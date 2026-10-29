@@ -6,11 +6,9 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
-local Balance = require(Shared.Config.Balance)
 local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
 local OrderGen = require(Shared.OrderGen)
-local Recipes = require(Shared.Config.Recipes)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -20,18 +18,6 @@ local PlotService = require(script.Parent.PlotService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local OrderService = {}
-
--- Items this player can make right now: enabled crops plus recipes of finished factories.
-local function itemPool(data: { [string]: any }): { string }
-	local pool = table.clone(Balance.enabledCrops)
-	for id, recipe in Recipes do
-		local factory = data.factories[recipe.factory]
-		if factory and factory.built then
-			table.insert(pool, id)
-		end
-	end
-	return pool
-end
 
 -- Grow the board to the level's slot count and fill slots whose wait is over.
 -- Returns true when anything changed.
@@ -66,7 +52,7 @@ function OrderService.refreshBoard(player: Player): boolean
 			local order, seed = OrderGen.generate({
 				level = data.level,
 				seed = orders.seed,
-				pool = itemPool(data),
+				pool = OrderGen.makeablePool(data),
 				existing = existing,
 				now = now,
 			})

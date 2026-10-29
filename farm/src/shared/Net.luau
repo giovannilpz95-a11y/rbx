@@ -9,6 +9,10 @@ return table.freeze({
 	Factory_Build = "Factory_Build", -- factoryId
 	Factory_Queue = "Factory_Queue", -- factoryId, recipeId
 	Factory_Collect = "Factory_Collect", -- factoryId
+	Pen_Build = "Pen_Build", -- penId
+	Pen_BuyAnimal = "Pen_BuyAnimal", -- penId
+	Pen_Feed = "Pen_Feed", -- penId
+	Pen_Collect = "Pen_Collect", -- penId
 	Order_Fulfill = "Order_Fulfill", -- slotIndex
 	Order_Discard = "Order_Discard", -- slotIndex
 	Barn_Sell = "Barn_Sell", -- itemId, qty

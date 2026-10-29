@@ -3,6 +3,7 @@
 -- tests can cover it). Layout follows Design/09 Roblox Architecture §4, trimmed to what the
 -- greybox uses; the other systems add their blocks with a migration when they arrive.
 
+local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
 local Factories = require("./Config/Factories")
 local Levels = require("./Config/Levels")
@@ -51,6 +52,23 @@ function Profile.template(): { [string]: any }
 		}
 	end
 
+	local pens = {}
+	for _, id in Balance.enabledPens do
+		local def = Animals.pens[id]
+		local animals = {}
+		if def.given then
+			for _ = 1, def.startAnimals do
+				table.insert(animals, {}) -- hungry
+			end
+		end
+		pens[id] = {
+			built = def.given,
+			constructionReadyAt = nil,
+			animals = animals, -- { readyAt: number? } each (shared/Pen)
+			feedLeft = 0,
+		}
+	end
+
 	return {
 		version = Profile.VERSION,
 		meta = {
@@ -65,11 +83,12 @@ function Profile.template(): { [string]: any }
 		},
 		level = 1,
 		inventory = {
-			items = {},
+			items = {}, -- never put starting items here: reconcile would refill them on every load
 			barnCapacity = Balance.barnStartCapacity,
 		},
 		fields = fields,
 		factories = factories,
+		pens = pens,
 		orders = {
 			board = {}, -- array of slots: an order, or { refreshAt = n } while empty
 			seed = 0,
@@ -81,6 +100,16 @@ function Profile.template(): { [string]: any }
 		-- puzzle = Crop Pop's own save block (Hearts, boosters, progress), absent until it
 		-- first saves; the farm stores it without reading it (server/Services/CropPopBridge).
 	}
+end
+
+-- One-time gifts for a brand-new farm (meta.createdAt still 0). Returns true if applied.
+function Profile.welcome(data: { [string]: any }, now: number): boolean
+	if data.meta.createdAt ~= 0 then
+		return false
+	end
+	data.meta.createdAt = now
+	data.inventory.items.CowFeed = (data.inventory.items.CowFeed or 0) + Balance.starterCowFeed
+	return true
 end
 
 -- Migrations[n] turns a version-n profile into version n+1. None yet.

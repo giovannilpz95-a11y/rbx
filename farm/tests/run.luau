@@ -6,6 +6,7 @@ local fs = require("@lune/fs")
 local luau = require("@lune/luau")
 local process = require("@lune/process")
 
+local Animals = require("../src/shared/Config/Animals")
 local Balance = require("../src/shared/Config/Balance")
 local Crops = require("../src/shared/Config/Crops")
 local Factories = require("../src/shared/Config/Factories")
@@ -13,6 +14,7 @@ local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
 local OrderConfig = require("../src/shared/Config/Orders")
 local OrderGen = require("../src/shared/OrderGen")
+local Pen = require("../src/shared/Pen")
 local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Recipes = require("../src/shared/Config/Recipes")
@@ -73,13 +75,68 @@ test("every recipe input and factory exists", function()
 	end
 end)
 
-test("enabled crops and factories exist", function()
+test("enabled crops, factories and pens exist", function()
 	for _, id in Balance.enabledCrops do
 		ok(Crops[id] ~= nil, "crop " .. id)
 	end
 	for _, id in Balance.enabledFactories do
 		ok(Factories[id] ~= nil, "factory " .. id)
 	end
+	for _, id in Balance.enabledPens do
+		ok(Animals.pens[id] ~= nil, "pen " .. id)
+	end
+end)
+
+test("every recipe of an enabled factory can be made in the MVP", function()
+	local enabled = {}
+	for _, id in Balance.enabledCrops do
+		enabled[id] = true
+	end
+	for _, id in Balance.enabledPens do
+		enabled[Animals.pens[id].product] = true
+	end
+	for id, recipe in Recipes do
+		enabled[id] = table.find(Balance.enabledFactories, recipe.factory) ~= nil
+	end
+	for id, recipe in Recipes do
+		if enabled[id] then
+			for input in recipe.inputs do
+				ok(enabled[input], id .. " needs " .. input .. ", which the MVP can't make")
+			end
+			ok(recipe.unlockLevel <= 12, id .. " unlocks past the MVP cap")
+			ok(recipe.unlockLevel >= Factories[recipe.factory].unlockLevel, id .. " unlocks before its factory")
+		end
+	end
+end)
+
+test("every pen's feed is a Feed Mill recipe and its product an item", function()
+	for id, def in Animals.pens do
+		eq(def.id, id, "pen id")
+		local feed = Recipes[def.feed]
+		ok(feed ~= nil and feed.isFeed and feed.factory == "FeedMill", id .. " feed " .. def.feed)
+		ok(Items[def.product] ~= nil and Items[def.product].kind == "Animal", id .. " product")
+		eq(#def.extraAnimalCosts, Animals.maxAnimals - def.startAnimals, id .. " animal costs")
+	end
+end)
+
+test("Township baseline rows for animals, factories and recipes", function()
+	eq(Animals.pens.CowBarn.produceSeconds, 20 * 60, "Milk time")
+	eq(Animals.pens.ChickenCoop.unlockLevel, 5, "Chickens level")
+	eq(Animals.pens.SheepFold.buildCost, 600, "Sheep Fold cost")
+	eq(Factories.FeedMill.unlockLevel, 3, "Feed Mill level")
+	eq(Factories.TextileMill.queueSlots, 2, "Textile Mill slots")
+	eq(Recipes.CowFeed.outputQty, 3, "feed batch")
+	eq(Recipes.Cheese.inputs.Milk, 2, "Cheese milk")
+	eq(Recipes.Shirt.inputs.CottonFabric, 1, "Shirt fabric")
+end)
+
+test("item production time includes everything upstream", function()
+	-- Cow Feed: (5 min + 2 Wheat * 60 s + 1 Corn * 150 s) / 3 bags = 190 s a bag
+	eq(Items.CowFeed.unitSeconds, 190, "Cow Feed")
+	-- Milk: 20 min + a third of a bag
+	ok(math.abs(Items.Milk.unitSeconds - (1200 + 190 / 3)) < 1e-6, "Milk")
+	ok(Items.Cheese.unitSeconds > 2 * Items.Milk.unitSeconds, "Cheese includes its Milk")
+	ok(Items.CowFeed.isFeed and not Items.Milk.isFeed, "feed flag")
 end)
 
 test("no item id is both a crop and a recipe", function()
@@ -160,6 +217,82 @@ test("a full tray pauses the queue until goods are collected", function()
 	eq(queue[1].startedAt, 200, "restarts at collect time")
 end)
 
+test("a batch only starts when the tray has room for all of it", function()
+	local queue = { { recipe = "CowFeed", seconds = 10, qty = 3 }, { recipe = "CowFeed", seconds = 10, qty = 3 } }
+	local output = { Bread = 3 }
+	Timer.advanceQueue(queue, output, 0, 8)
+	Timer.advanceQueue(queue, output, 100, 8)
+	eq(output.CowFeed, 3, "first batch of 3")
+	eq(#queue, 1, "second waits: 6 + 3 > 8")
+	eq(queue[1].startedAt, nil, "not started")
+	output.Bread = nil
+	Timer.advanceQueue(queue, output, 200, 8)
+	eq(queue[1].startedAt, 200, "starts once there's room")
+end)
+
+---------------------------------------------------------------------------------------------
+-- Pens
+---------------------------------------------------------------------------------------------
+
+local function newPen(n: number)
+	local pen = { built = true, animals = {}, feedLeft = 0 }
+	for _ = 1, n do
+		table.insert(pen.animals, {})
+	end
+	return pen
+end
+
+test("one bag feeds three animals", function()
+	local pen = newPen(4)
+	local bags = 1
+	local function takeBag(): boolean
+		if bags > 0 then
+			bags -= 1
+			return true
+		end
+		return false
+	end
+	eq(Pen.feed(pen, 0, 1200, takeBag), 3, "three fed from one bag")
+	eq(pen.feedLeft, 0, "bag used up")
+	eq(Pen.counts(pen, 0).hungry, 1, "one still hungry")
+	bags = 1
+	eq(Pen.feed(pen, 0, 1200, takeBag), 1, "the fourth")
+	eq(pen.feedLeft, 2, "two scoops left in the trough")
+end)
+
+test("animals hold their product until collected, within Barn space", function()
+	local pen = newPen(3)
+	Pen.feed(pen, 0, 100, function()
+		return true
+	end)
+	local counts = Pen.counts(pen, 50)
+	eq(counts.producing, 3, "producing")
+	eq(counts.nextReadyAt, 100, "next ready")
+	eq(Pen.counts(pen, 1000).ready, 3, "all ready, nothing lost offline")
+	eq(Pen.collect(pen, 1000, 2), 2, "only what fits")
+	local after = Pen.counts(pen, 1000)
+	eq(after.ready, 1, "one waits")
+	eq(after.hungry, 2, "collected ones are hungry")
+end)
+
+test("animals 4 to 6 cost Coins, then the pen is full", function()
+	local def = Animals.pens.CowBarn
+	local pen = newPen(3)
+	eq(Pen.nextAnimalCost(def, pen), 30, "4th")
+	table.insert(pen.animals, {})
+	table.insert(pen.animals, {})
+	eq(Pen.nextAnimalCost(def, pen), 50, "6th")
+	table.insert(pen.animals, {})
+	eq(Pen.nextAnimalCost(def, pen), nil, "full")
+end)
+
+test("construction blocks a pen until it's done", function()
+	local pen = newPen(3)
+	pen.constructionReadyAt = 100
+	ok(not Pen.isOperational(pen, 50), "building")
+	ok(Pen.isOperational(pen, 100), "done")
+end)
+
 ---------------------------------------------------------------------------------------------
 -- Rng and OrderGen
 ---------------------------------------------------------------------------------------------
@@ -224,6 +357,29 @@ test("the first card on an empty board is crops-only", function()
 	end
 end)
 
+test("the order pool only holds what the farm can make, and never feed", function()
+	local data = Profile.migrate(nil) :: any
+	local function has(pool: { string }, id: string): boolean
+		return table.find(pool, id) ~= nil
+	end
+	local pool = OrderGen.makeablePool(data)
+	ok(has(pool, "Wheat") and has(pool, "Cotton"), "crops")
+	ok(not has(pool, "Milk"), "no Milk without Cow Feed")
+	data.inventory.items.CowFeed = 1
+	ok(has(OrderGen.makeablePool(data), "Milk"), "Milk once there's feed")
+	data.inventory.items.CowFeed = nil
+	data.factories.FeedMill.built = true
+	data.factories.Dairy.built = true
+	pool = OrderGen.makeablePool(data)
+	ok(has(pool, "Milk") and has(pool, "Cheese"), "Milk and Cheese with a Feed Mill and Dairy")
+	ok(not has(pool, "CowFeed"), "feed is never ordered")
+	ok(not has(pool, "Cookies"), "no Cookies without a Bakery and Chickens")
+	data.factories.Bakery.built = true
+	ok(not has(OrderGen.makeablePool(data), "Cookies"), "still no Eggs")
+	data.pens.ChickenCoop.built = true
+	ok(has(OrderGen.makeablePool(data), "Cookies"), "Cookies once Chickens are in")
+end)
+
 ---------------------------------------------------------------------------------------------
 -- Profile
 ---------------------------------------------------------------------------------------------
@@ -240,6 +396,29 @@ test("new profile uses the Township starting wallet", function()
 	end
 	eq(fields, 6, "six fields")
 	eq(data.factories.Bakery.slots, 3, "bakery slots")
+	eq(data.factories.SugarMill.slots, 2, "sugar mill slots")
+	ok(data.pens.CowBarn.built, "Cow Barn given")
+	eq(#data.pens.CowBarn.animals, 3, "three Cows")
+	ok(not data.pens.ChickenCoop.built, "Chicken Coop not built")
+end)
+
+test("a new farm gets its starter feed once", function()
+	local data = Profile.migrate(nil) :: any
+	ok(Profile.welcome(data, 1000), "welcomed")
+	eq(data.inventory.items.CowFeed, Balance.starterCowFeed, "starter feed")
+	eq(data.meta.createdAt, 1000, "created")
+	data.inventory.items.CowFeed = nil -- fed it all
+	ok(not Profile.welcome(data, 2000), "only once")
+	local again = Profile.migrate(data) :: any
+	eq(again.inventory.items.CowFeed, nil, "a reload doesn't refill it")
+end)
+
+test("an old save gains the new factories and the Cow Barn", function()
+	local old = { version = 1, factories = { Bakery = { built = true, slots = 3, queue = {}, output = {} } } }
+	local data = Profile.migrate(old) :: any
+	ok(data.factories.Bakery.built, "kept the Bakery")
+	ok(data.factories.FeedMill ~= nil and not data.factories.FeedMill.built, "Feed Mill to build")
+	eq(#data.pens.CowBarn.animals, 3, "Cows")
 end)
 
 test("reconcile fills missing keys and keeps extra ones", function()

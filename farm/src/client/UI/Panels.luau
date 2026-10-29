@@ -1,5 +1,6 @@
 --!strict
--- One panel open at a time: Orders, Barn, Bakery, the seed picker and (Studio only) Debug.
+-- One panel open at a time: Orders, Barn, Buildings (every factory and pen), one factory,
+-- one pen, the seed picker and (Studio only) Debug.
 -- Panels re-render on every state change and once a second for countdowns.
 
 local Players = game:GetService("Players")
@@ -7,10 +8,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
+local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
 local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
 local Items = require(Shared.Items)
+local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Timer = require(Shared.Timer)
 
@@ -25,11 +28,23 @@ local frame: Frame
 local titleLabel: TextLabel
 local body: ScrollingFrame
 local current: string? = nil
-local seedFieldId: string? = nil
+local currentArg: string? = nil -- the field for Seeds, the pen for Pen
 
--- Set by the reach controller: is the avatar close enough to collect from the Bakery tray?
+-- Set by the reach controller: is the avatar close enough to a factory's output table, or to
+-- a pen, for the hands-on buttons?
 Panels.canCollect = function(_factoryId: string): boolean
 	return false
+end
+Panels.nearPen = function(_penId: string): boolean
+	return false
+end
+
+local function sortedIds(defs: { [string]: { order: number } }, enabled: { string }): { string }
+	local ids = table.clone(enabled)
+	table.sort(ids, function(a, b)
+		return defs[a].order < defs[b].order
+	end)
+	return ids
 end
 
 local function itemName(id: string): string
@@ -188,7 +203,13 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 			table.insert(recipeIds, id)
 		end
 	end
-	table.sort(recipeIds)
+	table.sort(recipeIds, function(a, b)
+		local ra, rb = Recipes[a], Recipes[b]
+		if ra.unlockLevel ~= rb.unlockLevel then
+			return ra.unlockLevel < rb.unlockLevel
+		end
+		return a < b
+	end)
 	for _, id in recipeIds do
 		local recipe = Recipes[id]
 		local line = row(46, order)
@@ -204,7 +225,9 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		local locked = state.level < recipe.unlockLevel
 		local text = string.format(
 			"%s  <-  %s   (%s)",
-			recipe.displayName,
+			if recipe.outputQty > 1
+				then string.format("%d %s", recipe.outputQty, recipe.displayName)
+				else recipe.displayName,
 			table.concat(inputs, ", "),
 			Timer.format(recipe.seconds * (state.timeScale or 1))
 		)
@@ -262,6 +285,209 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 	end
 end
 
+-- One line of status for a factory, shared by the Buildings list.
+local function factoryStatus(state: { [string]: any }, factoryId: string): string
+	local def = Factories[factoryId]
+	local preview = ClientStore.factoryPreview(factoryId)
+	local now = ClientStore.now()
+	if preview == nil then
+		return ""
+	elseif not preview.built then
+		return if state.level < def.unlockLevel
+			then string.format("unlocks at level %d", def.unlockLevel)
+			else string.format("build for %d Coins", def.buildCost)
+	elseif preview.underConstruction then
+		return "building, " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now)) .. " left"
+	elseif preview.outputCount > 0 then
+		return string.format("%d ready on the table", preview.outputCount)
+	elseif #preview.queue > 0 and preview.queue[1].readyAt then
+		local job = preview.queue[1]
+		return string.format(
+			"making %s, %s left",
+			itemName(job.recipe),
+			Timer.format(Timer.remaining(job.readyAt, now))
+		)
+	end
+	return "idle"
+end
+
+local function penStatus(state: { [string]: any }, penId: string): string
+	local def = Animals.pens[penId]
+	local pen = state.pens[penId]
+	local now = ClientStore.now()
+	if pen == nil then
+		return ""
+	elseif not pen.built then
+		return if state.level < def.unlockLevel
+			then string.format("unlocks at level %d", def.unlockLevel)
+			else string.format("build for %d Coins", def.buildCost)
+	elseif not Pen.isOperational(pen, now) then
+		return "building, " .. Timer.format(Timer.remaining(pen.constructionReadyAt, now)) .. " left"
+	end
+	local counts = Pen.counts(pen, now)
+	if counts.ready > 0 then
+		return string.format("%d %s ready", counts.ready, def.productName)
+	elseif counts.hungry > 0 then
+		return string.format("%d hungry", counts.hungry)
+	end
+	return string.format("%s in %s", def.productName, Timer.format(Timer.remaining(counts.nextReadyAt or now, now)))
+end
+
+local function renderBuildings(state: { [string]: any })
+	titleLabel.Text = "Buildings"
+	local order = 1
+	local function line(name: string, status: string, open: () -> ())
+		local card = row(42, order)
+		order += 1
+		Ui.label(name, { Size = UDim2.new(0.4, 0, 1, 0), Font = Enum.Font.GothamBold, Parent = card })
+		Ui.label(status, {
+			Position = UDim2.fromScale(0.4, 0),
+			Size = UDim2.new(0.6, -76, 1, 0),
+			TextColor3 = Ui.colors.muted,
+			TextSize = 14,
+			TextWrapped = true,
+			Parent = card,
+		})
+		Ui.button("Open", open, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(64, 30),
+			Parent = card,
+		})
+	end
+	for _, id in sortedIds(Factories, Balance.enabledFactories) do
+		line(Factories[id].displayName, factoryStatus(state, id), function()
+			Panels.open(id)
+		end)
+	end
+	for _, id in sortedIds(Animals.pens, Balance.enabledPens) do
+		line(Animals.pens[id].displayName, penStatus(state, id), function()
+			Panels.open("Pen", id)
+		end)
+	end
+end
+
+local function renderPen(state: { [string]: any }, penId: string)
+	local def = Animals.pens[penId]
+	local pen = state.pens[penId]
+	titleLabel.Text = def.displayName
+	if pen == nil then
+		return
+	end
+	local now = ClientStore.now()
+
+	if not pen.built then
+		local line = row(80, 1)
+		if state.level < def.unlockLevel then
+			Ui.label(string.format("Unlocks at level %d.", def.unlockLevel), { Parent = line })
+		else
+			Ui.label(
+				string.format(
+					"Build it for %d Coins (+%d XP). It comes with %d %s.",
+					def.buildCost,
+					def.xp,
+					def.startAnimals,
+					def.animalPlural
+				),
+				{ TextWrapped = true, Size = UDim2.new(1, 0, 0, 26), Parent = line }
+			)
+			local build = Ui.button("Build", function()
+				Remotes.fire("Pen_Build", penId)
+			end, { Position = UDim2.fromOffset(0, 30), Parent = line })
+			Ui.setEnabled(build, state.currencies.Coins >= def.buildCost)
+		end
+		return
+	end
+	if not Pen.isOperational(pen, now) then
+		Ui.label(
+			"Building... " .. Timer.format(Timer.remaining(pen.constructionReadyAt, now)) .. " left",
+			{ Parent = row(40, 1) }
+		)
+		return
+	end
+
+	local counts = Pen.counts(pen, now)
+	local near = Panels.nearPen(penId)
+	local feedName = itemName(def.feed)
+	local bags = ClientStore.itemCount(def.feed)
+	local scoops = pen.feedLeft or 0
+
+	local status = row(64, 1)
+	Ui.label(
+		string.format(
+			"Animals %d / %d    Ready %d    Eating %d    Hungry %d",
+			#pen.animals,
+			Animals.maxAnimals,
+			counts.ready,
+			counts.producing,
+			counts.hungry
+		),
+		{ Size = UDim2.new(1, 0, 0, 24), TextSize = 15, Parent = status }
+	)
+	local next_ = if counts.nextReadyAt
+		then string.format("Next %s in %s.  ", def.productName, Timer.format(Timer.remaining(counts.nextReadyAt, now)))
+		else ""
+	Ui.label(
+		string.format(
+			"%s%s in the Barn: %d bag%s (1 bag feeds %d)%s",
+			next_,
+			feedName,
+			bags,
+			if bags == 1 then "" else "s",
+			Animals.feedPerBag,
+			if scoops > 0 then string.format(", %d left in the trough", scoops) else ""
+		),
+		{
+			Position = UDim2.fromOffset(0, 26),
+			Size = UDim2.new(1, 0, 0, 26),
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			TextWrapped = true,
+			Parent = status,
+		}
+	)
+
+	local actions = row(42, 2)
+	local holder = Ui.new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Parent = actions,
+	}, { Ui.list(6, true) })
+	local collect = Ui.button("Collect", function()
+		Remotes.fire("Pen_Collect", penId)
+	end, { Size = UDim2.fromOffset(90, 30), LayoutOrder = 1, Parent = holder })
+	Ui.setEnabled(collect, near and counts.ready > 0)
+	local feed = Ui.button("Feed all", function()
+		Remotes.fire("Pen_Feed", penId)
+	end, { Size = UDim2.fromOffset(90, 30), LayoutOrder = 2, Parent = holder })
+	Ui.setEnabled(feed, near and counts.hungry > 0 and (bags > 0 or scoops > 0))
+	local cost = Pen.nextAnimalCost(def, pen)
+	local buy = Ui.button(
+		if cost then string.format("Buy a %s (%d)", def.animalName, cost) else "Pen is full",
+		function()
+			Remotes.fire("Pen_BuyAnimal", penId)
+		end,
+		{ Size = UDim2.fromOffset(150, 30), LayoutOrder = 3, Parent = holder }
+	)
+	Ui.setEnabled(buy, cost ~= nil and state.currencies.Coins >= cost)
+
+	if not near then
+		Ui.label("Walk to the pen to feed and collect.", {
+			LayoutOrder = 3,
+			TextColor3 = Ui.colors.muted,
+			TextSize = 14,
+			Parent = body,
+		})
+	elseif counts.hungry > 0 and bags == 0 and scoops == 0 then
+		Ui.label(string.format("Make %s at the Feed Mill.", feedName), {
+			LayoutOrder = 3,
+			TextColor3 = Ui.colors.muted,
+			TextSize = 14,
+			Parent = body,
+		})
+	end
+end
+
 local function renderSeeds(state: { [string]: any })
 	titleLabel.Text = "Plant a crop"
 	for i, id in Balance.enabledCrops do
@@ -280,8 +506,8 @@ local function renderSeeds(state: { [string]: any })
 			text ..= string.format("   (level %d)", crop.unlockLevel)
 		end
 		local button = Ui.button(text, function()
-			if seedFieldId then
-				Remotes.fire("Farm_Plant", seedFieldId, id)
+			if currentArg then
+				Remotes.fire("Farm_Plant", currentArg, id)
 			end
 			Panels.close()
 		end, {
@@ -369,8 +595,12 @@ local function render()
 		renderOrders(state)
 	elseif current == "Barn" then
 		renderBarn(state)
-	elseif current == "Bakery" then
-		renderFactory(state, "Bakery")
+	elseif current == "Buildings" then
+		renderBuildings(state)
+	elseif current == "Pen" and currentArg then
+		renderPen(state, currentArg)
+	elseif Factories[current] then
+		renderFactory(state, current)
 	elseif current == "Seeds" then
 		renderSeeds(state)
 	elseif current == "Debug" then
@@ -378,23 +608,23 @@ local function render()
 	end
 end
 
-function Panels.open(name: string, fieldId: string?)
+function Panels.open(name: string, arg: string?)
 	if name == "Debug" and not RunService:IsStudio() then
 		return
 	end
-	if current == name and name ~= "Seeds" then
+	if current == name and currentArg == arg and name ~= "Seeds" then
 		Panels.close()
 		return
 	end
 	current = name
-	seedFieldId = fieldId
+	currentArg = arg
 	frame.Visible = true
 	render()
 end
 
 function Panels.close()
 	current = nil
-	seedFieldId = nil
+	currentArg = nil
 	frame.Visible = false
 end
 

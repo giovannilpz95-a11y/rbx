@@ -1,0 +1,53 @@
+--!strict
+-- Animal pens from Design/03 Animals and Township Baseline Numbers §3 (Township baseline):
+-- the three pens of the level-12 MVP. Each pen comes with 3 animals; animals 4-6 are bought.
+-- One bag of feed feeds 3 animals (one product each).
+
+export type PenDef = {
+	id: string,
+	displayName: string, -- the pen
+	animalName: string, -- one animal, for buttons ("Buy a Cow")
+	animalPlural: string,
+	unlockLevel: number,
+	given: boolean, -- placed for free at level 1 (the Cow Barn)
+	buildCost: number, -- Coins
+	buildSeconds: number,
+	xp: number, -- XP for building it
+	feed: string, -- Feed Mill recipe id
+	product: string, -- Barn item id
+	productName: string,
+	produceSeconds: number,
+	sellPrice: number, -- Coins per product
+	productXP: number, -- XP per product collected
+	startAnimals: number,
+	extraAnimalCosts: { number }, -- Coins for animals 4, 5, 6
+	order: number,
+	color: { number }, -- greybox RGB for the animals
+	productColor: { number },
+}
+
+local MIN = 60
+local HOUR = 3600
+
+-- One bag of feed feeds this many animals.
+local FEED_PER_BAG = 3
+
+-- stylua: ignore
+local Pens: { [string]: PenDef } = {
+	CowBarn = { id = "CowBarn", displayName = "Cow Barn", animalName = "Cow", animalPlural = "Cows", unlockLevel = 1, given = true, buildCost = 0, buildSeconds = 0, xp = 0, feed = "CowFeed", product = "Milk", productName = "Milk", produceSeconds = 20 * MIN, sellPrice = 7, productXP = 3, startAnimals = 3, extraAnimalCosts = { 30, 40, 50 }, order = 1, color = { 245, 245, 245 }, productColor = { 250, 250, 255 } },
+	ChickenCoop = { id = "ChickenCoop", displayName = "Chicken Coop", animalName = "Chicken", animalPlural = "Chickens", unlockLevel = 5, given = false, buildCost = 200, buildSeconds = 1 * HOUR, xp = 13, feed = "ChickenFeed", product = "Eggs", productName = "Eggs", produceSeconds = 1 * HOUR, sellPrice = 10, productXP = 4, startAnimals = 3, extraAnimalCosts = { 90, 120, 150 }, order = 2, color = { 250, 240, 220 }, productColor = { 240, 220, 170 } },
+	SheepFold = { id = "SheepFold", displayName = "Sheep Fold", animalName = "Sheep", animalPlural = "Sheep", unlockLevel = 10, given = false, buildCost = 600, buildSeconds = 4 * HOUR, xp = 29, feed = "SheepFeed", product = "Wool", productName = "Wool", produceSeconds = 4 * HOUR, sellPrice = 15, productXP = 6, startAnimals = 3, extraAnimalCosts = { 180, 240, 300 }, order = 3, color = { 225, 225, 215 }, productColor = { 235, 235, 230 } },
+}
+
+for _, pen in Pens do
+	table.freeze(pen.extraAnimalCosts)
+	table.freeze(pen.color)
+	table.freeze(pen.productColor)
+	table.freeze(pen)
+end
+
+return table.freeze({
+	pens = table.freeze(Pens),
+	feedPerBag = FEED_PER_BAG,
+	maxAnimals = 6,
+})
