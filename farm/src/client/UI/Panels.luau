@@ -228,7 +228,8 @@ end
 
 local function renderBarn(state: { [string]: any })
 	titleLabel.Text = string.format("Barn  %d / %d", state.barnUsed, state.barnCapacity)
-	local full = state.barnUsed >= state.barnCapacity
+	-- "Full" once a typical harvest (2) no longer fits, so the banner shows when it bites
+	local full = state.barnCapacity - state.barnUsed < 2
 	local order = 1
 	if full then
 		Ui.label("Your Barn is full. Sell what you have most of, or upgrade it.", {
@@ -289,13 +290,13 @@ local function renderBarn(state: { [string]: any })
 	})
 	order += 1
 
-	-- Contents; when full, most-stocked first so the quick Sell buttons are on top
+	-- Contents, most-stocked first so the quick Sell buttons for them are on top
 	local ids = {}
 	for id in state.inventory do
 		table.insert(ids, id)
 	end
 	table.sort(ids, function(a, b)
-		if full and state.inventory[a] ~= state.inventory[b] then
+		if state.inventory[a] ~= state.inventory[b] then
 			return state.inventory[a] > state.inventory[b]
 		end
 		return a < b
