@@ -45,10 +45,12 @@ function Hud.popup(payload: { [string]: any })
 			table.insert(parts, string.format("+%d Coins", payload.coins))
 		end
 		if (payload.gems or 0) > 0 then
-			table.insert(parts, string.format("+%d Gems", payload.gems))
+			table.insert(parts, string.format("+%d %s", payload.gems, if payload.gems == 1 then "Gem" else "Gems"))
 		end
 		Hud.toast(table.concat(parts, "   "), "celebrate")
 		Motion.bump(levelStar, 1.35)
+	elseif payload.kind == "BarnUpgrade" then
+		Hud.toast(string.format("Barn upgraded: room for %d!", payload.capacity))
 	elseif payload.kind == "Drop" then
 		Hud.toast(string.format("Found 1 %s!", payload.name))
 	elseif payload.kind == "Field" then

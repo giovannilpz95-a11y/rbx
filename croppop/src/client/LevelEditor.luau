@@ -6,7 +6,7 @@
 	Paint the board, pick tile colours, goals and moves, then:
 	  Test play   plays it offline (no hearts, no rewards)
 	  Bot check   plays it 50 times with the test bot and shows the win rate
-	  Export      writes it as Luau for Levels.List (in the box and in Output)
+	  Export      writes it as Luau for a Levels set file (in the box and in Output)
 
 	A Studio plugin can reuse the same pieces later; this keeps level editing
 	inside the current Play-mode workflow.
@@ -562,8 +562,8 @@ function LevelEditor.export(): string?
 	if ui then
 		ui.exportBox.Text = text
 	end
-	print("[CropPop] Level " .. level.id .. " for Levels.List:\n" .. text)
-	setStatus("Exported. Copy it from the box or the Output window into Levels.List.")
+	print("[CropPop] Level " .. level.id .. " for Levels/" .. Levels.setFor(level.id) .. ".luau:\n" .. text)
+	setStatus("Exported. Paste it from the box or Output into Levels/" .. Levels.setFor(level.id) .. ".luau.")
 	return text
 end
 
