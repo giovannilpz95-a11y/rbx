@@ -345,8 +345,15 @@ local function renderDebug(state: { [string]: any })
 		Remotes.fire("Debug_SetTimeScale", v)
 	end, 3)
 	Ui.label(
-		"Timer length applies to timers started after the change.",
-		{ TextColor3 = Ui.colors.muted, TextSize = 13, LayoutOrder = 4, Parent = body }
+		"Timer length only changes timers you start after picking it; crops and Bread already growing keep their time.",
+		{
+			TextColor3 = Ui.colors.muted,
+			TextSize = 14,
+			TextWrapped = true,
+			Size = UDim2.new(1, 0, 0, 40),
+			LayoutOrder = 4,
+			Parent = body,
+		}
 	)
 end
 

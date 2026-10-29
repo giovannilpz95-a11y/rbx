@@ -122,7 +122,7 @@ local function render()
 	end
 
 	if boardText then
-		local lines = { "ORDERS" }
+		local lines = { "ORDER BOARD" }
 		for _, slot in state.board do
 			if slot.order then
 				local parts = {}

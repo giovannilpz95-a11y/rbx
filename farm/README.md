@@ -31,7 +31,7 @@ rokit install
 rojo serve
 ```
 
-Then connect with the Rojo plugin in a new Baseplate place (delete the Baseplate; the game builds its own ground). Or build a place file with `rojo build default.project.json -o farm-greybox.rbxlx` and open it.
+Then connect with the Rojo plugin in a new Baseplate place. The game builds its own ground and removes the template's Baseplate and SpawnLocation when the server starts. Or build a place file with `rojo build default.project.json -o farm-greybox.rbxlx` and open it.
 
 The project maps to:
 

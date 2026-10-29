@@ -111,6 +111,14 @@ end
 ---------------------------------------------------------------------------------------------
 
 local function buildWorld()
+	-- Clear what a Studio template leaves behind: its spawn would put players on the hub
+	-- floor at random, and its Baseplate z-fights with our ground.
+	for _, child in Workspace:GetChildren() do
+		if child:IsA("SpawnLocation") or (child:IsA("BasePart") and child.Name == "Baseplate") then
+			child:Destroy()
+		end
+	end
+
 	local map = Instance.new("Folder")
 	map.Name = "FarmMap"
 	map.Parent = Workspace
@@ -258,7 +266,30 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Color = COLORS.board,
 		Parent = model,
 	})
-	label(arch, player.DisplayName .. "'s Farm", 2.5, UDim2.fromOffset(260, 44))
+	-- A painted name sign on the arch (readable from both sides) instead of a floating
+	-- label, so it never overlaps the Order Board from the default camera.
+	local sign = part({
+		Name = "GateSign",
+		Size = Vector3.new(14, 3, 0.4),
+		CFrame = at(Vector3.new(0, 0, 47), 12.75),
+		Color = COLORS.board,
+		Parent = model,
+	})
+	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
+		local surface = Instance.new("SurfaceGui")
+		surface.Face = face
+		surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		surface.PixelsPerStud = 30
+		local text = Instance.new("TextLabel")
+		text.Size = UDim2.fromScale(1, 1)
+		text.BackgroundTransparency = 1
+		text.TextScaled = true
+		text.Font = Enum.Font.GothamBold
+		text.TextColor3 = Color3.new(1, 1, 1)
+		text.Text = player.DisplayName .. "'s Farm"
+		text.Parent = surface
+		surface.Parent = sign
+	end
 
 	local spawnPad = part({
 		Name = "SpawnPad",
@@ -392,7 +423,6 @@ local function buildPlot(player: Player, slot: Slot): Model
 			Parent = model,
 		})
 	end
-	label(board, "Order Board", 5)
 
 	local truck = part({
 		Name = "Truck",
