@@ -3,12 +3,16 @@
 -- tests share them. Saved under data.town:
 --   houses = { { type, lot, readyAt? } }      -- readyAt nil or past = finished
 --   community = { [id] = { readyAt? } }       -- present = built or building
+-- and data.land = { { readyAt? } } -- land expansions, started in order
 -- Population and the Cap only count finished buildings. A House can't be started unless
 -- the Cap has room for it on top of every House already finished or still building.
 
+local Land = require("./Config/Land")
 local Town = require("./Config/Town")
 
 local TownRules = {}
+
+export type FieldUnlock = Land.FieldUnlock
 
 function TownRules.isDone(entry: { [string]: any }, now: number): boolean
 	return entry.readyAt == nil or now >= entry.readyAt
@@ -104,6 +108,61 @@ function TownRules.freeLot(data: { [string]: any }, lotCount: number): number?
 		end
 	end
 	return nil
+end
+
+-- Land expansion
+
+function TownRules.landDone(data: { [string]: any }, stage: number, now: number): boolean
+	local entry = data.land[stage]
+	return entry ~= nil and TownRules.isDone(entry, now)
+end
+
+-- The next expansion to start, or nil when all are started.
+function TownRules.nextExpansion(data: { [string]: any }): Land.ExpansionDef?
+	return Land.expansions[#data.land + 1]
+end
+
+function TownRules.canExpand(data: { [string]: any }, now: number): (boolean, string?)
+	local def = TownRules.nextExpansion(data)
+	if def == nil then
+		return false, "No more land for now"
+	end
+	if def.stage > 1 and not TownRules.landDone(data, def.stage - 1, now) then
+		return false, "Finish clearing the last expansion first"
+	end
+	local population = TownRules.population(data, now)
+	if population < def.population then
+		return false, string.format("Needs Population %d (you have %d)", def.population, population)
+	end
+	return true, nil
+end
+
+-- Fields 7+ the farm has earned (by Population) and has land for, but not placed yet.
+function TownRules.fieldsToPlace(data: { [string]: any }, now: number): { FieldUnlock }
+	local population = TownRules.population(data, now)
+	local out = {}
+	for _, unlock in Land.fields do
+		if population < unlock.population then
+			break
+		end
+		local hasLand = unlock.field <= Land.startAreaFields or TownRules.landDone(data, Land.extraFieldsStage, now)
+		if data.fields["F" .. unlock.field] == nil and hasLand then
+			table.insert(out, unlock)
+		end
+	end
+	return out
+end
+
+-- Fields earned by Population but waiting for land.
+function TownRules.fieldsWaiting(data: { [string]: any }, now: number): number
+	local population = TownRules.population(data, now)
+	local count = 0
+	for _, unlock in Land.fields do
+		if population >= unlock.population and data.fields["F" .. unlock.field] == nil then
+			count += 1
+		end
+	end
+	return count - #TownRules.fieldsToPlace(data, now)
 end
 
 -- Building-material drop chance for one field harvest: longer crops drop more, up to x3.
