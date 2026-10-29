@@ -567,6 +567,145 @@ test("the hearts countdown doesn't ask the server every second when hearts are f
 	eq(calls, 0)
 end)
 
+test("the X asks before leaving a level, and Keep playing goes back to it", function()
+	local run = playLevel(1)
+	local backdrop = playerGui.CropPop.Backdrop
+	backdrop.Play.TopBar.Close.Activated:Fire()
+	truthy(backdrop.EndPanel.Visible)
+	eq(backdrop.EndPanel.Title.Text, "Leave this level?")
+	eq(run.view.enabled, false, "no swaps behind the question")
+	backdrop.EndPanel.Primary.Activated:Fire() -- Keep playing
+	eq(backdrop.EndPanel.Visible, false)
+	eq(PuzzleScreen.currentRun(), run)
+	eq(run.view.enabled, true)
+	backdrop.Play.TopBar.Close.Activated:Fire()
+	backdrop.EndPanel.Secondary.Activated:Fire() -- Leave
+	eq(PuzzleScreen.currentRun(), nil)
+	truthy(backdrop.LevelSelect.Visible)
+end)
+
+test("a Hot Streak shows on the Trail and the booster picker and puts free power-ups on the board", function()
+	services.ServerStorage.CropPopLoadSave:Invoke(Mock.localPlayer, { v = 1, highestBeaten = 5, streak = 2 })
+	refillHearts()
+	PuzzleScreen.open()
+	local backdrop = playerGui.CropPop.Backdrop
+	truthy(string.find(backdrop.LevelSelect.Hearts.Text, "🔥 2", 1, true), backdrop.LevelSelect.Hearts.Text)
+	PuzzleScreen.open(2)
+	truthy(string.find(backdrop.PreLevel.Body.Text, "Hot Streak 2", 1, true), backdrop.PreLevel.Body.Text)
+	local run = pressPlay()
+	local powered = 0
+	run.game.board:eachCell(function(cell)
+		if cell.piece and cell.piece.power then
+			powered += 1
+		end
+	end)
+	eq(powered, 2)
+	-- Giving up warns about the streak, then ends it.
+	runOutOfMoves(run)
+	truthy(string.find(backdrop.EndPanel.Body.Text, "Hot Streak", 1, true))
+	giveUp()
+	truthy(string.find(backdrop.EndPanel.Body.Text, "Hot Streak of 2 is over", 1, true), backdrop.EndPanel.Body.Text)
+end)
+
+-- Level editor (Studio only) -----------------------------------------------------
+
+local LevelEditor = mockRequire(clientFolder.LevelEditor)
+
+test("the Trail's Dev: Editor button opens the level editor", function()
+	PuzzleScreen.open()
+	playerGui.CropPop.Backdrop.LevelSelect.DevEditor.Activated:Fire()
+	eq(PuzzleScreen.isOpen(), false)
+	truthy(LevelEditor.isOpen())
+	local level, err = LevelEditor.current()
+	eq(err, nil, "a new level is valid")
+	eq(level.id, #CropPop.Levels.List + 1)
+end)
+
+test("painting, colours and goals change the level, and bad levels say why", function()
+	local panel = playerGui.CropPopEditor.Backdrop.Panel
+	local grid = playerGui.CropPopEditor.Backdrop.GridArea.Grid
+	panel.Brushes["Brush#"].Activated:Fire()
+	grid.Cell1_1.Activated:Fire()
+	panel.Brushes.Brushm.Activated:Fire()
+	grid.Cell4_4.Activated:Fire()
+	local level = LevelEditor.current()
+	eq(string.sub(level.layout[1], 1, 1), "#")
+	eq(string.sub(level.layout[4], 4, 4), "m")
+	-- Mud on the board but no mud goal is fine; a mud goal needs mud.
+	panel.AddGoal.AddMud.Activated:Fire()
+	local _, err = LevelEditor.current()
+	eq(err, nil)
+	grid.Cell4_4.Activated:Fire() -- still the mud brush
+	panel.Brushes["Brush."].Activated:Fire()
+	grid.Cell4_4.Activated:Fire()
+	_, err = LevelEditor.current()
+	truthy(err and string.find(err, "mud"), "mud goal without mud is flagged")
+	truthy(string.find(panel.StatusRow.Status.Text, "mud", 1, true))
+	panel.Brushes.Brushm.Activated:Fire()
+	grid.Cell4_4.Activated:Fire()
+	-- Colours: dropping to 2 is refused by the validator.
+	for _, name in { "Egg", "Carrot", "Corn" } do
+		panel.Colors[name].Activated:Fire()
+	end
+	_, err = LevelEditor.current()
+	truthy(err and string.find(err, "colours"))
+	for _, name in { "Egg", "Carrot", "Corn" } do
+		panel.Colors[name].Activated:Fire()
+	end
+	_, err = LevelEditor.current()
+	eq(err, nil)
+	panel.BoardSize.WidthUp.Activated:Fire()
+	eq(#LevelEditor.current().layout[1], 9)
+end)
+
+test("export writes Luau that reads back as the same level", function()
+	local panel = playerGui.CropPopEditor.Backdrop.Panel
+	panel.Actions.Export.Activated:Fire()
+	local text = panel.ExportRow.Text.Text
+	truthy(#text > 0)
+	local back = loadmodule("return " .. string.gsub(text, ",$", ""), "export", {})()
+	local level = LevelEditor.current()
+	eq(table.concat(back.layout, "/"), table.concat(level.layout, "/"))
+	eq(CropPop.Levels.validate(back), nil)
+end)
+
+test("the bot check reports a win rate", function()
+	local report = LevelEditor.botCheck()
+	eq(report.games, 50)
+	truthy(string.find(playerGui.CropPopEditor.Backdrop.Panel.StatusRow.Status.Text, "Bot wins", 1, true))
+end)
+
+test("test play runs the level offline and goes back to the editor", function()
+	local panel = playerGui.CropPopEditor.Backdrop.Panel
+	local before = serverProgress().hearts.count
+	panel.Actions.TestPlay.Activated:Fire()
+	eq(LevelEditor.isOpen(), false)
+	local run = PuzzleScreen.currentRun()
+	truthy(run and run.test, "a test run")
+	eq(run.token, nil, "nothing from the server")
+	playToEnd(200, false)
+	local endPanel = playerGui.CropPop.Backdrop.EndPanel
+	truthy(endPanel.Visible)
+	truthy(string.find(endPanel.Title.Text, "Test", 1, true))
+	eq(serverProgress().hearts.count, before, "no heart used")
+	endPanel.Secondary.Activated:Fire() -- Editor
+	truthy(LevelEditor.isOpen())
+	eq(PuzzleScreen.isOpen(), false)
+end)
+
+test("loading a Trail level fills the editor with it", function()
+	local panel = playerGui.CropPopEditor.Backdrop.Panel
+	panel.Load.LoadIdUp.Activated:Fire()
+	panel.Load.LoadIdUp.Activated:Fire()
+	panel.Load.LoadLevel.Activated:Fire()
+	local level = LevelEditor.current()
+	eq(level.id, 3)
+	eq(table.concat(level.layout, "/"), table.concat(CropPop.Levels.get(3).layout, "/"))
+	panel.Title.Close.Activated:Fire()
+	eq(LevelEditor.isOpen(), false)
+	truthy(PuzzleScreen.isOpen())
+end)
+
 test("closing hides the screen", function()
 	PuzzleScreen.close()
 	eq(PuzzleScreen.isOpen(), false)

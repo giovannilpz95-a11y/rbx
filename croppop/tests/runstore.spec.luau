@@ -350,3 +350,77 @@ test("the Studio hearts setter only works with dev actions on", function()
 	local _, err = studio:start(31, 1)
 	eq(err, "no hearts")
 end)
+
+-- Hot Streak ---------------------------------------------------------------------
+
+test("Hot Streak: a win starts it, the next level gets a free Sprayer", function()
+	local store, tick = makeStore(true)
+	tick(10)
+	local won = winLevel(store, tick, 40, 1)
+	eq(won.progress.streak, 1)
+	tick(2)
+	local run = assert(store:start(40, 2))
+	eq(#run.hotStreak, 1)
+	eq(run.hotStreak[1], "Sprayer")
+	eq(run.startPowerUps[#run.startPowerUps], "Sprayer")
+end)
+
+test("Hot Streak grows to 3 free power-ups and stays there", function()
+	local store, tick = makeStore(true)
+	store:importSave(41, { v = 1, highestBeaten = 0, streak = 2 })
+	tick(10)
+	local run = assert(store:start(41, 1, { "BombStart" }))
+	eq(#run.hotStreak, 2)
+	eq(#run.startPowerUps, 3, "the pre-level booster plus two free ones")
+	store:importSave(41, { v = 1, streak = 7 })
+	tick(2)
+	run = assert(store:start(41, 1))
+	eq(#run.hotStreak, 3)
+	eq(run.hotStreak[3], "Sunflower")
+end)
+
+test("a loss ends the Hot Streak and says how long it was", function()
+	local store, tick = makeStore(true)
+	store:importSave(42, { v = 1, streak = 4 })
+	local lost = loseRun(store, tick, 42)
+	eq(lost.lostStreak, 4)
+	eq(lost.progress.streak, 0)
+end)
+
+test("leaving a level part-way ends the Hot Streak, and saves mid-level don't keep it", function()
+	local store, tick = makeStore(true)
+	store:importSave(43, { v = 1, streak = 3 })
+	tick(10)
+	assert(store:start(43, 1))
+	eq(store:exportSave(43).streak, 0, "a drop mid-level would end it")
+	tick(2)
+	local again = assert(store:start(43, 1)) -- the first one was left
+	eq(#again.hotStreak, 0)
+	eq(again.progress.streak, 0)
+end)
+
+test("a win while on a streak adds to it and the save keeps it", function()
+	local store, tick = makeStore(true)
+	store:importSave(44, { v = 1, streak = 2 })
+	tick(10)
+	local before = store:getProgress(44).streak
+	local run = assert(store:start(44, 1))
+	-- Win through the replay with the streak's free power-ups on the board.
+	local pop = Engine.new(Levels.get(1), run.seed, { startPowerUps = run.startPowerUps })
+	local picker = Rng.new(5)
+	local moves = {}
+	while pop.status == "Playing" do
+		local m = picker:pick(pop:listPossibleMoves())
+		pop:trySwap(m[1], m[2], m[3], m[4])
+		table.insert(moves, m)
+	end
+	local result = assert(store:finish(44, run.token, moves))
+	if result.won then
+		eq(result.progress.streak, before + 1)
+		eq(store:exportSave(44).streak, before + 1)
+	else
+		eq(result.progress.streak, 0)
+	end
+	store:importSave(45, { v = 1, streak = "lots" })
+	eq(store:getProgress(45).streak, 0, "bad values fall back")
+end)

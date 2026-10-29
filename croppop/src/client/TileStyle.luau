@@ -4,9 +4,19 @@
 	Each tile has its own colour, glyph and corner shape so they can be told
 	apart without relying on colour alone. The glyphs are standard emoji used
 	as stand-ins; final tiles will be our own sprites on one sheet.
+
+	Screen colours and the font come from the shared UiTheme
+	(Design/25 UI Style Guide), so Crop Pop matches the farm's look.
 ]]
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local UiTheme = require(ReplicatedStorage:WaitForChild("UiTheme"))
+local Palette = UiTheme.Palette
+
 local TileStyle = {}
+
+TileStyle.Theme = UiTheme
 
 -- Indexed by tile colour id (see CropPop.Tiles.Names).
 TileStyle.Colors = {
@@ -49,20 +59,21 @@ TileStyle.BoosterGlyphs = {
 }
 
 TileStyle.Board = {
-	backdrop = Color3.fromRGB(112, 168, 84),
-	panel = Color3.fromRGB(250, 243, 222),
+	backdrop = Palette.grass,
+	panel = Palette.panel,
 	cellLight = Color3.fromRGB(196, 224, 150),
 	cellDark = Color3.fromRGB(178, 210, 132),
 	mud = Color3.fromRGB(122, 84, 52),
 	bale = Color3.fromRGB(226, 188, 92),
 	baleText = Color3.fromRGB(110, 76, 30),
-	text = Color3.fromRGB(70, 52, 34),
-	accent = Color3.fromRGB(232, 120, 48),
-	locked = Color3.fromRGB(190, 186, 176),
+	text = Palette.text,
+	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
+	accentText = Palette.accentText, -- orange text on cream
+	locked = Palette.button.disabled.face,
 	selection = Color3.fromRGB(255, 255, 255),
-	option = Color3.fromRGB(232, 222, 196), -- an unpicked booster
+	option = Palette.paper, -- an unpicked booster
 }
 
-TileStyle.Font = Enum.Font.FredokaOne
+TileStyle.Font = UiTheme.Type.display
 
 return TileStyle

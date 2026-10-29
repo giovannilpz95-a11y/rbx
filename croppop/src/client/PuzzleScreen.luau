@@ -25,10 +25,15 @@ local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
 local BoardView = require(script.Parent.BoardView)
 local TileStyle = require(script.Parent.TileStyle)
 
+local Kit = TileStyle.Theme.Kit
+local Motion = TileStyle.Theme.Motion
+
 local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
 local Colors = TileStyle.Board
+local LOCKED_AHEAD = 4 -- locked levels shown on the trail past the next one
+local ROW_STEP = 60 -- a trail row plus the list padding, in pixels
 local Glyphs = TileStyle.BoosterGlyphs
 
 local PuzzleScreen = {}
@@ -40,6 +45,21 @@ local progress = nil -- the latest hearts / boosters / unlocks from the server
 local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 
 local GEM_CONFIRM_OVER = 10 -- spends above this need a second tap (10 Monetization)
+
+-- Glyphs for the free Hot Streak power-ups, matching the start boosters.
+local POWER_GLYPHS = { Sprayer = Glyphs.SprayerStart, HayBomb = Glyphs.BombStart, Sunflower = Glyphs.SunflowerStart }
+
+local function streak(): number
+	return progress and progress.streak or 0
+end
+
+local function streakGlyphs(powers: { string }): string
+	local parts = {}
+	for _, power in powers do
+		table.insert(parts, POWER_GLYPHS[power] or "?")
+	end
+	return table.concat(parts, " ")
+end
 
 local BOOSTER_HINTS = {
 	Trowel = "⛏️ Tap a tile to break it.",
@@ -89,6 +109,8 @@ local function button(parent: Instance, name: string, text: string, size: UDim2,
 	padding.PaddingLeft = UDim.new(0, 12)
 	padding.PaddingRight = UDim.new(0, 12)
 	padding.Parent = b
+	-- The shared chunky look (Design/25 UI Style Guide); the button keeps its API.
+	Kit.skinButton(b)
 	return b
 end
 
@@ -127,6 +149,7 @@ local function buildUi()
 	backdrop.BackgroundColor3 = Colors.backdrop
 	backdrop.BorderSizePixel = 0
 	backdrop.Parent = gui
+	Kit.gloss(0.82).Parent = backdrop
 
 	-- Play area: top bar + board.
 	local play = Instance.new("Frame")
@@ -142,6 +165,7 @@ local function buildUi()
 	topBar.BackgroundColor3 = Colors.panel
 	topBar.Parent = play
 	corner(topBar, 0.2)
+	Kit.skinPanel(topBar)
 	local barPadding = Instance.new("UIPadding")
 	barPadding.PaddingLeft = UDim.new(0, 14)
 	barPadding.PaddingRight = UDim.new(0, 14)
@@ -156,7 +180,7 @@ local function buildUi()
 	nameSize.Parent = levelName
 	local difficulty = label(topBar, "Difficulty", "", UDim2.new(), UDim2.new())
 	difficulty.TextXAlignment = Enum.TextXAlignment.Left
-	difficulty.TextColor3 = Colors.accent
+	difficulty.TextColor3 = Colors.accentText
 
 	local movesBox = Instance.new("Frame")
 	movesBox.Name = "Moves"
@@ -205,13 +229,14 @@ local function buildUi()
 	levelSelect.BackgroundColor3 = Colors.panel
 	levelSelect.Parent = backdrop
 	corner(levelSelect, 0.06)
+	Kit.skinPanel(levelSelect)
 	local selectSize = Instance.new("UISizeConstraint")
 	selectSize.MaxSize = Vector2.new(520, 640)
 	selectSize.Parent = levelSelect
 	label(levelSelect, "Title", "Crop Pop Trail", UDim2.fromScale(0.8, 0.1), UDim2.fromScale(0.1, 0.03))
 	local heartsLine = label(levelSelect, "Hearts", "", UDim2.fromScale(0.9, 0.06), UDim2.fromScale(0.05, 0.13))
 	local status = label(levelSelect, "Status", "", UDim2.fromScale(0.9, 0.045), UDim2.fromScale(0.05, 0.195))
-	status.TextColor3 = Colors.accent
+	status.TextColor3 = Colors.accentText
 	status.TextWrapped = true
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "List"
@@ -229,10 +254,12 @@ local function buildUi()
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
 	-- Studio only: empty the hearts to check the refill offer.
-	local devNoHearts = nil
+	local devNoHearts, devEditor = nil, nil
 	if RunService:IsStudio() then
 		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
 		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+		devEditor = button(levelSelect, "DevEditor", "Dev: Editor", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.02, 0.87))
+		devEditor.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
 	-- End-of-level panel.
@@ -246,6 +273,7 @@ local function buildUi()
 	panel.ZIndex = 10
 	panel.Parent = backdrop
 	corner(panel, 0.08)
+	Kit.skinPanel(panel)
 	local panelSize = Instance.new("UISizeConstraint")
 	panelSize.MaxSize = Vector2.new(460, 320)
 	panelSize.Parent = panel
@@ -284,12 +312,13 @@ local function buildUi()
 		local b = button(boosterBar, kind, Glyphs[kind], UDim2.fromScale(0.23, 1), UDim2.new())
 		b.LayoutOrder = i
 		b.BackgroundColor3 = Colors.panel
-		local count = label(b, "Count", "", UDim2.fromScale(0.4, 0.6), UDim2.fromScale(1, 0))
+		-- Inside the button's top-right corner, above the themed face and text
+		local count = label(b, "Count", "", UDim2.fromScale(0.34, 0.48), UDim2.new(1, -3, 0, 3))
 		count.AnchorPoint = Vector2.new(1, 0)
 		count.BackgroundTransparency = 0
 		count.BackgroundColor3 = Colors.accent
 		count.TextColor3 = Color3.new(1, 1, 1)
-		count.ZIndex = 2
+		count.ZIndex = 6
 		corner(count, 0.5)
 		boosterButtons[kind] = b
 	end
@@ -304,6 +333,7 @@ local function buildUi()
 	hint.Visible = false
 	hint.ZIndex = 5
 	corner(hint, 0.2)
+	Kit.skinPanel(hint)
 	local hintSize = Instance.new("UITextSizeConstraint")
 	hintSize.MaxTextSize = 28
 	hintSize.Parent = hint
@@ -325,6 +355,7 @@ local function buildUi()
 	preLevel.ZIndex = 10
 	preLevel.Parent = backdrop
 	corner(preLevel, 0.06)
+	Kit.skinPanel(preLevel)
 	local preSize = Instance.new("UISizeConstraint")
 	preSize.MaxSize = Vector2.new(460, 440)
 	preSize.Parent = preLevel
@@ -372,6 +403,7 @@ local function buildUi()
 		list = list,
 		closeSelect = closeSelect,
 		devNoHearts = devNoHearts,
+		devEditor = devEditor,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -538,6 +570,7 @@ local function showPanel(title: string, body: string, primaryText: string, onPri
 	end
 	-- Ignore clicks for a moment so a tap meant for the board can't hit a panel button.
 	ui.panelShownAt = os.clock()
+	Motion.popIn(ui.panel)
 	ui.panel.Visible = true
 end
 
@@ -554,6 +587,7 @@ end
 local showLevelSelect -- forward declarations
 local showPreLevel
 local startLevel
+local beginRun
 
 local function clearRun()
 	if current then
@@ -610,6 +644,9 @@ local function heartsText(): string
 	local nextIn = since(hearts.secondsToNext)
 	if nextIn then
 		text ..= "   next in " .. clockText(nextIn)
+	end
+	if streak() > 0 then
+		text ..= "   🔥 " .. streak()
 	end
 	return text
 end
@@ -738,6 +775,12 @@ renderTrail = function()
 	local highest = progress and progress.highestBeaten or 0
 	local unlockAll = progress and progress.unlockAll
 	for _, level in Levels.List do
+		-- Show a few locked levels ahead, not the whole trail.
+		if not unlockAll and level.id > highest + 1 + LOCKED_AHEAD then
+			local more = label(ui.list, "MoreAhead", string.format("🔒 %d more levels ahead", #Levels.List - level.id + 1), UDim2.new(1, -10, 0, 40), UDim2.new())
+			more.LayoutOrder = level.id
+			break
+		end
 		local unlocked = unlockAll or level.id <= highest + 1
 		local beaten = level.id <= highest
 		local text = string.format("%d  %s%s", level.id, level.name, if level.difficulty ~= "Normal" then "  (" .. level.difficulty .. ")" else "")
@@ -758,6 +801,8 @@ renderTrail = function()
 			end)
 		end
 	end
+	-- Scroll so the next level to play is in view.
+	ui.list.CanvasPosition = Vector2.new(0, math.max(0, (highest - 2) * ROW_STEP))
 end
 
 -- Ticks the hearts countdown once a second while the Trail is showing, and
@@ -854,10 +899,14 @@ showPreLevel = function(levelId: number)
 	ui.preLevelId = levelId
 	ui.preSelected = {}
 	ui.preTitle.Text = level.id .. ". " .. level.name
-	ui.preBody.Text = "Pick boosters for a strong start"
+	local free = progress and progress.hotStreakPowers or {}
+	ui.preBody.Text = if #free > 0
+		then string.format("🔥 Hot Streak %d: free %s this level!", streak(), streakGlyphs(free))
+		else "Pick boosters for a strong start"
 	ui.play.Visible = false
 	ui.select.Visible = false
 	renderPreLevel()
+	Motion.popIn(ui.preLevel)
 	ui.preLevel.Visible = true
 end
 
@@ -898,9 +947,13 @@ local function finishRun(run)
 			return
 		end
 		local nextLevel = Levels.get(run.levelId + 1)
+		local body = rewardText(result.rewards)
+		if streak() >= 2 then
+			body ..= string.format("\n🔥 Hot Streak: %d wins in a row!", streak())
+		end
 		showPanel(
 			"Level complete!",
-			rewardText(result.rewards),
+			body,
 			if nextLevel then "Next level" else "Trail",
 			function()
 				if nextLevel then
@@ -919,6 +972,9 @@ local function finishRun(run)
 			total += goal.target
 		end
 		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
+		if (result.lostStreak or 0) > 0 then
+			body = string.format("Your Hot Streak of %d is over. ", result.lostStreak) .. body
+		end
 		showPanel("Level failed", body, "Retry", function()
 			showPreLevel(run.levelId)
 		end, "Trail", showLevelSelect)
@@ -975,6 +1031,9 @@ offerContinue = function(run)
 	local step = Boosters.continueStep(count)
 	local moves = Boosters.Continue.MOVES
 	local body = string.format("Keep going with %d more moves?", moves)
+	if streak() > 0 then
+		body ..= "\nGiving up ends your Hot Streak."
+	end
 	if step.power then
 		body ..= "\nComes with a " .. (POWER_NAMES[step.power] or step.power) .. "!"
 	end
@@ -996,9 +1055,25 @@ offerContinue = function(run)
 	end)
 end
 
+-- A level editor test: nothing goes to the server.
+local function endTest(run)
+	local test = run.test
+	local won = run.game.status == "Won"
+	showPanel(if won then "Test won!" else "Test lost", string.format("%d %s used.", run.game.movesMade, if run.game.movesMade == 1 then "move" else "moves"), "Play again", function()
+		PuzzleScreen.playTest(test.level, test.onDone)
+	end, "Editor", function()
+		PuzzleScreen.close()
+		test.onDone()
+	end)
+end
+
 local function onLevelEnded()
 	local run = current
 	run.view:setEnabled(false)
+	if run.test then
+		endTest(run)
+		return
+	end
 	local canContinue = progress and progress.canBuy and run.game.continues < Boosters.Continue.MAX_PER_RUN
 	if run.game.status == "Lost" and canContinue then
 		offerContinue(run)
@@ -1155,19 +1230,31 @@ startLevel = function(levelId: number, preBoosters: { string }?)
 		return
 	end
 	setProgress(run.progress)
+	beginRun(level, run.seed, run.startPowerUps, {
+		token = run.token,
+		stock = table.clone(progress and progress.boosters or {}),
+	})
+end
+
+-- Builds the board for a run. `extra` adds the run's own fields (token or test).
+beginRun = function(level, seed: number, startPowerUps: { string }?, extra)
+	hidePanel()
+	ui.preLevel.Visible = false
 	clearRun()
-	local pop = CropPop.Engine.new(level, run.seed, { startPowerUps = run.startPowerUps })
+	local pop = CropPop.Engine.new(level, seed, { startPowerUps = startPowerUps })
 	local view = BoardView.new(ui.boardHolder, onSwap)
 	current = {
-		levelId = levelId,
-		token = run.token,
+		levelId = level.id,
 		game = pop,
 		view = view,
 		moves = {}, -- swaps and booster uses, in order, for the server's replay
-		stock = table.clone(progress and progress.boosters or {}),
+		stock = {},
 	}
+	for k, v in extra do
+		current[k] = v
+	end
 	view:load(pop)
-	ui.levelName.Text = level.id .. ". " .. level.name
+	ui.levelName.Text = (if current.test then "Test: " else level.id .. ". ") .. level.name
 	ui.difficulty.Text = if level.difficulty == "Normal" then "" else level.difficulty
 	refreshHud()
 	refreshBoosters()
@@ -1202,6 +1289,11 @@ local function ensureUi()
 		ui.devNoHearts.Activated:Connect(function()
 			PuzzleScreen.debugEmptyHearts()
 		end)
+		ui.devEditor.Activated:Connect(function()
+			if PuzzleScreen.onDevEditor then
+				PuzzleScreen.onDevEditor()
+			end
+		end)
 		-- Same thing from the keyboard: L.
 		UserInputService.InputBegan:Connect(function(input, gameProcessed)
 			if not gameProcessed and input.KeyCode == Enum.KeyCode.L and PuzzleScreen.isOpen() then
@@ -1212,7 +1304,7 @@ local function ensureUi()
 		end)
 	end
 	ui.closePlay.Activated:Connect(function()
-		showLevelSelect()
+		PuzzleScreen.leaveLevel()
 	end)
 	ui.closeSelect.Activated:Connect(function()
 		PuzzleScreen.close()
@@ -1280,6 +1372,49 @@ function PuzzleScreen.close()
 	ui.preLevel.Visible = false
 	ui.gui.Enabled = false
 end
+
+-- The top bar's X: mid-level, ask first, since leaving costs the heart (and
+-- any Hot Streak). After the level, or while a panel is up, just leave.
+function PuzzleScreen.leaveLevel()
+	local run = current
+	if run and run.test then
+		local onDone = run.test.onDone
+		PuzzleScreen.close()
+		onDone()
+		return
+	end
+	if not run or run.game.status ~= "Playing" or busy or ui.panel.Visible then
+		showLevelSelect()
+		return
+	end
+	run.view:setEnabled(false)
+	local body = if streak() > 0 then "You'll lose this heart and your Hot Streak." else "You'll lose this heart."
+	showPanel("Leave this level?", body, "Keep playing", function()
+		hidePanel()
+		if current == run then
+			run.view:setEnabled(true)
+		end
+	end, "Leave", showLevelSelect)
+end
+
+--[[
+	Studio level editor: play `level` (not in Levels.List) offline with a
+	random seed and plenty of boosters. Nothing is sent to the server, so no
+	hearts, rewards or streak. `onDone` runs when the player goes back.
+]]
+function PuzzleScreen.playTest(level, onDone: () -> ())
+	ensureUi()
+	ui.gui.Enabled = true
+	local stock = {}
+	for _, kind in Boosters.InLevel do
+		stock[kind] = 9
+	end
+	beginRun(level, Random.new():NextInteger(1, 2 ^ 31 - 1), nil, { test = { level = level, onDone = onDone }, stock = stock })
+end
+
+-- Studio only: set by Main to open the level editor (the editor needs this
+-- module, so it can't be required from here).
+PuzzleScreen.onDevEditor = nil :: (() -> ())?
 
 function PuzzleScreen.isOpen(): boolean
 	return ui ~= nil and ui.gui.Enabled
