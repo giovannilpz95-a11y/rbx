@@ -19,6 +19,7 @@ local FactoryService = require(Services.FactoryService)
 local AnimalService = require(Services.AnimalService)
 local TownService = require(Services.TownService)
 local OrderService = require(Services.OrderService)
+local ReturnService = require(Services.ReturnService)
 local TutorialService = require(Services.TutorialService)
 local CropPopBridge = require(Services.CropPopBridge)
 local Clock = require(script.Parent.Util.Clock)
@@ -32,6 +33,7 @@ FactoryService.init()
 AnimalService.init()
 TownService.init()
 OrderService.init()
+ReturnService.init()
 TutorialService.init()
 CropPopBridge.init()
 
@@ -65,6 +67,7 @@ local function onPlayerAdded(player: Player)
 	FactoryService.advance(player) -- offline production lands on the output tray
 	CropPopBridge.playerLoaded(player)
 	OrderService.refreshBoard(player)
+	ReturnService.playerLoaded(player)
 
 	local plot = PlotService.assign(player)
 	if plot == nil then

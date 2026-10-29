@@ -109,6 +109,10 @@ function Profile.template(): { [string]: any }
 		settings = {
 			lastSeed = "Wheat",
 		},
+		daily = {
+			day = 0, -- days claimed in this round of the login calendar (shared/Daily)
+			lastDay = -1, -- UTC day number of the last claim
+		},
 		tutorial = {
 			step = 0, -- the first-session guide (shared/Tutorial); 0 = off
 		},

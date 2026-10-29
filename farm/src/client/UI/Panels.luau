@@ -1054,6 +1054,16 @@ local function choiceRow(
 	end
 end
 
+local function renderAway()
+	titleLabel.Text = "While you were away"
+	for i, text in ClientStore.away do
+		Ui.label("• " .. text, { TextWrapped = true, LayoutOrder = i, Parent = body })
+	end
+	Ui.button("OK", function()
+		Panels.close()
+	end, { Size = UDim2.fromOffset(100, 34), LayoutOrder = #ClientStore.away + 1, Parent = body })
+end
+
 local function renderDebug(state: { [string]: any })
 	titleLabel.Text = "Greybox tuning (Studio)"
 	local settings = ClientStore.settings
@@ -1086,6 +1096,9 @@ local function renderDebug(state: { [string]: any })
 	Ui.button("Replay the first-session guide", function()
 		Remotes.fire("Debug_RestartTutorial")
 	end, { Size = UDim2.fromOffset(260, 34), LayoutOrder = 5, Parent = body })
+	Ui.button("Pretend I was away (summary + daily gift)", function()
+		Remotes.fire("Debug_Away")
+	end, { Size = UDim2.fromOffset(320, 34), LayoutOrder = 6, Parent = body })
 end
 
 ---------------------------------------------------------------------------------------------
@@ -1112,6 +1125,8 @@ local function render()
 		renderField(state, currentArg)
 	elseif current == "Seeds" then
 		renderSeeds(state)
+	elseif current == "Away" then
+		renderAway()
 	elseif current == "Debug" then
 		renderDebug(state)
 	end

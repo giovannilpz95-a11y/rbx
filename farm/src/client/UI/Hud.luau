@@ -20,6 +20,7 @@ local levelLabel: TextLabel
 local xpFill: Frame
 local barnLabel: TextLabel
 local toastStack: Frame
+local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
 Hud.sprintButton = nil :: TextButton?
 
@@ -84,6 +85,11 @@ function Hud.popup(payload: { [string]: any })
 		Hud.toast(string.format("Found 1 %s!", payload.name))
 	elseif payload.kind == "Order" then
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
+	elseif payload.kind == "Daily" then
+		Hud.toast(string.format("Daily gift, day %d of %d:  %s", payload.day, payload.days, payload.reward))
+	elseif payload.kind == "Away" then
+		ClientStore.away = payload.lines
+		showPanel("Away")
 	end
 end
 
@@ -99,6 +105,7 @@ function Hud.render(state: { [string]: any })
 end
 
 function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) -> ())
+	showPanel = openPanel
 	local player = Players.LocalPlayer
 	gui = Ui.new("ScreenGui", {
 		Name = "FarmHud",
