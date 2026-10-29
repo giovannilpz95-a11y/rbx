@@ -1,0 +1,34 @@
+name: Crop Pop tests
+
+on:
+  push:
+    paths:
+      - "croppop/**"
+      - ".github/workflows/croppop-ci.yml"
+  pull_request:
+    paths:
+      - "croppop/**"
+      - ".github/workflows/croppop-ci.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: croppop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            croppop/tools/luaurun/target
+          key: luaurun-${{ runner.os }}-${{ hashFiles('croppop/tools/luaurun/Cargo.lock', 'croppop/tools/luaurun/src/**') }}
+
+      - name: Build the Luau test host
+        run: cargo build --release --locked --manifest-path tools/luaurun/Cargo.toml
+
+      - name: Run the Crop Pop tests
+        run: tools/luaurun/target/release/luaurun tests/run.luau

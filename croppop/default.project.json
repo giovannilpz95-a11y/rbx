@@ -1,0 +1,23 @@
+{
+  "name": "CropPop",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "CropPop": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "CropPopServer": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "CropPopClient": {
+          "$path": "src/client"
+        }
+      }
+    }
+  }
+}
