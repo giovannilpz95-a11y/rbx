@@ -226,17 +226,23 @@ local function buildUi()
 	local panelSize = Instance.new("UISizeConstraint")
 	panelSize.MaxSize = Vector2.new(460, 320)
 	panelSize.Parent = panel
-	local panelTitle = label(panel, "Title", "", UDim2.fromScale(0.9, 0.22), UDim2.fromScale(0.05, 0.06))
-	local panelBody = label(panel, "Body", "", UDim2.fromScale(0.8, 0.3), UDim2.fromScale(0.1, 0.32))
+	local panelTitle = label(panel, "Title", "", UDim2.fromScale(0.9, 0.26), UDim2.fromScale(0.05, 0.05))
+	local panelBody = label(panel, "Body", "", UDim2.fromScale(0.84, 0.3), UDim2.fromScale(0.08, 0.34))
 	panelBody.TextWrapped = true
 	local bodySize = Instance.new("UITextSizeConstraint")
-	bodySize.MaxTextSize = 26
+	bodySize.MaxTextSize = 30
 	bodySize.Parent = panelBody
 	local titleSize = Instance.new("UITextSizeConstraint")
-	titleSize.MaxTextSize = 40
+	titleSize.MaxTextSize = 48
 	titleSize.Parent = panelTitle
-	local primary = button(panel, "Primary", "", UDim2.fromScale(0.42, 0.2), UDim2.fromScale(0.05, 0.72))
-	local secondary = button(panel, "Secondary", "", UDim2.fromScale(0.42, 0.2), UDim2.fromScale(0.53, 0.72))
+	local primary = button(panel, "Primary", "", UDim2.fromScale(0.42, 0.18), UDim2.fromScale(0.05, 0.74))
+	local secondary = button(panel, "Secondary", "", UDim2.fromScale(0.42, 0.18), UDim2.fromScale(0.53, 0.74))
+	-- The title stays the biggest text in the panel.
+	for _, b in { primary, secondary } do
+		local buttonText = Instance.new("UITextSizeConstraint")
+		buttonText.MaxTextSize = 26
+		buttonText.Parent = b
+	end
 	secondary.BackgroundColor3 = Colors.locked
 
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
