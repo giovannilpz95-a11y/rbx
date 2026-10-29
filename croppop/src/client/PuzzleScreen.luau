@@ -16,6 +16,8 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
 local BoardView = require(script.Parent.BoardView)
@@ -119,29 +121,24 @@ local function buildUi()
 	play.Visible = false
 	play.Parent = backdrop
 
+	-- Positions for the top bar and board are set by applyLayout().
 	local topBar = Instance.new("Frame")
 	topBar.Name = "TopBar"
-	topBar.AnchorPoint = Vector2.new(0.5, 0)
-	topBar.Position = UDim2.new(0.5, 0, 0, 44)
-	topBar.Size = UDim2.new(0.96, 0, 0.12, 0)
 	topBar.BackgroundColor3 = Colors.panel
 	topBar.Parent = play
 	corner(topBar, 0.2)
 	local barSize = Instance.new("UISizeConstraint")
-	barSize.MaxSize = Vector2.new(720, 110)
 	barSize.Parent = topBar
 
-	local levelName = label(topBar, "LevelName", "", UDim2.fromScale(0.3, 0.4), UDim2.fromScale(0.03, 0.08))
+	local levelName = label(topBar, "LevelName", "", UDim2.new(), UDim2.new())
 	levelName.TextXAlignment = Enum.TextXAlignment.Left
-	local difficulty = label(topBar, "Difficulty", "", UDim2.fromScale(0.3, 0.3), UDim2.fromScale(0.03, 0.55))
+	local difficulty = label(topBar, "Difficulty", "", UDim2.new(), UDim2.new())
 	difficulty.TextXAlignment = Enum.TextXAlignment.Left
 	difficulty.TextColor3 = Colors.accent
 
 	local movesBox = Instance.new("Frame")
 	movesBox.Name = "Moves"
 	movesBox.AnchorPoint = Vector2.new(0.5, 0.5)
-	movesBox.Position = UDim2.fromScale(0.42, 0.5)
-	movesBox.Size = UDim2.fromScale(0.16, 0.84)
 	movesBox.BackgroundColor3 = Colors.accent
 	movesBox.Parent = topBar
 	corner(movesBox, 0.25)
@@ -152,8 +149,6 @@ local function buildUi()
 
 	local goals = Instance.new("Frame")
 	goals.Name = "Goals"
-	goals.Position = UDim2.fromScale(0.52, 0.1)
-	goals.Size = UDim2.fromScale(0.36, 0.8)
 	goals.BackgroundTransparency = 1
 	goals.Parent = topBar
 	local goalsLayout = Instance.new("UIListLayout")
@@ -164,17 +159,20 @@ local function buildUi()
 	goalsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	goalsLayout.Parent = goals
 
-	local closePlay = button(topBar, "Close", "X", UDim2.fromScale(0.08, 0.6), UDim2.fromScale(0.9, 0.2))
+	local closePlay = button(topBar, "Close", "X", UDim2.new(), UDim2.new())
 
+	-- The board keeps its shape inside this and shrinks to whichever side runs out first.
 	local boardHolder = Instance.new("Frame")
 	boardHolder.Name = "BoardHolder"
-	-- Fills the space under the top bar; the board keeps its shape inside it and
-	-- shrinks to whichever side runs out first (phones, landscape).
-	boardHolder.AnchorPoint = Vector2.new(0.5, 0)
-	boardHolder.Position = UDim2.new(0.5, 0, 0.12, 52)
-	boardHolder.Size = UDim2.new(0.96, 0, 0.88, -60)
 	boardHolder.BackgroundTransparency = 1
 	boardHolder.Parent = play
+
+	-- Studio only: jump to the last move so the out-of-moves panel is quick to test.
+	local devOneMove = nil
+	if RunService:IsStudio() then
+		devOneMove = button(topBar, "DevOneMove", "Dev: 1 move", UDim2.new(), UDim2.new())
+		devOneMove.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+	end
 
 	-- Level select.
 	local levelSelect = Instance.new("Frame")
@@ -238,6 +236,10 @@ local function buildUi()
 		movesCount = movesCount,
 		goals = goals,
 		closePlay = closePlay,
+		devOneMove = devOneMove,
+		topBar = topBar,
+		barSize = barSize,
+		movesBox = movesBox,
 		boardHolder = boardHolder,
 		select = levelSelect,
 		status = status,
@@ -250,6 +252,55 @@ local function buildUi()
 		secondary = secondary,
 		panelActions = {},
 	}
+end
+
+-- Layout -----------------------------------------------------------------------
+-- Tall screens get a bar across the top; wide screens (landscape phones, PCs)
+-- get a panel on the left so the board can use the full height.
+
+local ROBLOX_TOPBAR = 64 -- clear of Roblox's own buttons (58px)
+
+local LAYOUTS = {
+	tall = {
+		topBar = { anchor = Vector2.new(0.5, 0), position = UDim2.new(0.5, 0, 0, ROBLOX_TOPBAR), size = UDim2.new(0.96, 0, 0.12, 0), max = Vector2.new(720, 110) },
+		levelName = { position = UDim2.fromScale(0.03, 0.08), size = UDim2.fromScale(0.3, 0.4) },
+		difficulty = { position = UDim2.fromScale(0.03, 0.55), size = UDim2.fromScale(0.3, 0.3) },
+		movesBox = { position = UDim2.fromScale(0.42, 0.5), size = UDim2.fromScale(0.16, 0.84) },
+		goals = { position = UDim2.fromScale(0.52, 0.1), size = UDim2.fromScale(0.36, 0.8) },
+		closePlay = { position = UDim2.fromScale(0.9, 0.2), size = UDim2.fromScale(0.08, 0.6) },
+		devOneMove = { position = UDim2.fromScale(0.22, 0.55), size = UDim2.fromScale(0.12, 0.35) },
+		boardHolder = { anchor = Vector2.new(0.5, 0), position = UDim2.new(0.5, 0, 0.12, ROBLOX_TOPBAR + 8), size = UDim2.new(0.96, 0, 0.88, -(ROBLOX_TOPBAR + 16)) },
+	},
+	wide = {
+		topBar = { anchor = Vector2.new(0, 0), position = UDim2.new(0, 12, 0, ROBLOX_TOPBAR), size = UDim2.new(0.28, 0, 1, -(ROBLOX_TOPBAR + 12)), max = Vector2.new(340, 520) },
+		levelName = { position = UDim2.fromScale(0.06, 0.03), size = UDim2.fromScale(0.88, 0.1) },
+		difficulty = { position = UDim2.fromScale(0.06, 0.13), size = UDim2.fromScale(0.88, 0.06) },
+		movesBox = { position = UDim2.fromScale(0.5, 0.33), size = UDim2.fromScale(0.5, 0.2) },
+		goals = { position = UDim2.fromScale(0.05, 0.47), size = UDim2.fromScale(0.9, 0.24) },
+		closePlay = { position = UDim2.fromScale(0.25, 0.8), size = UDim2.fromScale(0.5, 0.13) },
+		devOneMove = { position = UDim2.fromScale(0.25, 0.72), size = UDim2.fromScale(0.5, 0.06) },
+		boardHolder = { anchor = Vector2.new(1, 0.5), position = UDim2.new(1, -12, 0.5, 0), size = UDim2.new(0.72, -36, 1, -24) },
+	},
+}
+
+local function applyLayout()
+	local screen = ui.gui.AbsoluteSize
+	local mode = if screen.X > screen.Y * 1.25 then "wide" else "tall"
+	ui.layout = mode
+	for key, spec in LAYOUTS[mode] do
+		local item = ui[key]
+		if not item then
+			continue -- the Studio-only button
+		end
+		if spec.anchor then
+			item.AnchorPoint = spec.anchor
+		end
+		item.Position = spec.position
+		item.Size = spec.size
+		if spec.max then
+			ui.barSize.MaxSize = spec.max
+		end
+	end
 end
 
 -- Top bar ----------------------------------------------------------------------
@@ -457,6 +508,19 @@ local function ensureUi()
 		return
 	end
 	ui = buildUi()
+	applyLayout()
+	ui.gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(applyLayout)
+	if ui.devOneMove then
+		ui.devOneMove.Activated:Connect(function()
+			PuzzleScreen.debugOneMoveLeft()
+		end)
+		-- Same thing from the keyboard: L.
+		UserInputService.InputBegan:Connect(function(input, gameProcessed)
+			if not gameProcessed and input.KeyCode == Enum.KeyCode.L and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugOneMoveLeft()
+			end
+		end)
+	end
 	ui.closePlay.Activated:Connect(function()
 		showLevelSelect()
 	end)
@@ -500,6 +564,17 @@ end
 
 function PuzzleScreen.isOpen(): boolean
 	return ui ~= nil and ui.gui.Enabled
+end
+
+-- Studio only: leave the current level on its last move. The next swap ends
+-- it like a real loss (unless that swap wins), and the server's replay agrees
+-- because an unfinished run is simply not a win.
+function PuzzleScreen.debugOneMoveLeft()
+	if not RunService:IsStudio() or not current or current.game.status ~= "Playing" or busy then
+		return
+	end
+	current.game.movesLeft = 1
+	refreshHud()
 end
 
 -- The level being played, for debugging and tests.

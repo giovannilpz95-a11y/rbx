@@ -147,6 +147,24 @@ test("a whole level plays to the end and the server checks it", function()
 	end
 end)
 
+test("the Studio 1-move button leads to the out-of-moves panel and Retry", function()
+	PuzzleScreen.open(1)
+	local backdrop = playerGui.CropPop.Backdrop
+	local run = PuzzleScreen.currentRun()
+	backdrop.Play.TopBar.DevOneMove.Activated:Fire()
+	eq(backdrop.Play.TopBar.Moves.Count.Text, "1")
+	local m = Matcher.listPossibleMoves(run.game.board)[1]
+	swipe(run.view, m[1], m[2], m[3], m[4])
+	eq(run.game.status, "Lost")
+	truthy(backdrop.EndPanel.Visible)
+	eq(backdrop.EndPanel.Title.Text, "Out of moves")
+	backdrop.EndPanel.Primary.Activated:Fire()
+	local retry = PuzzleScreen.currentRun()
+	truthy(retry and retry ~= run, "retry started a new run")
+	eq(retry.levelId, 1)
+	eq(backdrop.EndPanel.Visible, false)
+end)
+
 test("every test level can be played through the screen", function()
 	for levelId = 1, 5 do
 		PuzzleScreen.open(levelId)
@@ -157,6 +175,19 @@ test("every test level can be played through the screen", function()
 	end
 	eq(mismatches, 0, "tiles out of step before sync")
 	print(string.format("    %d of the screen runs were wins the server accepted", #wins))
+end)
+
+test("wide screens move the top bar to a side panel", function()
+	PuzzleScreen.open(1)
+	local screen = playerGui.CropPop
+	local bar = screen.Backdrop.Play.TopBar
+	eq(bar.Size, Mock.UDim2.new(0.96, 0, 0.12, 0), "tall layout by default")
+	screen.AbsoluteSize = { X = 844, Y = 390 }
+	screen:GetPropertyChangedSignal("AbsoluteSize"):Fire()
+	eq(bar.Size, Mock.UDim2.new(0.28, 0, 1, -76), "side panel on a landscape phone")
+	screen.AbsoluteSize = { X = 390, Y = 844 }
+	screen:GetPropertyChangedSignal("AbsoluteSize"):Fire()
+	eq(bar.Size, Mock.UDim2.new(0.96, 0, 0.12, 0), "back to the top bar in portrait")
 end)
 
 test("closing hides the screen", function()

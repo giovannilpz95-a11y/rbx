@@ -259,6 +259,15 @@ function Methods.GetChildren(self)
 	return table.clone(rawget(self, "_order"))
 end
 
+function Methods.GetPropertyChangedSignal(self, property)
+	local key = "_changed_" .. property
+	local props = rawget(self, "_props")
+	if not props[key] then
+		props[key] = newSignal()
+	end
+	return props[key]
+end
+
 function Methods.IsA(self, className)
 	local own = rawget(self, "ClassName")
 	if own == className then
@@ -410,6 +419,7 @@ function Mock.environment(tree)
 end
 
 Mock.Vector3 = Vector3
+Mock.UDim2 = UDim2
 Mock.Enum = Enum
 
 return Mock
