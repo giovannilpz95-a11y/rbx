@@ -15,6 +15,7 @@
 	  CropPopLoadSave (BindableFunction, ours)   (player, puzzleBlock?) once the farm profile loads
 	  CropPopGetSave  (BindableFunction, ours)   (player) -> puzzleBlock, for the farm's saves
 	  CropPopSpendGems (BindableFunction, farm's) (player, amount, reason) -> boolean
+	  CropPopGetGems   (BindableFunction, farm's, optional) (player) -> number, for "Not enough 💎" states
 ]]
 
 local Players = game:GetService("Players")
@@ -39,6 +40,18 @@ local function spendGems(userId: number, amount: number, reason: string): boolea
 	return ok and charged == true
 end
 
+local function getGems(userId: number): number?
+	local hook = ServerStorage:FindFirstChild("CropPopGetGems")
+	local player = Players:GetPlayerByUserId(userId)
+	if not hook or not player then
+		return nil
+	end
+	local ok, gems = pcall(function()
+		return (hook :: BindableFunction):Invoke(player)
+	end)
+	return if ok and type(gems) == "number" then gems else nil
+end
+
 local random = Random.new()
 local store = RunStore.new({
 	clock = os.clock,
@@ -47,6 +60,7 @@ local store = RunStore.new({
 		return random:NextInteger(1, 2 ^ 31 - 1)
 	end,
 	spendGems = spendGems,
+	getGems = getGems,
 	-- In Studio every test level is open; live servers follow the Crop Pop Trail order.
 	unlockAll = RunService:IsStudio(),
 	devActions = RunService:IsStudio(), -- the "Dev: 1 move" button
@@ -131,6 +145,13 @@ remote("BuyContinue", function(player, token, moves)
 	end
 	return reply(result, err)
 end)
+
+-- Studio only: empty the hearts so the refill offer can be checked quickly.
+if RunService:IsStudio() then
+	remote("DevEmptyHearts", function(player)
+		return reply(store:devSetHearts(player.UserId, 0))
+	end)
+end
 
 local function onPlayerAdded(player: Player)
 	local userId = player.UserId

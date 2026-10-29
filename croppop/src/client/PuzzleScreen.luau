@@ -228,6 +228,12 @@ local function buildUi()
 	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
+	-- Studio only: empty the hearts to check the refill offer.
+	local devNoHearts = nil
+	if RunService:IsStudio() then
+		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
+		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+	end
 
 	-- End-of-level panel.
 	local panel = Instance.new("Frame")
@@ -365,6 +371,7 @@ local function buildUi()
 		status = status,
 		list = list,
 		closeSelect = closeSelect,
+		devNoHearts = devNoHearts,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -516,6 +523,7 @@ local function showPanel(title: string, body: string, primaryText: string, onPri
 	ui.secondary.Text = secondaryText
 	ui.panelActions.primary = onPrimary
 	ui.panelActions.secondary = onSecondary
+	ui.primary.BackgroundColor3 = Colors.accent
 	ui.pendingSpend = nil
 	-- Centre on the board (not the screen) when one is showing.
 	local board = current and current.view.frame
@@ -608,6 +616,24 @@ end
 
 -- Spends above GEM_CONFIRM_OVER ask "Spend X Gems?" first and go through on a
 -- second tap of the same thing. Returns true when it's OK to buy now.
+-- False only when we know the player can't pay: the farm's Gem balance (if
+-- it shares one) or a charge that just failed for lack of Gems.
+local function canAfford(gems: number): boolean
+	local have = progress and progress.gems
+	return type(have) ~= "number" or have >= gems
+end
+
+-- A charge failed with "not enough Gems": remember they have less than that.
+local function noteShort(gems: number, err: any)
+	if err == "not enough Gems" and progress then
+		progress.gems = math.min(progress.gems or math.huge, gems - 1)
+	end
+end
+
+local function notEnoughText(gems: number): string
+	return string.format("Not enough 💎 (this costs %d).", gems)
+end
+
 local function askToSpend(key: string, gems: number): boolean
 	if gems <= GEM_CONFIRM_OVER or ui.pendingSpend == key then
 		ui.pendingSpend = nil
@@ -623,17 +649,23 @@ local renderTrail -- forward declaration
 
 local function buyHearts(packIndex: number, b: TextButton)
 	local pack = Hearts.Packs[packIndex]
+	if not canAfford(pack.gems) then
+		ui.status.Text = notEnoughText(pack.gems)
+		return
+	end
 	if not askToSpend("Hearts" .. packIndex, pack.gems) then
 		b.Text = string.format("Spend %d 💎?", pack.gems)
 		return
 	end
 	local result = invoke("BuyHearts", packIndex)
 	if result.error then
-		ui.status.Text = "Couldn't get hearts: " .. tostring(result.error)
-	else
-		setProgress(result)
-		ui.status.Text = ""
+		noteShort(pack.gems, result.error)
+		renderTrail()
+		ui.status.Text = if result.error == "not enough Gems" then notEnoughText(pack.gems) else "Couldn't get hearts: " .. tostring(result.error)
+		return
 	end
+	setProgress(result)
+	ui.status.Text = ""
 	renderTrail()
 end
 
@@ -668,7 +700,7 @@ local function addHeartShop()
 			local width = math.min(0.6, 0.98 / #Hearts.Packs - 0.02)
 			local b = button(row, "Pack" .. i, string.format("+%d ❤️ for %d 💎", pack.count, pack.gems), UDim2.fromScale(width, 1), UDim2.new())
 			b.LayoutOrder = i
-			b.BackgroundColor3 = Color3.fromRGB(214, 72, 92)
+			b.BackgroundColor3 = if canAfford(pack.gems) then Color3.fromRGB(214, 72, 92) else Colors.locked
 			b.Activated:Connect(function()
 				buyHearts(i, b)
 			end)
@@ -753,8 +785,11 @@ local function renderPreLevel()
 			b.Text = string.format("%s  %s  ✅", Glyphs[kind], info.name)
 		elseif have > 0 then
 			b.Text = string.format("%s  %s  x%d", Glyphs[kind], info.name, have)
-		elseif canBuy then
+		elseif canBuy and canAfford(info.gems) then
 			b.Text = string.format("%s  %s  %d 💎", Glyphs[kind], info.name, info.gems)
+		elseif canBuy then
+			b.Text = string.format("%s  %s  %d 💎 (not enough 💎)", Glyphs[kind], info.name, info.gems)
+			b.BackgroundColor3 = Colors.locked
 		else
 			b.Text = string.format("%s  %s  (none left)", Glyphs[kind], info.name)
 		end
@@ -768,10 +803,14 @@ local function onPreBooster(kind: string)
 		ui.preSelected[kind] = true
 		ui.pendingSpend = nil
 	elseif progress and progress.canBuy then
-		if askToSpend(kind, Boosters.Info[kind].gems) then
+		local gems = Boosters.Info[kind].gems
+		if not canAfford(gems) then
+			ui.preBody.Text = notEnoughText(gems)
+		elseif askToSpend(kind, gems) then
 			local result = invoke("BuyBooster", kind)
 			if result.error then
-				ui.preBody.Text = "Couldn't buy it: " .. tostring(result.error)
+				noteShort(gems, result.error)
+				ui.preBody.Text = if result.error == "not enough Gems" then notEnoughText(gems) else "Couldn't buy it: " .. tostring(result.error)
 			else
 				setProgress(result)
 				ui.preSelected[kind] = true
@@ -881,7 +920,12 @@ local function buyContinue(run, count: number, step)
 		return
 	end
 	if result.error then
-		ui.panelBody.Text = "Couldn't get more moves: " .. tostring(result.error)
+		if result.error == "not enough Gems" then
+			noteShort(step.gems, result.error)
+			offerContinue(run)
+		else
+			ui.panelBody.Text = "Couldn't get more moves: " .. tostring(result.error)
+		end
 		return
 	end
 	setProgress(result.progress)
@@ -913,6 +957,17 @@ offerContinue = function(run)
 	local body = string.format("Keep going with %d more moves?", moves)
 	if step.power then
 		body ..= "\nComes with a " .. (POWER_NAMES[step.power] or step.power) .. "!"
+	end
+	if not canAfford(step.gems) then
+		-- Tapping the greyed button checks the balance again (Gems bought meanwhile).
+		showPanel("Out of moves", body .. "\n" .. notEnoughText(step.gems), "Not enough 💎", function()
+			fetchProgress()
+			offerContinue(run)
+		end, "Give up", function()
+			finishRun(run)
+		end)
+		ui.primary.BackgroundColor3 = Colors.locked
+		return
 	end
 	showPanel("Out of moves", body, string.format("+%d moves  %d 💎", moves, step.gems), function()
 		buyContinue(run, count, step)
@@ -1019,6 +1074,11 @@ local function onBooster(kind: string)
 			refreshBoosters()
 			return
 		end
+		if not canAfford(info.gems) then
+			run.hint = "No " .. info.name .. " left. " .. notEnoughText(info.gems)
+			refreshBoosters()
+			return
+		end
 		if not askToSpend(kind, info.gems) then
 			run.hint = string.format("Spend %d 💎 on a %s? Tap %s again to buy.", info.gems, info.name, Glyphs[kind])
 			refreshBoosters()
@@ -1029,7 +1089,8 @@ local function onBooster(kind: string)
 			return
 		end
 		if result.error then
-			run.hint = "Couldn't buy it: " .. tostring(result.error)
+			noteShort(info.gems, result.error)
+			run.hint = if result.error == "not enough Gems" then "No " .. info.name .. " left. " .. notEnoughText(info.gems) else "Couldn't buy it: " .. tostring(result.error)
 			refreshBoosters()
 			return
 		end
@@ -1118,10 +1179,15 @@ local function ensureUi()
 		ui.devOneMove.Activated:Connect(function()
 			PuzzleScreen.debugOneMoveLeft()
 		end)
+		ui.devNoHearts.Activated:Connect(function()
+			PuzzleScreen.debugEmptyHearts()
+		end)
 		-- Same thing from the keyboard: L.
 		UserInputService.InputBegan:Connect(function(input, gameProcessed)
 			if not gameProcessed and input.KeyCode == Enum.KeyCode.L and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugOneMoveLeft()
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.H and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugEmptyHearts()
 			end
 		end)
 	end
@@ -1197,6 +1263,20 @@ end
 
 function PuzzleScreen.isOpen(): boolean
 	return ui ~= nil and ui.gui.Enabled
+end
+
+-- Studio only: set hearts to 0 so the refill offer shows (also the H key).
+function PuzzleScreen.debugEmptyHearts()
+	if not RunService:IsStudio() or current then
+		return
+	end
+	local result = invoke("DevEmptyHearts")
+	if not result.error then
+		setProgress(result)
+	end
+	if ui.select.Visible then
+		renderTrail()
+	end
 end
 
 -- Studio only: leave the current level on its last move. The next swap ends

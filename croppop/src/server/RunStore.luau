@@ -31,6 +31,8 @@ export type Config = {
 	newSeed: () -> number,
 	-- Charges Gems; returns true only if they were taken. Without it, nothing can be bought.
 	spendGems: ((userId: number, amount: number, reason: string) -> boolean)?,
+	-- The player's Gem balance, if the farm can tell us; shown so buttons can say "Not enough".
+	getGems: ((userId: number) -> number?)?,
 	levels: any?, -- defaults to CropPop.Levels
 	unlockAll: boolean?, -- Studio testing: skip the "beat the previous level" rule
 	devActions: boolean?, -- Studio testing: accept the "Dev: 1 move" action in replays
@@ -44,6 +46,7 @@ function RunStore.new(config: Config)
 		now = config.now or config.clock,
 		newSeed = config.newSeed,
 		spendGems = config.spendGems,
+		getGems = config.getGems,
 		levels = config.levels or CropPop.Levels,
 		unlockAll = config.unlockAll == true,
 		devActions = config.devActions == true,
@@ -133,6 +136,7 @@ function RunStore.getProgress(self, userId: number)
 		},
 		boosters = table.clone(state.boosters),
 		canBuy = self.spendGems ~= nil,
+		gems = self.getGems and self.getGems(userId) or nil,
 	}
 end
 
@@ -363,6 +367,18 @@ function RunStore.buyBooster(self, userId: number, kind: any)
 		return nil, "not enough Gems"
 	end
 	stock[kind] = (stock[kind] or 0) + 1
+	return self:getProgress(userId)
+end
+
+-- Studio testing: set the hearts count (the "Dev: 0 hearts" button).
+function RunStore.devSetHearts(self, userId: number, count: number)
+	if not self.devActions then
+		return nil, "not in Studio"
+	end
+	local hearts = self:_player(userId).state.hearts
+	hearts.count = math.clamp(math.floor(count), 0, Hearts.MAX)
+	hearts.updatedAt = self.now()
+	hearts.unlimitedUntil = 0
 	return self:getProgress(userId)
 end
 

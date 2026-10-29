@@ -328,3 +328,25 @@ test("the Studio dev action is refused on live servers", function()
 	falsy(result)
 	truthy(err)
 end)
+
+test("progress shows the farm's Gem balance when it has one", function()
+	local store, tick = makeStore(true, {
+		getGems = function()
+			return 42
+		end,
+	})
+	tick(10)
+	eq(store:getProgress(30).gems, 42)
+	local plain = makeStore(true)
+	eq(plain:getProgress(30).gems, nil)
+end)
+
+test("the Studio hearts setter only works with dev actions on", function()
+	local live = makeStore(true)
+	falsy(live:devSetHearts(31, 0))
+	local studio, tick = makeStore(true, { devActions = true })
+	tick(10)
+	eq(assert(studio:devSetHearts(31, 0)).hearts.count, 0)
+	local _, err = studio:start(31, 1)
+	eq(err, "no hearts")
+end)

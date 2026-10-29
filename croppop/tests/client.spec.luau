@@ -492,9 +492,52 @@ test("a continue the server can't charge leaves the offer up", function()
 	runOutOfMoves(run)
 	panel.Primary.Activated:Fire() -- no Gem hook in ServerStorage now
 	truthy(panel.Visible)
-	truthy(string.find(panel.Body.Text, "not enough Gems", 1, true))
+	eq(panel.Primary.Text, "Not enough 💎", "a failed charge switches to the Not enough state")
+	truthy(string.find(panel.Body.Text, "costs 10", 1, true))
 	eq(run.game.status, "Lost")
 	giveUp()
+end)
+
+test("with a known Gem balance, offers say Not enough before any tap", function()
+	local balance = 5
+	local getGems = Mock.newInstance("BindableFunction", { Name = "CropPopGetGems" })
+	getGems.OnInvoke = function()
+		return balance
+	end
+	getGems.Parent = services.ServerStorage
+	local panel = playerGui.CropPop.Backdrop.EndPanel
+
+	local run = playLevel(3)
+	runOutOfMoves(run)
+	eq(panel.Primary.Text, "Not enough 💎")
+	truthy(string.find(panel.Body.Text, "costs 10", 1, true))
+	panel.Primary.Activated:Fire() -- checks again; still short
+	eq(panel.Primary.Text, "Not enough 💎")
+	eq(run.game.status, "Lost")
+
+	-- Gems arrive from the farm: the next check offers the continue.
+	balance = 50
+	panel.Primary.Activated:Fire()
+	eq(panel.Primary.Text, "+5 moves  10 💎")
+	giveUp()
+
+	-- The booster bar says so too.
+	balance = 5
+	run = playLevel(1)
+	run.stock.Rake = 0
+	local bar = playerGui.CropPop.Backdrop.Play.Boosters
+	bar.Rake.Activated:Fire()
+	truthy(string.find(playerGui.CropPop.Backdrop.Play.BoosterHint.Text, "Not enough", 1, true))
+	getGems.Parent = nil
+end)
+
+test("the Studio Dev: 0 hearts button empties hearts and shows the refill", function()
+	refillHearts()
+	PuzzleScreen.open()
+	local select = playerGui.CropPop.Backdrop.LevelSelect
+	select.DevNoHearts.Activated:Fire()
+	truthy(string.find(select.Hearts.Text, "❤️ 0/5", 1, true), select.Hearts.Text)
+	truthy(select.List.GetHearts.Pack1, "refill offered")
 end)
 
 test("closing hides the screen", function()
