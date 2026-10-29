@@ -1068,6 +1068,9 @@ function Panels.init()
 	gui = Ui.new("ScreenGui", {
 		Name = "FarmPanels",
 		ResetOnSpawn = false,
+		-- The themed window layers its parts by ZIndex among siblings; Global would draw
+		-- the card over every label built at the default ZIndex.
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		DisplayOrder = 5,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	})

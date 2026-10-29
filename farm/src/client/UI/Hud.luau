@@ -89,11 +89,11 @@ end
 
 -- A square HUD button: a big glyph over a small caption, plus a key hint on keyboards.
 local function hudButton(glyph: string, caption: string, key: string, order: number, onClick: () -> ()): TextButton
-	local button = Ui.button(string.format('%s\n<font size="12">%s</font>', glyph, caption), onClick, {
-		Size = UDim2.fromOffset(64, 58),
+	local button = Ui.button(string.format('%s\n<font size="15">%s</font>', glyph, caption), onClick, {
+		Size = UDim2.fromOffset(70, 62),
 		LayoutOrder = order,
 		RichText = true,
-		TextSize = 24,
+		TextSize = 22,
 		LineHeight = 0.9,
 		TextColor3 = Palette.text,
 		BackgroundColor3 = Palette.button.neutral.face,
@@ -187,7 +187,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -214, 1, -14),
-		Size = UDim2.fromOffset(420, 60),
+		Size = UDim2.fromOffset(440, 64),
 		Parent = gui,
 	}, {
 		Ui.new("UIListLayout", {

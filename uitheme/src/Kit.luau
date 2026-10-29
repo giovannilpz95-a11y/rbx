@@ -134,10 +134,10 @@ function Kit.skinButton(button: TextButton, variant: string?, lipHeight: number?
 	make("Frame", {
 		Name = "Shine",
 		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.6,
+		BackgroundTransparency = 0.72,
 		BorderSizePixel = 0,
 		Position = UDim2.new(0, 5, 0, 3),
-		Size = UDim2.new(1, -10, 0.36, 0),
+		Size = UDim2.new(1, -10, 0.3, 0),
 		ZIndex = 3,
 		Parent = face,
 	}, { make("UICorner", { CornerRadius = radius }) })
@@ -150,10 +150,17 @@ function Kit.skinButton(button: TextButton, variant: string?, lipHeight: number?
 	})
 	local textOutline = Kit.textOutline(label, Palette.cocoa)
 
-	local padding = childOfClass(button, "UIPadding")
-	if padding then
-		padding.Parent = label
+	-- Text sizing and padding belong to the visible text, not the art behind it, including
+	-- ones the caller adds after skinning.
+	local function adopt(child: Instance)
+		if child:IsA("UIPadding") or child:IsA("UITextSizeConstraint") then
+			child.Parent = label
+		end
 	end
+	for _, child in button:GetChildren() do
+		adopt(child)
+	end
+	button.ChildAdded:Connect(adopt)
 
 	local function syncColor()
 		local faceColor = button.BackgroundColor3
@@ -407,12 +414,19 @@ function Kit.icon(kind: string, size: number): Frame
 		disc(Palette.xp, UDim2.fromScale(0.62, 0.62), holder, 0, 2)
 		disc(Palette.xp, UDim2.fromScale(0.62, 0.62), holder, 45, 2)
 	elseif kind == "Barn" then
-		local crate = disc(Palette.wood, UDim2.fromScale(0.82, 0.82), holder)
-		Kit.corner(5).Parent = crate
-		Kit.stroke(Palette.shade(Palette.wood, 0.55), 2, 0, true).Parent = crate
-		for _, rotation in { 45, -45 } do
-			disc(Palette.shade(Palette.wood, 0.75), UDim2.new(1.05, 0, 0.14, 0), crate, rotation)
-		end
+		-- A little barn: red roof (a turned square) over a wooden body with a dark door
+		local roofColor = Palette.hex("#D9534F")
+		local roof = disc(roofColor, UDim2.fromScale(0.58, 0.58), holder, 45, 1)
+		roof.Position = UDim2.fromScale(0.5, 0.42)
+		Kit.corner(3).Parent = roof
+		Kit.stroke(Palette.shade(roofColor, 0.6), 2, 0, true).Parent = roof
+		local body = disc(Palette.wood, UDim2.fromScale(0.66, 0.42), holder, 0, 2)
+		body.Position = UDim2.fromScale(0.5, 0.7)
+		Kit.corner(3).Parent = body
+		Kit.stroke(Palette.shade(Palette.wood, 0.55), 2, 0, true).Parent = body
+		local door = disc(Palette.shade(Palette.wood, 0.55), UDim2.fromScale(0.3, 0.7), body)
+		door.Position = UDim2.fromScale(0.5, 0.65)
+		Kit.corner(2).Parent = door
 	end
 	return holder
 end
