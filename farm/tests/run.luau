@@ -397,6 +397,40 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.06) < 1e-9, "x3 cap")
 end)
 
+test("Population brings fields; later ones need the West Meadow", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#TownRules.fieldsToPlace(data, 0), 0, "none at Population 60")
+	-- Population 100: fields 7-11 earned (65, 70, 75, 85, 95)
+	table.insert(data.town.houses, { type = "Duplex", lot = 5 })
+	table.insert(data.town.houses, { type = "LeanTo", lot = 6 })
+	table.insert(data.town.houses, { type = "LeanTo", lot = 7 })
+	eq(TownRules.population(data, 0), 100, "Population")
+	local place = TownRules.fieldsToPlace(data, 0)
+	eq(#place, 4, "7-10 fit in the start area")
+	eq(place[1].field, 7, "first")
+	eq(place[1].xp, 2, "XP on placing")
+	eq(TownRules.fieldsWaiting(data, 0), 1, "field 11 waits for land")
+	for _, unlock in place do
+		data.fields["F" .. unlock.field] = {}
+	end
+	data.land[1] = { readyAt = 50 }
+	eq(#TownRules.fieldsToPlace(data, 10), 0, "still clearing")
+	eq(TownRules.fieldsToPlace(data, 50)[1].field, 11, "placed once cleared")
+end)
+
+test("land expansions go in order and need Population", function()
+	local data = Profile.migrate(nil) :: any
+	eq((TownRules.canExpand(data, 0)), true, "first needs 60")
+	eq(TownRules.nextExpansion(data).coinCost, 25, "Township baseline cost")
+	data.land[1] = { readyAt = 100 }
+	local can, why = TownRules.canExpand(data, 50)
+	eq(can, false, "first still clearing")
+	ok(why and why:find("Finish"), "says why")
+	can, why = TownRules.canExpand(data, 100)
+	eq(can, false, "second needs 75")
+	ok(why and why:find("75"), "says the need")
+end)
+
 test("an old save gains the starter town", function()
 	local data = Profile.migrate({ version = 1 }) :: any
 	eq(TownRules.population(data, 0), 60, "starter Houses")
