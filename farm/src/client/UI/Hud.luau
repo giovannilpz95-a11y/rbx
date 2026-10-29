@@ -76,6 +76,8 @@ function Hud.popup(payload: { [string]: any })
 			table.insert(parts, string.format("+%d Gems", payload.gems))
 		end
 		Hud.toast(table.concat(parts, "   "))
+	elseif payload.kind == "Field" then
+		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
 	elseif payload.kind == "Drop" then
 		Hud.toast(string.format("Found 1 %s!", payload.name))
 	elseif payload.kind == "Order" then

@@ -80,6 +80,7 @@ local function snapshot(data: { [string]: any })
 		factories = factories,
 		pens = data.pens,
 		town = data.town,
+		land = data.land,
 		board = data.orders.board,
 		settings = data.settings,
 		serverNow = Clock.now(),
