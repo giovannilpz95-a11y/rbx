@@ -6,6 +6,7 @@
 -- its goal is true, so a player who runs ahead never gets stuck. Pacing is first-pass.
 
 local OrderGen = require("./OrderGen")
+local Town = require("./Config/Town")
 
 local Tutorial = {}
 
@@ -36,6 +37,22 @@ end
 
 local function count(data: { [string]: any }, item: string): number
 	return data.inventory.items[item] or 0
+end
+
+local function built(data: { [string]: any }, factoryId: string, now: number): boolean
+	local factory = data.factories[factoryId]
+	return factory.built and now >= (factory.constructionReadyAt or 0)
+end
+
+local function busy(data: { [string]: any }, factoryId: string): boolean
+	local factory = data.factories[factoryId]
+	return #factory.queue > 0 or next(factory.output) ~= nil
+end
+
+local function reach(level: number): (data: { [string]: any }) -> boolean
+	return function(data)
+		return data.level >= level
+	end
 end
 
 Tutorial.steps = table.freeze({
@@ -85,8 +102,7 @@ Tutorial.steps = table.freeze({
 		text = "Level 2 opens the Bakery. Walk to it and build it.",
 		target = "Factory:Bakery",
 		done = function(data, now)
-			local bakery = data.factories.Bakery
-			return bakery.built and now >= (bakery.constructionReadyAt or 0)
+			return built(data, "Bakery", now)
 		end,
 	},
 	{
@@ -95,8 +111,7 @@ Tutorial.steps = table.freeze({
 		text = "Bake Bread at the Bakery from 2 Wheat.",
 		target = "Factory:Bakery",
 		done = function(data)
-			local bakery = data.factories.Bakery
-			return #bakery.queue > 0 or next(bakery.output) ~= nil or count(data, "Bread") > 0
+			return busy(data, "Bakery") or count(data, "Bread") > 0
 		end,
 	},
 	{
@@ -123,9 +138,73 @@ Tutorial.steps = table.freeze({
 		end,
 	},
 	{
+		id = "Level3",
+		guide = "Pip",
+		text = "Keep filling orders. Level 3 brings Corn and the Feed Mill.",
+		target = "OrderBoard",
+		done = reach(3),
+	},
+	{
+		id = "FeedMill",
+		guide = "Auntie Crumb",
+		text = "Build the Feed Mill so your Cows never run out of feed.",
+		target = "Factory:FeedMill",
+		done = function(data, now)
+			return built(data, "FeedMill", now)
+		end,
+	},
+	{
+		id = "CowFeed",
+		guide = "Auntie Crumb",
+		text = "Make Cow Feed from 2 Wheat and 1 Corn. Plant some Corn first!",
+		target = "Factory:FeedMill",
+		done = function(data)
+			return busy(data, "FeedMill") or data.level >= 4
+		end,
+	},
+	{
+		id = "Level4",
+		guide = "Pip",
+		text = "Fill orders with Wheat, Milk and Bread to reach level 4.",
+		target = "OrderBoard",
+		done = reach(4),
+	},
+	{
+		id = "House",
+		guide = "Mort",
+		text = "Your town can grow! Open the Town panel (T) and build a Lean-to Cabin.",
+		done = function(data)
+			return #data.town.houses > #Town.starterHouses
+		end,
+	},
+	{
+		id = "Dairy",
+		guide = "Auntie Crumb",
+		text = "Build the Dairy. It takes an hour, but the first Finish is on me!",
+		target = "Factory:Dairy",
+		done = function(data, now)
+			return built(data, "Dairy", now)
+		end,
+	},
+	{
+		id = "Land",
+		guide = "Mort",
+		text = "More fields need more room. Start clearing the West Meadow from the Town panel (T).",
+		done = function(data)
+			return data.land[1] ~= nil
+		end,
+	},
+	{
+		id = "Level5",
+		guide = "Pip",
+		text = "Fill orders to reach level 5. Chickens are waiting!",
+		target = "OrderBoard",
+		done = reach(5),
+	},
+	{
 		id = "WrapUp",
 		guide = "Hattie",
-		text = "Great start! Your timers keep running while you're away. Here are 5 Gems.",
+		text = "Great start! Plant something long and queue Cream before you go: timers run while you're away. Here are 5 Gems.",
 	},
 } :: { Step })
 
@@ -167,6 +246,12 @@ function Tutorial.advance(data: { [string]: any }, now: number): { string }
 		step = Tutorial.current(data)
 	end
 	return finished
+end
+
+-- The first construction Finish is free (01 Core Loop: shown once, on the Dairy build).
+function Tutorial.freeFinish(data: { [string]: any }, factoryId: string): boolean
+	local step = Tutorial.current(data)
+	return step ~= nil and step.id == factoryId and factoryId == "Dairy"
 end
 
 -- How long a run takes: short the first time while its step is on, else the normal time.

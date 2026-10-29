@@ -23,6 +23,7 @@ local Land = require(Shared.Config.Land)
 local Speedup = require(Shared.Speedup)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
+local Tutorial = require(Shared.Tutorial)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
@@ -70,6 +71,9 @@ local function anyArmed(): boolean
 end
 
 local function gems(n: number): string
+	if n == 0 then
+		return "free"
+	end
 	return string.format("%d Gem%s", n, if n == 1 then "" else "s")
 end
 
@@ -383,7 +387,8 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		local left = Timer.remaining(preview.constructionReadyAt, now)
 		local line = row(42, 1)
 		Ui.label("Building... " .. Timer.format(left) .. " left", { Size = UDim2.new(1, -170, 1, 0), Parent = line })
-		gemButton("build:" .. factoryId, "Finish", Speedup.building(left), function()
+		local price = if Tutorial.freeFinish(state, factoryId) then 0 else Speedup.building(left)
+		gemButton("build:" .. factoryId, "Finish", price, function()
 			Remotes.fire("Factory_SpeedUp", factoryId)
 		end, {
 			AnchorPoint = Vector2.new(1, 0),

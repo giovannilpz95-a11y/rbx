@@ -162,7 +162,7 @@ function FactoryService.speedUp(player: Player, factoryId: any): (boolean, strin
 	local now = Clock.now()
 	local gems, finish
 	if factory.constructionReadyAt ~= nil then
-		gems = Speedup.building(factory.constructionReadyAt - now)
+		gems = if Tutorial.freeFinish(data, factoryId) then 0 else Speedup.building(factory.constructionReadyAt - now)
 		finish = function()
 			factory.constructionReadyAt = now
 		end
