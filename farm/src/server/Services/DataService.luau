@@ -177,7 +177,20 @@ function DataService.markDirty(player: Player, important: boolean?)
 	end
 end
 
+-- Other systems that keep their own live state (Crop Pop) copy it into the profile here.
+local beforeSaveHooks: { (player: Player, data: { [string]: any }) -> () } = {}
+
+function DataService.onBeforeSave(hook: (player: Player, data: { [string]: any }) -> ())
+	table.insert(beforeSaveHooks, hook)
+end
+
 local function write(player: Player, session: Session, release: boolean): boolean
+	for _, hook in beforeSaveHooks do
+		local ok, err = pcall(hook, player, session.data)
+		if not ok then
+			warn("[DataService] Before-save hook failed:", err)
+		end
+	end
 	if session.memoryOnly or store == nil then
 		return true
 	end
@@ -240,12 +253,14 @@ end
 
 function DataService.init()
 	-- Autosave: dirty profiles every 90 s, "important" ones (level up, etc.) within 10 s.
+	-- With before-save hooks every profile counts as dirty, since the hooked state changes
+	-- without telling us.
 	task.spawn(function()
 		while true do
 			task.wait(1)
 			local clock = os.clock()
 			for player, session in sessions do
-				if session.released or not session.dirty then
+				if session.released or (not session.dirty and #beforeSaveHooks == 0) then
 					continue
 				end
 				local age = clock - session.lastSaveAt

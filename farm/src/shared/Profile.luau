@@ -78,6 +78,8 @@ function Profile.template(): { [string]: any }
 		settings = {
 			lastSeed = "Wheat",
 		},
+		-- puzzle = Crop Pop's own save block (Hearts, boosters, progress), absent until it
+		-- first saves; the farm stores it without reading it (server/Services/CropPopBridge).
 	}
 end
 

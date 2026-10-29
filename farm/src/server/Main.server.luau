@@ -57,6 +57,7 @@ local function onPlayerAdded(player: Player)
 		return
 	end
 	FactoryService.advance(player) -- offline production lands on the output tray
+	CropPopBridge.playerLoaded(player)
 	OrderService.refreshBoard(player)
 
 	local plot = PlotService.assign(player)
