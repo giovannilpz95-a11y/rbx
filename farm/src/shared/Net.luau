@@ -17,6 +17,10 @@ return table.freeze({
 	Pen_Feed = "Pen_Feed", -- penId
 	Pen_Collect = "Pen_Collect", -- penId
 	Pen_SpeedUp = "Pen_SpeedUp", -- penId: construction, else every producing animal (Gems)
+	Town_BuildHouse = "Town_BuildHouse", -- houseId
+	Town_BuildCommunity = "Town_BuildCommunity", -- communityId
+	Town_SpeedUp = "Town_SpeedUp", -- "House", lot | "Community", id (Gems)
+	Town_BuyMaterial = "Town_BuyMaterial", -- materialId (Gems)
 	Order_Fulfill = "Order_Fulfill", -- slotIndex
 	Order_Discard = "Order_Discard", -- slotIndex
 	Order_SkipWait = "Order_SkipWait", -- slotIndex: a new card now (Gems)
