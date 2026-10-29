@@ -23,6 +23,7 @@ export type Result = {
 	movesUsed: number,
 	hash: string?,
 	stats: any?,
+	bonusCoins: number?, -- from leftover moves on a win
 }
 
 local function isCoord(v): boolean
@@ -67,6 +68,7 @@ function Replay.run(level, seed: number, moves: { { number } }, options: Engine.
 		movesUsed = #moves,
 		hash = game:hash(),
 		stats = game.stats,
+		bonusCoins = if game.bonus then game.bonus.coins else 0,
 	}
 end
 

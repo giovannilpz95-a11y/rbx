@@ -348,6 +348,31 @@ test("popping tiles on mud clears it and can win the level", function()
 	falsy(pop:canSwap(1, 1, 1, 2), "no swaps after winning")
 end)
 
+test("winning with moves left turns them into bonus Seed Sprayers", function()
+	local pop = engine({
+		moves = 6,
+		layout = { "mmm.....", "........", "........", "........", "........", "........", "........", "........" },
+		goals = { { kind = "Mud" } },
+	}, rows({
+		"1 1 2 x x x x x",
+		"x x 1 x x x x x",
+	}))
+	local _, phases = pop:trySwap(3, 2, 3, 1)
+	eq(pop.status, "Won")
+	eq(pop.movesLeft, 0)
+	eq(pop.bonus.moves, 5)
+	eq(pop.bonus.coins, 10)
+	local bonusPop
+	for _, p in phases do
+		if p.kind == "Pop" and p.bonus then
+			bonusPop = p
+		end
+	end
+	truthy(bonusPop, "bonus phase")
+	eq(#bonusPop.transformed, 5)
+	eq(#Helpers.phase(phases, "Pop").transformed, 0, "the winning match itself is not a bonus")
+end)
+
 test("running out of moves loses, and extra moves continue", function()
 	local pop = engine({ moves = 1 }, rows({
 		"1 1 2 x x x x x",

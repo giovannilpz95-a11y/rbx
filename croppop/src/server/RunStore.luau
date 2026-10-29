@@ -112,10 +112,13 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 	if firstWin then
 		record.highestBeaten = run.levelId
 	end
+	local rewards = table.clone(level.rewards)
+	rewards.bonusCoins = result.bonusCoins or 0
+	rewards.coins = (rewards.coins or 0) + rewards.bonusCoins
 	return {
 		won = true,
 		levelId = run.levelId,
-		rewards = table.clone(level.rewards),
+		rewards = rewards,
 		firstWin = firstWin,
 		stats = result.stats,
 	}

@@ -14,6 +14,9 @@
 	  { kind = "Drop", moves = {Board.Move}, spawns = {Board.Spawn} }
 	  { kind = "Shuffle", moves = {Board.Move} }
 
+	A winning move with moves left over also plays the bonus round: a Pop phase
+	(with `bonus = { moves, coins }`) where leftover moves become Seed Sprayers.
+
 	The same level, seed, options and swaps always give the same result, which is
 	what lets the server replay a client's run (see Replay.luau).
 ]]
@@ -30,6 +33,7 @@ local Power = Tiles.Power
 local BOMB_RADIUS = 2 -- Hay Bomb clears every cell within this many steps (diamond)
 local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
+local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 
 local NEIGHBORS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
 
@@ -438,6 +442,37 @@ function Engine._settle(self, phases)
 	end
 end
 
+--[[
+	Winning with moves left: each leftover move turns a random tile into a
+	Seed Sprayer, they all go off, and each pays a few bonus Coins.
+]]
+function Engine._bonusRound(self, phases)
+	local leftover = self.movesLeft
+	self.bonus = { moves = leftover, coins = leftover * BONUS_COINS_PER_MOVE }
+	self.movesLeft = 0
+
+	local candidates = {}
+	self.board:eachCell(function(cell)
+		if Board.isMovable(cell) and cell.piece.power == nil then
+			table.insert(candidates, cell)
+		end
+	end)
+	local wave = newWave()
+	local chosen = {}
+	for _ = 1, math.min(leftover, #candidates) do
+		local cell = table.remove(candidates, self.rng:int(1, #candidates))
+		cell.piece.power = if self.rng:int(1, 2) == 1 then Power.SprayerRow else Power.SprayerColumn
+		table.insert(wave.transformed, { id = cell.piece.id, power = cell.piece.power })
+		table.insert(chosen, cell)
+	end
+	for _, cell in chosen do
+		self:_removePiece(wave, cell, "bonus")
+	end
+	self:_finishWave(wave, phases)
+	phases[#phases].bonus = self.bonus
+	self:_settle(phases)
+end
+
 function Engine._updateStatus(self)
 	if self.goals:isComplete() then
 		self.status = "Won"
@@ -498,6 +533,9 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 
 	self:_settle(phases)
 	self:_updateStatus()
+	if self.status == "Won" and self.movesLeft > 0 then
+		self:_bonusRound(phases)
+	end
 	return true, phases
 end
 
@@ -520,6 +558,7 @@ function Engine.getState(self)
 		movesLeft = self.movesLeft,
 		movesMade = self.movesMade,
 		goals = self.goals:snapshot(),
+		bonus = self.bonus and table.clone(self.bonus),
 		stats = table.clone(self.stats),
 	}
 end

@@ -369,7 +369,11 @@ local function rewardText(rewards): string
 	if rewards.xp and rewards.xp > 0 then
 		table.insert(parts, "+" .. rewards.xp .. " XP")
 	end
-	return table.concat(parts, "   ")
+	local text = table.concat(parts, "   ")
+	if rewards.bonusCoins and rewards.bonusCoins > 0 then
+		text ..= "\n(" .. rewards.bonusCoins .. " bonus Coins from leftover moves)"
+	end
+	return text
 end
 
 local function onLevelEnded()
