@@ -21,6 +21,8 @@ local Recipes = require("../src/shared/Config/Recipes")
 local Rng = require("../src/shared/Rng")
 local Speedup = require("../src/shared/Speedup")
 local Timer = require("../src/shared/Timer")
+local Town = require("../src/shared/Config/Town")
+local TownRules = require("../src/shared/TownRules")
 
 local passed, failed = 0, 0
 
@@ -322,6 +324,82 @@ test("a pen's speed-up prices each producing animal", function()
 	local pen = { animals = { { readyAt = 100 + 600 }, { readyAt = 100 + 3600 }, {}, { readyAt = 50 } } }
 	-- 10 min -> 2, 1 h -> 6, hungry and ready ones are free
 	eq(Speedup.pen(pen, 100), 8, "sum")
+end)
+
+---------------------------------------------------------------------------------------------
+-- Town (07 Town Building)
+---------------------------------------------------------------------------------------------
+
+test("a new farm starts at Population 60 with Cap 80", function()
+	local data = Profile.migrate(nil) :: any
+	eq(TownRules.population(data, 0), 60, "starter Houses")
+	eq(TownRules.cap(data, 0), 80, "base Cap")
+	eq(#data.town.houses, 4, "four starter Houses")
+end)
+
+test("House copies unlock by level and need room under the Cap", function()
+	local data = Profile.migrate(nil) :: any
+	local first, reason = TownRules.canBuildHouse(data, "Cottage", 0)
+	eq(first, false, "second Cottage is level 5")
+	ok(reason ~= nil and reason:find("level 5") ~= nil, "says when")
+	data.level = 4
+	eq(TownRules.copiesAllowed("LeanTo", 4), 3, "three Lean-tos at level 4")
+	for lot = 5, 7 do
+		local can = TownRules.canBuildHouse(data, "LeanTo", 0)
+		eq(can, true, "Lean-to " .. lot)
+		table.insert(data.town.houses, { type = "LeanTo", lot = lot, readyAt = 100 })
+	end
+	eq(TownRules.population(data, 50), 60, "building ones don't count yet")
+	eq(TownRules.pending(data, 50), 15, "pending")
+	eq(TownRules.population(data, 100), 75, "done at readyAt")
+	data.level = 5
+	local can, why = TownRules.canBuildHouse(data, "Cottage", 100)
+	eq(can, false, "75 + 10 > 80")
+	ok(why and why:find("Community Building"), "asks for a Community Building")
+	data.town.community.VillageWell = { readyAt = 200 }
+	eq(TownRules.cap(data, 150), 80, "Cap waits for the Well")
+	eq(TownRules.cap(data, 200), 90, "Well done")
+	eq((TownRules.canBuildHouse(data, "Cottage", 200)), true, "room now")
+end)
+
+test("Houses take the first free lot", function()
+	local data = Profile.migrate(nil) :: any
+	eq(TownRules.freeLot(data, 32), 5, "after the starters")
+	table.remove(data.town.houses, 2)
+	eq(TownRules.freeLot(data, 32), 2, "a gap is reused")
+	eq(TownRules.freeLot(data, 3), 2, "still fits")
+	eq(TownRules.freeLot(data, 1), nil, "street full")
+end)
+
+test("Township baseline town rows", function()
+	eq(Town.houses.RowHouse.population, 20, "Row House")
+	eq(Town.houses.Townhouse.coinCost, 105, "Townhouse cost")
+	eq(Town.community.Bandstand.capBonus, 55, "Bandstand")
+	eq(Town.community.FireHall.materials.Bricks, 2, "Fire Hall bricks")
+	eq(Factories.Dairy.population, 65, "Dairy needs 65")
+	eq(Factories.TextileMill.population, 105, "Textile Mill needs 105")
+	local total = 0
+	for _, def in Town.community do
+		total += def.capBonus
+		ok(def.unlockLevel <= 12, def.id .. " past the MVP")
+		for material in def.materials do
+			ok(Town.materials[material] ~= nil and Items[material].kind == "Material", def.id .. " " .. material)
+		end
+	end
+	eq(Town.baseCap + total, 390, "Cap with every MVP Community Building")
+end)
+
+test("materials can't be sold or ordered; longer crops drop more", function()
+	eq(Items.Bricks.sellPrice, 0, "not sellable")
+	local data = Profile.migrate(nil) :: any
+	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
+	ok(math.abs(TownRules.harvestDropChance(0) - 0.02) < 1e-9, "base")
+	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.06) < 1e-9, "x3 cap")
+end)
+
+test("an old save gains the starter town", function()
+	local data = Profile.migrate({ version = 1 }) :: any
+	eq(TownRules.population(data, 0), 60, "starter Houses")
 end)
 
 ---------------------------------------------------------------------------------------------

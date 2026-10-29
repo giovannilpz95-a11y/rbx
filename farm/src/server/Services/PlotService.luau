@@ -18,6 +18,8 @@ local Factories = require(Shared.Config.Factories)
 local Pen = require(Shared.Pen)
 local Profile = require(Shared.Profile)
 local Timer = require(Shared.Timer)
+local Town = require(Shared.Config.Town)
+local TownRules = require(Shared.TownRules)
 
 local DataService = require(script.Parent.DataService)
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -48,8 +50,39 @@ local COLORS = {
 	crate = Color3.fromRGB(190, 150, 90),
 }
 
+-- Main Street: the strip between the gate and the Ring Road (local z 48..96), with two
+-- back-to-back rows of 8 x 8 House lots, a street, and a row of 12 x 12 Community Building
+-- lots. Lots nearest the gate road come first; the truck's lane (x 20..34) stays clear.
+local function mainStreetLots(): ({ Vector3 }, { Vector3 })
+	local houses, community = {}, {}
+	for step = 1, 9 do
+		local x = step * 10
+		for _, side in { -1, 1 } do
+			if side == 1 and (x == 20 or x == 30) then
+				continue
+			end
+			table.insert(houses, Vector3.new(side * x, 0, 54))
+			table.insert(houses, Vector3.new(side * x, 0, 64))
+		end
+	end
+	for step = 1, 6 do
+		local x = 13 + (step - 1) * 15
+		for _, side in { -1, 1 } do
+			if side == 1 and x == 28 then
+				continue
+			end
+			table.insert(community, Vector3.new(side * x, 0, 86))
+		end
+	end
+	return houses, community
+end
+local HOUSE_LOTS, COMMUNITY_LOTS = mainStreetLots()
+
 -- Plot-local positions (studs). Fields are 2 x 2 tiles (8 x 8 studs).
 local LAYOUT = {
+	houseLots = HOUSE_LOTS,
+	communityLots = COMMUNITY_LOTS, -- by Community Building order
+
 	fields = {
 		F1 = Vector3.new(-34, 0, -31),
 		F2 = Vector3.new(-22, 0, -31),
@@ -90,6 +123,7 @@ local slotByPlayer: { [Player]: Slot } = {}
 local fieldVisualState: { [Player]: { [string]: string } } = {}
 local factoryVisualState: { [Player]: { [string]: string } } = {}
 local penVisualState: { [Player]: { [string]: string } } = {}
+local townVisualState: { [Player]: { [string]: string } } = {}
 local truckBusy: { [Player]: boolean } = {}
 
 local function part(props: { [string]: any }): Part
@@ -460,6 +494,25 @@ local function buildPlot(player: Player, slot: Slot): Model
 	})
 	spawnPad.Transparency = 0.5
 
+	-- Main Street: the gate road down to the Ring Road and the street between the lot rows
+	part({
+		Name = "GateRoad",
+		Size = Vector3.new(8, 0.2, 48),
+		CFrame = at(Vector3.new(0, 0, 72), 0.3),
+		Color = COLORS.path,
+		Parent = model,
+	})
+	part({
+		Name = "MainStreet",
+		Size = Vector3.new(184, 0.2, 8),
+		CFrame = at(Vector3.new(0, 0, 75), 0.3),
+		Color = COLORS.path,
+		Parent = model,
+	})
+	local townFolder = Instance.new("Folder")
+	townFolder.Name = "Town"
+	townFolder.Parent = model
+
 	-- Fields
 	local fieldsFolder = Instance.new("Folder")
 	fieldsFolder.Name = "Fields"
@@ -569,6 +622,100 @@ end
 ---------------------------------------------------------------------------------------------
 -- Visuals that follow the data
 ---------------------------------------------------------------------------------------------
+
+-- One town building: a block with a roof, tapped to open the Town panel. Rebuilt when its
+-- state changes (greybox; the art pass swaps in models).
+local function townBlock(
+	folder: Instance,
+	name: string,
+	at: CFrame,
+	size: Vector3,
+	color: Color3,
+	building: boolean,
+	labelText: string?
+)
+	local old = folder:FindFirstChild(name)
+	if old then
+		old:Destroy()
+	end
+	local holder = Instance.new("Model")
+	holder.Name = name
+	local body = part({
+		Name = "Body",
+		Size = size,
+		CFrame = at * CFrame.new(0, size.Y / 2 + 0.3, 0),
+		Color = if building then COLORS.crate else color,
+		Transparency = if building then 0.45 else 0,
+		Parent = holder,
+	})
+	body:SetAttribute("Interact", "Town")
+	local roof = part({
+		Name = "Roof",
+		Size = Vector3.new(size.X + 1, 1.2, size.Z + 1),
+		CFrame = at * CFrame.new(0, size.Y + 0.9, 0),
+		Color = COLORS.roof,
+		Transparency = if building then 0.45 else 0,
+		Parent = holder,
+	})
+	roof.CanQuery = false
+	if labelText then
+		label(body, labelText, size.Y / 2 + 3, UDim2.fromOffset(140, 28), 40)
+	end
+	holder.Parent = folder
+end
+
+local function refreshTown(player: Player, model: Model, data: { [string]: any }, now: number)
+	local folder = model:FindFirstChild("Town")
+	local slot = slotByPlayer[player]
+	if folder == nil or slot == nil then
+		return
+	end
+	local cache = townVisualState[player]
+	for _, house in data.town.houses do
+		local def = Town.houses[house.type]
+		local pos = LAYOUT.houseLots[house.lot]
+		if def == nil or pos == nil then
+			continue
+		end
+		local name = "House_" .. house.lot
+		local state = house.type .. ":" .. tostring(TownRules.isDone(house, now))
+		if cache[name] ~= state then
+			cache[name] = state
+			-- Bigger Houses stand taller (greybox)
+			local height = 4 + def.population / 5
+			townBlock(
+				folder,
+				name,
+				slot.cframe * CFrame.new(pos),
+				Vector3.new(7, height, 7),
+				Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
+				not TownRules.isDone(house, now),
+				nil
+			)
+		end
+	end
+	for id, entry in data.town.community do
+		local def = Town.community[id]
+		local pos = def and LAYOUT.communityLots[def.order]
+		if def == nil or pos == nil then
+			continue
+		end
+		local name = "Community_" .. id
+		local state = tostring(TownRules.isDone(entry, now))
+		if cache[name] ~= state then
+			cache[name] = state
+			townBlock(
+				folder,
+				name,
+				slot.cframe * CFrame.new(pos),
+				Vector3.new(11, 7, 11),
+				Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
+				not TownRules.isDone(entry, now),
+				def.displayName
+			)
+		end
+	end
+end
 
 local function refreshFields(player: Player, model: Model, data: { [string]: any }, now: number)
 	local cache = fieldVisualState[player]
@@ -720,6 +867,7 @@ function PlotService.refresh(player: Player)
 	for id, pen in data.pens do
 		refreshPen(player, model, id, pen, now)
 	end
+	refreshTown(player, model, data, now)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -734,6 +882,7 @@ function PlotService.assign(player: Player): Model?
 			fieldVisualState[player] = {}
 			factoryVisualState[player] = {}
 			penVisualState[player] = {}
+			townVisualState[player] = {}
 			local model = buildPlot(player, slot)
 			plotsByPlayer[player] = model
 			PlotService.refresh(player)
@@ -757,6 +906,7 @@ function PlotService.release(player: Player)
 	fieldVisualState[player] = nil
 	factoryVisualState[player] = nil
 	penVisualState[player] = nil
+	townVisualState[player] = nil
 	truckBusy[player] = nil
 end
 

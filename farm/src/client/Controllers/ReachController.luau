@@ -171,6 +171,8 @@ local function act(part: BasePart)
 		Panels.open(part:GetAttribute("FactoryId") :: string)
 	elseif kind == "Barn" then
 		Panels.open("Barn")
+	elseif kind == "Town" then
+		Panels.open("Town")
 	elseif kind == "OrderBoard" then
 		Panels.open("Orders")
 	end
