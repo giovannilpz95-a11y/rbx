@@ -23,9 +23,10 @@ TileStyle.Glyphs = { "🍅", "🥚", "🥕", "🌽", "🥛", "🧶" }
 -- UICorner radius as a fraction of the tile (0.5 = round).
 TileStyle.Corners = { 0.5, 0.5, 0.12, 0.25, 0.18, 0.4 }
 
+-- Emoji only: FredokaOne has no arrow or symbol glyphs, emoji use the emoji font.
 TileStyle.PowerBadges = {
-	SprayerRow = "⇆",
-	SprayerColumn = "⇅",
+	SprayerRow = "↔️",
+	SprayerColumn = "↕️",
 	Bumblebee = "🐝",
 	HayBomb = "💥",
 }

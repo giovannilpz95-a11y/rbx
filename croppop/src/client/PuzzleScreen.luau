@@ -66,8 +66,11 @@ local function button(parent: Instance, name: string, text: string, size: UDim2,
 	b.Parent = parent
 	corner(b, 0.3)
 	local padding = Instance.new("UIPadding")
+	padding.Name = "Padding"
 	padding.PaddingTop = UDim.new(0.15, 0)
 	padding.PaddingBottom = UDim.new(0.15, 0)
+	padding.PaddingLeft = UDim.new(0, 12)
+	padding.PaddingRight = UDim.new(0, 12)
 	padding.Parent = b
 	return b
 end
@@ -161,13 +164,15 @@ local function buildUi()
 	goalsLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	goalsLayout.Parent = goals
 
-	local closePlay = button(topBar, "Close", "✕", UDim2.fromScale(0.08, 0.6), UDim2.fromScale(0.9, 0.2))
+	local closePlay = button(topBar, "Close", "X", UDim2.fromScale(0.08, 0.6), UDim2.fromScale(0.9, 0.2))
 
 	local boardHolder = Instance.new("Frame")
 	boardHolder.Name = "BoardHolder"
-	boardHolder.AnchorPoint = Vector2.new(0.5, 1)
-	boardHolder.Position = UDim2.new(0.5, 0, 1, -16)
-	boardHolder.Size = UDim2.new(0.96, 0, 0.84, -76)
+	-- Fills the space under the top bar; the board keeps its shape inside it and
+	-- shrinks to whichever side runs out first (phones, landscape).
+	boardHolder.AnchorPoint = Vector2.new(0.5, 0)
+	boardHolder.Position = UDim2.new(0.5, 0, 0.12, 52)
+	boardHolder.Size = UDim2.new(0.96, 0, 0.88, -60)
 	boardHolder.BackgroundTransparency = 1
 	boardHolder.Parent = play
 
@@ -276,7 +281,7 @@ local function refreshHud()
 		box.Parent = ui.goals
 		label(box, "Icon", goalGlyph(goal), UDim2.fromScale(1, 0.6), UDim2.fromScale(0, 0))
 		local left = goal.target - goal.progress
-		local count = label(box, "Count", if left <= 0 then "✓" else tostring(left), UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6))
+		local count = label(box, "Count", if left <= 0 then "✅" else tostring(left), UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6))
 		if left <= 0 then
 			count.TextColor3 = Color3.fromRGB(60, 150, 60)
 		end
@@ -429,7 +434,7 @@ showLevelSelect = function(message: string?)
 		local beaten = level.id <= highest
 		local text = string.format("%d  %s%s", level.id, level.name, if level.difficulty ~= "Normal" then "  (" .. level.difficulty .. ")" else "")
 		if beaten then
-			text ..= "  ✓"
+			text ..= "  ✅"
 		elseif not unlocked then
 			text ..= "  🔒"
 		end
