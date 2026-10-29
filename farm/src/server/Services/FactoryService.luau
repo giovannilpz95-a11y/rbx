@@ -1,5 +1,5 @@
 --!strict
--- Building the Bakery, queueing recipes and collecting finished goods
+-- Building factories, queueing recipes and collecting finished goods
 -- (Design/04 Factories & Recipes). Queueing is paperwork (from anywhere on your plot);
 -- collecting is hands-on (walk-by at the output table).
 
@@ -77,7 +77,7 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	end
 	FactoryService.advance(player)
 	if not isOperational(factory, Clock.now()) then
-		return false, "Build the " .. factoryId .. " first"
+		return false, "Build the " .. Factories[factoryId].displayName .. " first"
 	end
 	if data.level < recipe.unlockLevel then
 		return false, string.format("%s unlocks at level %d", recipe.displayName, recipe.unlockLevel)
@@ -89,7 +89,7 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	if not InventoryService.remove(player, recipe.inputs) then
 		return false, "Not enough ingredients in the Barn"
 	end
-	table.insert(factory.queue, { recipe = recipeId, seconds = Clock.duration(recipe.seconds) })
+	table.insert(factory.queue, { recipe = recipeId, seconds = Clock.duration(recipe.seconds), qty = recipe.outputQty })
 	FactoryService.advance(player)
 	PlotService.refresh(player)
 	return true
@@ -108,7 +108,7 @@ function FactoryService.collect(player: Player, factoryId: any): (boolean, strin
 	if Timer.countOutput(factory.output) == 0 then
 		return false
 	end
-	local tablePos = PlotService.worldPosition(player, PlotService.LAYOUT.bakeryOutput)
+	local tablePos = PlotService.factoryOutputPosition(player, factoryId)
 	if tablePos == nil or not NetService.isNear(player, tablePos, Balance.serverReachStuds) then
 		return false, "Walk closer to the output table"
 	end

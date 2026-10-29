@@ -4,9 +4,12 @@
 -- time by level band, a soft guarantee that one card can be filled from crops alone,
 -- no two cards sharing a top item where avoidable, and the first-pass reward formula.
 
+local Animals = require("./Config/Animals")
+local Balance = require("./Config/Balance")
 local Items = require("./Items")
-local Rng = require("./Rng")
 local OrderConfig = require("./Config/Orders")
+local Recipes = require("./Config/Recipes")
+local Rng = require("./Rng")
 
 local OrderGen = {}
 
@@ -44,6 +47,57 @@ function OrderGen.slotsFor(level: number): number
 		end
 	end
 	return math.min(slots, OrderConfig.maxSlots)
+end
+
+-- Items a farm can make right now: its crops, the products of its pens (when it can get their
+-- feed), and the recipes of its built factories whose inputs it can make too. Feed never goes
+-- on an order card.
+function OrderGen.makeablePool(data: { [string]: any }): { string }
+	local can: { [string]: boolean } = {}
+	for _, id in Balance.enabledCrops do
+		can[id] = true
+	end
+	local function addRecipes()
+		local changed = true
+		while changed do
+			changed = false
+			for id, recipe in Recipes do
+				local factory = data.factories[recipe.factory]
+				if not can[id] and factory and factory.built then
+					local all = true
+					for input in recipe.inputs do
+						if not can[input] then
+							all = false
+							break
+						end
+					end
+					if all then
+						can[id] = true
+						changed = true
+					end
+				end
+			end
+		end
+	end
+	-- Feed first (crops only), then animal products, then everything made from them.
+	addRecipes()
+	for id, pen in data.pens or {} do
+		local def = Animals.pens[id]
+		if def and pen.built and (can[def.feed] or (data.inventory.items[def.feed] or 0) > 0) then
+			can[def.product] = true
+		end
+	end
+	addRecipes()
+
+	local pool = {}
+	for id in can do
+		local item = Items[id]
+		if item and not item.isFeed then
+			table.insert(pool, id)
+		end
+	end
+	table.sort(pool)
+	return pool
 end
 
 function OrderGen.isCropsOnly(order: Order): boolean

@@ -1,6 +1,6 @@
 --!strict
 -- HUD: Coins / Gems / level + XP bar / Barn counter, paperwork buttons (Orders, Barn,
--- Bakery), the big context action button and Sprint for touch, toasts and reward pop-ups.
+-- Buildings), the big context action button and Sprint for touch, toasts and reward pop-ups.
 -- Layout follows Design/11 UI & UX loosely; it is a greybox, not the final look.
 
 local Players = game:GetService("Players")
@@ -148,7 +148,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 	local buttons = {
 		{ "Orders (O)", "Orders" },
 		{ "Barn (B)", "Barn" },
-		{ "Bakery (F)", "Bakery" },
+		{ "Buildings (F)", "Buildings" },
 	}
 	if RunService:IsStudio() then
 		table.insert(buttons, { "Debug (`)", "Debug" })
