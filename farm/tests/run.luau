@@ -24,6 +24,7 @@ local Speedup = require("../src/shared/Speedup")
 local Timer = require("../src/shared/Timer")
 local Town = require("../src/shared/Config/Town")
 local TownRules = require("../src/shared/TownRules")
+local Tutorial = require("../src/shared/Tutorial")
 
 local passed, failed = 0, 0
 
@@ -396,6 +397,39 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
 	ok(math.abs(TownRules.harvestDropChance(0) - 0.04) < 1e-9, "building + Barn materials")
 	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.12) < 1e-9, "x3 cap")
+end)
+
+test("the first-session guide walks the opening loop", function()
+	local data = Profile.migrate(nil) :: any
+	eq(data.tutorial.step, 0, "off until welcomed (old farms never see it)")
+	Profile.welcome(data, 100)
+	Tutorial.start(data, 100)
+	eq(Tutorial.current(data).id, "Harvest", "first step")
+	eq(data.fields.F1.crop, "Wheat", "ripe Wheat waiting")
+	eq(data.orders.board[1].order.wants.Wheat, 4, "an easy first order")
+	eq(#Tutorial.advance(data, 100), 0, "nothing harvested yet")
+	eq(Tutorial.seconds(data, "Wheat", 120), 30, "first Wheat is quick")
+	for _, id in Tutorial.ripeFields do
+		data.fields[id] = {}
+	end
+	data.fields.F4 = { crop = "Wheat", readyAt = 130 }
+	eq(table.concat(Tutorial.advance(data, 101), ","), "Harvest,Plant", "harvested and replanted")
+	eq(Tutorial.current(data).target, "OrderBoard", "points at the board")
+	data.orders.delivered = 1
+	data.level = 2
+	data.factories.Bakery.built = true
+	data.factories.Bakery.constructionReadyAt = 200
+	eq(table.concat(Tutorial.advance(data, 150), ","), "Ship,Level2", "waits for the Bakery to finish")
+	eq(table.concat(Tutorial.advance(data, 200), ","), "Bakery", "built")
+	eq(Tutorial.seconds(data, "Bread", 300), 30, "first Bread is quick")
+	eq(Tutorial.seconds(data, "Wheat", 120), 120, "Wheat back to normal")
+	data.inventory.items.Bread = 1
+	data.pens.CowBarn.animals[1].readyAt = 400
+	eq(table.concat(Tutorial.advance(data, 200), ","), "Bread,Feed", "fed")
+	data.inventory.items.Milk = 1
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Milk", "collected")
+	eq(Tutorial.current(data).id, "WrapUp", "ends on a tap")
+	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
 end)
 
 test("Barn upgrades follow the Township steps", function()

@@ -7,6 +7,7 @@ local Crops = require(Shared.Config.Crops)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tutorial = require(Shared.Tutorial)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -53,7 +54,7 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	local now = Clock.now()
 	field.crop = cropId
 	field.plantedAt = now
-	field.readyAt = now + Clock.duration(crop.growSeconds)
+	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, crop.growSeconds))
 	data.settings.lastSeed = cropId
 	PlotService.refresh(player)
 	return true
