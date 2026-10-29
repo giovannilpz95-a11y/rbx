@@ -431,11 +431,14 @@ function Mock.environment(tree)
 		warn = function(...)
 			print("    warn:", ...)
 		end,
+		-- Fixed sequence (not math.random) so every test run deals the same boards.
 		Random = {
 			new = function()
+				local state = 12345
 				return {
 					NextInteger = function(_, lo, hi)
-						return math.random(lo, hi)
+						state = (state * 1103515245 + 12345) % 2147483648
+						return lo + state % (hi - lo + 1)
 					end,
 				}
 			end,
