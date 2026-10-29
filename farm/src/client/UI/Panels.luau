@@ -12,6 +12,8 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
+local Barn = require(Shared.Config.Barn)
+local BarnRules = require(Shared.BarnRules)
 local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
 local Items = require(Shared.Items)
@@ -226,21 +228,96 @@ end
 
 local function renderBarn(state: { [string]: any })
 	titleLabel.Text = string.format("Barn  %d / %d", state.barnUsed, state.barnCapacity)
+	local full = state.barnUsed >= state.barnCapacity
+	local order = 1
+	if full then
+		Ui.label("Your Barn is full. Sell what you have most of, or upgrade it.", {
+			TextColor3 = Ui.colors.danger,
+			Font = Enum.Font.GothamBold,
+			TextWrapped = true,
+			LayoutOrder = order,
+			Parent = body,
+		})
+		order += 1
+	end
+
+	-- Next upgrade: n of each Barn material
+	local n = (state.barnUpgrades or 0) + 1
+	local cost = BarnRules.upgradeCost(n)
+	local canUpgrade = true
+	for material, qty in cost do
+		canUpgrade = canUpgrade and ClientStore.itemCount(material) >= qty
+	end
+	local upgradeRow = row(42, order)
+	order += 1
+	Ui.label(
+		string.format("Upgrade %d: room for %d (now %d)", n, BarnRules.capacity(n), state.barnCapacity),
+		{ Size = UDim2.new(1, -110, 1, 0), Font = Enum.Font.GothamBold, Parent = upgradeRow }
+	)
+	local upgrade = Ui.button("Upgrade", function()
+		Remotes.fire("Barn_Upgrade")
+	end, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.fromOffset(100, 30),
+		Parent = upgradeRow,
+	})
+	Ui.setEnabled(upgrade, canUpgrade)
+	for _, material in sortedKeys(Barn.materials) do
+		local line = row(42, order)
+		order += 1
+		local have = ClientStore.itemCount(material)
+		Ui.label(string.format("%s   %d / %d", Barn.materials[material].displayName, have, cost[material]), {
+			Size = UDim2.new(1, -170, 1, 0),
+			TextColor3 = if have >= cost[material] then Ui.colors.text else Ui.colors.muted,
+			Parent = line,
+		})
+		gemButton("barn:" .. material, "Buy 1", Barn.materialGemPrice, function()
+			Remotes.fire("Town_BuyMaterial", material)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = line,
+		})
+	end
+	Ui.label("Nails, Hinges and Paint drop from harvests and orders (level 5+).", {
+		TextColor3 = Ui.colors.muted,
+		TextSize = 13,
+		LayoutOrder = order,
+		Parent = body,
+	})
+	order += 1
+
+	-- Contents; when full, most-stocked first so the quick Sell buttons are on top
 	local ids = {}
 	for id in state.inventory do
 		table.insert(ids, id)
 	end
-	table.sort(ids)
+	table.sort(ids, function(a, b)
+		if full and state.inventory[a] ~= state.inventory[b] then
+			return state.inventory[a] > state.inventory[b]
+		end
+		return a < b
+	end)
 	if #ids == 0 then
-		Ui.label("Empty. Harvest a field to fill it.", { TextColor3 = Ui.colors.muted, Parent = body })
+		Ui.label(
+			"Empty. Harvest a field to fill it.",
+			{ TextColor3 = Ui.colors.muted, LayoutOrder = order, Parent = body }
+		)
 	end
 	for i, id in ids do
 		local qty = state.inventory[id]
 		local item = Items[id]
-		local line = row(42, i)
+		local line = row(42, order + i)
 		if item == nil or item.sellPrice <= 0 then
 			Ui.label(
-				string.format("%s  x%d   (for building)", itemName(id), qty),
+				string.format(
+					"%s  x%d   (%s)",
+					itemName(id),
+					qty,
+					if Barn.materials[id] then "for Barn upgrades" else "for building"
+				),
 				{ Size = UDim2.new(1, 0, 1, 0), Parent = line }
 			)
 			continue
@@ -767,6 +844,23 @@ local function renderTown(state: { [string]: any })
 		end)
 	end
 
+	-- Materials first: Community Buildings need them (and the panel is long)
+	heading("Building materials")
+	for _, material in sortedKeys(Town.materials) do
+		local card = line(
+			string.format("%s   x%d", Town.materials[material].displayName, ClientStore.itemCount(material)),
+			"From harvests and orders (level 5+)"
+		)
+		gemButton("material:" .. material, "Buy 1", Town.materialGemPrice, function()
+			Remotes.fire("Town_BuyMaterial", material)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = card,
+		})
+	end
+
 	-- Community Buildings
 	heading("Community Buildings (raise the Cap)")
 	for _, id in sortedKeys(Town.community) do
@@ -865,22 +959,6 @@ local function renderTown(state: { [string]: any })
 	else
 		Ui.label("All land for now is cleared.", { TextColor3 = Ui.colors.muted, LayoutOrder = order, Parent = body })
 		order += 1
-	end
-
-	heading("Building materials")
-	for _, material in sortedKeys(Town.materials) do
-		local card = line(
-			string.format("%s   x%d", Town.materials[material].displayName, ClientStore.itemCount(material)),
-			"From harvests and orders (level 5+)"
-		)
-		gemButton("material:" .. material, "Buy 1", Town.materialGemPrice, function()
-			Remotes.fire("Town_BuyMaterial", material)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(160, 30),
-			Parent = card,
-		})
 	end
 end
 
