@@ -7,6 +7,7 @@
 -- Population and the Cap only count finished buildings. A House can't be started unless
 -- the Cap has room for it on top of every House already finished or still building.
 
+local Barn = require("./Config/Barn")
 local Land = require("./Config/Land")
 local Town = require("./Config/Town")
 
@@ -165,9 +166,10 @@ function TownRules.fieldsWaiting(data: { [string]: any }, now: number): number
 	return count - #TownRules.fieldsToPlace(data, now)
 end
 
--- Building-material drop chance for one field harvest: longer crops drop more, up to x3.
+-- Chance one field harvest drops a material (building or Barn, one roll for both): longer
+-- crops drop more, up to x3.
 function TownRules.harvestDropChance(growSeconds: number): number
-	return Town.harvestDropChance * math.min(1 + growSeconds / 3600 * 0.25, 3)
+	return (Town.harvestDropChance + Barn.harvestDropChance) * math.min(1 + growSeconds / 3600 * 0.25, 3)
 end
 
 return TownRules

@@ -8,6 +8,7 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local Barn = require(Shared.Config.Barn)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
@@ -24,11 +25,35 @@ local Clock = require(script.Parent.Parent.Util.Clock)
 local TownService = {}
 
 local rng = Random.new()
-local materialIds: { string } = {}
-for id in Town.materials do
-	table.insert(materialIds, id)
+
+-- Building and Barn materials share one roll (at most one item per harvest or delivery),
+-- each item weighted by its group's chance
+local dropPool: { { id: string, weight: number } } = {}
+local dropWeight = 0
+local function addDrops(materials: { [string]: any }, chance: number)
+	local ids = {}
+	for id in materials do
+		table.insert(ids, id)
+	end
+	table.sort(ids)
+	for _, id in ids do
+		table.insert(dropPool, { id = id, weight = chance / #ids })
+		dropWeight += chance / #ids
+	end
 end
-table.sort(materialIds)
+addDrops(Town.materials, Town.harvestDropChance)
+addDrops(Barn.materials, Barn.harvestDropChance)
+
+local function pickDrop(): string
+	local roll = rng:NextNumber() * dropWeight
+	for _, drop in dropPool do
+		roll -= drop.weight
+		if roll < 0 then
+			return drop.id
+		end
+	end
+	return dropPool[#dropPool].id
+end
 
 function TownService.buildHouse(player: Player, houseId: any): (boolean, string?)
 	if not NetService.check.id(houseId) or Town.houses[houseId] == nil then
@@ -109,14 +134,22 @@ function TownService.speedUp(player: Player, kind: any, key: any): (boolean, str
 	return true
 end
 
+-- One building material (8 Gems) or Barn material (12 Gems).
 function TownService.buyMaterial(player: Player, itemId: any): (boolean, string?)
-	if not NetService.check.id(itemId) or Town.materials[itemId] == nil then
+	if not NetService.check.id(itemId) then
+		return false
+	end
+	local price = if Town.materials[itemId]
+		then Town.materialGemPrice
+		elseif Barn.materials[itemId] then Barn.materialGemPrice
+		else nil
+	if price == nil then
 		return false
 	end
 	if InventoryService.space(player) < 1 then
 		return false, "Your Barn is full. Sell something from the Barn first."
 	end
-	if not EconomyService.spend(player, "Gems", Town.materialGemPrice, "material_" .. itemId) then
+	if not EconomyService.spend(player, "Gems", price, "material_" .. itemId) then
 		return false, "Not enough Gems"
 	end
 	InventoryService.add(player, { [itemId] = 1 })
@@ -161,13 +194,13 @@ function TownService.placeFields(player: Player): boolean
 	return false
 end
 
--- A chance at one building material (from level 5). Silent when the Barn is full.
+-- A chance at one building or Barn material (both from level 5). Silent when the Barn is full.
 local function rollMaterial(player: Player, chance: number)
 	local data = DataService.get(player)
 	if data == nil or data.level < Town.materialsFromLevel or rng:NextNumber() >= chance then
 		return
 	end
-	local id = materialIds[rng:NextInteger(1, #materialIds)]
+	local id = pickDrop()
 	if InventoryService.add(player, { [id] = 1 }) then
 		NetService.popup(player, { kind = "Drop", item = id, name = Items[id].displayName })
 	end

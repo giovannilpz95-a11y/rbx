@@ -50,6 +50,25 @@ function Boosters.continueStep(n: number)
 	return steps[math.clamp(n, 1, #steps)]
 end
 
+--[[
+	Hot Streak (F12): win levels in a row and the next one starts with free
+	power-ups: 1, then 2, then 3. A loss, or leaving a level, resets it.
+	Township's Chef's Gift does the same with its own pieces.
+]]
+Boosters.HotStreak = table.freeze({
+	table.freeze({ "Sprayer" }),
+	table.freeze({ "Sprayer", "HayBomb" }),
+	table.freeze({ "Sprayer", "HayBomb", "Sunflower" }), -- and every streak after it
+})
+
+-- The free power-ups for a level started with `wins` wins in a row.
+function Boosters.hotStreakPowers(wins: number): { string }
+	if wins <= 0 then
+		return {}
+	end
+	return table.clone(Boosters.HotStreak[math.min(wins, #Boosters.HotStreak)])
+end
+
 Boosters.STARTING_STOCK = 2 -- of each, for a new player
 Boosters.MAX_STOCK = 99
 

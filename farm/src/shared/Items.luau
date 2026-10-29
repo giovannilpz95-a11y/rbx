@@ -2,6 +2,7 @@
 -- One lookup for every Barn item, built from the crop, animal, recipe and town configs.
 
 local Animals = require("./Config/Animals")
+local Barn = require("./Config/Barn")
 local Crops = require("./Config/Crops")
 local Recipes = require("./Config/Recipes")
 local Town = require("./Config/Town")
@@ -88,19 +89,23 @@ for id, recipe in Recipes do
 	}
 end
 
--- Building materials take Barn space but can't be sold or ordered
-for id, material in Town.materials do
-	Items[id] = {
-		id = id,
-		displayName = material.displayName,
-		kind = "Material",
-		unlockLevel = Town.materialsFromLevel,
-		sellPrice = 0,
-		xpPerUnit = 0,
-		unitSeconds = 0,
-		isFeed = false,
-	}
+-- Building and Barn materials take Barn space but can't be sold or ordered
+local function addMaterials(materials: { [string]: { displayName: string } }, unlockLevel: number)
+	for id, material in materials do
+		Items[id] = {
+			id = id,
+			displayName = material.displayName,
+			kind = "Material",
+			unlockLevel = unlockLevel,
+			sellPrice = 0,
+			xpPerUnit = 0,
+			unitSeconds = 0,
+			isFeed = false,
+		}
+	end
 end
+addMaterials(Town.materials, Town.materialsFromLevel)
+addMaterials(Barn.materials, Barn.materialsFromLevel)
 
 for _, item in Items do
 	table.freeze(item)

@@ -91,6 +91,7 @@ function Profile.template(): { [string]: any }
 		inventory = {
 			items = {}, -- never put starting items here: reconcile would refill them on every load
 			barnCapacity = Balance.barnStartCapacity,
+			upgrades = 0, -- Barn upgrades done (shared/BarnRules)
 		},
 		fields = fields,
 		factories = factories,
