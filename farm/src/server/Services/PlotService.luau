@@ -18,6 +18,7 @@ local Factories = require(Shared.Config.Factories)
 local Pen = require(Shared.Pen)
 local Profile = require(Shared.Profile)
 local Timer = require(Shared.Timer)
+local Land = require(Shared.Config.Land)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 
@@ -83,14 +84,38 @@ local LAYOUT = {
 	houseLots = HOUSE_LOTS,
 	communityLots = COMMUNITY_LOTS, -- by Community Building order
 
-	fields = {
-		F1 = Vector3.new(-34, 0, -31),
-		F2 = Vector3.new(-22, 0, -31),
-		F3 = Vector3.new(-10, 0, -31),
-		F4 = Vector3.new(-34, 0, -13),
-		F5 = Vector3.new(-22, 0, -13),
-		F6 = Vector3.new(-10, 0, -13),
-	} :: { [string]: Vector3 },
+	-- F1-F6 from the start; F7-F10 in a row north of them; F11-F22 in the West Meadow
+	-- (land expansion 1), lined up with the start area's field rows.
+	fields = (function()
+		local fields: { [string]: Vector3 } = {
+			F1 = Vector3.new(-34, 0, -31),
+			F2 = Vector3.new(-22, 0, -31),
+			F3 = Vector3.new(-10, 0, -31),
+			F4 = Vector3.new(-34, 0, -13),
+			F5 = Vector3.new(-22, 0, -13),
+			F6 = Vector3.new(-10, 0, -13),
+			F7 = Vector3.new(-34, 0, -43),
+			F8 = Vector3.new(-22, 0, -43),
+			F9 = Vector3.new(-10, 0, -43),
+			F10 = Vector3.new(2, 0, -43),
+		}
+		local n = 11
+		for _, z in { -43, -31, -19 } do
+			for _, x in { -56, -68, -80, -92 } do
+				fields["F" .. n] = Vector3.new(x, 0, z)
+				n += 1
+			end
+		end
+		return fields
+	end)(),
+	-- Land expansions 1-4: the plot-local rectangles each one clears (min corner, max corner)
+	land = {
+		{ Vector3.new(-96, 0, -48), Vector3.new(-48, 0, 48) },
+		{ Vector3.new(48, 0, -48), Vector3.new(96, 0, 48) },
+		{ Vector3.new(-48, 0, -96), Vector3.new(48, 0, -48) },
+		{ Vector3.new(-96, 0, -96), Vector3.new(-48, 0, -48) },
+		{ Vector3.new(48, 0, -96), Vector3.new(96, 0, -48) }, -- stage 4 clears both corners
+	},
 	-- Factory row on the east side, the first one nearest the spawn. Each output table stands
 	-- on the factory's west side, facing the spine path.
 	factories = {
@@ -124,6 +149,7 @@ local fieldVisualState: { [Player]: { [string]: string } } = {}
 local factoryVisualState: { [Player]: { [string]: string } } = {}
 local penVisualState: { [Player]: { [string]: string } } = {}
 local townVisualState: { [Player]: { [string]: string } } = {}
+local landVisualState: { [Player]: { [number]: string } } = {}
 local truckBusy: { [Player]: boolean } = {}
 
 local function part(props: { [string]: any }): Part
@@ -517,27 +543,34 @@ local function buildPlot(player: Player, slot: Slot): Model
 	local fieldsFolder = Instance.new("Folder")
 	fieldsFolder.Name = "Fields"
 	fieldsFolder.Parent = model
-	for id, pos in LAYOUT.fields do
-		local bed = part({
-			Name = "Field_" .. id,
-			Size = Vector3.new(8, 1, 8),
-			CFrame = at(pos, 0.5),
-			Color = COLORS.soil,
-			Material = Enum.Material.Ground,
-			Parent = fieldsFolder,
-		})
-		bed:SetAttribute("Interact", "Field")
-		bed:SetAttribute("FieldId", id)
-		local crop = part({
-			Name = "Crop",
-			Size = Vector3.new(6, 0.2, 6),
-			CFrame = bed.CFrame * CFrame.new(0, 0.6, 0),
-			Color = COLORS.sprout,
-			CanCollide = false,
-			Transparency = 1,
-			Parent = bed,
-		})
-		crop.CanTouch = false
+	-- Beds are added by refreshFields as the farm earns them
+
+	-- Land not cleared yet: a darker overlay with a sign per expansion
+	local landFolder = Instance.new("Folder")
+	landFolder.Name = "Land"
+	landFolder.Parent = model
+	for stage, def in Land.expansions do
+		local rects = { LAYOUT.land[stage] }
+		if stage == 4 then
+			table.insert(rects, LAYOUT.land[5])
+		end
+		for i, rect in rects do
+			local min, max = rect[1], rect[2]
+			local center = (min + max) / 2
+			local overlay = part({
+				Name = string.format("Locked_%d_%d", stage, i),
+				Size = Vector3.new(max.X - min.X - 1, 0.2, max.Z - min.Z - 1),
+				CFrame = at(center, 0.2),
+				Color = COLORS.wild:Lerp(Color3.new(0, 0, 0), 0.25),
+				Material = Enum.Material.Grass,
+				CanCollide = false,
+				Parent = landFolder,
+			})
+			overlay:SetAttribute("LandStage", stage)
+			if i == 1 then
+				label(overlay, def.displayName .. " (locked)", 4, UDim2.fromOffset(180, 30), 80)
+			end
+		end
 	end
 
 	-- Barn
@@ -717,11 +750,74 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 	end
 end
 
+local function buildField(fieldsFolder: Instance, slot: Slot, id: string)
+	local pos = LAYOUT.fields[id]
+	if pos == nil then
+		return
+	end
+	local bed = part({
+		Name = "Field_" .. id,
+		Size = Vector3.new(8, 1, 8),
+		CFrame = slot.cframe * CFrame.new(pos.X, 0.5, pos.Z),
+		Color = COLORS.soil,
+		Material = Enum.Material.Ground,
+	})
+	bed:SetAttribute("Interact", "Field")
+	bed:SetAttribute("FieldId", id)
+	local crop = part({
+		Name = "Crop",
+		Size = Vector3.new(6, 0.2, 6),
+		CFrame = bed.CFrame * CFrame.new(0, 0.6, 0),
+		Color = COLORS.sprout,
+		CanCollide = false,
+		Transparency = 1,
+		Parent = bed,
+	})
+	crop.CanTouch = false
+	bed.Parent = fieldsFolder
+end
+
+local function refreshLand(player: Player, model: Model, data: { [string]: any }, now: number)
+	local folder = model:FindFirstChild("Land")
+	if folder == nil then
+		return
+	end
+	local cache = landVisualState[player]
+	for stage, def in Land.expansions do
+		local entry = data.land[stage]
+		local state = if entry == nil then "locked" elseif TownRules.isDone(entry, now) then "open" else "clearing"
+		if cache[stage] == state then
+			continue
+		end
+		cache[stage] = state
+		for _, overlay in folder:GetChildren() do
+			if overlay:GetAttribute("LandStage") ~= stage then
+				continue
+			end
+			if state == "open" then
+				overlay:Destroy()
+			else
+				local sign = overlay:FindFirstChild("Label")
+				local text = sign and sign:FindFirstChild("Text") :: TextLabel?
+				if text then
+					text.Text = def.displayName .. (if state == "clearing" then " (clearing...)" else " (locked)")
+				end
+			end
+		end
+	end
+end
+
 local function refreshFields(player: Player, model: Model, data: { [string]: any }, now: number)
 	local cache = fieldVisualState[player]
 	local fieldsFolder = model:FindFirstChild("Fields")
-	if fieldsFolder == nil then
+	local slot = slotByPlayer[player]
+	if fieldsFolder == nil or slot == nil then
 		return
+	end
+	for id in data.fields do
+		if fieldsFolder:FindFirstChild("Field_" .. id) == nil then
+			buildField(fieldsFolder, slot, id)
+		end
 	end
 	for id, field in data.fields do
 		local state = if field.crop == nil
@@ -868,6 +964,7 @@ function PlotService.refresh(player: Player)
 		refreshPen(player, model, id, pen, now)
 	end
 	refreshTown(player, model, data, now)
+	refreshLand(player, model, data, now)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -883,6 +980,7 @@ function PlotService.assign(player: Player): Model?
 			factoryVisualState[player] = {}
 			penVisualState[player] = {}
 			townVisualState[player] = {}
+			landVisualState[player] = {}
 			local model = buildPlot(player, slot)
 			plotsByPlayer[player] = model
 			PlotService.refresh(player)
@@ -907,6 +1005,7 @@ function PlotService.release(player: Player)
 	factoryVisualState[player] = nil
 	penVisualState[player] = nil
 	townVisualState[player] = nil
+	landVisualState[player] = nil
 	truckBusy[player] = nil
 end
 

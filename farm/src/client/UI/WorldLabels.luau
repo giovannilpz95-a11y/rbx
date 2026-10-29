@@ -62,14 +62,7 @@ end
 
 local function attach(model: Model)
 	plot = model
-	table.clear(bedLabels)
-	local fields = model:WaitForChild("Fields")
-	for _, bed in fields:GetChildren() do
-		local id = bed:GetAttribute("FieldId")
-		if bed:IsA("BasePart") and type(id) == "string" then
-			bedLabels[id] = billboard(bed, 4)
-		end
-	end
+	table.clear(bedLabels) -- beds arrive over time (new fields); render adds their labels
 	table.clear(factoryLabels)
 	for _, id in Balance.enabledFactories do
 		local building = model:WaitForChild(id)
@@ -110,6 +103,15 @@ local function render()
 	end
 	local now = ClientStore.now()
 
+	local fieldsFolder = plot:FindFirstChild("Fields")
+	if fieldsFolder then
+		for id in state.fields do
+			local bed = if bedLabels[id] == nil then fieldsFolder:FindFirstChild("Field_" .. id) else nil
+			if bed and bed:IsA("BasePart") then
+				bedLabels[id] = billboard(bed, 4)
+			end
+		end
+	end
 	for id, label in bedLabels do
 		local field = state.fields[id]
 		local gui = label.Parent :: BillboardGui

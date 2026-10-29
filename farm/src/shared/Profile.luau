@@ -95,6 +95,7 @@ function Profile.template(): { [string]: any }
 		fields = fields,
 		factories = factories,
 		pens = pens,
+		land = {}, -- land expansions started, in order: { readyAt? } (shared/TownRules)
 		town = {
 			houses = houses, -- { type, lot, readyAt? } (shared/TownRules)
 			community = {}, -- id -> { readyAt? }

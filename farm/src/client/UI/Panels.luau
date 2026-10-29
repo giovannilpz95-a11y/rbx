@@ -17,6 +17,7 @@ local Factories = require(Shared.Config.Factories)
 local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
+local Land = require(Shared.Config.Land)
 local Speedup = require(Shared.Speedup)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
@@ -708,6 +709,14 @@ local function renderTown(state: { [string]: any })
 			)
 		end
 	end
+	for stage, entry in state.land do
+		if not TownRules.isDone(entry, now) then
+			table.insert(
+				building,
+				{ name = Land.expansions[stage].displayName, readyAt = entry.readyAt, kind = "Land", key = stage }
+			)
+		end
+	end
 	for id, entry in state.town.community do
 		if not TownRules.isDone(entry, now) then
 			table.insert(
@@ -721,7 +730,7 @@ local function renderTown(state: { [string]: any })
 		for _, item in building do
 			local left = Timer.remaining(item.readyAt, now)
 			local card = line(item.name .. "   " .. Timer.format(left) .. " left")
-			gemButton("town:" .. tostring(item.key), "Finish", Speedup.building(left), function()
+			gemButton("town:" .. item.kind .. tostring(item.key), "Finish", Speedup.building(left), function()
 				Remotes.fire("Town_SpeedUp", item.kind, item.key)
 			end, {
 				AnchorPoint = Vector2.new(1, 0),
@@ -809,6 +818,55 @@ local function renderTown(state: { [string]: any })
 	end
 
 	-- Building materials
+	-- Land expansion and the fields Population has earned
+	heading("Land")
+	local waiting = TownRules.fieldsWaiting(state, now)
+	if waiting > 0 then
+		Ui.label(
+			string.format(
+				"%d new field%s waiting for land: clear the %s.",
+				waiting,
+				if waiting == 1 then "" else "s",
+				Land.expansions[Land.extraFieldsStage].displayName
+			),
+			{ TextColor3 = Ui.colors.danger, TextSize = 14, LayoutOrder = order, Parent = body }
+		)
+		order += 1
+	end
+	local nextField = nil
+	for _, unlock in Land.fields do
+		if state.fields["F" .. unlock.field] == nil and population < unlock.population then
+			nextField = unlock
+			break
+		end
+	end
+	if nextField then
+		Ui.label(
+			string.format("Next free field at Population %d.", nextField.population),
+			{ TextColor3 = Ui.colors.muted, TextSize = 14, LayoutOrder = order, Parent = body }
+		)
+		order += 1
+	end
+	local expansion = TownRules.nextExpansion(state)
+	if expansion then
+		local can, why = TownRules.canExpand(state, now)
+		local card = line(
+			string.format(
+				"%s   %d Coins   %s",
+				expansion.displayName,
+				expansion.coinCost,
+				Timer.format(expansion.buildSeconds * (state.timeScale or 1))
+			),
+			if can then string.format("Expansion %d of %d", expansion.stage, #Land.expansions) else why
+		)
+		rightButton(card, "Clear", can and state.currencies.Coins >= expansion.coinCost, function()
+			Remotes.fire("Town_Expand")
+		end)
+	else
+		Ui.label("All land for now is cleared.", { TextColor3 = Ui.colors.muted, LayoutOrder = order, Parent = body })
+		order += 1
+	end
+
 	heading("Building materials")
 	for _, material in sortedKeys(Town.materials) do
 		local card = line(
