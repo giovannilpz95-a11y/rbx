@@ -42,7 +42,7 @@ local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 local GEM_CONFIRM_OVER = 10 -- spends above this need a second tap (10 Monetization)
 
 local BOOSTER_HINTS = {
-	Trowel = "🪏 Tap a tile to break it.",
+	Trowel = "⛏️ Tap a tile to break it.",
 	Rake = "🧹 Tap a row to clear it.",
 	GardenGloves = "🧤 Swap any two tiles next to each other.",
 }
