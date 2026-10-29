@@ -17,6 +17,7 @@ local PlotService = require(Services.PlotService)
 local FarmService = require(Services.FarmService)
 local FactoryService = require(Services.FactoryService)
 local OrderService = require(Services.OrderService)
+local CropPopBridge = require(Services.CropPopBridge)
 local Clock = require(script.Parent.Util.Clock)
 
 DataService.init()
@@ -26,6 +27,7 @@ PlotService.init()
 FarmService.init()
 FactoryService.init()
 OrderService.init()
+CropPopBridge.init()
 
 -- DEV-only: shorter timers for playtesting. Ignored outside Studio.
 NetService.on(Net.Debug_SetTimeScale, 1, 2, function(_player, scale)
