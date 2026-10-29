@@ -580,6 +580,12 @@ test("a profile from a newer build is refused", function()
 end)
 
 ---------------------------------------------------------------------------------------------
+-- Art models (tests/art.luau)
+---------------------------------------------------------------------------------------------
+
+require("./art")(test, eq, ok)
+
+---------------------------------------------------------------------------------------------
 -- Every Luau file compiles
 ---------------------------------------------------------------------------------------------
 
@@ -594,11 +600,13 @@ local function eachLuau(dir: string, fn: (string) -> ())
 	end
 end
 
-eachLuau("src", function(path)
-	test("compiles: " .. path, function()
-		luau.compile(fs.readFile(path))
+for _, dir in { "src", "tools" } do
+	eachLuau(dir, function(path)
+		test("compiles: " .. path, function()
+			luau.compile(fs.readFile(path))
+		end)
 	end)
-end)
+end
 
 print(string.format("%d passed, %d failed", passed, failed))
 if failed > 0 then
