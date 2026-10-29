@@ -39,16 +39,24 @@ local function billboard(adornee: BasePart, offsetY: number, maxDistance: number
 	})
 	local label = Ui.label("", {
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Ui.colors.bar,
-		BackgroundTransparency = 0.35,
-		TextColor3 = Color3.new(1, 1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = Enum.Font.GothamBold,
 		TextScaled = true,
 		Parent = gui,
 	})
-	Ui.corner(10).Parent = label
-	Ui.padding(3).Parent = label
+	Ui.padding(4).Parent = label
+	Ui.theme.Kit.skinBubble(label)
+	-- Ready bubbles bob gently so they catch the eye (12 Art & Audio Direction)
+	local bob: Tween? = nil
+	label:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+		local ready = label.BackgroundColor3 == Ui.colors.ready
+		if ready and bob == nil then
+			bob = Ui.theme.Motion.loop(gui, { StudsOffset = Vector3.new(0, offsetY + 0.6, 0) })
+		elseif not ready and bob ~= nil then
+			bob:Cancel()
+			bob = nil
+			gui.StudsOffset = Vector3.new(0, offsetY, 0)
+		end
+	end)
 	return label
 end
 
@@ -82,7 +90,7 @@ local function attach(model: Model)
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
 		TextScaled = true,
-		Font = Enum.Font.GothamBold,
+		Font = Ui.theme.Type.display,
 		Parent = surface,
 	})
 	Ui.padding(12).Parent = boardText
@@ -112,7 +120,7 @@ local function render()
 		elseif Timer.isReady(field.readyAt, now) then
 			gui.Enabled = true
 			label.Text = Crops[field.crop].displayName .. " ready!"
-			label.BackgroundColor3 = Color3.fromRGB(90, 160, 60)
+			label.BackgroundColor3 = Ui.colors.ready
 		else
 			gui.Enabled = true
 			label.Text = Timer.format(Timer.remaining(field.readyAt, now))
@@ -136,7 +144,7 @@ local function render()
 			label.Text = "Building " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now))
 		elseif preview.outputCount > 0 then
 			label.Text = string.format("%d ready!", preview.outputCount)
-			label.BackgroundColor3 = Color3.fromRGB(90, 160, 60)
+			label.BackgroundColor3 = Ui.colors.ready
 		elseif #preview.queue > 0 and preview.queue[1].readyAt then
 			local job = preview.queue[1]
 			label.Text = Items[job.recipe].displayName .. " " .. Timer.format(Timer.remaining(job.readyAt, now))
@@ -162,11 +170,11 @@ local function render()
 			local counts = Pen.counts(pen, now)
 			if counts.ready > 0 then
 				label.Text = string.format("%d %s ready!", counts.ready, def.productName)
-				label.BackgroundColor3 = Color3.fromRGB(90, 160, 60)
+				label.BackgroundColor3 = Ui.colors.ready
 			elseif counts.hungry > 0 then
 				local hasFeed = (pen.feedLeft or 0) > 0 or ClientStore.itemCount(def.feed) > 0
 				label.Text = if hasFeed then "Hungry" else "Needs " .. Items[def.feed].displayName
-				label.BackgroundColor3 = Color3.fromRGB(200, 120, 50)
+				label.BackgroundColor3 = Ui.colors.warn
 			elseif counts.nextReadyAt then
 				label.Text = def.productName .. " " .. Timer.format(Timer.remaining(counts.nextReadyAt, now))
 			end

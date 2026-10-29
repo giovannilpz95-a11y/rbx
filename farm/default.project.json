@@ -5,6 +5,9 @@
     "ReplicatedStorage": {
       "FarmShared": {
         "$path": "src/shared"
+      },
+      "UiTheme": {
+        "$path": "../uitheme/src"
       }
     },
     "ServerScriptService": {
