@@ -227,8 +227,14 @@ local function buildUi()
 	panelSize.MaxSize = Vector2.new(460, 320)
 	panelSize.Parent = panel
 	local panelTitle = label(panel, "Title", "", UDim2.fromScale(0.9, 0.22), UDim2.fromScale(0.05, 0.06))
-	local panelBody = label(panel, "Body", "", UDim2.fromScale(0.9, 0.3), UDim2.fromScale(0.05, 0.32))
+	local panelBody = label(panel, "Body", "", UDim2.fromScale(0.8, 0.3), UDim2.fromScale(0.1, 0.32))
 	panelBody.TextWrapped = true
+	local bodySize = Instance.new("UITextSizeConstraint")
+	bodySize.MaxTextSize = 26
+	bodySize.Parent = panelBody
+	local titleSize = Instance.new("UITextSizeConstraint")
+	titleSize.MaxTextSize = 40
+	titleSize.Parent = panelTitle
 	local primary = button(panel, "Primary", "", UDim2.fromScale(0.42, 0.2), UDim2.fromScale(0.05, 0.72))
 	local secondary = button(panel, "Secondary", "", UDim2.fromScale(0.42, 0.2), UDim2.fromScale(0.53, 0.72))
 	secondary.BackgroundColor3 = Colors.locked
