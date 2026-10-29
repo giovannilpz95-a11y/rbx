@@ -9,6 +9,16 @@
 ]]
 
 local Mock = {}
+Mock.delayed = {}
+
+-- Runs the task.delay callbacks queued so far (not ones they queue).
+function Mock.runDelayed()
+	local queue = Mock.delayed
+	Mock.delayed = {}
+	for _, item in queue do
+		item.fn(table.unpack(item.args))
+	end
+end
 
 -- Signals ----------------------------------------------------------------------
 
@@ -306,6 +316,12 @@ local function newInstance(className, props)
 		rawget(inst, "_props").Fire = function(self, ...)
 			self.Event:Fire(...)
 		end
+	elseif className == "BindableFunction" then
+		rawget(inst, "_props").Invoke = function(self, ...)
+			local handler = self.OnInvoke
+			assert(handler, "BindableFunction " .. self.Name .. " has no OnInvoke")
+			return handler(...)
+		end
 	elseif className == "RemoteFunction" then
 		rawget(inst, "_props").InvokeServer = function(self, ...)
 			local handler = self.OnServerInvoke
@@ -364,6 +380,13 @@ function Mock.environment(tree)
 	Mock.localPlayer = player
 	services.Players = newInstance("Players")
 	services.Players.LocalPlayer = player
+	player.Parent = services.Players
+	services.Players.GetPlayers = function()
+		return { player }
+	end
+	services.Players.GetPlayerByUserId = function(_, userId)
+		return if userId == player.UserId then player else nil
+	end
 
 	local fakeGame = setmetatable({}, {
 		__index = function(_, key)
@@ -386,8 +409,9 @@ function Mock.environment(tree)
 		defer = function(fn, ...)
 			fn(...)
 		end,
+		-- Delayed work waits for Mock.runDelayed(), so timer loops can't spin forever.
 		delay = function(_, fn, ...)
-			fn(...)
+			table.insert(Mock.delayed, { fn = fn, args = { ... } })
 		end,
 	}
 

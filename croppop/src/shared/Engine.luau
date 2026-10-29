@@ -22,6 +22,7 @@
 ]]
 
 local Board = require(script.Parent.Board)
+local Boosters = require(script.Parent.Boosters)
 local Goals = require(script.Parent.Goals)
 local Matcher = require(script.Parent.Matcher)
 local Rng = require(script.Parent.Rng)
@@ -65,6 +66,7 @@ function Engine.new(level, seed: number, options: Options?)
 		movesMade = 0,
 		status = "Playing", -- "Playing" | "Won" | "Lost"
 		stats = { powerUpsMade = 0, combos = 0, cascades = 0 },
+		boostersUsed = {}, -- in-level booster kind -> times used
 	}, Engine)
 
 	if options and options.startPowerUps then
@@ -85,6 +87,9 @@ function Engine._placeStartPowerUps(self, powers: { string })
 			break
 		end
 		local cell = table.remove(candidates, self.rng:int(1, #candidates))
+		if power == "Sprayer" then
+			power = if self.rng:int(1, 2) == 1 then Power.SprayerRow else Power.SprayerColumn
+		end
 		cell.piece.power = power
 		if power == Power.Sunflower then
 			cell.piece.color = 0
@@ -531,12 +536,94 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 		self:_finishWave(wave, phases)
 	end
 
+	self:_afterAction(phases)
+	return true, phases
+end
+
+-- Cascades, then win/lose, then the leftover-moves bonus.
+function Engine._afterAction(self, phases)
 	self:_settle(phases)
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then
 		self:_bonusRound(phases)
 	end
+end
+
+local function inBoard(self, x: number, y: number): boolean
+	return x >= 1 and y >= 1 and x <= self.board.width and y <= self.board.height
+end
+
+--[[
+	Uses an in-level booster. Doesn't cost a move. Returns false (and no
+	phases) if it can't be used there.
+	  Trowel(x, y)                 break one tile or one hay bale layer
+	  Rake(y)                      clear one row
+	  GardenGloves(x1, y1, x2, y2) swap two neighbouring tiles, matching or not
+	  ShakeUp()                    shuffle the board
+]]
+function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number?, d: number?): (boolean, { any })
+	local info = Boosters.Info[kind]
+	if self.status ~= "Playing" or not info or info.when ~= "in" then
+		return false, {}
+	end
+	local board = self.board
+	local phases = {}
+
+	if kind == "Trowel" then
+		local cell = board:get(a :: number, b :: number)
+		if not cell or (cell.piece == nil and cell.bale == 0) then
+			return false, {}
+		end
+		local wave = newWave()
+		table.insert(wave.effects, { type = "Trowel", x = cell.x, y = cell.y })
+		self:_hit(wave, cell.x, cell.y)
+		self:_finishWave(wave, phases)
+	elseif kind == "Rake" then
+		local y = a :: number
+		if not inBoard(self, 1, y) then
+			return false, {}
+		end
+		local wave = newWave()
+		table.insert(wave.effects, { type = "Spray", dir = "Row", x = 1, y = y })
+		for x = 1, board.width do
+			self:_hit(wave, x, y)
+		end
+		if #wave.removed == 0 and #wave.bales == 0 then
+			return false, {} -- an empty row
+		end
+		self:_finishWave(wave, phases)
+	elseif kind == "GardenGloves" then
+		local x1, y1, x2, y2 = a :: number, b :: number, c :: number, d :: number
+		if not self:canSwap(x1, y1, x2, y2) then
+			return false, {}
+		end
+		local cellA, cellB = board:get(x1, y1), board:get(x2, y2)
+		cellA.piece, cellB.piece = cellB.piece, cellA.piece
+		table.insert(phases, { kind = "Swap", from = { x1, y1 }, to = { x2, y2 }, ok = true })
+		local groups = Matcher.findGroups(board, { cellB, cellA })
+		if #groups > 0 then
+			local wave = newWave()
+			self:_popGroups(wave, groups)
+			self:_finishWave(wave, phases)
+		end
+	elseif kind == "ShakeUp" then
+		table.insert(phases, { kind = "Shuffle", moves = board:shuffle(self.rng, self.colors) })
+	end
+
+	self.boostersUsed[kind] = (self.boostersUsed[kind] or 0) + 1
+	self:_afterAction(phases)
 	return true, phases
+end
+
+--[[
+	Applies one recorded action: a swap { x1, y1, x2, y2 } or a booster
+	{ "Trowel", x, y }, { "Rake", y }, { "GardenGloves", x1, y1, x2, y2 }, { "ShakeUp" }.
+]]
+function Engine.apply(self, action: { any }): (boolean, { any })
+	if type(action[1]) == "string" then
+		return self:useBooster(action[1], action[2], action[3], action[4], action[5])
+	end
+	return self:trySwap(action[1], action[2], action[3], action[4])
 end
 
 function Engine._useMove(self)

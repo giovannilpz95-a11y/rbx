@@ -10,8 +10,10 @@
 
 return {
 	Board = require(script.Board),
+	Boosters = require(script.Boosters),
 	Engine = require(script.Engine),
 	Goals = require(script.Goals),
+	Hearts = require(script.Hearts),
 	Levels = require(script.Levels),
 	Matcher = require(script.Matcher),
 	Replay = require(script.Replay),
