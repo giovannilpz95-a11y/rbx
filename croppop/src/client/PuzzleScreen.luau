@@ -1,0 +1,663 @@
+--[[
+	The Crop Pop screen: level select, the board with its top bar, and the
+	win / out-of-moves panels.
+
+		local PuzzleScreen = require(path.to.PuzzleScreen)
+		PuzzleScreen.open()      -- level select
+		PuzzleScreen.open(3)     -- straight into level 3
+		PuzzleScreen.close()
+
+	The Puzzle Porch and the Town Square cabinet should call open(). Until
+	they exist, Main.client.luau adds a temporary button.
+
+	The client plays the level locally with the seed the server handed out and
+	sends its swaps when the level ends; the server replays them before paying.
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
+local BoardView = require(script.Parent.BoardView)
+local TileStyle = require(script.Parent.TileStyle)
+
+local Levels = CropPop.Levels
+local Colors = TileStyle.Board
+
+local PuzzleScreen = {}
+
+local ui = nil -- built on first open
+local current = nil -- the level being played
+local busy = false
+
+-- Small UI helpers -----------------------------------------------------------
+
+local function corner(parent: Instance, radius: number)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(radius, 0)
+	c.Parent = parent
+end
+
+local function label(parent: Instance, name: string, text: string, size: UDim2, position: UDim2): TextLabel
+	local l = Instance.new("TextLabel")
+	l.Name = name
+	l.Text = text
+	l.Size = size
+	l.Position = position
+	l.BackgroundTransparency = 1
+	l.TextScaled = true
+	l.Font = TileStyle.Font
+	l.TextColor3 = Colors.text
+	l.Parent = parent
+	return l
+end
+
+local function button(parent: Instance, name: string, text: string, size: UDim2, position: UDim2): TextButton
+	local b = Instance.new("TextButton")
+	b.Name = name
+	b.Text = text
+	b.Size = size
+	b.Position = position
+	b.BackgroundColor3 = Colors.accent
+	b.TextColor3 = Color3.new(1, 1, 1)
+	b.TextScaled = true
+	b.Font = TileStyle.Font
+	b.AutoButtonColor = true
+	b.Parent = parent
+	corner(b, 0.3)
+	local padding = Instance.new("UIPadding")
+	padding.Name = "Padding"
+	padding.PaddingTop = UDim.new(0.15, 0)
+	padding.PaddingBottom = UDim.new(0.15, 0)
+	padding.PaddingLeft = UDim.new(0, 12)
+	padding.PaddingRight = UDim.new(0, 12)
+	padding.Parent = b
+	return b
+end
+
+local function remotes()
+	return ReplicatedStorage:WaitForChild("CropPopRemotes", 10)
+end
+
+local function invoke(name: string, ...)
+	local folder = remotes()
+	if not folder then
+		return { error = "Crop Pop isn't running on this server" }
+	end
+	local ok, result = pcall(function(...)
+		return (folder:WaitForChild(name) :: RemoteFunction):InvokeServer(...)
+	end, ...)
+	if not ok then
+		return { error = "couldn't reach the server" }
+	end
+	return result or { error = "no answer from the server" }
+end
+
+-- Building the screen ----------------------------------------------------------
+
+local function buildUi()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "CropPop"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 20
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	gui.Enabled = false
+
+	local backdrop = Instance.new("Frame")
+	backdrop.Name = "Backdrop"
+	backdrop.Size = UDim2.fromScale(1, 1)
+	backdrop.BackgroundColor3 = Colors.backdrop
+	backdrop.BorderSizePixel = 0
+	backdrop.Parent = gui
+
+	-- Play area: top bar + board.
+	local play = Instance.new("Frame")
+	play.Name = "Play"
+	play.Size = UDim2.fromScale(1, 1)
+	play.BackgroundTransparency = 1
+	play.Visible = false
+	play.Parent = backdrop
+
+	-- Positions for the top bar and board are set by applyLayout().
+	local topBar = Instance.new("Frame")
+	topBar.Name = "TopBar"
+	topBar.BackgroundColor3 = Colors.panel
+	topBar.Parent = play
+	corner(topBar, 0.2)
+	local barPadding = Instance.new("UIPadding")
+	barPadding.PaddingLeft = UDim.new(0, 14)
+	barPadding.PaddingRight = UDim.new(0, 14)
+	barPadding.PaddingTop = UDim.new(0, 6)
+	barPadding.PaddingBottom = UDim.new(0, 6)
+	barPadding.Parent = topBar
+
+	local levelName = label(topBar, "LevelName", "", UDim2.new(), UDim2.new())
+	levelName.TextXAlignment = Enum.TextXAlignment.Left
+	local nameSize = Instance.new("UITextSizeConstraint")
+	nameSize.MaxTextSize = 34
+	nameSize.Parent = levelName
+	local difficulty = label(topBar, "Difficulty", "", UDim2.new(), UDim2.new())
+	difficulty.TextXAlignment = Enum.TextXAlignment.Left
+	difficulty.TextColor3 = Colors.accent
+
+	local movesBox = Instance.new("Frame")
+	movesBox.Name = "Moves"
+	movesBox.AnchorPoint = Vector2.new(0.5, 0.5)
+	movesBox.BackgroundColor3 = Colors.accent
+	movesBox.Parent = topBar
+	corner(movesBox, 0.25)
+	local movesCount = label(movesBox, "Count", "0", UDim2.fromScale(1, 0.62), UDim2.fromScale(0, 0.04))
+	movesCount.TextColor3 = Color3.new(1, 1, 1)
+	local movesCaption = label(movesBox, "Caption", "moves", UDim2.fromScale(1, 0.3), UDim2.fromScale(0, 0.66))
+	movesCaption.TextColor3 = Color3.new(1, 1, 1)
+
+	local goals = Instance.new("Frame")
+	goals.Name = "Goals"
+	goals.BackgroundTransparency = 1
+	goals.Parent = topBar
+	local goalsLayout = Instance.new("UIListLayout")
+	goalsLayout.FillDirection = Enum.FillDirection.Horizontal
+	goalsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	goalsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	goalsLayout.Padding = UDim.new(0.03, 0)
+	goalsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	goalsLayout.Parent = goals
+
+	local closePlay = button(topBar, "Close", "X", UDim2.new(), UDim2.new())
+
+	-- The board keeps its shape inside this and shrinks to whichever side runs out first.
+	local boardHolder = Instance.new("Frame")
+	boardHolder.Name = "BoardHolder"
+	boardHolder.BackgroundTransparency = 1
+	boardHolder.Parent = play
+
+	-- Studio only: jump to the last move so the out-of-moves panel is quick to test.
+	local devOneMove = nil
+	if RunService:IsStudio() then
+		devOneMove = button(topBar, "DevOneMove", "Dev: 1 move", UDim2.new(), UDim2.new())
+		devOneMove.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+	end
+
+	-- Level select.
+	local levelSelect = Instance.new("Frame")
+	levelSelect.Name = "LevelSelect"
+	levelSelect.AnchorPoint = Vector2.new(0.5, 0.5)
+	levelSelect.Position = UDim2.fromScale(0.5, 0.5)
+	levelSelect.Size = UDim2.fromScale(0.9, 0.8)
+	levelSelect.BackgroundColor3 = Colors.panel
+	levelSelect.Parent = backdrop
+	corner(levelSelect, 0.06)
+	local selectSize = Instance.new("UISizeConstraint")
+	selectSize.MaxSize = Vector2.new(520, 640)
+	selectSize.Parent = levelSelect
+	label(levelSelect, "Title", "Crop Pop Trail", UDim2.fromScale(0.8, 0.1), UDim2.fromScale(0.1, 0.03))
+	local status = label(levelSelect, "Status", "", UDim2.fromScale(0.9, 0.05), UDim2.fromScale(0.05, 0.14))
+	status.TextColor3 = Colors.accent
+	local list = Instance.new("ScrollingFrame")
+	list.Name = "List"
+	list.Position = UDim2.fromScale(0.06, 0.21)
+	list.Size = UDim2.fromScale(0.88, 0.62)
+	list.BackgroundTransparency = 1
+	list.BorderSizePixel = 0
+	list.ScrollBarThickness = 6
+	list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	list.CanvasSize = UDim2.new()
+	list.Parent = levelSelect
+	local listLayout = Instance.new("UIListLayout")
+	listLayout.Padding = UDim.new(0, 8)
+	listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	listLayout.Parent = list
+	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
+
+	-- End-of-level panel.
+	local panel = Instance.new("Frame")
+	panel.Name = "EndPanel"
+	panel.AnchorPoint = Vector2.new(0.5, 0.5)
+	panel.Position = UDim2.fromScale(0.5, 0.5)
+	panel.Size = UDim2.fromScale(0.8, 0.42)
+	panel.BackgroundColor3 = Colors.panel
+	panel.Visible = false
+	panel.ZIndex = 10
+	panel.Parent = backdrop
+	corner(panel, 0.08)
+	local panelSize = Instance.new("UISizeConstraint")
+	panelSize.MaxSize = Vector2.new(460, 320)
+	panelSize.Parent = panel
+	local panelTitle = label(panel, "Title", "", UDim2.fromScale(0.9, 0.26), UDim2.fromScale(0.05, 0.05))
+	local panelBody = label(panel, "Body", "", UDim2.fromScale(0.84, 0.3), UDim2.fromScale(0.08, 0.34))
+	panelBody.TextWrapped = true
+	local bodySize = Instance.new("UITextSizeConstraint")
+	bodySize.MaxTextSize = 30
+	bodySize.Parent = panelBody
+	local titleSize = Instance.new("UITextSizeConstraint")
+	titleSize.MaxTextSize = 48
+	titleSize.Parent = panelTitle
+	local primary = button(panel, "Primary", "", UDim2.fromScale(0.42, 0.18), UDim2.fromScale(0.05, 0.74))
+	local secondary = button(panel, "Secondary", "", UDim2.fromScale(0.42, 0.18), UDim2.fromScale(0.53, 0.74))
+	-- The title stays the biggest text in the panel.
+	for _, b in { primary, secondary } do
+		local buttonText = Instance.new("UITextSizeConstraint")
+		buttonText.MaxTextSize = 26
+		buttonText.Parent = b
+	end
+	secondary.BackgroundColor3 = Colors.locked
+
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+	return {
+		gui = gui,
+		play = play,
+		levelName = levelName,
+		difficulty = difficulty,
+		movesCount = movesCount,
+		goals = goals,
+		closePlay = closePlay,
+		devOneMove = devOneMove,
+		topBar = topBar,
+		movesBox = movesBox,
+		boardHolder = boardHolder,
+		select = levelSelect,
+		status = status,
+		list = list,
+		closeSelect = closeSelect,
+		panel = panel,
+		panelTitle = panelTitle,
+		panelBody = panelBody,
+		primary = primary,
+		secondary = secondary,
+		panelActions = {},
+	}
+end
+
+-- Layout -----------------------------------------------------------------------
+-- Tall screens get a bar across the top; wide screens (landscape phones, PCs)
+-- get a panel on the left so the board can use the full height. The bar and
+-- the board area are placed in pixels from the screen size; the board sits at
+-- the top of its area, centred across it.
+
+local ROBLOX_TOPBAR = 64 -- clear of Roblox's own buttons (58px)
+local MARGIN = 12
+
+-- Where things sit inside the bar / panel, by scale.
+local INNER = {
+	tall = {
+		levelName = { position = UDim2.fromScale(0.03, 0.08), size = UDim2.fromScale(0.3, 0.4) },
+		difficulty = { position = UDim2.fromScale(0.03, 0.55), size = UDim2.fromScale(0.3, 0.3) },
+		movesBox = { position = UDim2.fromScale(0.42, 0.5), size = UDim2.fromScale(0.16, 0.84) },
+		goals = { position = UDim2.fromScale(0.52, 0.1), size = UDim2.fromScale(0.36, 0.8) },
+		closePlay = { position = UDim2.fromScale(0.9, 0.2), size = UDim2.fromScale(0.08, 0.6) },
+		devOneMove = { position = UDim2.fromScale(0.22, 0.55), size = UDim2.fromScale(0.12, 0.35) },
+	},
+	wide = {
+		levelName = { position = UDim2.fromScale(0, 0.03), size = UDim2.fromScale(1, 0.1) },
+		difficulty = { position = UDim2.fromScale(0, 0.13), size = UDim2.fromScale(1, 0.06) },
+		movesBox = { position = UDim2.fromScale(0.5, 0.33), size = UDim2.fromScale(0.5, 0.2) },
+		goals = { position = UDim2.fromScale(0, 0.47), size = UDim2.fromScale(1, 0.24) },
+		closePlay = { position = UDim2.fromScale(0.25, 0.8), size = UDim2.fromScale(0.5, 0.13) },
+		devOneMove = { position = UDim2.fromScale(0.25, 0.72), size = UDim2.fromScale(0.5, 0.06) },
+	},
+}
+
+local function applyLayout()
+	local screen = ui.gui.AbsoluteSize
+	local w, h = screen.X, screen.Y
+	if w <= 0 or h <= 0 then
+		return -- not measured yet; AbsoluteSize changes again once it is
+	end
+	local mode = if w > h * 1.25 then "wide" else "tall"
+	ui.layout = mode
+
+	local barX, barW, barH, holderX, holderY, holderW, holderH
+	if mode == "wide" then
+		barX = MARGIN
+		barW = math.min(w * 0.28, 340)
+		barH = math.min(h - ROBLOX_TOPBAR - MARGIN, 520)
+		holderX = barX + barW + MARGIN
+		holderY = ROBLOX_TOPBAR -- board top lines up with the panel top
+		holderW = w - holderX - MARGIN
+		holderH = h - holderY - MARGIN
+	else
+		barW = math.min(w * 0.96, 720)
+		barX = (w - barW) / 2
+		barH = math.min(h * 0.12, 110)
+		holderX = w * 0.02
+		holderY = ROBLOX_TOPBAR + barH + 8
+		holderW = w * 0.96
+		holderH = h - holderY - 8
+	end
+
+	ui.topBar.AnchorPoint = Vector2.new(0, 0)
+	ui.topBar.Position = UDim2.fromOffset(barX, ROBLOX_TOPBAR)
+	ui.topBar.Size = UDim2.fromOffset(barW, barH)
+	ui.boardHolder.AnchorPoint = Vector2.new(0, 0)
+	ui.boardHolder.Position = UDim2.fromOffset(holderX, holderY)
+	ui.boardHolder.Size = UDim2.fromOffset(holderW, holderH)
+
+	for key, spec in INNER[mode] do
+		local item = ui[key]
+		if item then -- devOneMove only exists in Studio
+			item.Position = spec.position
+			item.Size = spec.size
+		end
+	end
+end
+
+-- Top bar ----------------------------------------------------------------------
+
+local function goalGlyph(goal): string
+	if goal.kind == "Collect" then
+		return TileStyle.Glyphs[goal.color] or "?"
+	end
+	return TileStyle.GoalGlyphs[goal.kind] or "?"
+end
+
+local function refreshHud()
+	if not current then
+		return
+	end
+	local state = current.game:getState()
+	ui.movesCount.Text = tostring(state.movesLeft)
+	for _, child in ui.goals:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+	for i, goal in state.goals do
+		local box = Instance.new("Frame")
+		box.Name = "Goal" .. i
+		box.LayoutOrder = i
+		box.Size = UDim2.fromScale(0.3, 1)
+		box.BackgroundTransparency = 1
+		box.Parent = ui.goals
+		label(box, "Icon", goalGlyph(goal), UDim2.fromScale(1, 0.6), UDim2.fromScale(0, 0))
+		local left = goal.target - goal.progress
+		local count = label(box, "Count", if left <= 0 then "✅" else tostring(left), UDim2.fromScale(1, 0.4), UDim2.fromScale(0, 0.6))
+		if left <= 0 then
+			count.TextColor3 = Color3.fromRGB(60, 150, 60)
+		end
+	end
+end
+
+-- Panels -----------------------------------------------------------------------
+
+local function showPanel(title: string, body: string, primaryText: string, onPrimary: () -> (), secondaryText: string, onSecondary: () -> ())
+	ui.panelTitle.Text = title
+	ui.panelBody.Text = body
+	ui.primary.Text = primaryText
+	ui.secondary.Text = secondaryText
+	ui.panelActions.primary = onPrimary
+	ui.panelActions.secondary = onSecondary
+	-- Centre on the board (not the screen) when one is showing.
+	local board = current and current.view.frame
+	if board and ui.play.Visible then
+		local origin = ui.panel.Parent.AbsolutePosition
+		ui.panel.Position = UDim2.fromOffset(
+			board.AbsolutePosition.X - origin.X + board.AbsoluteSize.X / 2,
+			board.AbsolutePosition.Y - origin.Y + board.AbsoluteSize.Y / 2
+		)
+	else
+		ui.panel.Position = UDim2.fromScale(0.5, 0.5)
+	end
+	-- Ignore clicks for a moment so a tap meant for the board can't hit a panel button.
+	ui.panelShownAt = os.clock()
+	ui.panel.Visible = true
+end
+
+local PANEL_CLICK_DELAY = 0.5
+
+local function panelReady(): boolean
+	return os.clock() - (ui.panelShownAt or 0) >= PANEL_CLICK_DELAY
+end
+
+local function hidePanel()
+	ui.panel.Visible = false
+end
+
+local showLevelSelect -- forward declaration
+local startLevel
+
+local function rewardText(rewards): string
+	if not rewards then
+		return ""
+	end
+	local parts = {}
+	if rewards.coins and rewards.coins > 0 then
+		table.insert(parts, "+" .. rewards.coins .. " Coins")
+	end
+	if rewards.xp and rewards.xp > 0 then
+		table.insert(parts, "+" .. rewards.xp .. " XP")
+	end
+	local text = table.concat(parts, "   ")
+	if rewards.bonusCoins and rewards.bonusCoins > 0 then
+		text ..= "\n(" .. rewards.bonusCoins .. " bonus Coins from leftover moves)"
+	end
+	return text
+end
+
+local function onLevelEnded()
+	local run = current
+	local status = run.game.status
+	run.view:setEnabled(false)
+	local result = invoke("FinishLevel", run.token, run.moves)
+	if current ~= run then
+		return -- the player left while the server was checking
+	end
+	if status == "Won" then
+		if result.error then
+			showPanel("Hmm, that didn't check out", "The server couldn't confirm this win (" .. tostring(result.error) .. ").", "Try again", function()
+				startLevel(run.levelId)
+			end, "Trail", showLevelSelect)
+			return
+		end
+		local nextLevel = Levels.get(run.levelId + 1)
+		showPanel(
+			"Level complete!",
+			rewardText(result.rewards),
+			if nextLevel then "Next level" else "Trail",
+			function()
+				if nextLevel then
+					startLevel(nextLevel.id)
+				else
+					showLevelSelect()
+				end
+			end,
+			"Trail",
+			showLevelSelect
+		)
+	else
+		-- Paid continues (+5 moves) arrive with P2.
+		local done, total = 0, 0
+		for _, goal in run.game.goals.list do
+			done += math.min(goal.progress, goal.target)
+			total += goal.target
+		end
+		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
+		showPanel("Out of moves", body, "Retry", function()
+			startLevel(run.levelId)
+		end, "Trail", showLevelSelect)
+	end
+end
+
+local function onSwap(x1: number, y1: number, x2: number, y2: number)
+	local run = current
+	if busy or not run or run.game.status ~= "Playing" then
+		return
+	end
+	busy = true
+	task.spawn(function()
+		local ok, phases = run.game:trySwap(x1, y1, x2, y2)
+		if ok then
+			table.insert(run.moves, { x1, y1, x2, y2 })
+			ui.movesCount.Text = tostring(run.game.movesLeft)
+		end
+		run.view:play(phases)
+		if current == run then
+			run.view:sync(run.game)
+			refreshHud()
+		end
+		busy = false
+		if current == run and run.game.status ~= "Playing" then
+			onLevelEnded()
+		end
+	end)
+end
+
+-- Flow -------------------------------------------------------------------------
+
+local function clearRun()
+	if current then
+		current.view:destroy()
+		current = nil
+	end
+	busy = false
+end
+
+startLevel = function(levelId: number)
+	hidePanel()
+	local level = Levels.get(levelId)
+	if not level then
+		return
+	end
+	local run = invoke("StartLevel", levelId)
+	if run.error then
+		showLevelSelect("Couldn't start: " .. tostring(run.error))
+		return
+	end
+	clearRun()
+	local pop = CropPop.Engine.new(level, run.seed)
+	local view = BoardView.new(ui.boardHolder, onSwap)
+	current = { levelId = levelId, token = run.token, game = pop, view = view, moves = {} }
+	view:load(pop)
+	ui.levelName.Text = level.id .. ". " .. level.name
+	ui.difficulty.Text = if level.difficulty == "Normal" then "" else level.difficulty
+	refreshHud()
+	ui.select.Visible = false
+	ui.play.Visible = true
+end
+
+showLevelSelect = function(message: string?)
+	hidePanel()
+	clearRun()
+	ui.play.Visible = false
+	ui.select.Visible = true
+	ui.status.Text = message or ""
+	for _, child in ui.list:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+	local progress = invoke("GetProgress")
+	local highest = progress.highestBeaten or 0
+	for _, level in Levels.List do
+		local unlocked = progress.unlockAll or level.id <= highest + 1
+		local beaten = level.id <= highest
+		local text = string.format("%d  %s%s", level.id, level.name, if level.difficulty ~= "Normal" then "  (" .. level.difficulty .. ")" else "")
+		if beaten then
+			text ..= "  ✅"
+		elseif not unlocked then
+			text ..= "  🔒"
+		end
+		local row = button(ui.list, "Level" .. level.id, text, UDim2.new(1, -10, 0, 52), UDim2.new())
+		row.LayoutOrder = level.id
+		row.TextXAlignment = Enum.TextXAlignment.Left
+		if not unlocked then
+			row.BackgroundColor3 = Colors.locked
+			row.AutoButtonColor = false
+		else
+			row.Activated:Connect(function()
+				startLevel(level.id)
+			end)
+		end
+	end
+end
+
+local function ensureUi()
+	if ui then
+		return
+	end
+	ui = buildUi()
+	applyLayout()
+	ui.gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(applyLayout)
+	if ui.devOneMove then
+		ui.devOneMove.Activated:Connect(function()
+			PuzzleScreen.debugOneMoveLeft()
+		end)
+		-- Same thing from the keyboard: L.
+		UserInputService.InputBegan:Connect(function(input, gameProcessed)
+			if not gameProcessed and input.KeyCode == Enum.KeyCode.L and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugOneMoveLeft()
+			end
+		end)
+	end
+	ui.closePlay.Activated:Connect(function()
+		showLevelSelect()
+	end)
+	ui.closeSelect.Activated:Connect(function()
+		PuzzleScreen.close()
+	end)
+	ui.primary.Activated:Connect(function()
+		if not panelReady() then
+			return
+		end
+		local action = ui.panelActions.primary
+		if action then
+			action()
+		end
+	end)
+	ui.secondary.Activated:Connect(function()
+		if not panelReady() then
+			return
+		end
+		local action = ui.panelActions.secondary
+		if action then
+			action()
+		end
+	end)
+end
+
+-- Public API -------------------------------------------------------------------
+
+function PuzzleScreen.open(levelId: number?)
+	ensureUi()
+	ui.gui.Enabled = true
+	if levelId then
+		startLevel(levelId)
+	else
+		showLevelSelect()
+	end
+end
+
+function PuzzleScreen.close()
+	if not ui then
+		return
+	end
+	clearRun()
+	hidePanel()
+	ui.gui.Enabled = false
+end
+
+function PuzzleScreen.isOpen(): boolean
+	return ui ~= nil and ui.gui.Enabled
+end
+
+-- Studio only: leave the current level on its last move. The next swap ends
+-- it like a real loss (unless that swap wins), and the server's replay agrees
+-- because an unfinished run is simply not a win.
+function PuzzleScreen.debugOneMoveLeft()
+	if not RunService:IsStudio() or not current or current.game.status ~= "Playing" or busy then
+		return
+	end
+	current.game.movesLeft = 1
+	refreshHud()
+end
+
+-- The level being played, for debugging and tests.
+function PuzzleScreen.currentRun()
+	return current
+end
+
+
+return PuzzleScreen

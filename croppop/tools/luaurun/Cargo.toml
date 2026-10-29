@@ -1,0 +1,9 @@
+[package]
+name = "luaurun"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Tiny Luau host used to run the Crop Pop tests outside Roblox Studio.
+[dependencies]
+mlua = { version = "0.12.2", features = ["luau", "vendored"] }
