@@ -19,6 +19,7 @@ local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Recipes = require("../src/shared/Config/Recipes")
 local Rng = require("../src/shared/Rng")
+local Speedup = require("../src/shared/Speedup")
 local Timer = require("../src/shared/Timer")
 
 local passed, failed = 0, 0
@@ -291,6 +292,36 @@ test("construction blocks a pen until it's done", function()
 	pen.constructionReadyAt = 100
 	ok(not Pen.isOperational(pen, 50), "building")
 	ok(Pen.isOperational(pen, 100), "done")
+end)
+
+---------------------------------------------------------------------------------------------
+-- Gem speed-ups (Township baseline §10)
+---------------------------------------------------------------------------------------------
+
+test("speed-up prices follow the Township tables", function()
+	eq(Speedup.production(0), 0, "done is free")
+	eq(Speedup.production(1), 1, "a second left")
+	eq(Speedup.production(4 * 60 + 59), 1, "under 5 min")
+	eq(Speedup.production(5 * 60), 2, "5 min")
+	eq(Speedup.production(2 * 3600 - 1), 9, "under 2 h")
+	eq(Speedup.production(20 * 3600), 19, "past the table")
+	eq(Speedup.building(40), 1, "Feed Mill build")
+	eq(Speedup.building(3600), 5, "Dairy build (1 h)")
+	eq(Speedup.building(6 * 3600), 20, "Textile Mill build (6 h)")
+	eq(Speedup.orderWait(29 * 60), 4, "order wait")
+end)
+
+test("queue slots cost 8 Gems and up, to 7 slots", function()
+	eq(Speedup.nextSlotCost(3, 3), 8, "first extra (Bakery)")
+	eq(Speedup.nextSlotCost(3, 6), 20, "fourth extra")
+	eq(Speedup.nextSlotCost(3, 7), nil, "max")
+	eq(Speedup.nextSlotCost(2, 6), 24, "fifth extra (Sugar Mill)")
+end)
+
+test("a pen's speed-up prices each producing animal", function()
+	local pen = { animals = { { readyAt = 100 + 600 }, { readyAt = 100 + 3600 }, {}, { readyAt = 50 } } }
+	-- 10 min -> 2, 1 h -> 6, hungry and ready ones are free
+	eq(Speedup.pen(pen, 100), 8, "sum")
 end)
 
 ---------------------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
 local OrderGen = require(Shared.OrderGen)
+local Speedup = require(Shared.Speedup)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -105,9 +106,25 @@ function OrderService.discard(player: Player, slotIndex: any): (boolean, string?
 	return true
 end
 
+-- Gems bring a new card now instead of waiting out the refresh.
+function OrderService.skipWait(player: Player, slotIndex: any): (boolean, string?)
+	local slot = slotFor(player, slotIndex)
+	local now = Clock.now()
+	if slot == nil or slot.order ~= nil or (slot.refreshAt or 0) <= now then
+		return false
+	end
+	if not EconomyService.spend(player, "Gems", Speedup.orderWait(slot.refreshAt - now), "speedup_order") then
+		return false, "Not enough Gems"
+	end
+	slot.refreshAt = now
+	OrderService.refreshBoard(player)
+	return true
+end
+
 function OrderService.init()
 	NetService.on(Net.Order_Fulfill, 2, 3, OrderService.fulfill)
 	NetService.on(Net.Order_Discard, 1, 2, OrderService.discard)
+	NetService.on(Net.Order_SkipWait, 1, 2, OrderService.skipWait)
 
 	-- Refill cards whose wait ended, and add slots after a level up.
 	task.spawn(function()

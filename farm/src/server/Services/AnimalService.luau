@@ -10,6 +10,7 @@ local Balance = require(Shared.Config.Balance)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Pen = require(Shared.Pen)
+local Speedup = require(Shared.Speedup)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -132,11 +133,41 @@ function AnimalService.collect(player: Player, penId: any): (boolean, string?)
 	return true
 end
 
+-- Gems finish construction, or else every animal that's producing (each priced on its own).
+function AnimalService.speedUp(player: Player, penId: any): (boolean, string?)
+	local def, pen = penFor(player, penId)
+	if def == nil or pen == nil or not pen.built then
+		return false
+	end
+	local now = Clock.now()
+	local building = not Pen.isOperational(pen, now)
+	local gems = if building then Speedup.building(pen.constructionReadyAt - now) else Speedup.pen(pen, now)
+	if gems <= 0 then
+		return false
+	end
+	if not EconomyService.spend(player, "Gems", gems, "speedup_" .. def.id) then
+		return false, "Not enough Gems"
+	end
+	if building then
+		pen.constructionReadyAt = now
+	else
+		for _, animal in pen.animals do
+			if animal.readyAt ~= nil and animal.readyAt > now then
+				animal.readyAt = now
+			end
+		end
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	return true
+end
+
 function AnimalService.init()
 	NetService.on(Net.Pen_Build, 1, 2, AnimalService.build)
 	NetService.on(Net.Pen_BuyAnimal, 2, 3, AnimalService.buyAnimal)
 	NetService.on(Net.Pen_Feed, 8, 12, AnimalService.feed)
 	NetService.on(Net.Pen_Collect, 8, 12, AnimalService.collect)
+	NetService.on(Net.Pen_SpeedUp, 2, 3, AnimalService.speedUp)
 end
 
 return AnimalService

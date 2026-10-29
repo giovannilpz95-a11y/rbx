@@ -161,14 +161,7 @@ local function act(part: BasePart)
 		elseif status == "empty" then
 			Panels.open("Seeds", fieldId)
 		elseif status == "growing" then
-			local field = (ClientStore.state :: any).fields[fieldId]
-			Hud.toast(
-				string.format(
-					"%s: %s left",
-					Crops[field.crop].displayName,
-					Timer.format(Timer.remaining(field.readyAt, ClientStore.now()))
-				)
-			)
+			Panels.open("Field", fieldId) -- time left, and a Gem speed-up
 		end
 	elseif kind == "Pen" then
 		usePen(part:GetAttribute("PenId") :: string, true)

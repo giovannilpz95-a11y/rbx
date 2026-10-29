@@ -18,6 +18,7 @@ A walkable greybox of the farm, built from plain blocks, for testing the walk-fi
   - Animals: the Cow Barn comes with 3 Cows at level 1 (plus 2 bags of Cow Feed to start), Chicken Coop at 5, Sheep Fold at 10. Each pen comes with 3 animals and you can buy up to 3 more. One bag of feed feeds 3 animals.
   - Factories: Bakery (L2), Feed Mill (L3), Dairy (L4), Sugar Mill (L7), Textile Mill (L9), with 13 recipes: Bread, Cookies, Bagel; Cow, Chicken and Sheep Feed (3 bags a batch); Cream, Cheese, Butter; Sugar; Cotton Fabric, Yarn, Shirt.
   - Order cards only ask for things your farm can make right now (and never feed).
+- **Gem speed-ups** (Township baseline prices, two taps to confirm): finish a growing field (tap it), a factory job or construction, every producing animal in a pen, or an Order Board wait; buy extra factory queue slots (8 Gems and up, to 7 slots).
 - **Paperwork from anywhere:** Orders (O), Barn (B) and Buildings (F) panels from the HUD. Buildings lists every factory and pen with its status.
 - **Saving:** one profile per player in a DataStore, with a session lock, autosave every 90 s, save on leave and on shutdown, schema version and migrations.
 - **Server decides everything:** the client only sends intents (plant this field, deliver card 2). Every remote is rate-limited and checked, hands-on actions check that your avatar is near, and all Coins, Gems and XP go through one service.
@@ -64,4 +65,4 @@ CI runs both and a Rojo build on every pull request that touches `farm/`.
 
 ## Not in the greybox yet
 
-Overview camera and the Errand queue, Gem speed-ups, extra queue slots, tool drops and tool orders, pen upgrades, placing and moving buildings, new fields from Population, Houses and Population, visiting and Helping Hands, the tutorial, and the Train Station. Selene linting and `luau-lsp` strict type checks should be added to CI next.
+Overview camera and the Errand queue, tool drops and tool orders, pen upgrades, placing and moving buildings, new fields from Population, Houses and Population, visiting and Helping Hands, the tutorial, and the Train Station. Selene linting and `luau-lsp` strict type checks should be added to CI next.
