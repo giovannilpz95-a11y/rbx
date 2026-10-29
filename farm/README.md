@@ -45,6 +45,7 @@ The project maps to:
 | Folder | Goes to |
 |---|---|
 | `src/shared` | `ReplicatedStorage.FarmShared` |
+| `../uitheme/src` | `ReplicatedStorage.UiTheme` (shared UI look, see Design/25 UI Style Guide) |
 | `src/server` | `ServerScriptService.FarmServer` (`Main` is the Script) |
 | `src/client` | `StarterPlayer.StarterPlayerScripts.FarmClient` (`Main` is the LocalScript) |
 
