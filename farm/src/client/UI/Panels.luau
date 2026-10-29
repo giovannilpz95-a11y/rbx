@@ -1,6 +1,7 @@
 --!strict
 -- One panel open at a time: Orders, Barn, Buildings (every factory and pen), one factory,
--- one pen, one growing field, the seed picker and (Studio only) Debug.
+-- one pen, one growing field, the Town (Houses, Community Buildings, materials), the seed
+-- picker and (Studio only) Debug.
 -- Anything that spends Gems takes two taps: the first asks, the second spends.
 -- Panels re-render on every state change and once a second for countdowns.
 
@@ -17,6 +18,8 @@ local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
+local Town = require(Shared.Config.Town)
+local TownRules = require(Shared.TownRules)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
@@ -108,6 +111,18 @@ local function gemButton(key: string, text: string, price: number, fire: () -> (
 		if armedNow then Color3.fromRGB(220, 150, 40) else Ui.colors.gems
 	)
 	return button
+end
+
+-- Every key of a config table, in its `order`.
+local function sortedKeys(defs: { [string]: { order: number } }): { string }
+	local ids = {}
+	for id in defs do
+		table.insert(ids, id)
+	end
+	table.sort(ids, function(a, b)
+		return defs[a].order < defs[b].order
+	end)
+	return ids
 end
 
 local function sortedIds(defs: { [string]: { order: number } }, enabled: { string }): { string }
@@ -222,8 +237,15 @@ local function renderBarn(state: { [string]: any })
 		local qty = state.inventory[id]
 		local item = Items[id]
 		local line = row(42, i)
+		if item == nil or item.sellPrice <= 0 then
+			Ui.label(
+				string.format("%s  x%d   (for building)", itemName(id), qty),
+				{ Size = UDim2.new(1, 0, 1, 0), Parent = line }
+			)
+			continue
+		end
 		Ui.label(
-			string.format("%s  x%d   (sells for %d each)", itemName(id), qty, if item then item.sellPrice else 0),
+			string.format("%s  x%d   (sells for %d each)", itemName(id), qty, item.sellPrice),
 			{ Size = UDim2.new(1, -150, 1, 0), Parent = line }
 		)
 		Ui.button("Sell 1", function()
@@ -260,11 +282,21 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		if state.level < def.unlockLevel then
 			Ui.label(string.format("Unlocks at level %d.", def.unlockLevel), { Parent = line })
 		else
-			Ui.label(string.format("Build it for %d Coins (+%d XP).", def.buildCost, def.xp), { Parent = line })
+			local population = TownRules.population(state, now)
+			Ui.label(
+				string.format(
+					"Build it for %d Coins (+%d XP). Needs Population %d (you have %d).",
+					def.buildCost,
+					def.xp,
+					def.population,
+					population
+				),
+				{ TextWrapped = true, Size = UDim2.new(1, 0, 0, 26), TextSize = 14, Parent = line }
+			)
 			local build = Ui.button("Build", function()
 				Remotes.fire("Factory_Build", factoryId)
 			end, { Position = UDim2.fromOffset(0, 30), Parent = line })
-			Ui.setEnabled(build, state.currencies.Coins >= def.buildCost)
+			Ui.setEnabled(build, state.currencies.Coins >= def.buildCost and population >= def.population)
 		end
 		return
 	end
@@ -412,6 +444,10 @@ local function factoryStatus(state: { [string]: any }, factoryId: string): strin
 	elseif not preview.built then
 		return if state.level < def.unlockLevel
 			then string.format("unlocks at level %d", def.unlockLevel)
+			elseif TownRules.population(state, now) < def.population then string.format(
+				"needs Population %d",
+				def.population
+			)
 			else string.format("build for %d Coins", def.buildCost)
 	elseif preview.underConstruction then
 		return "building, " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now)) .. " left"
@@ -617,6 +653,179 @@ local function renderPen(state: { [string]: any }, penId: string)
 	end
 end
 
+local function renderTown(state: { [string]: any })
+	local now = ClientStore.now()
+	local population = TownRules.population(state, now)
+	local pending = TownRules.pending(state, now)
+	local cap = TownRules.cap(state, now)
+	titleLabel.Text = string.format("Town   Population %d / %d", population, cap)
+	local order = 1
+	local function heading(text: string)
+		Ui.label(text, { Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body })
+		order += 1
+	end
+	local function line(text: string, sub: string?): Frame
+		local card = row(if sub then 46 else 36, order)
+		order += 1
+		Ui.label(text, { Size = UDim2.new(1, -170, 0, 22), TextSize = 15, Parent = card })
+		if sub then
+			Ui.label(sub, {
+				Position = UDim2.fromOffset(0, 20),
+				Size = UDim2.new(1, -170, 0, 18),
+				TextColor3 = Ui.colors.muted,
+				TextSize = 13,
+				Parent = card,
+			})
+		end
+		return card
+	end
+	local function rightButton(card: Frame, text: string, enabled: boolean, onClick: () -> ())
+		local button = Ui.button(text, onClick, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(80, 30),
+			Parent = card,
+		})
+		Ui.setEnabled(button, enabled)
+	end
+	if pending > 0 then
+		Ui.label(string.format("+%d more when the Houses being built are done.", pending), {
+			TextColor3 = Ui.colors.muted,
+			TextSize = 14,
+			LayoutOrder = order,
+			Parent = body,
+		})
+		order += 1
+	end
+
+	-- Under construction (with a Gem finish)
+	local building = {}
+	for _, house in state.town.houses do
+		if not TownRules.isDone(house, now) then
+			table.insert(
+				building,
+				{ name = Town.houses[house.type].displayName, readyAt = house.readyAt, kind = "House", key = house.lot }
+			)
+		end
+	end
+	for id, entry in state.town.community do
+		if not TownRules.isDone(entry, now) then
+			table.insert(
+				building,
+				{ name = Town.community[id].displayName, readyAt = entry.readyAt, kind = "Community", key = id }
+			)
+		end
+	end
+	if #building > 0 then
+		heading("Building now")
+		for _, item in building do
+			local left = Timer.remaining(item.readyAt, now)
+			local card = line(item.name .. "   " .. Timer.format(left) .. " left")
+			gemButton("town:" .. tostring(item.key), "Finish", Speedup.building(left), function()
+				Remotes.fire("Town_SpeedUp", item.kind, item.key)
+			end, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(160, 30),
+				Parent = card,
+			})
+		end
+	end
+
+	-- Houses
+	heading("Houses (raise Population)")
+	for _, id in sortedKeys(Town.houses) do
+		local def = Town.houses[id]
+		local built = TownRules.copiesBuilt(state, id)
+		local allowed = TownRules.copiesAllowed(id, state.level)
+		local nextLevel = TownRules.nextCopyLevel(state, id)
+		if built == 0 and allowed == 0 and nextLevel and nextLevel > state.level + 2 then
+			continue -- keep the list short: only what's close
+		end
+		local ok, reason = TownRules.canBuildHouse(state, id, now)
+		local card = line(
+			string.format(
+				"%s   +%d   %d Coins   %s",
+				def.displayName,
+				def.population,
+				def.coinCost,
+				Timer.format(def.buildSeconds * (state.timeScale or 1))
+			),
+			string.format("%d built%s", built, if ok then "" elseif reason then "  ·  " .. reason else "")
+		)
+		rightButton(card, "Build", ok and state.currencies.Coins >= def.coinCost, function()
+			Remotes.fire("Town_BuildHouse", id)
+		end)
+	end
+
+	-- Community Buildings
+	heading("Community Buildings (raise the Cap)")
+	for _, id in sortedKeys(Town.community) do
+		local def = Town.community[id]
+		local entry = state.town.community[id]
+		if entry == nil and def.unlockLevel > state.level + 2 then
+			continue
+		end
+		local parts = {}
+		local enough = true
+		for _, material in sortedKeys(Town.materials) do
+			local need = def.materials[material]
+			if need then
+				local have = ClientStore.itemCount(material)
+				enough = enough and have >= need
+				table.insert(
+					parts,
+					string.format("%s %d/%d", Town.materials[material].displayName, math.min(have, need), need)
+				)
+			end
+		end
+		local status = if entry == nil
+			then (if state.level < def.unlockLevel then string.format("Lv %d   ", def.unlockLevel) else "") .. table.concat(
+				parts,
+				"  "
+			)
+			elseif TownRules.isDone(entry, now) then "Built"
+			else "Building"
+		local card = line(
+			string.format(
+				"%s   Cap +%d   %d Coins   %s",
+				def.displayName,
+				def.capBonus,
+				def.coinCost,
+				Timer.format(def.buildSeconds * (state.timeScale or 1))
+			),
+			status
+		)
+		if entry == nil then
+			rightButton(
+				card,
+				"Build",
+				state.level >= def.unlockLevel and enough and state.currencies.Coins >= def.coinCost,
+				function()
+					Remotes.fire("Town_BuildCommunity", id)
+				end
+			)
+		end
+	end
+
+	-- Building materials
+	heading("Building materials")
+	for _, material in sortedKeys(Town.materials) do
+		local card = line(
+			string.format("%s   x%d", Town.materials[material].displayName, ClientStore.itemCount(material)),
+			"From harvests and orders (level 5+)"
+		)
+		gemButton("material:" .. material, "Buy 1", Town.materialGemPrice, function()
+			Remotes.fire("Town_BuyMaterial", material)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = card,
+		})
+	end
+end
+
 local function renderField(state: { [string]: any }, fieldId: string)
 	local field = state.fields[fieldId]
 	local now = ClientStore.now()
@@ -752,6 +961,8 @@ local function render()
 		renderPen(state, currentArg)
 	elseif Factories[current] then
 		renderFactory(state, current)
+	elseif current == "Town" then
+		renderTown(state)
 	elseif current == "Field" and currentArg then
 		renderField(state, currentArg)
 	elseif current == "Seeds" then

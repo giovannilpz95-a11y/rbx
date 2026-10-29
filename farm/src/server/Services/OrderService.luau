@@ -16,6 +16,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local OrderService = {}
@@ -93,6 +94,7 @@ function OrderService.fulfill(player: Player, slotIndex: any): (boolean, string?
 	EconomyService.add(player, "XP", order.rewardXP, "order")
 	NetService.popup(player, { kind = "Order", coins = order.rewardCoins, xp = order.rewardXP })
 	PlotService.driveTruck(player, Clock.duration(OrderConfig.truckReturnSeconds))
+	TownService.onOrderDelivered(player)
 	return true
 end
 
