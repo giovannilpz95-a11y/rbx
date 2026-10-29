@@ -119,6 +119,13 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		table.insert(cues, { sound = "Unlock" })
 	end
 
+	-- The tutorial moving to a new step (tutorial.step: 0 = off).
+	local stepBefore = amount(prev.tutorial, "step")
+	local step = amount(nextState.tutorial, "step")
+	if step ~= 0 and step ~= stepBefore then
+		table.insert(cues, { sound = "Notify" })
+	end
+
 	-- Currencies. Selling from the Barn: items went down and Coins went up.
 	local coinsUp = amount(nextState.currencies, "Coins") > amount(prev.currencies, "Coins")
 	local gemsUp = amount(nextState.currencies, "Gems") > amount(prev.currencies, "Gems")
@@ -180,6 +187,12 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 			buildDone = true
 		end
 	end
+	local landOpened = false
+	for _, plot in state.land or {} do
+		if type(plot) == "table" and crossed(plot.readyAt, fromTime, toTime) then
+			landOpened = true -- an expansion finished clearing
+		end
+	end
 	local town = state.town
 	if type(town) == "table" then
 		for _, house in town.houses or {} do
@@ -199,18 +212,22 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 	if jobDone then
 		table.insert(cues, { sound = "Ready" })
 	end
+	if landOpened then
+		table.insert(cues, { sound = "Unlock" })
+	end
 	return cues
 end
 
--- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order" | "Drop", ... }).
+-- Reward_Popup payloads from the farm server
+-- ({ kind = "LevelUp" | "Order" | "Drop" | "Field" | "BarnUpgrade", ... }).
 function FarmCues.popup(payload: { [string]: any }?): { Cue }
 	local kind = type(payload) == "table" and payload.kind
 	if kind == "LevelUp" then
 		return { { sound = "LevelUp" } }
 	elseif kind == "Order" then
 		return { { sound = "OrderComplete" }, { sound = "Coin", delay = 0.35 } }
-	elseif kind == "Drop" then
-		return { { sound = "Unlock" } } -- a tool dropped (Shovel, Axe, Saw...)
+	elseif kind == "Drop" or kind == "Field" or kind == "BarnUpgrade" then
+		return { { sound = "Unlock" } } -- a tool dropped, a new field placed, a bigger Barn
 	end
 	return {}
 end

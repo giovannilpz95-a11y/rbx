@@ -137,8 +137,22 @@ test("town: a new house or community building starts a build; finishing chimes",
 	expect.eq(names(FarmCues.timed(pen, 249, 251)), "BuildDone")
 end)
 
-test("a tool drop sparkles", function()
+test("a tool drop, a new field and a Barn upgrade sparkle", function()
 	expect.eq(names(FarmCues.popup({ kind = "Drop", item = "Shovel" })), "Unlock")
+	expect.eq(names(FarmCues.popup({ kind = "Field", field = "F7", xp = 5 })), "Unlock")
+	expect.eq(names(FarmCues.popup({ kind = "BarnUpgrade", capacity = 75 })), "Unlock")
+end)
+
+test("the tutorial chimes on each new step, not when it ends", function()
+	expect.eq(names(FarmCues.diff(state({ tutorial = { step = 0 } }), state({ tutorial = { step = 1 } }))), "Notify")
+	expect.eq(names(FarmCues.diff(state({ tutorial = { step = 1 } }), state({ tutorial = { step = 1 } }))), "")
+	expect.eq(names(FarmCues.diff(state({ tutorial = { step = 4 } }), state({ tutorial = { step = 0 } }))), "")
+end)
+
+test("land that finishes clearing opens with a sparkle", function()
+	local s = state({ land = { {}, { readyAt = 500 } } })
+	expect.eq(names(FarmCues.timed(s, 499, 501)), "Unlock")
+	expect.eq(names(FarmCues.timed(s, 501, 600)), "")
 end)
 
 test("missing blocks in a snapshot don't break it (newer farm builds add more)", function()
