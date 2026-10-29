@@ -614,26 +614,44 @@ local function heartsText(): string
 	return text
 end
 
--- Spends above GEM_CONFIRM_OVER ask "Spend X Gems?" first and go through on a
--- second tap of the same thing. Returns true when it's OK to buy now.
+-- Most Gems the player can have after a charge failed for lack of them, when
+-- the farm doesn't share the balance. Kept across progress updates; cleared
+-- by a fresh look (stillShort) or a successful buy.
+local shortBelow: number? = nil
+
 -- False only when we know the player can't pay: the farm's Gem balance (if
--- it shares one) or a charge that just failed for lack of Gems.
+-- it shares one) or a charge that failed for lack of Gems.
 local function canAfford(gems: number): boolean
 	local have = progress and progress.gems
-	return type(have) ~= "number" or have >= gems
+	if type(have) == "number" then
+		return have >= gems
+	end
+	return shortBelow == nil or gems <= shortBelow
 end
 
--- A charge failed with "not enough Gems": remember they have less than that.
 local function noteShort(gems: number, err: any)
-	if err == "not enough Gems" and progress then
-		progress.gems = math.min(progress.gems or math.huge, gems - 1)
+	if err == "not enough Gems" then
+		shortBelow = math.min(shortBelow or math.huge, gems - 1)
 	end
+end
+
+-- For a tap on a greyed "Not enough" offer: take a fresh look (they may have
+-- bought Gems since) and say whether they still can't pay.
+local function stillShort(gems: number): boolean
+	if canAfford(gems) then
+		return false
+	end
+	shortBelow = nil
+	fetchProgress()
+	return not canAfford(gems)
 end
 
 local function notEnoughText(gems: number): string
 	return string.format("Not enough 💎 (this costs %d).", gems)
 end
 
+-- Spends above GEM_CONFIRM_OVER ask "Spend X Gems?" first and go through on a
+-- second tap of the same thing. Returns true when it's OK to buy now.
 local function askToSpend(key: string, gems: number): boolean
 	if gems <= GEM_CONFIRM_OVER or ui.pendingSpend == key then
 		ui.pendingSpend = nil
@@ -649,8 +667,9 @@ local renderTrail -- forward declaration
 
 local function buyHearts(packIndex: number, b: TextButton)
 	local pack = Hearts.Packs[packIndex]
-	if not canAfford(pack.gems) then
+	if stillShort(pack.gems) then
 		ui.status.Text = notEnoughText(pack.gems)
+		renderTrail()
 		return
 	end
 	if not askToSpend("Hearts" .. packIndex, pack.gems) then
@@ -755,7 +774,8 @@ local function startHeartsTicker()
 			return
 		end
 		local hearts = progress and progress.hearts
-		local nextIn = hearts and (since(hearts.secondsToNext) or since(hearts.unlimitedSeconds))
+		local unlimited = hearts and (hearts.unlimitedSeconds or 0) > 0 and hearts.unlimitedSeconds or nil
+		local nextIn = hearts and (since(hearts.secondsToNext) or since(unlimited))
 		if nextIn and nextIn <= 0 then
 			fetchProgress()
 			renderTrail()
@@ -804,7 +824,7 @@ local function onPreBooster(kind: string)
 		ui.pendingSpend = nil
 	elseif progress and progress.canBuy then
 		local gems = Boosters.Info[kind].gems
-		if not canAfford(gems) then
+		if stillShort(gems) then
 			ui.preBody.Text = notEnoughText(gems)
 		elseif askToSpend(kind, gems) then
 			local result = invoke("BuyBooster", kind)
@@ -961,7 +981,7 @@ offerContinue = function(run)
 	if not canAfford(step.gems) then
 		-- Tapping the greyed button checks the balance again (Gems bought meanwhile).
 		showPanel("Out of moves", body .. "\n" .. notEnoughText(step.gems), "Not enough 💎", function()
-			fetchProgress()
+			stillShort(step.gems)
 			offerContinue(run)
 		end, "Give up", function()
 			finishRun(run)
@@ -1074,7 +1094,7 @@ local function onBooster(kind: string)
 			refreshBoosters()
 			return
 		end
-		if not canAfford(info.gems) then
+		if stillShort(info.gems) then
 			run.hint = "No " .. info.name .. " left. " .. notEnoughText(info.gems)
 			refreshBoosters()
 			return

@@ -27,6 +27,7 @@ end
 local mockRequire, runScript = Harness.makeRequire(mockEnv)
 
 local Matcher = CropPop.Matcher
+local TileStyleColors = mockRequire(game.StarterPlayerScripts.CropPopClient.TileStyle).Board
 
 -- Server first: it creates the remotes the client waits for.
 local wins = {}
@@ -538,6 +539,32 @@ test("the Studio Dev: 0 hearts button empties hearts and shows the refill", func
 	select.DevNoHearts.Activated:Fire()
 	truthy(string.find(select.Hearts.Text, "❤️ 0/5", 1, true), select.Hearts.Text)
 	truthy(select.List.GetHearts.Pack1, "refill offered")
+	-- No Gem hook here, so the charge fails: the button greys out after the second tap.
+	select.List.GetHearts.Pack1.Activated:Fire()
+	eq(select.List.GetHearts.Pack1.Text, "Spend 36 💎?")
+	select.List.GetHearts.Pack1.Activated:Fire()
+	truthy(string.find(select.Status.Text, "costs 36", 1, true), select.Status.Text)
+	eq(select.List.GetHearts.Pack1.BackgroundColor3, TileStyleColors.locked, "greyed after a failed charge")
+	-- A tap on the greyed button looks again; with no balance to go on, it offers the confirm again.
+	select.List.GetHearts.Pack1.Activated:Fire()
+	eq(select.List.GetHearts.Pack1.Text, "Spend 36 💎?")
+end)
+
+test("the hearts countdown doesn't ask the server every second when hearts are full", function()
+	refillHearts()
+	PuzzleScreen.open()
+	local calls = 0
+	local remote = services.ReplicatedStorage.CropPopRemotes.GetProgress
+	local handler = remote.OnServerInvoke
+	remote.OnServerInvoke = function(...)
+		calls += 1
+		return handler(...)
+	end
+	for _ = 1, 3 do
+		Mock.runDelayed()
+	end
+	remote.OnServerInvoke = handler
+	eq(calls, 0)
 end)
 
 test("closing hides the screen", function()
