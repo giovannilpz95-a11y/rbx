@@ -1,0 +1,34 @@
+{
+  "name": "FarmGreybox",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "FarmShared": {
+        "$path": "src/shared"
+      }
+    },
+    "ServerScriptService": {
+      "FarmServer": {
+        "$path": "src/server"
+      }
+    },
+    "StarterPlayer": {
+      "$properties": {
+        "CameraMinZoomDistance": 10,
+        "CameraMaxZoomDistance": 45,
+        "CharacterWalkSpeed": 20,
+        "EnableMouseLockOption": false
+      },
+      "StarterPlayerScripts": {
+        "FarmClient": {
+          "$path": "src/client"
+        }
+      }
+    },
+    "Workspace": {
+      "$properties": {
+        "StreamingEnabled": false
+      }
+    }
+  }
+}
