@@ -25,6 +25,9 @@ local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
 local BoardView = require(script.Parent.BoardView)
 local TileStyle = require(script.Parent.TileStyle)
 
+local Kit = TileStyle.Theme.Kit
+local Motion = TileStyle.Theme.Motion
+
 local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
@@ -104,6 +107,8 @@ local function button(parent: Instance, name: string, text: string, size: UDim2,
 	padding.PaddingLeft = UDim.new(0, 12)
 	padding.PaddingRight = UDim.new(0, 12)
 	padding.Parent = b
+	-- The shared chunky look (Design/25 UI Style Guide); the button keeps its API.
+	Kit.skinButton(b)
 	return b
 end
 
@@ -142,6 +147,7 @@ local function buildUi()
 	backdrop.BackgroundColor3 = Colors.backdrop
 	backdrop.BorderSizePixel = 0
 	backdrop.Parent = gui
+	Kit.gloss(0.82).Parent = backdrop
 
 	-- Play area: top bar + board.
 	local play = Instance.new("Frame")
@@ -157,6 +163,7 @@ local function buildUi()
 	topBar.BackgroundColor3 = Colors.panel
 	topBar.Parent = play
 	corner(topBar, 0.2)
+	Kit.skinPanel(topBar)
 	local barPadding = Instance.new("UIPadding")
 	barPadding.PaddingLeft = UDim.new(0, 14)
 	barPadding.PaddingRight = UDim.new(0, 14)
@@ -171,7 +178,7 @@ local function buildUi()
 	nameSize.Parent = levelName
 	local difficulty = label(topBar, "Difficulty", "", UDim2.new(), UDim2.new())
 	difficulty.TextXAlignment = Enum.TextXAlignment.Left
-	difficulty.TextColor3 = Colors.accent
+	difficulty.TextColor3 = Colors.accentText
 
 	local movesBox = Instance.new("Frame")
 	movesBox.Name = "Moves"
@@ -220,13 +227,14 @@ local function buildUi()
 	levelSelect.BackgroundColor3 = Colors.panel
 	levelSelect.Parent = backdrop
 	corner(levelSelect, 0.06)
+	Kit.skinPanel(levelSelect)
 	local selectSize = Instance.new("UISizeConstraint")
 	selectSize.MaxSize = Vector2.new(520, 640)
 	selectSize.Parent = levelSelect
 	label(levelSelect, "Title", "Crop Pop Trail", UDim2.fromScale(0.8, 0.1), UDim2.fromScale(0.1, 0.03))
 	local heartsLine = label(levelSelect, "Hearts", "", UDim2.fromScale(0.9, 0.06), UDim2.fromScale(0.05, 0.13))
 	local status = label(levelSelect, "Status", "", UDim2.fromScale(0.9, 0.045), UDim2.fromScale(0.05, 0.195))
-	status.TextColor3 = Colors.accent
+	status.TextColor3 = Colors.accentText
 	status.TextWrapped = true
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "List"
@@ -263,6 +271,7 @@ local function buildUi()
 	panel.ZIndex = 10
 	panel.Parent = backdrop
 	corner(panel, 0.08)
+	Kit.skinPanel(panel)
 	local panelSize = Instance.new("UISizeConstraint")
 	panelSize.MaxSize = Vector2.new(460, 320)
 	panelSize.Parent = panel
@@ -321,6 +330,7 @@ local function buildUi()
 	hint.Visible = false
 	hint.ZIndex = 5
 	corner(hint, 0.2)
+	Kit.skinPanel(hint)
 	local hintSize = Instance.new("UITextSizeConstraint")
 	hintSize.MaxTextSize = 28
 	hintSize.Parent = hint
@@ -342,6 +352,7 @@ local function buildUi()
 	preLevel.ZIndex = 10
 	preLevel.Parent = backdrop
 	corner(preLevel, 0.06)
+	Kit.skinPanel(preLevel)
 	local preSize = Instance.new("UISizeConstraint")
 	preSize.MaxSize = Vector2.new(460, 440)
 	preSize.Parent = preLevel
@@ -556,6 +567,7 @@ local function showPanel(title: string, body: string, primaryText: string, onPri
 	end
 	-- Ignore clicks for a moment so a tap meant for the board can't hit a panel button.
 	ui.panelShownAt = os.clock()
+	Motion.popIn(ui.panel)
 	ui.panel.Visible = true
 end
 
@@ -883,6 +895,7 @@ showPreLevel = function(levelId: number)
 	ui.play.Visible = false
 	ui.select.Visible = false
 	renderPreLevel()
+	Motion.popIn(ui.preLevel)
 	ui.preLevel.Visible = true
 end
 

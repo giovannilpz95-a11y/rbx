@@ -245,12 +245,13 @@ function Kit.card(props: { [string]: any }?): Frame
 	return card
 end
 
--- Gives an existing Frame the window look: cream body, honey-brown outline, soft gloss.
-function Kit.skinPanel(frame: Frame)
+-- Gives an existing Frame (or a TextLabel used as a box) the window look: cream body,
+-- honey-brown outline, and a soft gloss on Frames (a gradient would tint a label's text).
+function Kit.skinPanel(frame: GuiObject)
 	frame.BackgroundColor3 = Palette.panel
 	frame.BorderSizePixel = 0
 	Kit.stroke(Palette.edge, 3, 0, true).Parent = frame
-	if childOfClass(frame, "UIGradient") == nil then
+	if frame:IsA("Frame") and childOfClass(frame, "UIGradient") == nil then
 		Kit.gloss(0.96).Parent = frame
 	end
 end

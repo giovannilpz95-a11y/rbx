@@ -149,6 +149,8 @@ local EVENTS = {
 	InputEnded = true,
 	InputChanged = true,
 	Activated = true,
+	MouseEnter = true,
+	MouseLeave = true,
 	FocusLost = true,
 	Event = true,
 	PlayerRemoving = true,
@@ -425,6 +427,11 @@ function Mock.environment(tree)
 		Vector2 = Vector2,
 		Vector3 = Vector3,
 		Color3 = Color3,
+		ColorSequence = {
+			new = function(a, b)
+				return { Keypoints = { a, b } }
+			end,
+		},
 		TweenInfo = TweenInfo,
 		Enum = Enum,
 		task = tasks,

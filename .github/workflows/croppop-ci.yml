@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - "croppop/**"
+      - "uitheme/**"
       - ".github/workflows/croppop-ci.yml"
   pull_request:
     paths:
       - "croppop/**"
+      - "uitheme/**"
       - ".github/workflows/croppop-ci.yml"
 
 jobs:

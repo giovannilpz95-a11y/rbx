@@ -5,6 +5,9 @@
     "ReplicatedStorage": {
       "CropPop": {
         "$path": "src/shared"
+      },
+      "UiTheme": {
+        "$path": "../uitheme/src"
       }
     },
     "ServerScriptService": {
