@@ -150,6 +150,7 @@ local EVENTS = {
 	InputChanged = true,
 	Activated = true,
 	MouseEnter = true,
+	ChildAdded = true,
 	MouseLeave = true,
 	FocusLost = true,
 	Event = true,

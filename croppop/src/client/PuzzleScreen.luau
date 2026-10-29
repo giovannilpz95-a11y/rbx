@@ -310,12 +310,13 @@ local function buildUi()
 		local b = button(boosterBar, kind, Glyphs[kind], UDim2.fromScale(0.23, 1), UDim2.new())
 		b.LayoutOrder = i
 		b.BackgroundColor3 = Colors.panel
-		local count = label(b, "Count", "", UDim2.fromScale(0.4, 0.6), UDim2.fromScale(1, 0))
+		-- Inside the button's top-right corner, above the themed face and text
+		local count = label(b, "Count", "", UDim2.fromScale(0.34, 0.48), UDim2.new(1, -3, 0, 3))
 		count.AnchorPoint = Vector2.new(1, 0)
 		count.BackgroundTransparency = 0
 		count.BackgroundColor3 = Colors.accent
 		count.TextColor3 = Color3.new(1, 1, 1)
-		count.ZIndex = 2
+		count.ZIndex = 6
 		corner(count, 0.5)
 		boosterButtons[kind] = b
 	end

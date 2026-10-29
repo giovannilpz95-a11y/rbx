@@ -14,6 +14,7 @@ local TileStyle = require(script.Parent.TileStyle)
 local launcher = Instance.new("ScreenGui")
 launcher.Name = "CropPopLauncher"
 launcher.ResetOnSpawn = false
+launcher.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local openButton = Instance.new("TextButton")
 openButton.Name = "Open"
