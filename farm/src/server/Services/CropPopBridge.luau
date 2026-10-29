@@ -5,6 +5,8 @@
 --   * CropPopLoadSave / CropPopGetSave (BindableFunctions, theirs): Crop Pop's save block
 --     (Hearts, boosters, progress) lives in the farm profile as `puzzle`. We hand it over
 --     once the profile loads and copy it back before every save.
+--   * CropPopGetGems (BindableFunction, ours): (player) -> number, the current Gem balance
+--     (0 while the farm is still loading), so buy buttons can show "not enough" up front.
 --   * CropPopSpendGems (BindableFunction, ours): (player, amount, reason) -> boolean, so
 --     Hearts and boosters are paid from the one Gem wallet.
 -- Amounts are still checked so a bad payload can't mint or drain currency.
@@ -118,6 +120,14 @@ function CropPopBridge.init()
 	spend.Name = "CropPopSpendGems"
 	spend.OnInvoke = spendGems
 	spend.Parent = ServerStorage
+
+	local balance = Instance.new("BindableFunction")
+	balance.Name = "CropPopGetGems"
+	balance.OnInvoke = function(player: any): number
+		local data = if isPlayer(player) then DataService.get(player) else nil
+		return if data then data.currencies.Gems else 0
+	end
+	balance.Parent = ServerStorage
 
 	-- Crop Pop may start before or after us, and may not be in the place at all.
 	ServerStorage.ChildAdded:Connect(onChild)
