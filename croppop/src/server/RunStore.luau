@@ -58,6 +58,7 @@ end
 function RunStore._fresh(self)
 	return {
 		highestBeaten = 0,
+		streak = 0, -- Hot Streak: levels won in a row
 		hearts = Hearts.new(self.now()),
 		boosters = Boosters.newStock(),
 	}
@@ -90,6 +91,8 @@ function RunStore.exportSave(self, userId: number)
 	return {
 		v = SAVE_VERSION,
 		highestBeaten = state.highestBeaten,
+		-- A level left open (the player quit or dropped mid-level) ends the streak.
+		streak = if record.run then 0 else state.streak,
 		hearts = table.clone(state.hearts),
 		boosters = table.clone(state.boosters),
 	}
@@ -105,10 +108,15 @@ function RunStore.importSave(self, userId: number, block: any)
 		if type(highest) == "number" and highest == highest then
 			state.highestBeaten = math.max(0, math.floor(highest))
 		end
+		local streak = block.streak
+		if type(streak) == "number" and streak == streak then
+			state.streak = math.clamp(math.floor(streak), 0, 9999)
+		end
 		state.hearts = Hearts.fromSave(block.hearts, self.now())
 		state.boosters = Boosters.fromSave(block.boosters)
 	end
 	record.state = state
+	record.run = nil -- a run from before the load belongs to the old state
 	record.loaded = true
 end
 
@@ -128,6 +136,8 @@ function RunStore.getProgress(self, userId: number)
 	return {
 		loaded = record.loaded,
 		highestBeaten = state.highestBeaten,
+		streak = state.streak,
+		hotStreakPowers = Boosters.hotStreakPowers(state.streak),
 		hearts = {
 			count = hearts.count,
 			max = Hearts.MAX,
@@ -165,7 +175,7 @@ local function cleanPreBoosters(raw: any): ({ string }?, string?)
 	return out, nil
 end
 
--- Returns { token, levelId, seed, startPowerUps, progress } or nil and a reason.
+-- Returns { token, levelId, seed, startPowerUps, hotStreak, progress } or nil and a reason.
 function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 	if type(levelId) ~= "number" then
 		return nil, "bad level"
@@ -202,10 +212,18 @@ function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 	end
 	record.lastStart = clockNow
 
+	-- Leaving a level part-way counts as a loss for the Hot Streak.
+	if record.run then
+		state.streak = 0
+	end
 	local startPowerUps = {}
 	for _, kind in preBoosters do
 		state.boosters[kind] -= 1
 		table.insert(startPowerUps, Boosters.Info[kind].power)
+	end
+	local hotStreak = Boosters.hotStreakPowers(state.streak)
+	for _, power in hotStreak do
+		table.insert(startPowerUps, power)
 	end
 
 	local token = record.nextToken
@@ -225,6 +243,7 @@ function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 		levelId = levelId,
 		seed = record.run.seed,
 		startPowerUps = startPowerUps,
+		hotStreak = hotStreak, -- the free ones among startPowerUps
 		progress = self:getProgress(userId),
 	}
 end
@@ -268,8 +287,11 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 	end
 
 	if not result.won then
-		return { won = false, levelId = run.levelId, progress = self:getProgress(userId) }
+		local lostStreak = state.streak
+		state.streak = 0
+		return { won = false, levelId = run.levelId, lostStreak = lostStreak, progress = self:getProgress(userId) }
 	end
+	state.streak += 1
 	if run.heartTaken then
 		Hearts.give(state.hearts, 1, self.now())
 	end

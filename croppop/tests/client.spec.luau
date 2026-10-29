@@ -567,6 +567,46 @@ test("the hearts countdown doesn't ask the server every second when hearts are f
 	eq(calls, 0)
 end)
 
+test("the X asks before leaving a level, and Keep playing goes back to it", function()
+	local run = playLevel(1)
+	local backdrop = playerGui.CropPop.Backdrop
+	backdrop.Play.TopBar.Close.Activated:Fire()
+	truthy(backdrop.EndPanel.Visible)
+	eq(backdrop.EndPanel.Title.Text, "Leave this level?")
+	eq(run.view.enabled, false, "no swaps behind the question")
+	backdrop.EndPanel.Primary.Activated:Fire() -- Keep playing
+	eq(backdrop.EndPanel.Visible, false)
+	eq(PuzzleScreen.currentRun(), run)
+	eq(run.view.enabled, true)
+	backdrop.Play.TopBar.Close.Activated:Fire()
+	backdrop.EndPanel.Secondary.Activated:Fire() -- Leave
+	eq(PuzzleScreen.currentRun(), nil)
+	truthy(backdrop.LevelSelect.Visible)
+end)
+
+test("a Hot Streak shows on the Trail and the booster picker and puts free power-ups on the board", function()
+	services.ServerStorage.CropPopLoadSave:Invoke(Mock.localPlayer, { v = 1, highestBeaten = 5, streak = 2 })
+	refillHearts()
+	PuzzleScreen.open()
+	local backdrop = playerGui.CropPop.Backdrop
+	truthy(string.find(backdrop.LevelSelect.Hearts.Text, "🔥 2", 1, true), backdrop.LevelSelect.Hearts.Text)
+	PuzzleScreen.open(2)
+	truthy(string.find(backdrop.PreLevel.Body.Text, "Hot Streak 2", 1, true), backdrop.PreLevel.Body.Text)
+	local run = pressPlay()
+	local powered = 0
+	run.game.board:eachCell(function(cell)
+		if cell.piece and cell.piece.power then
+			powered += 1
+		end
+	end)
+	eq(powered, 2)
+	-- Giving up warns about the streak, then ends it.
+	runOutOfMoves(run)
+	truthy(string.find(backdrop.EndPanel.Body.Text, "Hot Streak", 1, true))
+	giveUp()
+	truthy(string.find(backdrop.EndPanel.Body.Text, "Hot Streak of 2 is over", 1, true), backdrop.EndPanel.Body.Text)
+end)
+
 test("closing hides the screen", function()
 	PuzzleScreen.close()
 	eq(PuzzleScreen.isOpen(), false)
