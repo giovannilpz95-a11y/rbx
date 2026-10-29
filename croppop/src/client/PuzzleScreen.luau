@@ -636,14 +636,18 @@ local function buyHearts(packIndex: number, b: TextButton)
 	renderTrail()
 end
 
--- Heart packs that fit in the empty slots, at the top of the list.
+-- Heart packs that fit in the empty slots (the Township-style refill: only when empty), at the top of the list.
 local function addHeartShop()
 	local hearts = progress and progress.hearts
 	if not (progress and progress.canBuy and hearts) or (hearts.unlimitedSeconds or 0) > 0 then
 		return
 	end
 	local missing = hearts.max - hearts.count
-	if missing <= 0 then
+	local fits = false
+	for _, pack in Hearts.Packs do
+		fits = fits or pack.count <= missing
+	end
+	if not fits then
 		return
 	end
 	local row = Instance.new("Frame")
@@ -654,12 +658,14 @@ local function addHeartShop()
 	row.Parent = ui.list
 	local rowLayout = Instance.new("UIListLayout")
 	rowLayout.FillDirection = Enum.FillDirection.Horizontal
+	rowLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	rowLayout.Padding = UDim.new(0.02, 0)
 	rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
 	rowLayout.Parent = row
 	for i, pack in Hearts.Packs do
 		if pack.count <= missing then
-			local b = button(row, "Pack" .. i, string.format("+%d ❤️  %d 💎", pack.count, pack.gems), UDim2.fromScale(0.32, 1), UDim2.new())
+			local width = math.min(0.6, 0.98 / #Hearts.Packs - 0.02)
+			local b = button(row, "Pack" .. i, string.format("+%d ❤️ for %d 💎", pack.count, pack.gems), UDim2.fromScale(width, 1), UDim2.new())
 			b.LayoutOrder = i
 			b.BackgroundColor3 = Color3.fromRGB(214, 72, 92)
 			b.Activated:Connect(function()

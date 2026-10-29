@@ -11,12 +11,11 @@ local Hearts = {}
 Hearts.MAX = 5 -- Township baseline
 Hearts.REFILL_SECONDS = 30 * 60 -- Township baseline: one heart back every 30 minutes (Playrix help centre)
 
--- Gem packs, bought when hearts aren't full. Township baseline from the older
--- wiki prices (1 | 2 | 3 lives for 10 | 24 | 35), unverified against today's shop.
+-- Gem packs. Township baseline (township.fandom.com Match-3 page): a full
+-- refill of 5 lives for 900 T-cash, only when none are left. 900 / 25 for the
+-- 2025 T-cash rescale = 36 Gems. A pack is only sold when it fits.
 Hearts.Packs = {
-	{ count = 1, gems = 10 },
-	{ count = 2, gems = 24 },
-	{ count = 3, gems = 35 },
+	{ count = 5, gems = 36 },
 }
 
 export type State = {
