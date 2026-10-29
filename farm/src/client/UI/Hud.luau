@@ -1,6 +1,6 @@
 --!strict
 -- HUD: level star + XP bar, Coins / Gems / Barn pills, paperwork buttons (Orders, Barn,
--- Buildings), the big context action button and Sprint for touch, toasts and reward pop-ups.
+-- Buildings, Town), the big context action button and Sprint for touch, toasts and reward pop-ups.
 -- Layout follows Design/11 UI & UX; the look comes from the UiTheme (Design/25 UI Style Guide).
 
 local Players = game:GetService("Players")
@@ -49,6 +49,8 @@ function Hud.popup(payload: { [string]: any })
 		end
 		Hud.toast(table.concat(parts, "   "), "celebrate")
 		Motion.bump(levelStar, 1.35)
+	elseif payload.kind == "Drop" then
+		Hud.toast(string.format("Found 1 %s!", payload.name))
 	elseif payload.kind == "Order" then
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
 	end
@@ -198,6 +200,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		{ "📋", "Orders", "O", "Orders" },
 		{ "🧺", "Barn", "B", "Barn" },
 		{ "🏠", "Build", "F", "Buildings" },
+		{ "🏘️", "Town", "T", "Town" },
 	}
 	if RunService:IsStudio() then
 		table.insert(buttons, { "🔧", "Debug", "`", "Debug" })
