@@ -245,10 +245,12 @@ local function buildUi()
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
 	-- Studio only: empty the hearts to check the refill offer.
-	local devNoHearts = nil
+	local devNoHearts, devEditor = nil, nil
 	if RunService:IsStudio() then
 		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
 		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+		devEditor = button(levelSelect, "DevEditor", "Dev: Editor", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.02, 0.87))
+		devEditor.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
 	-- End-of-level panel.
@@ -388,6 +390,7 @@ local function buildUi()
 		list = list,
 		closeSelect = closeSelect,
 		devNoHearts = devNoHearts,
+		devEditor = devEditor,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -570,6 +573,7 @@ end
 local showLevelSelect -- forward declarations
 local showPreLevel
 local startLevel
+local beginRun
 
 local function clearRun()
 	if current then
@@ -1030,9 +1034,25 @@ offerContinue = function(run)
 	end)
 end
 
+-- A level editor test: nothing goes to the server.
+local function endTest(run)
+	local test = run.test
+	local won = run.game.status == "Won"
+	showPanel(if won then "Test won!" else "Test lost", string.format("%d %s used.", run.game.movesMade, if run.game.movesMade == 1 then "move" else "moves"), "Play again", function()
+		PuzzleScreen.playTest(test.level, test.onDone)
+	end, "Editor", function()
+		PuzzleScreen.close()
+		test.onDone()
+	end)
+end
+
 local function onLevelEnded()
 	local run = current
 	run.view:setEnabled(false)
+	if run.test then
+		endTest(run)
+		return
+	end
 	local canContinue = progress and progress.canBuy and run.game.continues < Boosters.Continue.MAX_PER_RUN
 	if run.game.status == "Won" then
 		Sfx.event("Win") -- right away; the server's check comes after
@@ -1192,19 +1212,31 @@ startLevel = function(levelId: number, preBoosters: { string }?)
 		return
 	end
 	setProgress(run.progress)
+	beginRun(level, run.seed, run.startPowerUps, {
+		token = run.token,
+		stock = table.clone(progress and progress.boosters or {}),
+	})
+end
+
+-- Builds the board for a run. `extra` adds the run's own fields (token or test).
+beginRun = function(level, seed: number, startPowerUps: { string }?, extra)
+	hidePanel()
+	ui.preLevel.Visible = false
 	clearRun()
-	local pop = CropPop.Engine.new(level, run.seed, { startPowerUps = run.startPowerUps })
+	local pop = CropPop.Engine.new(level, seed, { startPowerUps = startPowerUps })
 	local view = BoardView.new(ui.boardHolder, onSwap)
 	current = {
-		levelId = levelId,
-		token = run.token,
+		levelId = level.id,
 		game = pop,
 		view = view,
 		moves = {}, -- swaps and booster uses, in order, for the server's replay
-		stock = table.clone(progress and progress.boosters or {}),
+		stock = {},
 	}
+	for k, v in extra do
+		current[k] = v
+	end
 	view:load(pop)
-	ui.levelName.Text = level.id .. ". " .. level.name
+	ui.levelName.Text = (if current.test then "Test: " else level.id .. ". ") .. level.name
 	ui.difficulty.Text = if level.difficulty == "Normal" then "" else level.difficulty
 	refreshHud()
 	refreshBoosters()
@@ -1238,6 +1270,11 @@ local function ensureUi()
 		end)
 		ui.devNoHearts.Activated:Connect(function()
 			PuzzleScreen.debugEmptyHearts()
+		end)
+		ui.devEditor.Activated:Connect(function()
+			if PuzzleScreen.onDevEditor then
+				PuzzleScreen.onDevEditor()
+			end
 		end)
 		-- Same thing from the keyboard: L.
 		UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -1324,6 +1361,12 @@ end
 -- any Hot Streak). After the level, or while a panel is up, just leave.
 function PuzzleScreen.leaveLevel()
 	local run = current
+	if run and run.test then
+		local onDone = run.test.onDone
+		PuzzleScreen.close()
+		onDone()
+		return
+	end
 	if not run or run.game.status ~= "Playing" or busy or ui.panel.Visible then
 		showLevelSelect()
 		return
@@ -1337,6 +1380,25 @@ function PuzzleScreen.leaveLevel()
 		end
 	end, "Leave", showLevelSelect)
 end
+
+--[[
+	Studio level editor: play `level` (not in Levels.List) offline with a
+	random seed and plenty of boosters. Nothing is sent to the server, so no
+	hearts, rewards or streak. `onDone` runs when the player goes back.
+]]
+function PuzzleScreen.playTest(level, onDone: () -> ())
+	ensureUi()
+	ui.gui.Enabled = true
+	local stock = {}
+	for _, kind in Boosters.InLevel do
+		stock[kind] = 9
+	end
+	beginRun(level, Random.new():NextInteger(1, 2 ^ 31 - 1), nil, { test = { level = level, onDone = onDone }, stock = stock })
+end
+
+-- Studio only: set by Main to open the level editor (the editor needs this
+-- module, so it can't be required from here).
+PuzzleScreen.onDevEditor = nil :: (() -> ())?
 
 function PuzzleScreen.isOpen(): boolean
 	return ui ~= nil and ui.gui.Enabled

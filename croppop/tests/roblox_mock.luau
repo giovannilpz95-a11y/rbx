@@ -141,6 +141,7 @@ local GUI_CLASSES = {
 	ImageLabel = true,
 	ImageButton = true,
 	ScrollingFrame = true,
+	TextBox = true,
 }
 
 local EVENTS = {
@@ -148,6 +149,7 @@ local EVENTS = {
 	InputEnded = true,
 	InputChanged = true,
 	Activated = true,
+	FocusLost = true,
 	Event = true,
 	PlayerRemoving = true,
 	PlayerAdded = true,

@@ -81,7 +81,7 @@ function InventoryService.sell(player: Player, itemId: any, qty: any): (boolean,
 		return false
 	end
 	local item = Items[itemId]
-	if item == nil then
+	if item == nil or item.sellPrice <= 0 then
 		return false
 	end
 	if not InventoryService.remove(player, { [itemId] = qty }) then

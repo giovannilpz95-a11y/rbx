@@ -7,6 +7,7 @@ local Timer = {}
 export type Job = {
 	recipe: string,
 	seconds: number, -- production time locked in when the job was queued
+	qty: number?, -- units the job puts on the tray (feed comes 3 to a batch); 1 when absent
 	startedAt: number?,
 	readyAt: number?,
 }
@@ -40,13 +41,14 @@ Timer.countOutput = countOutput
 
 -- Advance a factory queue to `now`. Only the head runs; when it finishes the next job starts
 -- at the head's readyAt (not at "now"), so offline time is fully used. When the output tray
--- is full the factory pauses: the next job waits unstarted until goods are collected.
+-- has no room for a job's output the factory pauses: the job waits unstarted until goods
+-- are collected.
 function Timer.advanceQueue(queue: { Job }, output: { [string]: number }, now: number, trayCapacity: number)
 	local count = countOutput(output)
 	while #queue > 0 do
 		local head = queue[1]
 		if head.startedAt == nil then
-			if count >= trayCapacity then
+			if count + (head.qty or 1) > trayCapacity then
 				return
 			end
 			head.startedAt = now
@@ -56,11 +58,12 @@ function Timer.advanceQueue(queue: { Job }, output: { [string]: number }, now: n
 		if now < readyAt then
 			return
 		end
-		output[head.recipe] = (output[head.recipe] or 0) + 1
-		count += 1
+		local qty = head.qty or 1
+		output[head.recipe] = (output[head.recipe] or 0) + qty
+		count += qty
 		table.remove(queue, 1)
 		local nextJob = queue[1]
-		if nextJob and count < trayCapacity then
+		if nextJob and count + (nextJob.qty or 1) <= trayCapacity then
 			nextJob.startedAt = readyAt
 			nextJob.readyAt = readyAt + nextJob.seconds
 		end

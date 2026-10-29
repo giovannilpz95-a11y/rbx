@@ -4,7 +4,8 @@
 --   * tap something farther away and the avatar auto-walks there (at sprint speed), then acts;
 --   * hold the action button (E / touch button / gamepad X) to sweep: harvest ready beds in
 --     front of you, or sow your last seed into empty beds you walk over;
---   * walk past the Bakery's output table to collect finished goods.
+--   * walk past a factory's output table to collect finished goods;
+--   * tap a pen (or use the action button next to it) to collect products, then feed.
 -- Objects in Reach get a soft outline. The context label on the action button stands in
 -- for the auto-equipped tool (scythe / seed bag / hands).
 
@@ -17,7 +18,9 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
+local Animals = require(Shared.Config.Animals)
 local Crops = require(Shared.Config.Crops)
+local Pen = require(Shared.Pen)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
@@ -31,7 +34,7 @@ local player = Players.LocalPlayer
 local plot: Model? = nil
 local interactives: { BasePart } = {}
 local highlights: { [BasePart]: Highlight } = {}
-local pendingFields: { [string]: number } = {} -- fieldId -> os.clock() of the last intent
+local pendingFields: { [string]: number } = {} -- fieldId or "pen:<id>" -> os.clock() of the last intent
 local lastCollectAt = 0
 local walkToken = 0
 local actionHeld = false
@@ -94,9 +97,46 @@ local function recentlySent(fieldId: string): boolean
 	return sentAt ~= nil and os.clock() - sentAt < 1.5
 end
 
-local function sendField(remote: string, fieldId: string, ...: any)
-	pendingFields[fieldId] = os.clock()
-	Remotes.fire(remote, fieldId, ...)
+local function sendField(remote: string, key: string, ...: any)
+	pendingFields[key] = os.clock()
+	if key:sub(1, 4) == "pen:" then
+		Remotes.fire(remote, key:sub(5), ...)
+	else
+		Remotes.fire(remote, key, ...)
+	end
+end
+
+-- What a tap on a pen does now: "collect", "feed", or "panel" (nothing to do by hand).
+local function penAction(penId: string): string
+	local state = ClientStore.state
+	local pen = state and state.pens[penId]
+	local def = Animals.pens[penId]
+	if pen == nil or def == nil or not Pen.isOperational(pen, ClientStore.now()) then
+		return "panel"
+	end
+	local counts = Pen.counts(pen, ClientStore.now())
+	if counts.ready > 0 then
+		return "collect"
+	elseif counts.hungry > 0 and ((pen.feedLeft or 0) > 0 or ClientStore.itemCount(def.feed) > 0) then
+		return "feed"
+	end
+	return "panel"
+end
+
+local function usePen(penId: string, openPanel: boolean): boolean
+	local key = "pen:" .. penId
+	local action = penAction(penId)
+	if action == "panel" then
+		if openPanel then
+			Panels.open("Pen", penId)
+		end
+		return openPanel
+	end
+	if recentlySent(key) then
+		return true
+	end
+	sendField(if action == "collect" then "Pen_Collect" else "Pen_Feed", key)
+	return true
 end
 
 local function canAffordSeed(cropId: string): boolean
@@ -121,21 +161,18 @@ local function act(part: BasePart)
 		elseif status == "empty" then
 			Panels.open("Seeds", fieldId)
 		elseif status == "growing" then
-			local field = (ClientStore.state :: any).fields[fieldId]
-			Hud.toast(
-				string.format(
-					"%s: %s left",
-					Crops[field.crop].displayName,
-					Timer.format(Timer.remaining(field.readyAt, ClientStore.now()))
-				)
-			)
+			Panels.open("Field", fieldId) -- time left, and a Gem speed-up
 		end
+	elseif kind == "Pen" then
+		usePen(part:GetAttribute("PenId") :: string, true)
 	elseif kind == "FactoryOutput" then
 		Remotes.fire("Factory_Collect", part:GetAttribute("FactoryId"))
 	elseif kind == "Factory" then
 		Panels.open(part:GetAttribute("FactoryId") :: string)
 	elseif kind == "Barn" then
 		Panels.open("Barn")
+	elseif kind == "Town" then
+		Panels.open("Town")
 	elseif kind == "OrderBoard" then
 		Panels.open("Orders")
 	end
@@ -285,6 +322,18 @@ local function sweep(firstPress: boolean): boolean
 		return true
 	end
 
+	-- Basket / feed bucket: a pen you're standing next to
+	for _, part in interactives do
+		if
+			part:GetAttribute("Interact") == "Pen"
+			and distanceToPart(part, root.Position) <= Balance.plantRadiusStuds
+		then
+			if usePen(part:GetAttribute("PenId") :: string, false) then
+				return true
+			end
+		end
+	end
+
 	-- Seed bag: empty beds you're standing on or next to get your last seed
 	local seed = ClientStore.state and ClientStore.state.settings.lastSeed
 	if seed and canAffordSeed(seed) then
@@ -351,6 +400,17 @@ local function contextLabel(root: BasePart): string
 	local front = root.Position + root.CFrame.LookVector * 3
 	local nearEmpty = false
 	for _, part in interactives do
+		if
+			part:GetAttribute("Interact") == "Pen"
+			and distanceToPart(part, root.Position) <= Balance.plantRadiusStuds
+		then
+			local action = penAction(part:GetAttribute("PenId") :: string)
+			if action == "collect" then
+				return "Basket"
+			elseif action == "feed" then
+				return "Feed"
+			end
+		end
 		if part:GetAttribute("Interact") == "Field" then
 			local status = fieldState(part:GetAttribute("FieldId") :: string)
 			if status == "ready" and distanceToPart(part, front) <= Balance.harvestArcStuds then
@@ -384,16 +444,19 @@ local function upkeep()
 	end
 	Hud.setActionLabel(contextLabel(root))
 
-	-- Walk-by collect at the Bakery's output table
-	local preview = ClientStore.factoryPreview("Bakery")
-	if preview and preview.outputCount > 0 and os.clock() - lastCollectAt > 1 then
+	-- Walk-by collect at any output table with goods on it
+	if os.clock() - lastCollectAt > 1 then
 		for _, part in interactives do
 			if
 				part:GetAttribute("Interact") == "FactoryOutput"
 				and distanceToPart(part, root.Position) <= Balance.magnetStuds
 			then
-				lastCollectAt = os.clock()
-				Remotes.fire("Factory_Collect", part:GetAttribute("FactoryId"))
+				local factoryId = part:GetAttribute("FactoryId") :: string
+				local preview = ClientStore.factoryPreview(factoryId)
+				if preview and preview.outputCount > 0 then
+					lastCollectAt = os.clock()
+					Remotes.fire("Factory_Collect", factoryId)
+				end
 			end
 		end
 	end
@@ -437,6 +500,18 @@ function ReachController.init()
 		end
 		for _, part in interactives do
 			if part:GetAttribute("Interact") == "FactoryOutput" and part:GetAttribute("FactoryId") == factoryId then
+				return distanceToPart(part, root.Position) <= reach()
+			end
+		end
+		return false
+	end
+	Panels.nearPen = function(penId: string): boolean
+		local root = rootPart()
+		if root == nil then
+			return false
+		end
+		for _, part in interactives do
+			if part:GetAttribute("Interact") == "Pen" and part:GetAttribute("PenId") == penId then
 				return distanceToPart(part, root.Position) <= reach()
 			end
 		end
