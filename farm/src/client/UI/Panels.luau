@@ -43,30 +43,51 @@ end
 
 -- Gem buttons waiting for their second tap: key -> os.clock() of the first tap
 local armed: { [string]: number } = {}
-local ARM_SECONDS = 3
+local ARM_SECONDS = 4
 
--- A button that spends Gems after a confirming second tap. Panels re-render every second,
--- so the "armed" state lives outside the button.
-local function gemButton(key: string, text: string, gems: number, fire: () -> (), props: { [string]: any })
+local function isArmed(key: string): boolean
+	return armed[key] ~= nil and os.clock() - armed[key] < ARM_SECONDS
+end
+
+-- While a Gem button waits for its second tap, the once-a-second refresh leaves the panel
+-- alone so the armed button stays the same button under the player's finger.
+local function anyArmed(): boolean
+	for key in armed do
+		if isArmed(key) then
+			return true
+		end
+		armed[key] = nil
+	end
+	return false
+end
+
+local function gems(n: number): string
+	return string.format("%d Gem%s", n, if n == 1 then "" else "s")
+end
+
+-- A button that spends Gems after a confirming second tap.
+local function gemButton(key: string, text: string, price: number, fire: () -> (), props: { [string]: any })
 	local state = ClientStore.state
-	local isArmed = armed[key] ~= nil and os.clock() - armed[key] < ARM_SECONDS
+	local armedNow = isArmed(key)
 	local button = Ui.button(
-		if isArmed then string.format("Spend %d Gems?", gems) else string.format("%s  %d Gems", text, gems),
+		if armedNow then string.format("Spend %s?", gems(price)) else string.format("%s  %s", text, gems(price)),
 		function()
-			if armed[key] ~= nil and os.clock() - armed[key] < ARM_SECONDS then
+			if isArmed(key) then
 				armed[key] = nil
 				fire()
 			else
+				table.clear(armed) -- one armed button at a time
 				armed[key] = os.clock()
 				Panels.refresh()
+				task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
 			end
 		end,
 		props
 	)
 	Ui.setEnabled(
 		button,
-		gems > 0 and state ~= nil and state.currencies.Gems >= gems,
-		if isArmed then Color3.fromRGB(220, 150, 40) else Ui.colors.gems
+		price > 0 and state ~= nil and state.currencies.Gems >= price,
+		if armedNow then Color3.fromRGB(220, 150, 40) else Ui.colors.gems
 	)
 	return button
 end
@@ -724,6 +745,9 @@ end
 
 Panels.refresh = render
 
+local FULL_SIZE = UDim2.fromScale(0.9, 0.62)
+local COMPACT: { [string]: number } = { Field = 110 }
+
 function Panels.open(name: string, arg: string?)
 	if name == "Debug" and not RunService:IsStudio() then
 		return
@@ -734,6 +758,8 @@ function Panels.open(name: string, arg: string?)
 	end
 	current = name
 	currentArg = arg
+	-- One-row panels get a short frame instead of the full-size one
+	frame.Size = if COMPACT[name] then UDim2.new(0.9, 0, 0, COMPACT[name]) else FULL_SIZE
 	frame.Visible = true
 	render()
 end
@@ -758,7 +784,7 @@ function Panels.init()
 	frame = Ui.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.55),
-		Size = UDim2.fromScale(0.9, 0.62),
+		Size = FULL_SIZE,
 		BackgroundColor3 = Ui.colors.panel,
 		Visible = false,
 		Parent = gui,
@@ -797,7 +823,7 @@ function Panels.init()
 	task.spawn(function()
 		while true do
 			task.wait(1)
-			if current ~= nil and current ~= "Seeds" and current ~= "Debug" then
+			if current ~= nil and current ~= "Seeds" and current ~= "Debug" and not anyArmed() then
 				render()
 			end
 		end
