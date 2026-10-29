@@ -41,6 +41,21 @@ local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 
 local GEM_CONFIRM_OVER = 10 -- spends above this need a second tap (10 Monetization)
 
+-- Glyphs for the free Hot Streak power-ups, matching the start boosters.
+local POWER_GLYPHS = { Sprayer = Glyphs.SprayerStart, HayBomb = Glyphs.BombStart, Sunflower = Glyphs.SunflowerStart }
+
+local function streak(): number
+	return progress and progress.streak or 0
+end
+
+local function streakGlyphs(powers: { string }): string
+	local parts = {}
+	for _, power in powers do
+		table.insert(parts, POWER_GLYPHS[power] or "?")
+	end
+	return table.concat(parts, " ")
+end
+
 local BOOSTER_HINTS = {
 	Trowel = "⛏️ Tap a tile to break it.",
 	Rake = "🧹 Tap a row to clear it.",
@@ -611,6 +626,9 @@ local function heartsText(): string
 	if nextIn then
 		text ..= "   next in " .. clockText(nextIn)
 	end
+	if streak() > 0 then
+		text ..= "   🔥 " .. streak()
+	end
 	return text
 end
 
@@ -854,7 +872,10 @@ showPreLevel = function(levelId: number)
 	ui.preLevelId = levelId
 	ui.preSelected = {}
 	ui.preTitle.Text = level.id .. ". " .. level.name
-	ui.preBody.Text = "Pick boosters for a strong start"
+	local free = progress and progress.hotStreakPowers or {}
+	ui.preBody.Text = if #free > 0
+		then string.format("🔥 Hot Streak %d: free %s this level!", streak(), streakGlyphs(free))
+		else "Pick boosters for a strong start"
 	ui.play.Visible = false
 	ui.select.Visible = false
 	renderPreLevel()
@@ -898,9 +919,13 @@ local function finishRun(run)
 			return
 		end
 		local nextLevel = Levels.get(run.levelId + 1)
+		local body = rewardText(result.rewards)
+		if streak() >= 2 then
+			body ..= string.format("\n🔥 Hot Streak: %d wins in a row!", streak())
+		end
 		showPanel(
 			"Level complete!",
-			rewardText(result.rewards),
+			body,
 			if nextLevel then "Next level" else "Trail",
 			function()
 				if nextLevel then
@@ -919,6 +944,9 @@ local function finishRun(run)
 			total += goal.target
 		end
 		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
+		if (result.lostStreak or 0) > 0 then
+			body = string.format("Your Hot Streak of %d is over. ", result.lostStreak) .. body
+		end
 		showPanel("Level failed", body, "Retry", function()
 			showPreLevel(run.levelId)
 		end, "Trail", showLevelSelect)
@@ -975,6 +1003,9 @@ offerContinue = function(run)
 	local step = Boosters.continueStep(count)
 	local moves = Boosters.Continue.MOVES
 	local body = string.format("Keep going with %d more moves?", moves)
+	if streak() > 0 then
+		body ..= "\nGiving up ends your Hot Streak."
+	end
 	if step.power then
 		body ..= "\nComes with a " .. (POWER_NAMES[step.power] or step.power) .. "!"
 	end
@@ -1212,7 +1243,7 @@ local function ensureUi()
 		end)
 	end
 	ui.closePlay.Activated:Connect(function()
-		showLevelSelect()
+		PuzzleScreen.leaveLevel()
 	end)
 	ui.closeSelect.Activated:Connect(function()
 		PuzzleScreen.close()
@@ -1279,6 +1310,24 @@ function PuzzleScreen.close()
 	hidePanel()
 	ui.preLevel.Visible = false
 	ui.gui.Enabled = false
+end
+
+-- The top bar's X: mid-level, ask first, since leaving costs the heart (and
+-- any Hot Streak). After the level, or while a panel is up, just leave.
+function PuzzleScreen.leaveLevel()
+	local run = current
+	if not run or run.game.status ~= "Playing" or busy or ui.panel.Visible then
+		showLevelSelect()
+		return
+	end
+	run.view:setEnabled(false)
+	local body = if streak() > 0 then "You'll lose this heart and your Hot Streak." else "You'll lose this heart."
+	showPanel("Leave this level?", body, "Keep playing", function()
+		hidePanel()
+		if current == run then
+			run.view:setEnabled(true)
+		end
+	end, "Leave", showLevelSelect)
 end
 
 function PuzzleScreen.isOpen(): boolean
