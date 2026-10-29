@@ -16,7 +16,7 @@ The match-3 side game for the farm (design: `Design/Features/F12 Crop Pop Puzzle
 
 ## Playing it in Studio
 
-Press Play and click the **🍅 Crop Pop** button in the bottom-left. Pick a level from the Crop Pop Trail, pick any start boosters, and press Play. Swipe a tile, or tap one tile and then a neighbour. The booster bar (🔨 🧹 🧤 🔀) sits under the board, or in the side panel on a wide screen: tap one, then tap the board. In Studio every test level is unlocked; live servers unlock them in order.
+Press Play and click the **🍅 Crop Pop** button in the bottom-left. Pick a level from the Crop Pop Trail, pick any start boosters, and press Play. Swipe a tile, or tap one tile and then a neighbour. The booster bar (🪏 🧹 🧤 🔀) sits under the board, or in the side panel on a wide screen: tap one, then tap the board. In Studio every test level is unlocked; live servers unlock them in order.
 
 The button is temporary. The Puzzle Porch and the Town Square cabinet should call `PuzzleScreen.open()` (or `open(levelId)`) instead.
 

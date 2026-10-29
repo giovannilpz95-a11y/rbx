@@ -233,11 +233,16 @@ test("wide screens move the top bar to a side panel next to the board", function
 	eq(holder.Position.Y.Offset, 64 + 844 * 0.12 + 8, "board area starts under the bar")
 	local boosters = play.Boosters
 	eq(boosters.Size.Y.Offset, 64, "booster bar under the board")
-	eq(holder.Position.Y.Offset + holder.Size.Y.Offset, 844 - 8 - 64 - 8)
 	eq(boosters.Position.Y.Offset, 844 - 8 - 64)
+	local hint = play.BoosterHint
+	eq(hint.Position.Y.Offset + hint.Size.Y.Offset, boosters.Position.Y.Offset - 4, "hint strip just above the boosters")
+	eq(holder.Position.Y.Offset + holder.Size.Y.Offset, hint.Position.Y.Offset - 4, "board area ends above the hint")
 
 	resize(1668, 878)
 	truthy(boosters.Position.X.Offset < holder.Position.X.Offset, "boosters move into the side panel")
+	local goals = play.TopBar.Goals
+	local goalsTop = bar.Position.Y.Offset + bar.Size.Y.Offset * goals.Position.Y.Scale
+	truthy(hint.Position.Y.Offset + hint.Size.Y.Offset <= goalsTop, "the hint doesn't cover the goals")
 end)
 
 test("the out-of-moves message depends on how close the player got", function()

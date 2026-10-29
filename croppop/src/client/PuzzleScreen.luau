@@ -42,7 +42,7 @@ local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 local GEM_CONFIRM_OVER = 10 -- spends above this need a second tap (10 Monetization)
 
 local BOOSTER_HINTS = {
-	Trowel = "🔨 Tap a tile to break it.",
+	Trowel = "🪏 Tap a tile to break it.",
 	Rake = "🧹 Tap a row to clear it.",
 	GardenGloves = "🧤 Swap any two tiles next to each other.",
 }
@@ -288,8 +288,9 @@ local function buildUi()
 		boosterButtons[kind] = b
 	end
 
-	-- What an armed booster does, or a "Spend X Gems?" question. Covers the
-	-- top bar on tall screens and the goals on wide ones while it shows.
+	-- What an armed booster does, or a "Spend X Gems?" question. Sits above the
+	-- boosters on tall screens and over the level name on wide ones, so the
+	-- goals and moves stay in view.
 	local hint = label(play, "BoosterHint", "", UDim2.new(), UDim2.new())
 	hint.BackgroundTransparency = 0
 	hint.BackgroundColor3 = Colors.panel
@@ -392,6 +393,7 @@ end
 local ROBLOX_TOPBAR = 64 -- clear of Roblox's own buttons (58px)
 local MARGIN = 12
 local BOOSTER_BAR_HEIGHT = 64
+local HINT_HEIGHT = 40
 
 -- Where things sit inside the bar / panel, by scale.
 local INNER = {
@@ -433,18 +435,20 @@ local function applyLayout()
 		holderW = w - holderX - MARGIN
 		holderH = h - holderY - MARGIN
 		boosters = { barX + 14, ROBLOX_TOPBAR + barH * 0.65, barW - 28, barH * 0.12 }
-		hint = { barX, ROBLOX_TOPBAR + barH * 0.45, barW, barH * 0.18 }
+		hint = { barX, ROBLOX_TOPBAR, barW, barH * 0.21 } -- over the level name, clear of the goals
 	else
 		barW = math.min(w * 0.96, 720)
 		barX = (w - barW) / 2
 		barH = math.min(h * 0.12, 110)
 		local boosterH = math.min(h * 0.08, BOOSTER_BAR_HEIGHT)
+		local boostersY = h - 8 - boosterH
+		local hintY = boostersY - 4 - HINT_HEIGHT -- a strip of its own above the boosters
 		holderX = w * 0.02
 		holderY = ROBLOX_TOPBAR + barH + 8
 		holderW = w * 0.96
-		holderH = h - holderY - 8 - boosterH - 8
-		boosters = { barX, h - 8 - boosterH, barW, boosterH }
-		hint = { barX, ROBLOX_TOPBAR, barW, barH }
+		holderH = hintY - 4 - holderY
+		boosters = { barX, boostersY, barW, boosterH }
+		hint = { barX, hintY, barW, HINT_HEIGHT }
 	end
 	ui.boosterBar.Position = UDim2.fromOffset(boosters[1], boosters[2])
 	ui.boosterBar.Size = UDim2.fromOffset(boosters[3], boosters[4])
