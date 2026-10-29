@@ -41,12 +41,14 @@ Panels.nearPen = function(_penId: string): boolean
 	return false
 end
 
--- Gem buttons waiting for their second tap: key -> os.clock() of the first tap
+-- Gem buttons waiting for their second tap: key -> time() of the first tap. (time() is wall
+-- time since the game started; os.clock() is CPU time on Roblox and can run fast.)
 local armed: { [string]: number } = {}
 local ARM_SECONDS = 4
+local lastGemTap = 0
 
 local function isArmed(key: string): boolean
-	return armed[key] ~= nil and os.clock() - armed[key] < ARM_SECONDS
+	return armed[key] ~= nil and time() - armed[key] < ARM_SECONDS
 end
 
 -- While a Gem button waits for its second tap, the once-a-second refresh leaves the panel
@@ -69,21 +71,37 @@ end
 local function gemButton(key: string, text: string, price: number, fire: () -> (), props: { [string]: any })
 	local state = ClientStore.state
 	local armedNow = isArmed(key)
-	local button = Ui.button(
+	local button: TextButton
+	local function tap()
+		-- Press and Activated can both arrive for one tap; take the first
+		if time() - lastGemTap < 0.35 or not button.Active then
+			return
+		end
+		lastGemTap = time()
+		if isArmed(key) then
+			armed[key] = nil
+			fire()
+		else
+			table.clear(armed) -- one armed button at a time
+			armed[key] = time()
+			Panels.refresh()
+			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
+		end
+	end
+	button = Ui.button(
 		if armedNow then string.format("Spend %s?", gems(price)) else string.format("%s  %s", text, gems(price)),
-		function()
-			if isArmed(key) then
-				armed[key] = nil
-				fire()
-			else
-				table.clear(armed) -- one armed button at a time
-				armed[key] = os.clock()
-				Panels.refresh()
-				task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
-			end
-		end,
+		tap,
 		props
 	)
+	-- Act on the press itself, so a panel refresh between press and release can't swallow it
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			tap()
+		end
+	end)
 	Ui.setEnabled(
 		button,
 		price > 0 and state ~= nil and state.currencies.Gems >= price,
