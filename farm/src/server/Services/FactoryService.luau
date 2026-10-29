@@ -8,6 +8,7 @@ local Balance = require(Shared.Config.Balance)
 local Factories = require(Shared.Config.Factories)
 local Net = require(Shared.Net)
 local Recipes = require(Shared.Config.Recipes)
+local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
 
 local DataService = require(script.Parent.DataService)
@@ -134,10 +135,72 @@ function FactoryService.collect(player: Player, factoryId: any): (boolean, strin
 	return true
 end
 
+-- Gems finish construction, or else the job that's running now (the next one starts at once).
+function FactoryService.speedUp(player: Player, factoryId: any): (boolean, string?)
+	if not NetService.check.id(factoryId) then
+		return false
+	end
+	local data = DataService.get(player) :: { [string]: any }
+	local factory = data.factories[factoryId]
+	if factory == nil or not factory.built then
+		return false
+	end
+	FactoryService.advance(player)
+	local now = Clock.now()
+	local gems, finish
+	if factory.constructionReadyAt ~= nil then
+		gems = Speedup.building(factory.constructionReadyAt - now)
+		finish = function()
+			factory.constructionReadyAt = now
+		end
+	else
+		local head = factory.queue[1]
+		if head == nil or head.readyAt == nil or head.readyAt <= now then
+			return false
+		end
+		gems = Speedup.production(head.readyAt - now)
+		finish = function()
+			head.readyAt = now
+		end
+	end
+	if not EconomyService.spend(player, "Gems", gems, "speedup_" .. factoryId) then
+		return false, "Not enough Gems"
+	end
+	finish()
+	FactoryService.advance(player)
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	return true
+end
+
+function FactoryService.buySlot(player: Player, factoryId: any): (boolean, string?)
+	if not NetService.check.id(factoryId) then
+		return false
+	end
+	local data = DataService.get(player) :: { [string]: any }
+	local factory = data.factories[factoryId]
+	local def = Factories[factoryId]
+	if factory == nil or def == nil or not factory.built then
+		return false
+	end
+	local gems = Speedup.nextSlotCost(def.queueSlots, factory.slots)
+	if gems == nil then
+		return false, "This queue is as long as it gets"
+	end
+	if not EconomyService.spend(player, "Gems", gems, "slot_" .. factoryId) then
+		return false, "Not enough Gems"
+	end
+	factory.slots += 1
+	DataService.markDirty(player, true)
+	return true
+end
+
 function FactoryService.init()
 	NetService.on(Net.Factory_Build, 1, 2, FactoryService.build)
 	NetService.on(Net.Factory_Queue, 5, 8, FactoryService.queue)
 	NetService.on(Net.Factory_Collect, 5, 8, FactoryService.collect)
+	NetService.on(Net.Factory_SpeedUp, 2, 3, FactoryService.speedUp)
+	NetService.on(Net.Factory_BuySlot, 1, 2, FactoryService.buySlot)
 end
 
 return FactoryService

@@ -104,13 +104,13 @@ local function part(props: { [string]: any }): Part
 	return p
 end
 
-local function label(parent: Instance, text: string, offsetY: number, size: UDim2?)
+local function label(parent: Instance, text: string, offsetY: number, size: UDim2?, maxDistance: number?)
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "Label"
 	gui.Size = size or UDim2.fromOffset(200, 40)
 	gui.StudsOffset = Vector3.new(0, offsetY, 0)
 	gui.AlwaysOnTop = false
-	gui.MaxDistance = 120
+	gui.MaxDistance = maxDistance or 120
 	local text_ = Instance.new("TextLabel")
 	text_.Name = "Text"
 	text_.Size = UDim2.fromScale(1, 1)
@@ -283,7 +283,9 @@ local function buildFactory(plot: Model, id: string, at: (Vector3, number) -> CF
 	})
 	outputTable:SetAttribute("Interact", "FactoryOutput")
 	outputTable:SetAttribute("FactoryId", id)
-	label(body, def.displayName, 7)
+	-- Names only show up close: the row's buildings stand 14 studs apart (status bubbles
+	-- come from the client)
+	label(body, def.displayName, 7, UDim2.fromOffset(140, 28), 40)
 end
 
 -- Where each animal stands in a 12 x 12 pen (3 x 2 grid), and its greybox size.
@@ -361,7 +363,7 @@ local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame
 		})
 		product.CanQuery = false
 	end
-	label(floor, def.displayName, 5)
+	label(floor, def.displayName, 5, UDim2.fromOffset(140, 28), 40)
 end
 
 local function buildPlot(player: Player, slot: Slot): Model
@@ -640,12 +642,6 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 			child.Transparency = transparency
 		end
 	end
-	local body = building:FindFirstChild("Body") :: BasePart
-	local text = (body:FindFirstChild("Label") :: BillboardGui):FindFirstChild("Text") :: TextLabel
-	text.Text = if not factory.built
-		then def.displayName .. " (build me)"
-		elseif underConstruction then def.displayName .. " (building...)"
-		else def.displayName
 	local smoke = (building:FindFirstChild("Chimney") :: BasePart):FindFirstChildOfClass("Smoke")
 	if smoke then
 		smoke.Enabled = busy
@@ -708,12 +704,6 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 			product.Transparency = if mark == "r" then 0 else 1
 		end
 	end
-	local floor = building:FindFirstChild("Floor") :: BasePart
-	local text = (floor:FindFirstChild("Label") :: BillboardGui):FindFirstChild("Text") :: TextLabel
-	text.Text = if not pen.built
-		then def.displayName .. " (build me)"
-		elseif underConstruction then def.displayName .. " (building...)"
-		else def.displayName
 end
 
 function PlotService.refresh(player: Player)

@@ -26,13 +26,13 @@ local factoryLabels: { [string]: TextLabel } = {}
 local penLabels: { [string]: TextLabel } = {}
 local boardText: TextLabel? = nil
 
-local function billboard(adornee: BasePart, offsetY: number): TextLabel
+local function billboard(adornee: BasePart, offsetY: number, maxDistance: number?): TextLabel
 	local gui = Ui.new("BillboardGui", {
 		Name = "FarmStatus",
 		Adornee = adornee,
 		Size = UDim2.fromOffset(120, 34),
 		StudsOffset = Vector3.new(0, offsetY, 0),
-		MaxDistance = 90,
+		MaxDistance = maxDistance or 90,
 		AlwaysOnTop = true,
 		Parent = adornee,
 	})
@@ -64,12 +64,12 @@ local function attach(model: Model)
 	table.clear(factoryLabels)
 	for _, id in Balance.enabledFactories do
 		local building = model:WaitForChild(id)
-		factoryLabels[id] = billboard(building:WaitForChild("Body") :: BasePart, 10.5)
+		factoryLabels[id] = billboard(building:WaitForChild("Body") :: BasePart, 10.5, 60)
 	end
 	table.clear(penLabels)
 	for _, id in Balance.enabledPens do
 		local pen = model:WaitForChild(id)
-		penLabels[id] = billboard(pen:WaitForChild("Floor") :: BasePart, 8.5)
+		penLabels[id] = billboard(pen:WaitForChild("Floor") :: BasePart, 8.5, 60)
 	end
 
 	local board = model:WaitForChild("OrderBoard") :: BasePart

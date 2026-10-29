@@ -1,6 +1,7 @@
 --!strict
 -- One panel open at a time: Orders, Barn, Buildings (every factory and pen), one factory,
--- one pen, the seed picker and (Studio only) Debug.
+-- one pen, one growing field, the seed picker and (Studio only) Debug.
+-- Anything that spends Gems takes two taps: the first asks, the second spends.
 -- Panels re-render on every state change and once a second for countdowns.
 
 local Players = game:GetService("Players")
@@ -15,6 +16,7 @@ local Factories = require(Shared.Config.Factories)
 local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
+local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
@@ -37,6 +39,75 @@ Panels.canCollect = function(_factoryId: string): boolean
 end
 Panels.nearPen = function(_penId: string): boolean
 	return false
+end
+
+-- Gem buttons waiting for their second tap: key -> time() of the first tap. (time() is wall
+-- time since the game started; os.clock() is CPU time on Roblox and can run fast.)
+local armed: { [string]: number } = {}
+local ARM_SECONDS = 4
+local lastGemTap = 0
+
+local function isArmed(key: string): boolean
+	return armed[key] ~= nil and time() - armed[key] < ARM_SECONDS
+end
+
+-- While a Gem button waits for its second tap, the once-a-second refresh leaves the panel
+-- alone so the armed button stays the same button under the player's finger.
+local function anyArmed(): boolean
+	for key in armed do
+		if isArmed(key) then
+			return true
+		end
+		armed[key] = nil
+	end
+	return false
+end
+
+local function gems(n: number): string
+	return string.format("%d Gem%s", n, if n == 1 then "" else "s")
+end
+
+-- A button that spends Gems after a confirming second tap.
+local function gemButton(key: string, text: string, price: number, fire: () -> (), props: { [string]: any })
+	local state = ClientStore.state
+	local armedNow = isArmed(key)
+	local button: TextButton
+	local function tap()
+		-- Press and Activated can both arrive for one tap; take the first
+		if time() - lastGemTap < 0.35 or not button.Active then
+			return
+		end
+		lastGemTap = time()
+		if isArmed(key) then
+			armed[key] = nil
+			fire()
+		else
+			table.clear(armed) -- one armed button at a time
+			armed[key] = time()
+			Panels.refresh()
+			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
+		end
+	end
+	button = Ui.button(
+		if armedNow then string.format("Spend %s?", gems(price)) else string.format("%s  %s", text, gems(price)),
+		tap,
+		props
+	)
+	-- Act on the press itself, so a panel refresh between press and release can't swallow it
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			tap()
+		end
+	end)
+	Ui.setEnabled(
+		button,
+		price > 0 and state ~= nil and state.currencies.Gems >= price,
+		if armedNow then Color3.fromRGB(220, 150, 40) else Ui.colors.gems
+	)
+	return button
 end
 
 local function sortedIds(defs: { [string]: { order: number } }, enabled: { string }): { string }
@@ -121,8 +192,18 @@ local function renderOrders(state: { [string]: any })
 			local waitLeft = Timer.remaining(slot.refreshAt or 0, now)
 			Ui.label(
 				if waitLeft > 0 then "New order in " .. Timer.format(waitLeft) else "A new order is on its way...",
-				{ TextColor3 = Ui.colors.muted, Parent = card }
+				{ Size = UDim2.new(1, -150, 0, 22), TextColor3 = Ui.colors.muted, Parent = card }
 			)
+			if waitLeft > 0 then
+				gemButton("order:" .. i, "Now", Speedup.orderWait(waitLeft), function()
+					Remotes.fire("Order_SkipWait", i)
+				end, {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, 0),
+					Size = UDim2.fromOffset(140, 30),
+					Parent = card,
+				})
+			end
 		end
 	end
 end
@@ -188,10 +269,17 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		return
 	end
 	if preview.underConstruction then
-		Ui.label(
-			"Building... " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now)) .. " left",
-			{ Parent = row(40, 1) }
-		)
+		local left = Timer.remaining(preview.constructionReadyAt, now)
+		local line = row(42, 1)
+		Ui.label("Building... " .. Timer.format(left) .. " left", { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+		gemButton("build:" .. factoryId, "Finish", Speedup.building(left), function()
+			Remotes.fire("Factory_SpeedUp", factoryId)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = line,
+		})
 		return
 	end
 
@@ -247,17 +335,46 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 	end
 
 	-- Queue
+	local queueLine = row(42, order)
+	order += 1
 	Ui.label(
 		string.format("Queue  %d / %d", #preview.queue, preview.slots),
-		{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
+		{ Size = UDim2.new(1, -170, 1, 0), Font = Enum.Font.GothamBold, Parent = queueLine }
 	)
-	order += 1
+	local slotCost = Speedup.nextSlotCost(def.queueSlots, preview.slots)
+	if slotCost then
+		gemButton("slot:" .. factoryId, "+1 slot", slotCost, function()
+			Remotes.fire("Factory_BuySlot", factoryId)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = queueLine,
+		})
+	end
 	for i, job in preview.queue do
-		local status = if job.readyAt then Timer.format(Timer.remaining(job.readyAt, now)) .. " left" else "waiting"
+		local running = job.readyAt ~= nil and job.readyAt > now
+		local status = if running then Timer.format(Timer.remaining(job.readyAt, now)) .. " left" else "waiting"
+		local line = Ui.new("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, -4, 0, 30),
+			LayoutOrder = order,
+			Parent = body,
+		})
 		Ui.label(
 			string.format("%d. %s  %s", i, itemName(job.recipe), status),
-			{ LayoutOrder = order, TextColor3 = Ui.colors.muted, Parent = body }
+			{ Size = UDim2.new(1, -170, 1, 0), TextColor3 = Ui.colors.muted, Parent = line }
 		)
+		if i == 1 and running then
+			gemButton("job:" .. factoryId, "Finish", Speedup.production(job.readyAt - now), function()
+				Remotes.fire("Factory_SpeedUp", factoryId)
+			end, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(160, 28),
+				Parent = line,
+			})
+		end
 		order += 1
 	end
 
@@ -399,10 +516,17 @@ local function renderPen(state: { [string]: any }, penId: string)
 		return
 	end
 	if not Pen.isOperational(pen, now) then
-		Ui.label(
-			"Building... " .. Timer.format(Timer.remaining(pen.constructionReadyAt, now)) .. " left",
-			{ Parent = row(40, 1) }
-		)
+		local left = Timer.remaining(pen.constructionReadyAt, now)
+		local line = row(42, 1)
+		Ui.label("Building... " .. Timer.format(left) .. " left", { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+		gemButton("build:" .. penId, "Finish", Speedup.building(left), function()
+			Remotes.fire("Pen_SpeedUp", penId)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = line,
+		})
 		return
 	end
 
@@ -470,22 +594,49 @@ local function renderPen(state: { [string]: any }, penId: string)
 		{ Size = UDim2.fromOffset(150, 30), LayoutOrder = 3, Parent = holder }
 	)
 	Ui.setEnabled(buy, cost ~= nil and state.currencies.Coins >= cost)
+	if counts.producing > 0 then
+		gemButton("animals:" .. penId, "Finish all", Speedup.pen(pen, now), function()
+			Remotes.fire("Pen_SpeedUp", penId)
+		end, { Size = UDim2.fromOffset(180, 30), LayoutOrder = 3, Parent = row(42, 3) })
+	end
 
 	if not near then
 		Ui.label("Walk to the pen to feed and collect.", {
-			LayoutOrder = 3,
+			LayoutOrder = 4,
 			TextColor3 = Ui.colors.muted,
 			TextSize = 14,
 			Parent = body,
 		})
 	elseif counts.hungry > 0 and bags == 0 and scoops == 0 then
 		Ui.label(string.format("Make %s at the Feed Mill.", feedName), {
-			LayoutOrder = 3,
+			LayoutOrder = 4,
 			TextColor3 = Ui.colors.muted,
 			TextSize = 14,
 			Parent = body,
 		})
 	end
+end
+
+local function renderField(state: { [string]: any }, fieldId: string)
+	local field = state.fields[fieldId]
+	local now = ClientStore.now()
+	if field == nil or field.crop == nil or Timer.isReady(field.readyAt, now) then
+		Panels.close()
+		return
+	end
+	local crop = Crops[field.crop]
+	titleLabel.Text = crop.displayName
+	local left = Timer.remaining(field.readyAt, now)
+	local line = row(42, 1)
+	Ui.label("Ready in " .. Timer.format(left), { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+	gemButton("field:" .. fieldId, "Finish", Speedup.production(left), function()
+		Remotes.fire("Farm_SpeedUp", fieldId)
+	end, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.fromOffset(160, 30),
+		Parent = line,
+	})
 end
 
 local function renderSeeds(state: { [string]: any })
@@ -601,12 +752,19 @@ local function render()
 		renderPen(state, currentArg)
 	elseif Factories[current] then
 		renderFactory(state, current)
+	elseif current == "Field" and currentArg then
+		renderField(state, currentArg)
 	elseif current == "Seeds" then
 		renderSeeds(state)
 	elseif current == "Debug" then
 		renderDebug(state)
 	end
 end
+
+Panels.refresh = render
+
+local FULL_SIZE = UDim2.fromScale(0.9, 0.62)
+local COMPACT: { [string]: number } = { Field = 110 }
 
 function Panels.open(name: string, arg: string?)
 	if name == "Debug" and not RunService:IsStudio() then
@@ -618,6 +776,8 @@ function Panels.open(name: string, arg: string?)
 	end
 	current = name
 	currentArg = arg
+	-- One-row panels get a short frame instead of the full-size one
+	frame.Size = if COMPACT[name] then UDim2.new(0.9, 0, 0, COMPACT[name]) else FULL_SIZE
 	frame.Visible = true
 	render()
 end
@@ -642,7 +802,7 @@ function Panels.init()
 	frame = Ui.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.55),
-		Size = UDim2.fromScale(0.9, 0.62),
+		Size = FULL_SIZE,
 		BackgroundColor3 = Ui.colors.panel,
 		Visible = false,
 		Parent = gui,
@@ -681,7 +841,7 @@ function Panels.init()
 	task.spawn(function()
 		while true do
 			task.wait(1)
-			if current ~= nil and current ~= "Seeds" and current ~= "Debug" then
+			if current ~= nil and current ~= "Seeds" and current ~= "Debug" and not anyArmed() then
 				render()
 			end
 		end
