@@ -4,7 +4,10 @@
 ]]
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
+local LevelEditor = require(script.Parent.LevelEditor)
 local PuzzleScreen = require(script.Parent.PuzzleScreen)
 local TileStyle = require(script.Parent.TileStyle)
 
@@ -37,3 +40,17 @@ openButton.Activated:Connect(function()
 end)
 
 launcher.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+-- Studio only: the level editor, from the Trail's "Dev: Editor" button or the E key.
+if RunService:IsStudio() then
+	local function openEditor()
+		PuzzleScreen.close()
+		LevelEditor.open()
+	end
+	PuzzleScreen.onDevEditor = openEditor
+	UserInputService.InputBegan:Connect(function(input, gameProcessed)
+		if not gameProcessed and input.KeyCode == Enum.KeyCode.E and PuzzleScreen.isOpen() then
+			openEditor()
+		end
+	end)
+end

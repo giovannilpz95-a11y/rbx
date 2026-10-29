@@ -35,9 +35,20 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 - **Saving and Gems:** the farm owns the save. It calls `ServerStorage.CropPopLoadSave(player, puzzleBlock)` when the profile loads and reads `CropPopGetSave(player)` before each save. Until the save loads, levels can't start (Studio without the farm falls back to a fresh state after 10 seconds). Buying calls the farm's `CropPopSpendGems(player, amount, reason)`.
 - **Levels** are Luau tables in `Levels.luau` (layout strings, colours, goals, moves, rewards). The Studio level editor (P2) will write the same format.
 
+## Level editor (Studio only)
+
+On the Trail, press **Dev: Editor** (or the E key) in Studio Play mode.
+- Paint the board with the brushes: cell, hole, mud, double mud, and hay bales with 1–3 layers.
+- Set the size, moves, difficulty, tile colours (3–6) and up to 3 goals.
+- The status line says what's wrong while the level isn't valid.
+- **Test play** plays the level offline, with no hearts, rewards or streak.
+- **Bot check** has the test bot (`Bot.luau`) play it 50 times and shows its win rate. The bot plays randomly, so people do better; use it to compare levels.
+- **Export** writes the level as Luau (`LevelText.luau`), shown in the box and printed to Output, ready to paste into `Levels.List`.
+- **Load** brings an existing level in to edit.
+
 ## Not in yet
 
-Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, the level editor and real tile art.
+Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, and real tile art.
 
 ## Tests
 

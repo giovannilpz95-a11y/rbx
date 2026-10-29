@@ -1,0 +1,577 @@
+--[[
+	Crop Pop level editor (Studio only, in Play mode).
+
+		LevelEditor.open()        -- from the Trail's "Dev: Editor" button or the E key
+
+	Paint the board, pick tile colours, goals and moves, then:
+	  Test play   plays it offline (no hearts, no rewards)
+	  Bot check   plays it 50 times with the test bot and shows the win rate
+	  Export      writes it as Luau for Levels.List (in the box and in Output)
+
+	A Studio plugin can reuse the same pieces later; this keeps level editing
+	inside the current Play-mode workflow.
+]]
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
+local PuzzleScreen = require(script.Parent.PuzzleScreen)
+local TileStyle = require(script.Parent.TileStyle)
+
+local Levels, LevelText, Bot, Tiles = CropPop.Levels, CropPop.LevelText, CropPop.Bot, CropPop.Tiles
+local Colors = TileStyle.Board
+
+local LevelEditor = {}
+
+local ROW_HEIGHT = 36
+local BOT_GAMES = 50
+local DIFFICULTIES = { "Normal", "Tough", "Super Tough" }
+-- First-pass rewards by difficulty until the economy thread sets them.
+local REWARDS = { Normal = { coins = 25, xp = 5 }, Tough = { coins = 50, xp = 10 }, ["Super Tough"] = { coins = 75, xp = 15 } }
+
+-- Paint brushes: layout character, label, cell colour.
+local BRUSHES = {
+	{ char = ".", label = "Cell" },
+	{ char = "#", label = "Hole" },
+	{ char = "m", label = "Mud" },
+	{ char = "M", label = "Mud 2" },
+	{ char = "1", label = "🌾1" },
+	{ char = "2", label = "🌾2" },
+	{ char = "3", label = "🌾3" },
+}
+
+local ui = nil
+local state = nil -- the level being edited
+
+-- Level state ----------------------------------------------------------------
+
+local function blankLevel()
+	local grid = {}
+	for y = 1, 8 do
+		grid[y] = {}
+		for x = 1, 8 do
+			grid[y][x] = "."
+		end
+	end
+	return {
+		id = #Levels.List + 1,
+		name = "New Level",
+		difficulty = "Normal",
+		moves = 20,
+		colors = { "Tomato", "Egg", "Carrot", "Corn", "Milk" },
+		grid = grid,
+		goals = { { kind = "Collect", tile = "Tomato", count = 15 } },
+		brush = ".",
+		loadId = 1,
+	}
+end
+
+local function fromLevel(level)
+	local grid = {}
+	for y, row in level.layout do
+		grid[y] = {}
+		for x = 1, #row do
+			grid[y][x] = string.sub(row, x, x)
+		end
+	end
+	local goals = {}
+	for _, goal in level.goals do
+		table.insert(goals, table.clone(goal))
+	end
+	return {
+		id = level.id,
+		name = level.name,
+		difficulty = level.difficulty,
+		moves = level.moves,
+		colors = table.clone(level.colors),
+		grid = grid,
+		goals = goals,
+		brush = ".",
+		loadId = level.id,
+	}
+end
+
+-- The level table the engine, the validator and the exporter use.
+local function toLevel()
+	local layout = {}
+	for y, row in state.grid do
+		layout[y] = table.concat(row)
+	end
+	local colors = {}
+	for _, name in Tiles.Names do -- keep the standard tile order
+		if table.find(state.colors, name) then
+			table.insert(colors, name)
+		end
+	end
+	local goals = {}
+	for _, goal in state.goals do
+		table.insert(goals, table.clone(goal))
+	end
+	return {
+		id = state.id,
+		name = state.name,
+		difficulty = state.difficulty,
+		moves = state.moves,
+		colors = colors,
+		layout = layout,
+		goals = goals,
+		rewards = table.clone(REWARDS[state.difficulty]),
+	}
+end
+
+local function width(): number
+	return #state.grid[1]
+end
+
+local function height(): number
+	return #state.grid
+end
+
+local function resize(dw: number, dh: number)
+	local w = math.clamp(width() + dw, 3, Levels.MAX_SIZE)
+	local h = math.clamp(height() + dh, 3, Levels.MAX_SIZE)
+	local grid = {}
+	for y = 1, h do
+		grid[y] = {}
+		for x = 1, w do
+			grid[y][x] = state.grid[y] and state.grid[y][x] or "."
+		end
+	end
+	state.grid = grid
+end
+
+-- Small UI helpers ---------------------------------------------------------------
+
+local function corner(parent: Instance, radius: number)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(radius, 0)
+	c.Parent = parent
+end
+
+local function textItem(className: string, parent: Instance, name: string, text: string, size: UDim2): any
+	local item = Instance.new(className)
+	item.Name = name
+	item.Text = text
+	item.Size = size
+	item.Font = TileStyle.Font
+	item.TextScaled = true
+	item.TextColor3 = Colors.text
+	item.BackgroundTransparency = 1
+	item.Parent = parent
+	return item
+end
+
+local function button(parent: Instance, name: string, text: string, size: UDim2, onClick: () -> ()): TextButton
+	local b = textItem("TextButton", parent, name, text, size)
+	b.BackgroundTransparency = 0
+	b.BackgroundColor3 = Colors.accent
+	b.TextColor3 = Color3.new(1, 1, 1)
+	b.AutoButtonColor = true
+	corner(b, 0.25)
+	b.Activated:Connect(onClick)
+	return b
+end
+
+-- A horizontal row in the side panel.
+local function row(name: string, order: number, rows: number?): Frame
+	local r = Instance.new("Frame")
+	r.Name = name
+	r.LayoutOrder = order
+	r.Size = UDim2.new(1, -8, 0, ROW_HEIGHT * (rows or 1))
+	r.BackgroundTransparency = 1
+	r.Parent = ui.panel
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.Padding = UDim.new(0, 4)
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.VerticalAlignment = Enum.VerticalAlignment.Center
+	layout.Parent = r
+	return r
+end
+
+local function clearRows()
+	for _, child in ui.panel:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+end
+
+-- Drawing ------------------------------------------------------------------------
+
+local render -- forward declaration
+
+local function setStatus(text: string)
+	state.status = text
+	if ui then
+		ui.status.Text = text
+	end
+end
+
+local function cellLook(char: string): (Color3, string)
+	if char == "#" then
+		return Colors.backdrop, ""
+	elseif char == "m" then
+		return Color3.fromRGB(170, 126, 86), ""
+	elseif char == "M" then
+		return Colors.mud, ""
+	elseif char == "1" or char == "2" or char == "3" then
+		return Colors.bale, "🌾" .. char
+	end
+	return Colors.cellLight, ""
+end
+
+local function renderGrid()
+	for _, child in ui.grid:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+	local w, h = width(), height()
+	ui.gridAspect.AspectRatio = w / h
+	for y = 1, h do
+		for x = 1, w do
+			local color, text = cellLook(state.grid[y][x])
+			local cell = textItem("TextButton", ui.grid, string.format("Cell%d_%d", x, y), text, UDim2.fromScale(1 / w, 1 / h))
+			cell.Position = UDim2.fromScale((x - 1) / w, (y - 1) / h)
+			cell.BackgroundTransparency = 0
+			cell.BackgroundColor3 = color
+			cell.BorderSizePixel = 1
+			cell.BorderColor3 = Colors.backdrop
+			cell.TextColor3 = Colors.baleText
+			cell.AutoButtonColor = false
+			cell.Activated:Connect(function()
+				state.grid[y][x] = state.brush
+				render()
+			end)
+		end
+	end
+end
+
+local function goalLabel(goal): string
+	if goal.kind == "Collect" then
+		return TileStyle.Glyphs[Tiles.ByName[goal.tile]] .. " " .. goal.tile
+	elseif goal.kind == "Mud" then
+		return "🟫 all mud"
+	end
+	return "🌾 all bales"
+end
+
+local function stepper(parent: Instance, name: string, value: string, onChange: (number) -> ())
+	button(parent, name .. "Down", "-", UDim2.fromOffset(32, ROW_HEIGHT - 4), function()
+		onChange(-1)
+	end)
+	textItem("TextLabel", parent, name, value, UDim2.fromOffset(70, ROW_HEIGHT - 6))
+	button(parent, name .. "Up", "+", UDim2.fromOffset(32, ROW_HEIGHT - 4), function()
+		onChange(1)
+	end)
+end
+
+local function renderPanel()
+	clearRows()
+	local order = 0
+	local function nextOrder()
+		order += 1
+		return order
+	end
+
+	local title = row("Title", nextOrder())
+	textItem("TextLabel", title, "Label", "Level editor", UDim2.new(0.6, 0, 1, 0))
+	button(title, "Close", "Back", UDim2.new(0.35, 0, 1, -4), function()
+		LevelEditor.close()
+		PuzzleScreen.open()
+	end)
+
+	local nameRow = row("NameRow", nextOrder())
+	textItem("TextLabel", nameRow, "Label", "Name", UDim2.new(0.25, 0, 1, -8))
+	local nameBox = textItem("TextBox", nameRow, "Box", state.name, UDim2.new(0.72, 0, 1, -4))
+	nameBox.BackgroundTransparency = 0
+	nameBox.BackgroundColor3 = Color3.new(1, 1, 1)
+	nameBox.ClearTextOnFocus = false
+	nameBox.FocusLost:Connect(function()
+		state.name = nameBox.Text
+	end)
+
+	local sizeRow = row("BoardSize", nextOrder())
+	stepper(sizeRow, "Width", "W " .. width(), function(d)
+		resize(d, 0)
+		render()
+	end)
+	stepper(sizeRow, "Height", "H " .. height(), function(d)
+		resize(0, d)
+		render()
+	end)
+
+	local brushRow = row("Brushes", nextOrder())
+	for i, brush in BRUSHES do
+		local b = button(brushRow, "Brush" .. brush.char, brush.label, UDim2.new(1 / #BRUSHES, -4, 1, -4), function()
+			state.brush = brush.char
+			render()
+		end)
+		b.LayoutOrder = i
+		b.BackgroundColor3 = if state.brush == brush.char then Colors.accent else Colors.locked
+	end
+
+	local movesRow = row("Moves", nextOrder())
+	stepper(movesRow, "Moves", state.moves .. " moves", function(d)
+		state.moves = math.clamp(state.moves + d, 5, 60)
+		render()
+	end)
+	button(movesRow, "Difficulty", state.difficulty, UDim2.fromOffset(110, ROW_HEIGHT - 4), function()
+		local i = table.find(DIFFICULTIES, state.difficulty) or 1
+		state.difficulty = DIFFICULTIES[i % #DIFFICULTIES + 1]
+		render()
+	end)
+
+	local colorRow = row("Colors", nextOrder())
+	for i, name in Tiles.Names do
+		local on = table.find(state.colors, name) ~= nil
+		local b = button(colorRow, name, TileStyle.Glyphs[i], UDim2.new(1 / #Tiles.Names, -4, 1, -4), function()
+			local at = table.find(state.colors, name)
+			if at then
+				table.remove(state.colors, at)
+			else
+				table.insert(state.colors, name)
+			end
+			render()
+		end)
+		b.LayoutOrder = i
+		b.BackgroundColor3 = if on then TileStyle.Colors[i] else Colors.locked
+		b.BackgroundTransparency = if on then 0 else 0.5
+	end
+
+	for i, goal in state.goals do
+		local goalRow = row("Goal" .. i, nextOrder())
+		local label = button(goalRow, "Kind", goalLabel(goal), UDim2.fromOffset(120, ROW_HEIGHT - 4), function()
+			-- Tap a collect goal to move it to the next tile colour.
+			if goal.kind == "Collect" then
+				local at = table.find(state.colors, goal.tile) or 0
+				goal.tile = state.colors[at % math.max(1, #state.colors) + 1] or goal.tile
+				render()
+			end
+		end)
+		label.BackgroundColor3 = Colors.option
+		label.TextColor3 = Colors.text
+		if goal.kind == "Collect" then
+			stepper(goalRow, "Count", tostring(goal.count), function(d)
+				goal.count = math.clamp(goal.count + d * 5, 5, 200)
+				render()
+			end)
+		end
+		button(goalRow, "Remove", "X", UDim2.fromOffset(32, ROW_HEIGHT - 4), function()
+			table.remove(state.goals, i)
+			render()
+		end)
+	end
+	local addRow = row("AddGoal", nextOrder())
+	for _, kind in { "Collect", "Mud", "HayBale" } do
+		button(addRow, "Add" .. kind, "+ " .. (if kind == "HayBale" then "Bales" else kind), UDim2.new(1 / 3, -4, 1, -4), function()
+			if #state.goals >= 3 then
+				setStatus("3 goals at most.")
+				return
+			end
+			if kind == "Collect" then
+				table.insert(state.goals, { kind = "Collect", tile = state.colors[1] or "Tomato", count = 15 })
+			else
+				table.insert(state.goals, { kind = kind })
+			end
+			render()
+		end)
+	end
+
+	local loadRow = row("Load", nextOrder())
+	stepper(loadRow, "LoadId", "Level " .. state.loadId, function(d)
+		state.loadId = math.clamp(state.loadId + d, 1, #Levels.List)
+		render()
+	end)
+	button(loadRow, "LoadLevel", "Load", UDim2.fromOffset(60, ROW_HEIGHT - 4), function()
+		LevelEditor.load(Levels.get(state.loadId))
+	end)
+	button(loadRow, "New", "New", UDim2.fromOffset(60, ROW_HEIGHT - 4), function()
+		state = blankLevel()
+		render()
+	end)
+
+	local actions = row("Actions", nextOrder())
+	button(actions, "TestPlay", "Test play", UDim2.new(1 / 3, -4, 1, -4), LevelEditor.testPlay)
+	button(actions, "BotCheck", "Bot check", UDim2.new(1 / 3, -4, 1, -4), LevelEditor.botCheck)
+	button(actions, "Export", "Export", UDim2.new(1 / 3, -4, 1, -4), LevelEditor.export)
+
+	local statusRow = row("StatusRow", nextOrder(), 2)
+	local status = textItem("TextLabel", statusRow, "Status", state.status or "", UDim2.new(1, 0, 1, 0))
+	status.TextWrapped = true
+	status.TextColor3 = Colors.accent
+	ui.status = status
+
+	local exportRow = row("ExportRow", nextOrder(), 5)
+	local box = textItem("TextBox", exportRow, "Text", state.exported or "", UDim2.new(1, 0, 1, 0))
+	box.TextScaled = false
+	box.TextSize = 12
+	box.Font = Enum.Font.Code
+	box.MultiLine = true
+	box.ClearTextOnFocus = false
+	box.TextXAlignment = Enum.TextXAlignment.Left
+	box.TextYAlignment = Enum.TextYAlignment.Top
+	box.BackgroundTransparency = 0
+	box.BackgroundColor3 = Color3.new(1, 1, 1)
+	ui.exportBox = box
+end
+
+render = function()
+	renderGrid()
+	renderPanel()
+	local err = Levels.validate(toLevel())
+	if err then
+		ui.status.Text = "⚠️ " .. err
+	end
+end
+
+local function build()
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "CropPopEditor"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 21
+	gui.Enabled = false
+
+	local backdrop = Instance.new("Frame")
+	backdrop.Name = "Backdrop"
+	backdrop.Size = UDim2.fromScale(1, 1)
+	backdrop.BackgroundColor3 = Colors.backdrop
+	backdrop.BorderSizePixel = 0
+	backdrop.Parent = gui
+
+	local gridArea = Instance.new("Frame")
+	gridArea.Name = "GridArea"
+	gridArea.Position = UDim2.new(0, 12, 0, 64)
+	gridArea.Size = UDim2.new(0.55, -18, 1, -76)
+	gridArea.BackgroundTransparency = 1
+	gridArea.Parent = backdrop
+	local grid = Instance.new("Frame")
+	grid.Name = "Grid"
+	grid.Size = UDim2.fromScale(1, 1)
+	grid.BackgroundTransparency = 1
+	grid.Parent = gridArea
+	local gridAspect = Instance.new("UIAspectRatioConstraint")
+	gridAspect.Parent = grid
+
+	local panel = Instance.new("ScrollingFrame")
+	panel.Name = "Panel"
+	panel.Position = UDim2.new(0.55, 6, 0, 64)
+	panel.Size = UDim2.new(0.45, -18, 1, -76)
+	panel.BackgroundColor3 = Colors.panel
+	panel.BorderSizePixel = 0
+	panel.ScrollBarThickness = 6
+	panel.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	panel.CanvasSize = UDim2.new()
+	panel.Parent = backdrop
+	corner(panel, 0.02)
+	local panelLayout = Instance.new("UIListLayout")
+	panelLayout.Padding = UDim.new(0, 6)
+	panelLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	panelLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	panelLayout.Parent = panel
+	local panelPadding = Instance.new("UIPadding")
+	panelPadding.PaddingTop = UDim.new(0, 6)
+	panelPadding.Parent = panel
+
+	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
+	return { gui = gui, grid = grid, gridAspect = gridAspect, panel = panel }
+end
+
+-- Public API ---------------------------------------------------------------------
+
+function LevelEditor.open()
+	if not RunService:IsStudio() then
+		return
+	end
+	if not ui then
+		ui = build()
+	end
+	state = state or blankLevel()
+	ui.gui.Enabled = true
+	render()
+end
+
+function LevelEditor.close()
+	if ui then
+		ui.gui.Enabled = false
+	end
+end
+
+function LevelEditor.isOpen(): boolean
+	return ui ~= nil and ui.gui.Enabled
+end
+
+function LevelEditor.load(level)
+	if not level then
+		return
+	end
+	state = fromLevel(level)
+	if ui then
+		render()
+	end
+end
+
+-- The level as it stands, and the validator's complaint if any.
+function LevelEditor.current()
+	local level = toLevel()
+	return level, Levels.validate(level)
+end
+
+function LevelEditor.testPlay()
+	local level, err = LevelEditor.current()
+	if err then
+		setStatus("Can't play yet: " .. err)
+		return
+	end
+	LevelEditor.close()
+	PuzzleScreen.playTest(level, LevelEditor.open)
+end
+
+function LevelEditor.botCheck()
+	local level, err = LevelEditor.current()
+	if err then
+		setStatus("Can't check yet: " .. err)
+		return
+	end
+	setStatus("The bot is playing...")
+	local report = Bot.play(level, BOT_GAMES, os.time())
+	setStatus(string.format(
+		"Bot wins %d%% of %d games (%.1f moves left on wins; %d%% of goals done on losses). The bot plays randomly, so people do better.",
+		math.round(report.winRate * 100),
+		report.games,
+		report.avgMovesLeft,
+		math.round(report.avgGoalShare * 100)
+	))
+	return report
+end
+
+function LevelEditor.export(): string?
+	local level, err = LevelEditor.current()
+	if err then
+		setStatus("Fix this first: " .. err)
+		return nil
+	end
+	local text = LevelText.write(level)
+	state.exported = text
+	if ui then
+		ui.exportBox.Text = text
+	end
+	print("[CropPop] Level " .. level.id .. " for Levels.List:\n" .. text)
+	setStatus("Exported. Copy it from the box or the Output window into Levels.List.")
+	return text
+end
+
+-- For tests: paint one cell with a brush character.
+function LevelEditor.paint(x: number, y: number, char: string)
+	state.brush = char
+	state.grid[y][x] = char
+	if ui then
+		render()
+	end
+end
+
+return LevelEditor
