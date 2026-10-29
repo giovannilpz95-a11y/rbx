@@ -1,0 +1,39 @@
+name: Audio tests
+
+on:
+  push:
+    paths:
+      - "audio/**"
+      - "croppop/src/client/**"
+      - "croppop/tools/luaurun/**"
+      - ".github/workflows/audio-ci.yml"
+  pull_request:
+    paths:
+      - "audio/**"
+      - "croppop/src/client/**"
+      - "croppop/tools/luaurun/**"
+      - ".github/workflows/audio-ci.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: audio
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            croppop/tools/luaurun/target
+          key: luaurun-${{ runner.os }}-${{ hashFiles('croppop/tools/luaurun/Cargo.lock', 'croppop/tools/luaurun/src/**') }}
+
+      # The audio tests reuse Crop Pop's small Luau host.
+      - name: Build the Luau test host
+        run: cargo build --release --locked --manifest-path ../croppop/tools/luaurun/Cargo.toml
+
+      - name: Run the audio tests
+        run: ../croppop/tools/luaurun/target/release/luaurun tests/run.luau
