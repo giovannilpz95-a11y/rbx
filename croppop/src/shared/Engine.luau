@@ -67,15 +67,19 @@ function Engine.new(level, seed: number, options: Options?)
 		status = "Playing", -- "Playing" | "Won" | "Lost"
 		stats = { powerUpsMade = 0, combos = 0, cascades = 0 },
 		boostersUsed = {}, -- in-level booster kind -> times used
+		continues = 0, -- paid +5-move continues taken
 	}, Engine)
 
 	if options and options.startPowerUps then
-		self:_placeStartPowerUps(options.startPowerUps)
+		self:_placePowerUps(options.startPowerUps)
 	end
 	return self
 end
 
-function Engine._placeStartPowerUps(self, powers: { string })
+-- Turns random plain tiles into power-ups. Returns what changed (as a Pop
+-- phase's `transformed`) and a Shuffle phase if the board had to be shuffled.
+function Engine._placePowerUps(self, powers: { string })
+	local placed = {}
 	local candidates = {}
 	self.board:eachCell(function(cell)
 		if Board.isMovable(cell) and cell.piece.power == nil then
@@ -94,10 +98,13 @@ function Engine._placeStartPowerUps(self, powers: { string })
 		if power == Power.Sunflower then
 			cell.piece.color = 0
 		end
+		table.insert(placed, { id = cell.piece.id, power = power, x = cell.x, y = cell.y })
 	end
+	local shuffle = nil
 	if not Matcher.hasPossibleMove(self.board) then
-		self.board:shuffle(self.rng, self.colors)
+		shuffle = { kind = "Shuffle", moves = self.board:shuffle(self.rng, self.colors) }
 	end
+	return placed, shuffle
 end
 
 -- Waves ---------------------------------------------------------------------
@@ -616,10 +623,21 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 end
 
 --[[
-	Applies one recorded action: a swap { x1, y1, x2, y2 } or a booster
-	{ "Trowel", x, y }, { "Rake", y }, { "GardenGloves", x1, y1, x2, y2 }, { "ShakeUp" }.
+	Applies one recorded action: a swap { x1, y1, x2, y2 }, a booster
+	{ "Trowel", x, y }, { "Rake", y }, { "GardenGloves", x1, y1, x2, y2 }, { "ShakeUp" },
+	or a paid continue { "Continue" }.
 ]]
 function Engine.apply(self, action: { any }): (boolean, { any })
+	if action[1] == "Continue" then
+		return self:continue()
+	elseif action[1] == "DevOneMove" then
+		-- Studio testing only (Replay drops it elsewhere): jump to the last move.
+		if self.status ~= "Playing" then
+			return false, {}
+		end
+		self.movesLeft = 1
+		return true, {}
+	end
 	if type(action[1]) == "string" then
 		return self:useBooster(action[1], action[2], action[3], action[4], action[5])
 	end
@@ -631,12 +649,31 @@ function Engine._useMove(self)
 	self.movesMade += 1
 end
 
--- Extra moves after running out (paid continues, P2).
 function Engine.addMoves(self, count: number)
 	self.movesLeft += count
 	if self.status == "Lost" then
 		self.status = "Playing"
 	end
+end
+
+-- A paid continue after running out of moves: +5 moves, and from the second
+-- one a power-up on the board (Boosters.Continue). Only when the level is lost.
+function Engine.continue(self): (boolean, { any })
+	if self.status ~= "Lost" then
+		return false, {}
+	end
+	self.continues += 1
+	local step = Boosters.continueStep(self.continues)
+	self:addMoves(Boosters.Continue.MOVES)
+	local phases = {}
+	if step.power then
+		local placed, shuffle = self:_placePowerUps({ step.power })
+		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, effects = {} })
+		if shuffle then
+			table.insert(phases, shuffle)
+		end
+	end
+	return true, phases
 end
 
 function Engine.getState(self)
@@ -666,6 +703,7 @@ function Engine.hash(self): string
 		table.concat(goalParts, ","),
 		tostring(self.rng.state),
 		self.status,
+		tostring(self.continues),
 	}, "|")
 end
 

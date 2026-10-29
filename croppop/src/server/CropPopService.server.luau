@@ -8,6 +8,7 @@
 	  FinishLevel(token, actions)         -> { won, levelId, rewards?, firstWin?, progress } | { error }
 	  BuyHearts(packIndex)                -> progress | { error }
 	  BuyBooster(kind)                    -> progress | { error }
+	  BuyContinue(token, actions)         -> { continues, progress } | { error }   (+5 moves once out of moves)
 
 	Farm hooks in ServerStorage:
 	  CropPopLevelWon (BindableEvent, fired)     (player, levelId, rewards, firstWin) after a verified win
@@ -48,6 +49,7 @@ local store = RunStore.new({
 	spendGems = spendGems,
 	-- In Studio every test level is open; live servers follow the Crop Pop Trail order.
 	unlockAll = RunService:IsStudio(),
+	devActions = RunService:IsStudio(), -- the "Dev: 1 move" button
 	autoLoad = false,
 })
 
@@ -119,6 +121,15 @@ end)
 
 remote("BuyBooster", function(player, kind)
 	return reply(store:buyBooster(player.UserId, kind))
+end)
+
+remote("BuyContinue", function(player, token, moves)
+	local ok, result, err = pcall(store.buyContinue, store, player.UserId, token, moves)
+	if not ok then
+		warn("[CropPop] continue replay failed for", player.Name, result)
+		return { error = "server error" }
+	end
+	return reply(result, err)
 end)
 
 local function onPlayerAdded(player: Player)

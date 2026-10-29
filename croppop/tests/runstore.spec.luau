@@ -241,3 +241,90 @@ test("saves round-trip, and a late load replaces the fresh state", function()
 	store:importSave(15, nil)
 	eq(store:getProgress(15).hearts.count, Hearts.MAX, "nil is a new player")
 end)
+
+test("continues are sold only when out of moves, at rising prices, and checked at the end", function()
+	local charged = {}
+	local store, tick = makeStore(true, {
+		spendGems = function(_, amount)
+			table.insert(charged, amount)
+			return true
+		end,
+		devActions = true,
+	})
+	tick(10)
+	local run = assert(store:start(20, 5))
+	local pop = Engine.new(Levels.get(5), run.seed, { startPowerUps = run.startPowerUps })
+	local actions = {}
+	local function act(action)
+		assert(pop:apply(action))
+		table.insert(actions, action)
+	end
+
+	falsy(store:buyContinue(20, run.token, actions), "not before running out")
+	act({ "DevOneMove" })
+	act(pop:listPossibleMoves()[1])
+	if pop.status ~= "Lost" then
+		return -- won on the last move by luck
+	end
+	falsy(store:buyContinue(20, run.token + 1, actions), "wrong run")
+	assert(store:buyContinue(20, run.token, actions))
+	eq(charged[1], 10)
+	falsy(store:buyContinue(20, run.token, actions), "the paid one has to be used first")
+	act({ "Continue" })
+	act({ "DevOneMove" })
+	act(pop:listPossibleMoves()[1])
+	if pop.status ~= "Lost" then
+		return
+	end
+	assert(store:buyContinue(20, run.token, actions))
+	eq(charged[2], 20)
+	act({ "Continue" })
+
+	-- One more continue than was paid for is refused at the end.
+	local cheat = table.clone(actions)
+	pop:apply({ "DevOneMove" })
+	table.insert(cheat, { "DevOneMove" })
+	local m = pop:listPossibleMoves()[1]
+	pop:apply(m)
+	table.insert(cheat, m)
+	if pop.status == "Lost" then
+		table.insert(cheat, { "Continue" })
+		local result, err = store:finish(20, run.token, cheat)
+		falsy(result)
+		truthy(string.find(err, "paid"))
+	end
+end)
+
+test("an honest run with paid continues is accepted", function()
+	local store, tick = makeStore(true, {
+		spendGems = function()
+			return true
+		end,
+		devActions = true,
+	})
+	tick(10)
+	local run = assert(store:start(21, 4))
+	local pop = Engine.new(Levels.get(4), run.seed, { startPowerUps = run.startPowerUps })
+	local actions = {}
+	local function act(action)
+		assert(pop:apply(action))
+		table.insert(actions, action)
+	end
+	act({ "DevOneMove" })
+	act(pop:listPossibleMoves()[1])
+	if pop.status == "Lost" then
+		assert(store:buyContinue(21, run.token, actions))
+		act({ "Continue" })
+	end
+	local result = assert(store:finish(21, run.token, actions))
+	eq(result.won, pop.status == "Won")
+end)
+
+test("the Studio dev action is refused on live servers", function()
+	local store, tick = makeStore(true)
+	tick(10)
+	local run = assert(store:start(22, 1))
+	local result, err = store:finish(22, run.token, { { "DevOneMove" } })
+	falsy(result)
+	truthy(err)
+end)

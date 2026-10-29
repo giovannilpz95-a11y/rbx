@@ -111,6 +111,21 @@ local function playLevel(levelId, boosters)
 	return pressPlay(boosters)
 end
 
+-- On the out-of-moves offer, turn down the continue so the level is checked.
+local function giveUp()
+	local panel = playerGui.CropPop.Backdrop.EndPanel
+	if panel.Visible and panel.Title.Text == "Out of moves" then
+		panel.Secondary.Activated:Fire()
+	end
+end
+
+-- Runs the current level out of moves with the Studio button and one swap.
+local function runOutOfMoves(run)
+	playerGui.CropPop.Backdrop.Play.TopBar.DevOneMove.Activated:Fire()
+	local m = Matcher.listPossibleMoves(run.game.board)[1]
+	swipe(run.view, m[1], m[2], m[3], m[4])
+end
+
 local function playToEnd(maxMoves, useTaps)
 	local run = PuzzleScreen.currentRun()
 	for i = 1, maxMoves do
@@ -189,6 +204,9 @@ test("the Studio 1-move button leads to the out-of-moves panel and Retry", funct
 	eq(run.game.status, "Lost")
 	truthy(backdrop.EndPanel.Visible)
 	eq(backdrop.EndPanel.Title.Text, "Out of moves")
+	eq(backdrop.EndPanel.Secondary.Text, "Give up")
+	backdrop.EndPanel.Secondary.Activated:Fire()
+	eq(backdrop.EndPanel.Title.Text, "Level failed")
 	backdrop.EndPanel.Primary.Activated:Fire()
 	local retry = pressPlay()
 	truthy(retry and retry ~= run, "retry started a new run")
@@ -251,6 +269,7 @@ test("the out-of-moves message depends on how close the player got", function()
 	local m = Matcher.listPossibleMoves(run.game.board)[1]
 	swipe(run.view, m[1], m[2], m[3], m[4])
 	eq(run.game.status, "Lost")
+	giveUp()
 	eq(playerGui.CropPop.Backdrop.EndPanel.Body.Text, "Give it another go!")
 end)
 
@@ -287,6 +306,7 @@ test("the Trail shows hearts and the countdown after a loss", function()
 	local m = Matcher.listPossibleMoves(run.game.board)[1]
 	swipe(run.view, m[1], m[2], m[3], m[4])
 	eq(run.game.status, "Lost")
+	giveUp()
 	playerGui.CropPop.Backdrop.EndPanel.Secondary.Activated:Fire() -- Trail
 	truthy(select.Visible)
 	-- The mock clock jumps a few seconds per read, so only the start is fixed.
@@ -375,6 +395,7 @@ test("in-level boosters arm, act on a tap and are recorded for the replay", func
 	-- The server replays it all and charges the boosters used.
 	local stockBefore = serverProgress().boosters
 	playToEnd(200, false)
+	giveUp()
 	truthy(playerGui.CropPop.Backdrop.EndPanel.Visible)
 	falsy(playerGui.CropPop.Backdrop.EndPanel.Title.Text == "Hmm, that didn't check out")
 	local stockAfter = serverProgress().boosters
@@ -407,6 +428,73 @@ test("an empty booster asks before spending Gems, then buys on the second tap", 
 	eq(run.stock.Trowel, 1)
 	truthy(string.find(hint.Text, "break"), "bought and ready to use")
 	spend.Parent = nil
+end)
+
+test("out of moves offers +5 moves for Gems, at a rising price", function()
+	local wallet = 100
+	local spend = Mock.newInstance("BindableFunction", { Name = "CropPopSpendGems" })
+	spend.OnInvoke = function(_, amount)
+		if amount > wallet then
+			return false
+		end
+		wallet -= amount
+		return true
+	end
+	spend.Parent = services.ServerStorage
+	local panel = playerGui.CropPop.Backdrop.EndPanel
+
+	local run = playLevel(3)
+	runOutOfMoves(run)
+	eq(run.game.status, "Lost")
+	eq(panel.Title.Text, "Out of moves")
+	eq(panel.Primary.Text, "+5 moves  10 💎")
+	panel.Primary.Activated:Fire() -- 10 Gems: no confirm needed
+	eq(wallet, 90)
+	eq(panel.Visible, false)
+	eq(run.game.status, "Playing")
+	eq(run.game.movesLeft, 5)
+	eq(playerGui.CropPop.Backdrop.Play.TopBar.Moves.Count.Text, "5")
+
+	-- The second one costs more, asks first, and adds a Seed Sprayer.
+	runOutOfMoves(run)
+	truthy(string.find(panel.Body.Text, "Seed Sprayer", 1, true))
+	panel.Primary.Activated:Fire()
+	eq(panel.Primary.Text, "Spend 20 💎?")
+	eq(wallet, 90)
+	local sprayers = 0
+	run.game.board:eachCell(function(cell)
+		if cell.piece and CropPop.Tiles.isSprayer(cell.piece.power) then
+			sprayers += 1
+		end
+	end)
+	panel.Primary.Activated:Fire()
+	eq(wallet, 70)
+	eq(run.game.continues, 2)
+	local after = 0
+	run.game.board:eachCell(function(cell)
+		if cell.piece and CropPop.Tiles.isSprayer(cell.piece.power) then
+			after += 1
+		end
+	end)
+	eq(after, sprayers + 1)
+	eq(mismatches, 0, "tiles out of step before sync")
+
+	-- Giving up sends everything to the server, which accepts the paid continues.
+	runOutOfMoves(run)
+	giveUp()
+	eq(panel.Title.Text, "Level failed")
+	spend.Parent = nil
+end)
+
+test("a continue the server can't charge leaves the offer up", function()
+	local panel = playerGui.CropPop.Backdrop.EndPanel
+	local run = playLevel(3)
+	runOutOfMoves(run)
+	panel.Primary.Activated:Fire() -- no Gem hook in ServerStorage now
+	truthy(panel.Visible)
+	truthy(string.find(panel.Body.Text, "not enough Gems", 1, true))
+	eq(run.game.status, "Lost")
+	giveUp()
 end)
 
 test("closing hides the screen", function()

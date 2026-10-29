@@ -16,7 +16,7 @@ The match-3 side game for the farm (design: `Design/Features/F12 Crop Pop Puzzle
 
 ## Playing it in Studio
 
-Press Play and click the **🍅 Crop Pop** button in the bottom-left. Pick a level from the Crop Pop Trail, pick any start boosters, and press Play. Swipe a tile, or tap one tile and then a neighbour. The booster bar (🪏 🧹 🧤 🔀) sits under the board, or in the side panel on a wide screen: tap one, then tap the board. In Studio every test level is unlocked; live servers unlock them in order.
+Press Play and click the **🍅 Crop Pop** button in the bottom-left. Pick a level from the Crop Pop Trail, pick any start boosters, and press Play. Swipe a tile, or tap one tile and then a neighbour. The booster bar (🪏 🧹 🧤 🔀) sits under the board, or in the side panel on a wide screen: tap one, then tap the board. In Studio every test level is unlocked (live servers unlock them in order), and **Dev: 1 move** (or the L key) jumps to the last move. That jump goes in the action list and the Studio server's replay accepts it, so you can test buying continues; live servers refuse it.
 
 The button is temporary. The Puzzle Porch and the Town Square cabinet should call `PuzzleScreen.open()` (or `open(levelId)`) instead.
 
@@ -29,12 +29,13 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 - **Anti-cheat:** `StartLevel` gives the client a seed and a token. When the level ends, the client sends its swaps to `FinishLevel`; the server replays them and only fires `ServerStorage.CropPopLevelWon(player, levelId, rewards, firstWin)` if the replay wins. The farm economy should listen to that event to pay Coins and XP.
 - **Hearts:** 5 at most, one back every 30 minutes, even offline. Starting a level holds a heart and a win gives it back, so only losses (and quitting) cost one. When they're all gone, a full refill costs 36 Gems (Township's 5 lives for 900 T-cash, rescaled).
 - **Boosters:** before a level, Sprayer Start, Bomb Start and Sunflower Start put that power-up on the starting board; they're charged when the level starts. During a level, the Trowel breaks one tile or bale layer, the Rake clears a row, Garden Gloves swap any two neighbours without needing a match, and Shake-Up shuffles. They don't cost a move, go into the action list with the swaps, and are charged after the server's replay. New players get 2 of each. Spends over 10 Gems ask "Spend X Gems?" first and go through on a second tap. Prices follow Township's (its boosters come in 3s, so per booster after the T-cash rescale), apart from Sprayer Start and Garden Gloves, which are first-pass.
+- **Continues:** running out of moves offers +5 moves for Gems: 10, then 20 (with a Seed Sprayer), 35, then 50 each (with a Hay Bomb), up to 10 per run. The price is on the button, there's no countdown, and "Give up" ends the level. The server replays the run before selling one (it has to be out of moves), and the final replay can't use more continues than were paid for. Township's first continue was 10 T-cash; the later steps are first-pass.
 - **Saving and Gems:** the farm owns the save. It calls `ServerStorage.CropPopLoadSave(player, puzzleBlock)` when the profile loads and reads `CropPopGetSave(player)` before each save. Until the save loads, levels can't start (Studio without the farm falls back to a fresh state after 10 seconds). Buying calls the farm's `CropPopSpendGems(player, amount, reason)`.
 - **Levels** are Luau tables in `Levels.luau` (layout strings, colours, goals, moves, rewards). The Studio level editor (P2) will write the same format.
 
 ## Not in yet
 
-Paid +5-move continues (`Engine:addMoves`), Hot Streak, Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, the level editor and real tile art.
+Hot Streak, Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, the level editor and real tile art.
 
 ## Tests
 

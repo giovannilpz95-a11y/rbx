@@ -516,6 +516,7 @@ local function showPanel(title: string, body: string, primaryText: string, onPri
 	ui.secondary.Text = secondaryText
 	ui.panelActions.primary = onPrimary
 	ui.panelActions.secondary = onSecondary
+	ui.pendingSpend = nil
 	-- Centre on the board (not the screen) when one is showing.
 	local board = current and current.view.frame
 	if board and ui.play.Visible then
@@ -821,11 +822,11 @@ local function rewardText(rewards): string
 	return text
 end
 
-local function onLevelEnded()
-	local run = current
+local function finishRun(run)
 	local status = run.game.status
-	run.view:setEnabled(false)
+	busy = true -- no taps while the server checks
 	local result = invoke("FinishLevel", run.token, run.moves)
+	busy = false
 	setProgress(result.progress)
 	if current ~= run then
 		return -- the player left while the server was checking
@@ -853,21 +854,86 @@ local function onLevelEnded()
 			showLevelSelect
 		)
 	else
-		-- Paid continues (+5 moves) come later.
 		local done, total = 0, 0
 		for _, goal in run.game.goals.list do
 			done += math.min(goal.progress, goal.target)
 			total += goal.target
 		end
 		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
-		showPanel("Out of moves", body, "Retry", function()
+		showPanel("Level failed", body, "Retry", function()
 			showPreLevel(run.levelId)
 		end, "Trail", showLevelSelect)
 	end
 end
 
+local POWER_NAMES = { Sprayer = "Seed Sprayer", HayBomb = "Hay Bomb", Sunflower = "Sunflower", Bumblebee = "Bumblebee" }
 
-local function refreshBoosters()
+local offerContinue -- forward declarations
+local refreshBoosters
+
+local function buyContinue(run, count: number, step)
+	if not askToSpend("Continue" .. count, step.gems) then
+		ui.primary.Text = string.format("Spend %d 💎?", step.gems)
+		return
+	end
+	local result = invoke("BuyContinue", run.token, run.moves)
+	if current ~= run then
+		return
+	end
+	if result.error then
+		ui.panelBody.Text = "Couldn't get more moves: " .. tostring(result.error)
+		return
+	end
+	setProgress(result.progress)
+	local ok, phases = run.game:continue()
+	if not ok then
+		return
+	end
+	table.insert(run.moves, { "Continue" })
+	hidePanel()
+	run.view:setEnabled(true)
+	busy = true
+	task.spawn(function()
+		run.view:play(phases)
+		if current == run then
+			run.view:sync(run.game)
+			refreshHud()
+			refreshBoosters()
+		end
+		busy = false
+	end)
+end
+
+-- Out of moves: offer +5 moves for Gems, at the price on the button. A calm
+-- choice with no countdown (F06 continue rules); "Give up" ends the level.
+offerContinue = function(run)
+	local count = run.game.continues + 1
+	local step = Boosters.continueStep(count)
+	local moves = Boosters.Continue.MOVES
+	local body = string.format("Keep going with %d more moves?", moves)
+	if step.power then
+		body ..= "\nComes with a " .. (POWER_NAMES[step.power] or step.power) .. "!"
+	end
+	showPanel("Out of moves", body, string.format("+%d moves  %d 💎", moves, step.gems), function()
+		buyContinue(run, count, step)
+	end, "Give up", function()
+		finishRun(run)
+	end)
+end
+
+local function onLevelEnded()
+	local run = current
+	run.view:setEnabled(false)
+	local canContinue = progress and progress.canBuy and run.game.continues < Boosters.Continue.MAX_PER_RUN
+	if run.game.status == "Lost" and canContinue then
+		offerContinue(run)
+	else
+		finishRun(run)
+	end
+end
+
+
+refreshBoosters = function()
 	local run = current
 	if not run then
 		return
@@ -1134,13 +1200,16 @@ function PuzzleScreen.isOpen(): boolean
 end
 
 -- Studio only: leave the current level on its last move. The next swap ends
--- it like a real loss (unless that swap wins), and the server's replay agrees
--- because an unfinished run is simply not a win.
+-- it like a real loss (unless that swap wins). It goes in the action list so
+-- the server's replay (which accepts it in Studio only) runs out too, and a
+-- continue can be bought.
 function PuzzleScreen.debugOneMoveLeft()
 	if not RunService:IsStudio() or not current or current.game.status ~= "Playing" or busy then
 		return
 	end
-	current.game.movesLeft = 1
+	if current.game:apply({ "DevOneMove" }) then
+		table.insert(current.moves, { "DevOneMove" })
+	end
 	refreshHud()
 end
 
