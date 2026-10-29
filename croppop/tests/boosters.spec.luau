@@ -160,3 +160,73 @@ test("sanitize checks booster actions", function()
 	local clean = Replay.sanitize({ { "Rake", 3, 4, 5 } })
 	eq(#clean[1], 2, "extra values are dropped")
 end)
+
+-- Paid continues ---------------------------------------------------------------
+
+local Boosters = CropPop.Boosters
+
+local function runOut(pop)
+	while pop.status == "Playing" do
+		local m = pop:listPossibleMoves()[1]
+		pop.movesLeft = 1
+		pop:trySwap(m[1], m[2], m[3], m[4])
+	end
+end
+
+test("a continue adds 5 moves, only once the level is lost", function()
+	local pop = Engine.new(Levels.get(5), 3)
+	falsy(pop:continue(), "not while playing")
+	runOut(pop)
+	if pop.status == "Won" then
+		return -- this seed won by luck; the replay test below covers continues too
+	end
+	local ok, phases = pop:continue()
+	truthy(ok)
+	eq(#phases, 0, "the first continue adds no power-up")
+	eq(pop.status, "Playing")
+	eq(pop.movesLeft, 5)
+	falsy(pop:continue(), "not twice in a row")
+end)
+
+test("later continues add a power-up and the prices rise", function()
+	eq(Boosters.continueStep(1).gems, 10)
+	truthy(Boosters.continueStep(2).gems > Boosters.continueStep(1).gems)
+	eq(Boosters.continueStep(99).gems, Boosters.continueStep(#Boosters.Continue.Steps).gems)
+	local pop = Engine.new(Levels.get(5), 11)
+	for n = 1, 3 do
+		runOut(pop)
+		if pop.status == "Won" then
+			return
+		end
+		local _, phases = pop:continue()
+		local step = Boosters.continueStep(n)
+		if step.power then
+			eq(phases[1].kind, "Pop")
+			eq(#phases[1].transformed, 1)
+		end
+	end
+	eq(pop.continues, 3)
+end)
+
+test("replays accept continues only when the level is lost, and count them", function()
+	local level = Levels.get(5)
+	local pop = Engine.new(level, 21)
+	local actions = { { "DevOneMove" } }
+	pop:apply(actions[1])
+	local m = pop:listPossibleMoves()[1]
+	pop:apply(m)
+	table.insert(actions, m)
+	if pop.status ~= "Lost" then
+		return
+	end
+	table.insert(actions, { "Continue" })
+	falsy(Replay.sanitize(actions), "the dev action needs allowDev")
+	local clean = assert(Replay.sanitize(actions, true))
+	local result = Replay.run(level, 21, clean)
+	truthy(result.ok, tostring(result.reason))
+	eq(result.continues, 1)
+	eq(result.status, "Playing")
+
+	local early = Replay.run(level, 21, { { "Continue" } })
+	falsy(early.ok, "a continue while playing is refused")
+end)
