@@ -1035,7 +1035,7 @@ end
 local function endTest(run)
 	local test = run.test
 	local won = run.game.status == "Won"
-	showPanel(if won then "Test won!" else "Test lost", string.format("%d moves used.", run.game.movesMade), "Play again", function()
+	showPanel(if won then "Test won!" else "Test lost", string.format("%d %s used.", run.game.movesMade, if run.game.movesMade == 1 then "move" else "moves"), "Play again", function()
 		PuzzleScreen.playTest(test.level, test.onDone)
 	end, "Editor", function()
 		PuzzleScreen.close()

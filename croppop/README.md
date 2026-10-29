@@ -37,7 +37,7 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 
 ## Level editor (Studio only)
 
-On the Trail, press **Dev: Editor** (or the E key) in Studio Play mode.
+On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode.
 - Paint the board with the brushes: cell, hole, mud, double mud, and hay bales with 1–3 layers.
 - Set the size, moves, difficulty, tile colours (3–6) and up to 3 goals.
 - The status line says what's wrong while the level isn't valid.

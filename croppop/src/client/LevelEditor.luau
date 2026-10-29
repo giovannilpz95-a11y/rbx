@@ -1,7 +1,7 @@
 --[[
 	Crop Pop level editor (Studio only, in Play mode).
 
-		LevelEditor.open()        -- from the Trail's "Dev: Editor" button or the E key
+		LevelEditor.open()        -- from the Trail's "Dev: Editor" button or the F6 key
 
 	Paint the board, pick tile colours, goals and moves, then:
 	  Test play   plays it offline (no hearts, no rewards)
@@ -260,7 +260,7 @@ local function goalLabel(goal): string
 end
 
 local function stepper(parent: Instance, name: string, value: string, onChange: (number) -> ())
-	button(parent, name .. "Down", "-", UDim2.fromOffset(32, ROW_HEIGHT - 4), function()
+	button(parent, name .. "Down", "−", UDim2.fromOffset(32, ROW_HEIGHT - 4), function()
 		onChange(-1)
 	end)
 	textItem("TextLabel", parent, name, value, UDim2.fromOffset(70, ROW_HEIGHT - 6))
@@ -539,12 +539,14 @@ function LevelEditor.botCheck()
 	end
 	setStatus("The bot is playing...")
 	local report = Bot.play(level, BOT_GAMES, os.time())
+	local losses = report.games - report.wins
+	local lossText = if losses == 0 then "no losses" else string.format("%d%% of goals done on losses", math.round(report.avgGoalShare * 100))
 	setStatus(string.format(
-		"Bot wins %d%% of %d games (%.1f moves left on wins; %d%% of goals done on losses). The bot plays randomly, so people do better.",
+		"Bot wins %d%% of %d games (%.1f moves left on wins; %s). The bot plays randomly, so people do better.",
 		math.round(report.winRate * 100),
 		report.games,
 		report.avgMovesLeft,
-		math.round(report.avgGoalShare * 100)
+		lossText
 	))
 	return report
 end

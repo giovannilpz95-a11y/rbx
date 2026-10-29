@@ -41,7 +41,7 @@ end)
 
 launcher.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
--- Studio only: the level editor, from the Trail's "Dev: Editor" button or the E key.
+-- Studio only: the level editor, from the Trail's "Dev: Editor" button or the F6 key.
 if RunService:IsStudio() then
 	local function openEditor()
 		PuzzleScreen.close()
@@ -49,7 +49,7 @@ if RunService:IsStudio() then
 	end
 	PuzzleScreen.onDevEditor = openEditor
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
-		if not gameProcessed and input.KeyCode == Enum.KeyCode.E and PuzzleScreen.isOpen() then
+		if not gameProcessed and input.KeyCode == Enum.KeyCode.F6 and PuzzleScreen.isOpen() then
 			openEditor()
 		end
 	end)
