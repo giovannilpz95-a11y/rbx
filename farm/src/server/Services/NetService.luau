@@ -78,6 +78,7 @@ local function snapshot(data: { [string]: any })
 		barnCapacity = data.inventory.barnCapacity,
 		fields = data.fields,
 		factories = factories,
+		pens = data.pens,
 		board = data.orders.board,
 		settings = data.settings,
 		serverNow = Clock.now(),

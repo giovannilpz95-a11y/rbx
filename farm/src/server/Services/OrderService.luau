@@ -6,11 +6,10 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
-local Balance = require(Shared.Config.Balance)
 local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
 local OrderGen = require(Shared.OrderGen)
-local Recipes = require(Shared.Config.Recipes)
+local Speedup = require(Shared.Speedup)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -20,18 +19,6 @@ local PlotService = require(script.Parent.PlotService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local OrderService = {}
-
--- Items this player can make right now: enabled crops plus recipes of finished factories.
-local function itemPool(data: { [string]: any }): { string }
-	local pool = table.clone(Balance.enabledCrops)
-	for id, recipe in Recipes do
-		local factory = data.factories[recipe.factory]
-		if factory and factory.built then
-			table.insert(pool, id)
-		end
-	end
-	return pool
-end
 
 -- Grow the board to the level's slot count and fill slots whose wait is over.
 -- Returns true when anything changed.
@@ -66,7 +53,7 @@ function OrderService.refreshBoard(player: Player): boolean
 			local order, seed = OrderGen.generate({
 				level = data.level,
 				seed = orders.seed,
-				pool = itemPool(data),
+				pool = OrderGen.makeablePool(data),
 				existing = existing,
 				now = now,
 			})
@@ -119,9 +106,25 @@ function OrderService.discard(player: Player, slotIndex: any): (boolean, string?
 	return true
 end
 
+-- Gems bring a new card now instead of waiting out the refresh.
+function OrderService.skipWait(player: Player, slotIndex: any): (boolean, string?)
+	local slot = slotFor(player, slotIndex)
+	local now = Clock.now()
+	if slot == nil or slot.order ~= nil or (slot.refreshAt or 0) <= now then
+		return false
+	end
+	if not EconomyService.spend(player, "Gems", Speedup.orderWait(slot.refreshAt - now), "speedup_order") then
+		return false, "Not enough Gems"
+	end
+	slot.refreshAt = now
+	OrderService.refreshBoard(player)
+	return true
+end
+
 function OrderService.init()
 	NetService.on(Net.Order_Fulfill, 2, 3, OrderService.fulfill)
 	NetService.on(Net.Order_Discard, 1, 2, OrderService.discard)
+	NetService.on(Net.Order_SkipWait, 1, 2, OrderService.skipWait)
 
 	-- Refill cards whose wait ended, and add slots after a level up.
 	task.spawn(function()

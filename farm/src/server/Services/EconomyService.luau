@@ -49,7 +49,8 @@ local function checkLevelUp(player: Player, data: { [string]: any })
 			EconomyService.add(player, "Gems", gems, "levelup")
 		end
 		pcall(function()
-			AnalyticsService:LogProgressionCompleteEvent(player, "Level", data.level - 1)
+			local reached = data.level - 1
+			AnalyticsService:LogProgressionCompleteEvent(player, "Level", reached, "Level " .. reached)
 		end)
 		DataService.markDirty(player, true)
 		NetService.popup(player, { kind = "LevelUp", level = data.level, coins = coins, gems = gems })

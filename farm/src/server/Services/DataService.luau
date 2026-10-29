@@ -146,9 +146,7 @@ function DataService.load(player: Player): boolean
 	end
 
 	local now = Clock.now()
-	if data.meta.createdAt == 0 then
-		data.meta.createdAt = now
-	end
+	Profile.welcome(data, now)
 	data.meta.sessionCount += 1
 
 	sessions[player] = {

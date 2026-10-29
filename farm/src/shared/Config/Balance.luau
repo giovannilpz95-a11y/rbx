@@ -3,10 +3,14 @@
 -- Design/15 3D World & Avatar Play and are meant to be tuned in the greybox playtest.
 
 return table.freeze({
-	-- Crops playable in the greybox (the full table lives in Crops)
-	enabledCrops = table.freeze({ "Wheat", "Corn" }),
-	-- Factories placed on the greybox plot
-	enabledFactories = table.freeze({ "Bakery" }),
+	-- What the level-12 MVP plays with (the full crop table lives in Crops)
+	enabledCrops = table.freeze({ "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton" }),
+	enabledFactories = table.freeze({ "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" }),
+	enabledPens = table.freeze({ "CowBarn", "ChickenCoop", "SheepFold" }),
+
+	-- Cow Feed a new farm starts with, so the given Cows work before the Feed Mill opens at
+	-- level 3 (first-pass, 03 Animals)
+	starterCowFeed = 2,
 
 	startingFields = 6, -- Township baseline
 	barnStartCapacity = 50, -- Township baseline
