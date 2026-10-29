@@ -1,17 +1,19 @@
 --[[
-	The Crop Pop screen: level select, the board with its top bar, and the
+	The Crop Pop screen: the Trail (level select, with Hearts), the pre-level
+	booster picker, the board with its top bar and booster bar, and the
 	win / out-of-moves panels.
 
 		local PuzzleScreen = require(path.to.PuzzleScreen)
-		PuzzleScreen.open()      -- level select
-		PuzzleScreen.open(3)     -- straight into level 3
+		PuzzleScreen.open()      -- the Trail
+		PuzzleScreen.open(3)     -- straight to level 3's booster picker
 		PuzzleScreen.close()
 
 	The Puzzle Porch and the Town Square cabinet should call open(). Until
 	they exist, Main.client.luau adds a temporary button.
 
 	The client plays the level locally with the seed the server handed out and
-	sends its swaps when the level ends; the server replays them before paying.
+	sends its swaps and booster uses when the level ends; the server replays
+	them before paying, and only then charges the in-level boosters.
 ]]
 
 local Players = game:GetService("Players")
@@ -23,14 +25,27 @@ local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
 local BoardView = require(script.Parent.BoardView)
 local TileStyle = require(script.Parent.TileStyle)
 
+local Boosters = CropPop.Boosters
+local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
 local Colors = TileStyle.Board
+local Glyphs = TileStyle.BoosterGlyphs
 
 local PuzzleScreen = {}
 
 local ui = nil -- built on first open
 local current = nil -- the level being played
 local busy = false
+local progress = nil -- the latest hearts / boosters / unlocks from the server
+local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
+
+local GEM_CONFIRM_OVER = 10 -- spends above this need a second tap (10 Monetization)
+
+local BOOSTER_HINTS = {
+	Trowel = "🔨 Tap a tile to break it.",
+	Rake = "🧹 Tap a row to clear it.",
+	GardenGloves = "🧤 Swap any two tiles next to each other.",
+}
 
 -- Small UI helpers -----------------------------------------------------------
 
@@ -194,12 +209,14 @@ local function buildUi()
 	selectSize.MaxSize = Vector2.new(520, 640)
 	selectSize.Parent = levelSelect
 	label(levelSelect, "Title", "Crop Pop Trail", UDim2.fromScale(0.8, 0.1), UDim2.fromScale(0.1, 0.03))
-	local status = label(levelSelect, "Status", "", UDim2.fromScale(0.9, 0.05), UDim2.fromScale(0.05, 0.14))
+	local heartsLine = label(levelSelect, "Hearts", "", UDim2.fromScale(0.9, 0.06), UDim2.fromScale(0.05, 0.13))
+	local status = label(levelSelect, "Status", "", UDim2.fromScale(0.9, 0.045), UDim2.fromScale(0.05, 0.195))
 	status.TextColor3 = Colors.accent
+	status.TextWrapped = true
 	local list = Instance.new("ScrollingFrame")
 	list.Name = "List"
-	list.Position = UDim2.fromScale(0.06, 0.21)
-	list.Size = UDim2.fromScale(0.88, 0.62)
+	list.Position = UDim2.fromScale(0.06, 0.25)
+	list.Size = UDim2.fromScale(0.88, 0.6)
 	list.BackgroundTransparency = 1
 	list.BorderSizePixel = 0
 	list.ScrollBarThickness = 6
@@ -245,6 +262,89 @@ local function buildUi()
 	end
 	secondary.BackgroundColor3 = Colors.locked
 
+	-- In-level boosters: under the board on tall screens, in the side panel on wide ones.
+	local boosterBar = Instance.new("Frame")
+	boosterBar.Name = "Boosters"
+	boosterBar.BackgroundTransparency = 1
+	boosterBar.Parent = play
+	local barLayout = Instance.new("UIListLayout")
+	barLayout.FillDirection = Enum.FillDirection.Horizontal
+	barLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	barLayout.Padding = UDim.new(0.02, 0)
+	barLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	barLayout.Parent = boosterBar
+	local boosterButtons = {}
+	for i, kind in Boosters.InLevel do
+		local b = button(boosterBar, kind, Glyphs[kind], UDim2.fromScale(0.23, 1), UDim2.new())
+		b.LayoutOrder = i
+		b.BackgroundColor3 = Colors.panel
+		local count = label(b, "Count", "", UDim2.fromScale(0.4, 0.6), UDim2.fromScale(1, 0))
+		count.AnchorPoint = Vector2.new(1, 0)
+		count.BackgroundTransparency = 0
+		count.BackgroundColor3 = Colors.accent
+		count.TextColor3 = Color3.new(1, 1, 1)
+		count.ZIndex = 2
+		corner(count, 0.5)
+		boosterButtons[kind] = b
+	end
+
+	-- What an armed booster does, or a "Spend X Gems?" question. Covers the
+	-- top bar on tall screens and the goals on wide ones while it shows.
+	local hint = label(play, "BoosterHint", "", UDim2.new(), UDim2.new())
+	hint.BackgroundTransparency = 0
+	hint.BackgroundColor3 = Colors.panel
+	hint.TextWrapped = true
+	hint.Visible = false
+	hint.ZIndex = 5
+	corner(hint, 0.2)
+	local hintSize = Instance.new("UITextSizeConstraint")
+	hintSize.MaxTextSize = 28
+	hintSize.Parent = hint
+	local hintPadding = Instance.new("UIPadding")
+	hintPadding.PaddingLeft = UDim.new(0, 12)
+	hintPadding.PaddingRight = UDim.new(0, 12)
+	hintPadding.PaddingTop = UDim.new(0, 6)
+	hintPadding.PaddingBottom = UDim.new(0, 6)
+	hintPadding.Parent = hint
+
+	-- Pre-level panel: pick boosters, then Play.
+	local preLevel = Instance.new("Frame")
+	preLevel.Name = "PreLevel"
+	preLevel.AnchorPoint = Vector2.new(0.5, 0.5)
+	preLevel.Position = UDim2.fromScale(0.5, 0.5)
+	preLevel.Size = UDim2.fromScale(0.86, 0.6)
+	preLevel.BackgroundColor3 = Colors.panel
+	preLevel.Visible = false
+	preLevel.ZIndex = 10
+	preLevel.Parent = backdrop
+	corner(preLevel, 0.06)
+	local preSize = Instance.new("UISizeConstraint")
+	preSize.MaxSize = Vector2.new(460, 440)
+	preSize.Parent = preLevel
+	local preTitle = label(preLevel, "Title", "", UDim2.fromScale(0.9, 0.13), UDim2.fromScale(0.05, 0.04))
+	local preTitleSize = Instance.new("UITextSizeConstraint")
+	preTitleSize.MaxTextSize = 40
+	preTitleSize.Parent = preTitle
+	local preBody = label(preLevel, "Body", "Pick boosters for a strong start", UDim2.fromScale(0.84, 0.07), UDim2.fromScale(0.08, 0.19))
+	preBody.TextWrapped = true
+	local function capText(b: GuiObject)
+		local cap = Instance.new("UITextSizeConstraint")
+		cap.MaxTextSize = 26
+		cap.Parent = b
+	end
+	local preButtons = {}
+	for i, kind in Boosters.PreLevel do
+		local b = button(preLevel, kind, "", UDim2.fromScale(0.84, 0.11), UDim2.fromScale(0.08, 0.17 + 0.13 * i))
+		b.TextXAlignment = Enum.TextXAlignment.Left
+		capText(b)
+		preButtons[kind] = b
+	end
+	local prePlay = button(preLevel, "Play", "Play", UDim2.fromScale(0.42, 0.14), UDim2.fromScale(0.05, 0.8))
+	local preBack = button(preLevel, "Back", "Trail", UDim2.fromScale(0.42, 0.14), UDim2.fromScale(0.53, 0.8))
+	preBack.BackgroundColor3 = Colors.locked
+	capText(prePlay)
+	capText(preBack)
+
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	return {
@@ -260,6 +360,7 @@ local function buildUi()
 		movesBox = movesBox,
 		boardHolder = boardHolder,
 		select = levelSelect,
+		heartsLine = heartsLine,
 		status = status,
 		list = list,
 		closeSelect = closeSelect,
@@ -269,6 +370,16 @@ local function buildUi()
 		primary = primary,
 		secondary = secondary,
 		panelActions = {},
+		boosterBar = boosterBar,
+		boosterButtons = boosterButtons,
+		hint = hint,
+		preLevel = preLevel,
+		preTitle = preTitle,
+		preBody = preBody,
+		preButtons = preButtons,
+		prePlay = prePlay,
+		preBack = preBack,
+		preSelected = {},
 	}
 end
 
@@ -280,6 +391,7 @@ end
 
 local ROBLOX_TOPBAR = 64 -- clear of Roblox's own buttons (58px)
 local MARGIN = 12
+local BOOSTER_BAR_HEIGHT = 64
 
 -- Where things sit inside the bar / panel, by scale.
 local INNER = {
@@ -295,9 +407,9 @@ local INNER = {
 		levelName = { position = UDim2.fromScale(0, 0.03), size = UDim2.fromScale(1, 0.1) },
 		difficulty = { position = UDim2.fromScale(0, 0.13), size = UDim2.fromScale(1, 0.06) },
 		movesBox = { position = UDim2.fromScale(0.5, 0.33), size = UDim2.fromScale(0.5, 0.2) },
-		goals = { position = UDim2.fromScale(0, 0.47), size = UDim2.fromScale(1, 0.24) },
-		closePlay = { position = UDim2.fromScale(0.25, 0.8), size = UDim2.fromScale(0.5, 0.13) },
-		devOneMove = { position = UDim2.fromScale(0.25, 0.72), size = UDim2.fromScale(0.5, 0.06) },
+		goals = { position = UDim2.fromScale(0, 0.45), size = UDim2.fromScale(1, 0.18) },
+		closePlay = { position = UDim2.fromScale(0.25, 0.86), size = UDim2.fromScale(0.5, 0.1) },
+		devOneMove = { position = UDim2.fromScale(0.25, 0.79), size = UDim2.fromScale(0.5, 0.05) },
 	},
 }
 
@@ -311,6 +423,7 @@ local function applyLayout()
 	ui.layout = mode
 
 	local barX, barW, barH, holderX, holderY, holderW, holderH
+	local boosters, hint -- { x, y, w, h }
 	if mode == "wide" then
 		barX = MARGIN
 		barW = math.min(w * 0.28, 340)
@@ -319,15 +432,24 @@ local function applyLayout()
 		holderY = ROBLOX_TOPBAR -- board top lines up with the panel top
 		holderW = w - holderX - MARGIN
 		holderH = h - holderY - MARGIN
+		boosters = { barX + 14, ROBLOX_TOPBAR + barH * 0.65, barW - 28, barH * 0.12 }
+		hint = { barX, ROBLOX_TOPBAR + barH * 0.45, barW, barH * 0.18 }
 	else
 		barW = math.min(w * 0.96, 720)
 		barX = (w - barW) / 2
 		barH = math.min(h * 0.12, 110)
+		local boosterH = math.min(h * 0.08, BOOSTER_BAR_HEIGHT)
 		holderX = w * 0.02
 		holderY = ROBLOX_TOPBAR + barH + 8
 		holderW = w * 0.96
-		holderH = h - holderY - 8
+		holderH = h - holderY - 8 - boosterH - 8
+		boosters = { barX, h - 8 - boosterH, barW, boosterH }
+		hint = { barX, ROBLOX_TOPBAR, barW, barH }
 	end
+	ui.boosterBar.Position = UDim2.fromOffset(boosters[1], boosters[2])
+	ui.boosterBar.Size = UDim2.fromOffset(boosters[3], boosters[4])
+	ui.hint.Position = UDim2.fromOffset(hint[1], hint[2])
+	ui.hint.Size = UDim2.fromOffset(hint[3], hint[4])
 
 	ui.topBar.AnchorPoint = Vector2.new(0, 0)
 	ui.topBar.Position = UDim2.fromOffset(barX, ROBLOX_TOPBAR)
@@ -416,8 +538,260 @@ local function hidePanel()
 	ui.panel.Visible = false
 end
 
-local showLevelSelect -- forward declaration
+local showLevelSelect -- forward declarations
+local showPreLevel
 local startLevel
+
+local function clearRun()
+	if current then
+		current.view:destroy()
+		current = nil
+	end
+	busy = false
+end
+
+-- Server progress ----------------------------------------------------------------
+
+local function setProgress(p)
+	if type(p) ~= "table" or type(p.hearts) ~= "table" then
+		return
+	end
+	-- Only GetProgress says whether every level is open (Studio).
+	if p.unlockAll == nil and progress then
+		p.unlockAll = progress.unlockAll
+	end
+	progress = p
+	progressAt = os.clock()
+end
+
+local function fetchProgress()
+	setProgress(invoke("GetProgress"))
+end
+
+local function clockText(seconds: number): string
+	seconds = math.max(0, math.ceil(seconds))
+	if seconds >= 3600 then
+		return string.format("%d:%02d:%02d", seconds // 3600, seconds % 3600 // 60, seconds % 60)
+	end
+	return string.format("%d:%02d", seconds // 60, seconds % 60)
+end
+
+-- Seconds left on a countdown from the last progress, counting down locally.
+local function since(seconds: number?): number?
+	if not seconds then
+		return nil
+	end
+	return seconds - (os.clock() - progressAt)
+end
+
+local function heartsText(): string
+	local hearts = progress and progress.hearts
+	if not hearts then
+		return ""
+	end
+	local unlimited = since(hearts.unlimitedSeconds)
+	if unlimited and unlimited > 0 then
+		return "❤️ Unlimited for " .. clockText(unlimited)
+	end
+	local text = string.format("❤️ %d/%d", hearts.count, hearts.max)
+	local nextIn = since(hearts.secondsToNext)
+	if nextIn then
+		text ..= "   next in " .. clockText(nextIn)
+	end
+	return text
+end
+
+-- Spends above GEM_CONFIRM_OVER ask "Spend X Gems?" first and go through on a
+-- second tap of the same thing. Returns true when it's OK to buy now.
+local function askToSpend(key: string, gems: number): boolean
+	if gems <= GEM_CONFIRM_OVER or ui.pendingSpend == key then
+		ui.pendingSpend = nil
+		return true
+	end
+	ui.pendingSpend = key
+	return false
+end
+
+-- The Trail ------------------------------------------------------------------------
+
+local renderTrail -- forward declaration
+
+local function buyHearts(packIndex: number, b: TextButton)
+	local pack = Hearts.Packs[packIndex]
+	if not askToSpend("Hearts" .. packIndex, pack.gems) then
+		b.Text = string.format("Spend %d 💎?", pack.gems)
+		return
+	end
+	local result = invoke("BuyHearts", packIndex)
+	if result.error then
+		ui.status.Text = "Couldn't get hearts: " .. tostring(result.error)
+	else
+		setProgress(result)
+		ui.status.Text = ""
+	end
+	renderTrail()
+end
+
+-- Heart packs that fit in the empty slots, at the top of the list.
+local function addHeartShop()
+	local hearts = progress and progress.hearts
+	if not (progress and progress.canBuy and hearts) or (hearts.unlimitedSeconds or 0) > 0 then
+		return
+	end
+	local missing = hearts.max - hearts.count
+	if missing <= 0 then
+		return
+	end
+	local row = Instance.new("Frame")
+	row.Name = "GetHearts"
+	row.LayoutOrder = 0
+	row.Size = UDim2.new(1, -10, 0, 52)
+	row.BackgroundTransparency = 1
+	row.Parent = ui.list
+	local rowLayout = Instance.new("UIListLayout")
+	rowLayout.FillDirection = Enum.FillDirection.Horizontal
+	rowLayout.Padding = UDim.new(0.02, 0)
+	rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	rowLayout.Parent = row
+	for i, pack in Hearts.Packs do
+		if pack.count <= missing then
+			local b = button(row, "Pack" .. i, string.format("+%d ❤️  %d 💎", pack.count, pack.gems), UDim2.fromScale(0.32, 1), UDim2.new())
+			b.LayoutOrder = i
+			b.BackgroundColor3 = Color3.fromRGB(214, 72, 92)
+			b.Activated:Connect(function()
+				buyHearts(i, b)
+			end)
+		end
+	end
+end
+
+renderTrail = function()
+	for _, child in ui.list:GetChildren() do
+		if child:IsA("GuiObject") then
+			child:Destroy()
+		end
+	end
+	ui.heartsLine.Text = heartsText()
+	addHeartShop()
+	local highest = progress and progress.highestBeaten or 0
+	local unlockAll = progress and progress.unlockAll
+	for _, level in Levels.List do
+		local unlocked = unlockAll or level.id <= highest + 1
+		local beaten = level.id <= highest
+		local text = string.format("%d  %s%s", level.id, level.name, if level.difficulty ~= "Normal" then "  (" .. level.difficulty .. ")" else "")
+		if beaten then
+			text ..= "  ✅"
+		elseif not unlocked then
+			text ..= "  🔒"
+		end
+		local row = button(ui.list, "Level" .. level.id, text, UDim2.new(1, -10, 0, 52), UDim2.new())
+		row.LayoutOrder = level.id
+		row.TextXAlignment = Enum.TextXAlignment.Left
+		if not unlocked then
+			row.BackgroundColor3 = Colors.locked
+			row.AutoButtonColor = false
+		else
+			row.Activated:Connect(function()
+				showPreLevel(level.id)
+			end)
+		end
+	end
+end
+
+-- Ticks the hearts countdown once a second while the Trail is showing, and
+-- asks the server again when a heart is due.
+local tickerRunning = false
+local function startHeartsTicker()
+	if tickerRunning then
+		return
+	end
+	tickerRunning = true
+	local function tick()
+		if not (ui.gui.Enabled and ui.select.Visible) then
+			tickerRunning = false
+			return
+		end
+		local hearts = progress and progress.hearts
+		local nextIn = hearts and (since(hearts.secondsToNext) or since(hearts.unlimitedSeconds))
+		if nextIn and nextIn <= 0 then
+			fetchProgress()
+			renderTrail()
+		else
+			ui.heartsLine.Text = heartsText()
+		end
+		task.delay(1, tick)
+	end
+	task.delay(1, tick)
+end
+
+-- The pre-level panel ----------------------------------------------------------------
+
+local function renderPreLevel()
+	local stock = progress and progress.boosters or {}
+	local canBuy = progress and progress.canBuy
+	for _, kind in Boosters.PreLevel do
+		local b = ui.preButtons[kind]
+		local info = Boosters.Info[kind]
+		local have = stock[kind] or 0
+		local picked = ui.preSelected[kind] == true
+		b.BackgroundColor3 = if picked then Colors.accent else Colors.option
+		b.TextColor3 = if picked then Color3.new(1, 1, 1) else Colors.text
+		if ui.pendingSpend == kind then
+			b.Text = string.format("%s  Spend %d 💎 on a %s?", Glyphs[kind], info.gems, info.name)
+		elseif picked then
+			b.Text = string.format("%s  %s  ✅", Glyphs[kind], info.name)
+		elseif have > 0 then
+			b.Text = string.format("%s  %s  x%d", Glyphs[kind], info.name, have)
+		elseif canBuy then
+			b.Text = string.format("%s  %s  %d 💎", Glyphs[kind], info.name, info.gems)
+		else
+			b.Text = string.format("%s  %s  (none left)", Glyphs[kind], info.name)
+		end
+	end
+end
+
+local function onPreBooster(kind: string)
+	if ui.preSelected[kind] then
+		ui.preSelected[kind] = nil
+	elseif ((progress and progress.boosters[kind]) or 0) > 0 then
+		ui.preSelected[kind] = true
+		ui.pendingSpend = nil
+	elseif progress and progress.canBuy then
+		if askToSpend(kind, Boosters.Info[kind].gems) then
+			local result = invoke("BuyBooster", kind)
+			if result.error then
+				ui.preBody.Text = "Couldn't buy it: " .. tostring(result.error)
+			else
+				setProgress(result)
+				ui.preSelected[kind] = true
+			end
+		end
+	end
+	renderPreLevel()
+end
+
+showPreLevel = function(levelId: number)
+	local level = Levels.get(levelId)
+	if not level then
+		return
+	end
+	hidePanel()
+	clearRun()
+	if not progress then
+		fetchProgress()
+	end
+	ui.pendingSpend = nil
+	ui.preLevelId = levelId
+	ui.preSelected = {}
+	ui.preTitle.Text = level.id .. ". " .. level.name
+	ui.preBody.Text = "Pick boosters for a strong start"
+	ui.play.Visible = false
+	ui.select.Visible = false
+	renderPreLevel()
+	ui.preLevel.Visible = true
+end
+
+-- Playing ----------------------------------------------------------------------------
 
 local function rewardText(rewards): string
 	if not rewards then
@@ -442,13 +816,14 @@ local function onLevelEnded()
 	local status = run.game.status
 	run.view:setEnabled(false)
 	local result = invoke("FinishLevel", run.token, run.moves)
+	setProgress(result.progress)
 	if current ~= run then
 		return -- the player left while the server was checking
 	end
 	if status == "Won" then
 		if result.error then
 			showPanel("Hmm, that didn't check out", "The server couldn't confirm this win (" .. tostring(result.error) .. ").", "Try again", function()
-				startLevel(run.levelId)
+				showPreLevel(run.levelId)
 			end, "Trail", showLevelSelect)
 			return
 		end
@@ -459,7 +834,7 @@ local function onLevelEnded()
 			if nextLevel then "Next level" else "Trail",
 			function()
 				if nextLevel then
-					startLevel(nextLevel.id)
+					showPreLevel(nextLevel.id)
 				else
 					showLevelSelect()
 				end
@@ -468,7 +843,7 @@ local function onLevelEnded()
 			showLevelSelect
 		)
 	else
-		-- Paid continues (+5 moves) arrive with P2.
+		-- Paid continues (+5 moves) come later.
 		local done, total = 0, 0
 		for _, goal in run.game.goals.list do
 			done += math.min(goal.progress, goal.target)
@@ -476,23 +851,54 @@ local function onLevelEnded()
 		end
 		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
 		showPanel("Out of moves", body, "Retry", function()
-			startLevel(run.levelId)
+			showPreLevel(run.levelId)
 		end, "Trail", showLevelSelect)
 	end
 end
 
-local function onSwap(x1: number, y1: number, x2: number, y2: number)
+
+local function refreshBoosters()
 	local run = current
-	if busy or not run or run.game.status ~= "Playing" then
+	if not run then
+		return
+	end
+	local canBuy = progress and progress.canBuy
+	for _, kind in Boosters.InLevel do
+		local b = ui.boosterButtons[kind]
+		local have = run.stock[kind] or 0
+		b.BackgroundColor3 = if run.armed == kind then Colors.accent else Colors.panel
+		local count = b:FindFirstChild("Count") :: TextLabel
+		count.Text = if have > 0 then tostring(have) elseif canBuy then "+" else "0"
+	end
+	ui.hint.Text = run.hint or ""
+	ui.hint.Visible = run.hint ~= nil
+end
+
+local function disarm(run)
+	run.armed = nil
+	run.hint = nil
+	run.view:setCellTarget(nil)
+end
+
+-- Plays one action: a swap { x1, y1, x2, y2 } or a booster { "Trowel", x, y } etc.
+local function doAction(run, action: { any })
+	if busy or current ~= run or run.game.status ~= "Playing" then
 		return
 	end
 	busy = true
+	ui.pendingSpend = nil
 	task.spawn(function()
-		local ok, phases = run.game:trySwap(x1, y1, x2, y2)
+		local ok, phases = run.game:apply(action)
 		if ok then
-			table.insert(run.moves, { x1, y1, x2, y2 })
+			table.insert(run.moves, action)
+			local kind = action[1]
+			if type(kind) == "string" then
+				run.stock[kind] -= 1
+				disarm(run)
+			end
 			ui.movesCount.Text = tostring(run.game.movesLeft)
 		end
+		refreshBoosters()
 		run.view:play(phases)
 		if current == run then
 			run.view:sync(run.game)
@@ -500,40 +906,114 @@ local function onSwap(x1: number, y1: number, x2: number, y2: number)
 		end
 		busy = false
 		if current == run and run.game.status ~= "Playing" then
+			disarm(run)
+			refreshBoosters()
 			onLevelEnded()
 		end
 	end)
 end
 
--- Flow -------------------------------------------------------------------------
-
-local function clearRun()
-	if current then
-		current.view:destroy()
-		current = nil
+local function onSwap(x1: number, y1: number, x2: number, y2: number)
+	local run = current
+	if not run then
+		return
 	end
-	busy = false
+	if run.armed == "GardenGloves" then
+		doAction(run, { "GardenGloves", x1, y1, x2, y2 })
+	else
+		doAction(run, { x1, y1, x2, y2 })
+	end
 end
 
-startLevel = function(levelId: number)
+local function onBooster(kind: string)
+	local run = current
+	if busy or not run or run.game.status ~= "Playing" then
+		return
+	end
+	local info = Boosters.Info[kind]
+	if run.armed == kind then
+		disarm(run) -- a second tap puts it away
+		refreshBoosters()
+		return
+	end
+	disarm(run)
+	if (run.stock[kind] or 0) <= 0 then
+		if not (progress and progress.canBuy) then
+			run.hint = "No " .. info.name .. " left."
+			refreshBoosters()
+			return
+		end
+		if not askToSpend(kind, info.gems) then
+			run.hint = string.format("Spend %d 💎 on a %s? Tap %s again to buy.", info.gems, info.name, Glyphs[kind])
+			refreshBoosters()
+			return
+		end
+		local result = invoke("BuyBooster", kind)
+		if current ~= run then
+			return
+		end
+		if result.error then
+			run.hint = "Couldn't buy it: " .. tostring(result.error)
+			refreshBoosters()
+			return
+		end
+		setProgress(result)
+		run.stock[kind] = (run.stock[kind] or 0) + 1
+	end
+	ui.pendingSpend = nil
+	if kind == "ShakeUp" then
+		doAction(run, { "ShakeUp" })
+		return
+	end
+	run.armed = kind
+	run.hint = BOOSTER_HINTS[kind] .. " Tap " .. Glyphs[kind] .. " again to put it away."
+	if kind == "Trowel" then
+		run.view:setCellTarget(function(x, y)
+			doAction(run, { "Trowel", x, y })
+		end)
+	elseif kind == "Rake" then
+		run.view:setCellTarget(function(_, y)
+			doAction(run, { "Rake", y })
+		end)
+	end
+	refreshBoosters()
+end
+
+-- Flow -------------------------------------------------------------------------
+
+startLevel = function(levelId: number, preBoosters: { string }?)
 	hidePanel()
+	ui.preLevel.Visible = false
 	local level = Levels.get(levelId)
 	if not level then
 		return
 	end
-	local run = invoke("StartLevel", levelId)
+	local run = invoke("StartLevel", levelId, preBoosters or {})
 	if run.error then
-		showLevelSelect("Couldn't start: " .. tostring(run.error))
+		if run.error == "no hearts" then
+			showLevelSelect("Out of hearts! One comes back every 30 minutes.")
+		else
+			showLevelSelect("Couldn't start: " .. tostring(run.error))
+		end
 		return
 	end
+	setProgress(run.progress)
 	clearRun()
-	local pop = CropPop.Engine.new(level, run.seed)
+	local pop = CropPop.Engine.new(level, run.seed, { startPowerUps = run.startPowerUps })
 	local view = BoardView.new(ui.boardHolder, onSwap)
-	current = { levelId = levelId, token = run.token, game = pop, view = view, moves = {} }
+	current = {
+		levelId = levelId,
+		token = run.token,
+		game = pop,
+		view = view,
+		moves = {}, -- swaps and booster uses, in order, for the server's replay
+		stock = table.clone(progress and progress.boosters or {}),
+	}
 	view:load(pop)
 	ui.levelName.Text = level.id .. ". " .. level.name
 	ui.difficulty.Text = if level.difficulty == "Normal" then "" else level.difficulty
 	refreshHud()
+	refreshBoosters()
 	ui.select.Visible = false
 	ui.play.Visible = true
 end
@@ -541,37 +1021,14 @@ end
 showLevelSelect = function(message: string?)
 	hidePanel()
 	clearRun()
+	ui.pendingSpend = nil
 	ui.play.Visible = false
+	ui.preLevel.Visible = false
 	ui.select.Visible = true
 	ui.status.Text = message or ""
-	for _, child in ui.list:GetChildren() do
-		if child:IsA("GuiObject") then
-			child:Destroy()
-		end
-	end
-	local progress = invoke("GetProgress")
-	local highest = progress.highestBeaten or 0
-	for _, level in Levels.List do
-		local unlocked = progress.unlockAll or level.id <= highest + 1
-		local beaten = level.id <= highest
-		local text = string.format("%d  %s%s", level.id, level.name, if level.difficulty ~= "Normal" then "  (" .. level.difficulty .. ")" else "")
-		if beaten then
-			text ..= "  ✅"
-		elseif not unlocked then
-			text ..= "  🔒"
-		end
-		local row = button(ui.list, "Level" .. level.id, text, UDim2.new(1, -10, 0, 52), UDim2.new())
-		row.LayoutOrder = level.id
-		row.TextXAlignment = Enum.TextXAlignment.Left
-		if not unlocked then
-			row.BackgroundColor3 = Colors.locked
-			row.AutoButtonColor = false
-		else
-			row.Activated:Connect(function()
-				startLevel(level.id)
-			end)
-		end
-	end
+	fetchProgress()
+	renderTrail()
+	startHeartsTicker()
 end
 
 local function ensureUi()
@@ -598,6 +1055,28 @@ local function ensureUi()
 	ui.closeSelect.Activated:Connect(function()
 		PuzzleScreen.close()
 	end)
+	for kind, b in ui.preButtons do
+		b.Activated:Connect(function()
+			onPreBooster(kind)
+		end)
+	end
+	ui.prePlay.Activated:Connect(function()
+		local picked = {}
+		for _, kind in Boosters.PreLevel do
+			if ui.preSelected[kind] then
+				table.insert(picked, kind)
+			end
+		end
+		startLevel(ui.preLevelId, picked)
+	end)
+	ui.preBack.Activated:Connect(function()
+		showLevelSelect()
+	end)
+	for kind, b in ui.boosterButtons do
+		b.Activated:Connect(function()
+			onBooster(kind)
+		end)
+	end
 	ui.primary.Activated:Connect(function()
 		if not panelReady() then
 			return
@@ -624,7 +1103,7 @@ function PuzzleScreen.open(levelId: number?)
 	ensureUi()
 	ui.gui.Enabled = true
 	if levelId then
-		startLevel(levelId)
+		showPreLevel(levelId)
 	else
 		showLevelSelect()
 	end
@@ -636,6 +1115,7 @@ function PuzzleScreen.close()
 	end
 	clearRun()
 	hidePanel()
+	ui.preLevel.Visible = false
 	ui.gui.Enabled = false
 end
 

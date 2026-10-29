@@ -6,6 +6,8 @@
 		view:play(phases)             -- yields until the animations finish
 		view:sync(game)               -- snap every tile to the engine's state
 
+		view:setCellTarget(fn)        -- boosters: the next tap calls fn(x, y) instead of swapping
+
 	Tiles are pooled Frames positioned by scale, so the board resizes with the
 	screen. Input is a swipe (or tap one tile, then a neighbour) on invisible
 	per-cell buttons.
@@ -93,6 +95,15 @@ function BoardView.new(parent: GuiObject, onSwap: (number, number, number, numbe
 	corner.CornerRadius = UDim.new(0.2, 0)
 	corner.Parent = selection
 	self.selection = selection
+
+	-- Outline while a booster is waiting for a tap.
+	local targetStroke = Instance.new("UIStroke")
+	targetStroke.Name = "TargetStroke"
+	targetStroke.Color = TileStyle.Board.accent
+	targetStroke.Thickness = 4
+	targetStroke.Enabled = false
+	targetStroke.Parent = frame
+	self.targetStroke = targetStroke
 
 	self:_bindInput()
 	return self
@@ -380,6 +391,9 @@ function BoardView._effect(self, effect): number
 		local r = effect.radius * 2 + 1
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(r / w, r / h), Color3.fromRGB(255, 170, 60), true)
 		return FX_TIME
+	elseif effect.type == "Trowel" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), Color3.fromRGB(255, 255, 255), true)
+		return FX_TIME
 	elseif effect.type == "Sun" or effect.type == "Everything" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(3 / w, 3 / h), Color3.fromRGB(255, 230, 90), true)
 		return FX_TIME
@@ -555,6 +569,10 @@ function BoardView._makeHitButton(self, x: number, y: number)
 	button.Position = self:_cellPosition(x, y)
 	button.Parent = self.hitLayer
 	button.InputBegan:Connect(function(input)
+		if self.enabled and isPress(input) and self.cellTarget then
+			self.cellTarget(x, y)
+			return
+		end
 		if self.enabled and isPress(input) then
 			self.drag = { x = x, y = y, start = input.Position, input = input }
 		end
@@ -608,6 +626,14 @@ function BoardView._bindInput(self)
 			end
 		end)
 	)
+end
+
+-- Boosters that pick a cell (Trowel, Rake): taps go to fn(x, y) until cleared with nil.
+function BoardView.setCellTarget(self, fn: ((number, number) -> ())?)
+	self.cellTarget = fn
+	self.drag = nil
+	self:clearSelection()
+	self.targetStroke.Enabled = fn ~= nil
 end
 
 function BoardView.setEnabled(self, enabled: boolean)

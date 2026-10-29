@@ -38,6 +38,16 @@ TileStyle.GoalGlyphs = {
 	HayBale = "🌾",
 }
 
+TileStyle.BoosterGlyphs = {
+	SprayerStart = "💦",
+	BombStart = "💥",
+	SunflowerStart = "🌻",
+	Trowel = "🔨",
+	Rake = "🧹",
+	GardenGloves = "🧤",
+	ShakeUp = "🔀",
+}
+
 TileStyle.Board = {
 	backdrop = Color3.fromRGB(112, 168, 84),
 	panel = Color3.fromRGB(250, 243, 222),
@@ -50,6 +60,7 @@ TileStyle.Board = {
 	accent = Color3.fromRGB(232, 120, 48),
 	locked = Color3.fromRGB(190, 186, 176),
 	selection = Color3.fromRGB(255, 255, 255),
+	option = Color3.fromRGB(232, 222, 196), -- an unpicked booster
 }
 
 TileStyle.Font = Enum.Font.FredokaOne

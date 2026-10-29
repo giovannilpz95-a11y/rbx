@@ -1,0 +1,97 @@
+--[[
+	Crop Pop Hearts (lives): starting a level holds a heart, a win gives it back,
+	and empty hearts refill one at a time on a timer that keeps running offline.
+
+	Pure maths on a small state table so the client can show the same countdown
+	the server enforces. Times are os.time() seconds.
+]]
+
+local Hearts = {}
+
+Hearts.MAX = 5 -- Township baseline
+Hearts.REFILL_SECONDS = 30 * 60 -- Township baseline: one heart back every 30 minutes (Playrix help centre)
+
+-- Gem packs, bought when hearts aren't full. Township baseline from the older
+-- wiki prices (1 | 2 | 3 lives for 10 | 24 | 35), unverified against today's shop.
+Hearts.Packs = {
+	{ count = 1, gems = 10 },
+	{ count = 2, gems = 24 },
+	{ count = 3, gems = 35 },
+}
+
+export type State = {
+	count: number,
+	updatedAt: number, -- when the current refill countdown started
+	unlimitedUntil: number, -- Unlimited Hearts bonus end time (0 = none)
+}
+
+function Hearts.new(now: number): State
+	return { count = Hearts.MAX, updatedAt = now, unlimitedUntil = 0 }
+end
+
+-- Applies any refills earned since updatedAt.
+function Hearts.refresh(state: State, now: number)
+	if state.count >= Hearts.MAX or now < state.updatedAt then
+		-- Full (nothing counting down) or the clock went backwards: restart the countdown.
+		state.updatedAt = now
+		return
+	end
+	local gained = (now - state.updatedAt) // Hearts.REFILL_SECONDS
+	if gained > 0 then
+		state.count = math.min(Hearts.MAX, state.count + gained)
+		state.updatedAt = if state.count >= Hearts.MAX then now else state.updatedAt + gained * Hearts.REFILL_SECONDS
+	end
+end
+
+function Hearts.isUnlimited(state: State, now: number): boolean
+	return (state.unlimitedUntil or 0) > now
+end
+
+-- Spends a heart to start a level. Returns false if there are none.
+-- `taken` is false during Unlimited Hearts (nothing to give back on a win).
+function Hearts.take(state: State, now: number): (boolean, boolean)
+	Hearts.refresh(state, now)
+	if Hearts.isUnlimited(state, now) then
+		return true, false
+	end
+	if state.count <= 0 then
+		return false, false
+	end
+	state.count -= 1
+	return true, true
+end
+
+function Hearts.give(state: State, amount: number, now: number)
+	Hearts.refresh(state, now)
+	state.count = math.min(Hearts.MAX, state.count + amount)
+	if state.count >= Hearts.MAX then
+		state.updatedAt = now
+	end
+end
+
+-- Seconds until the next heart comes back, or nil when full.
+function Hearts.secondsToNext(state: State, now: number): number?
+	Hearts.refresh(state, now)
+	if state.count >= Hearts.MAX then
+		return nil
+	end
+	return math.max(0, Hearts.REFILL_SECONDS - (now - state.updatedAt))
+end
+
+-- Rebuilds a state from saved data, falling back to full hearts if it's malformed.
+function Hearts.fromSave(raw: any, now: number): State
+	if type(raw) ~= "table" then
+		return Hearts.new(now)
+	end
+	local count, updatedAt, unlimitedUntil = raw.count, raw.updatedAt, raw.unlimitedUntil
+	if type(count) ~= "number" or count ~= count or type(updatedAt) ~= "number" then
+		return Hearts.new(now)
+	end
+	return {
+		count = math.clamp(math.floor(count), 0, Hearts.MAX),
+		updatedAt = math.min(updatedAt, now),
+		unlimitedUntil = if type(unlimitedUntil) == "number" then unlimitedUntil else 0,
+	}
+end
+
+return Hearts

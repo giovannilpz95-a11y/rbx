@@ -6,9 +6,12 @@
 	and only pays out if the replay wins within the move limit. Because the
 	engine is deterministic, an honest client always matches.
 
-	A move is { x1, y1, x2, y2 }. Paid continues (P2) will add a marker entry.
+	Each action is a swap { x1, y1, x2, y2 } or an in-level booster such as
+	{ "Trowel", x, y } (see Engine.apply). The server checks the player owns
+	the boosters the replay used.
 ]]
 
+local Boosters = require(script.Parent.Boosters)
 local Engine = require(script.Parent.Engine)
 local Levels = require(script.Parent.Levels)
 
@@ -24,6 +27,7 @@ export type Result = {
 	hash: string?,
 	stats: any?,
 	bonusCoins: number?, -- from leftover moves on a win
+	boostersUsed: { [string]: number }?,
 }
 
 local function isCoord(v): boolean
@@ -31,7 +35,7 @@ local function isCoord(v): boolean
 end
 
 -- Checks the shape of untrusted input from a RemoteFunction. Returns a clean copy.
-function Replay.sanitize(raw: any): ({ { number } }?, string?)
+function Replay.sanitize(raw: any): ({ { any } }?, string?)
 	if type(raw) ~= "table" then
 		return nil, "moves must be a list"
 	end
@@ -42,23 +46,40 @@ function Replay.sanitize(raw: any): ({ { number } }?, string?)
 	local clean = table.create(count)
 	for i = 1, count do
 		local m = raw[i]
-		if type(m) ~= "table" or not (isCoord(m[1]) and isCoord(m[2]) and isCoord(m[3]) and isCoord(m[4])) then
+		if type(m) ~= "table" then
 			return nil, "bad move at " .. i
 		end
-		clean[i] = { m[1], m[2], m[3], m[4] }
+		if type(m[1]) == "string" then
+			local info = Boosters.Info[m[1]]
+			if not info or info.when ~= "in" then
+				return nil, "bad booster at " .. i
+			end
+			local action = { m[1] }
+			for k = 1, info.args do
+				if not isCoord(m[k + 1]) then
+					return nil, "bad booster at " .. i
+				end
+				action[k + 1] = m[k + 1]
+			end
+			clean[i] = action
+		elseif isCoord(m[1]) and isCoord(m[2]) and isCoord(m[3]) and isCoord(m[4]) then
+			clean[i] = { m[1], m[2], m[3], m[4] }
+		else
+			return nil, "bad move at " .. i
+		end
 	end
 	return clean, nil
 end
 
-function Replay.run(level, seed: number, moves: { { number } }, options: Engine.Options?): Result
+function Replay.run(level, seed: number, moves: { { any } }, options: Engine.Options?): Result
 	local game = Engine.new(level, seed, options)
 	for i, m in moves do
 		if game.status ~= "Playing" then
 			return { ok = false, won = false, reason = "move " .. i .. " after the level ended", movesUsed = i - 1 }
 		end
-		local ok = game:trySwap(m[1], m[2], m[3], m[4])
+		local ok = game:apply(m)
 		if not ok then
-			return { ok = false, won = false, reason = "illegal swap at move " .. i, movesUsed = i - 1 }
+			return { ok = false, won = false, reason = "illegal action at move " .. i, movesUsed = i - 1 }
 		end
 	end
 	return {
@@ -69,6 +90,7 @@ function Replay.run(level, seed: number, moves: { { number } }, options: Engine.
 		hash = game:hash(),
 		stats = game.stats,
 		bonusCoins = if game.bonus then game.bonus.coins else 0,
+		boostersUsed = game.boostersUsed,
 	}
 end
 
