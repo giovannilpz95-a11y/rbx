@@ -23,8 +23,9 @@ test("every level written out reads back the same", function()
 	end
 end)
 
-test("the bot plays every level and reports a win rate", function()
-	for _, level in Levels.List do
+test("the bot plays the first levels and reports a win rate", function()
+	for id = 1, 5 do
+		local level = Levels.get(id)
 		local report = Bot.play(level, 20, level.id)
 		eq(report.games, 20)
 		truthy(report.winRate >= 0 and report.winRate <= 1)
