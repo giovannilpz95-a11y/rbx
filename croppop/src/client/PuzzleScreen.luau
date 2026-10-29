@@ -23,6 +23,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
 local BoardView = require(script.Parent.BoardView)
+local Sfx = require(script.Parent.Sfx)
 local TileStyle = require(script.Parent.TileStyle)
 
 local Boosters = CropPop.Boosters
@@ -943,6 +944,7 @@ local function finishRun(run)
 			done += math.min(goal.progress, goal.target)
 			total += goal.target
 		end
+		Sfx.event("Lose")
 		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
 		if (result.lostStreak or 0) > 0 then
 			body = string.format("Your Hot Streak of %d is over. ", result.lostStreak) .. body
@@ -982,6 +984,7 @@ local function buyContinue(run, count: number, step)
 		return
 	end
 	table.insert(run.moves, { "Continue" })
+	Sfx.event("MoreMoves")
 	hidePanel()
 	run.view:setEnabled(true)
 	busy = true
@@ -1031,6 +1034,9 @@ local function onLevelEnded()
 	local run = current
 	run.view:setEnabled(false)
 	local canContinue = progress and progress.canBuy and run.game.continues < Boosters.Continue.MAX_PER_RUN
+	if run.game.status == "Won" then
+		Sfx.event("Win") -- right away; the server's check comes after
+	end
 	if run.game.status == "Lost" and canContinue then
 		offerContinue(run)
 	else
@@ -1295,6 +1301,7 @@ end
 function PuzzleScreen.open(levelId: number?)
 	ensureUi()
 	ui.gui.Enabled = true
+	Sfx.event("Open")
 	if levelId then
 		showPreLevel(levelId)
 	else
@@ -1310,6 +1317,7 @@ function PuzzleScreen.close()
 	hidePanel()
 	ui.preLevel.Visible = false
 	ui.gui.Enabled = false
+	Sfx.event("Close")
 end
 
 -- The top bar's X: mid-level, ask first, since leaving costs the heart (and
