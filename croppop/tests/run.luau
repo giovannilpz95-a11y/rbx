@@ -113,37 +113,57 @@ end
 
 -- require() for fake instances ------------------------------------------------
 
-local cache = {}
-local loading = {}
 local game -- set below
 
-local function requireModule(target)
-	if type(target) ~= "table" or getmetatable(target) ~= InstanceMeta then
-		error("require expects a ModuleScript, got " .. tostring(target), 2)
+-- Returns a require() whose modules see `extraEnv` as globals (on top of _G).
+-- Each require() has its own module cache, like a separate Roblox VM.
+local function makeRequire(extraEnv)
+	local cache = {}
+	local loading = {}
+	local requireModule
+	local function envFor(target)
+		local env = { script = target, require = requireModule, game = game }
+		for k, v in extraEnv or {} do
+			env[k] = v
+		end
+		return setmetatable(env, { __index = _G })
 	end
-	local found = cache[target]
-	if found ~= nil then
-		return found
+	requireModule = function(target)
+		if type(target) ~= "table" or rawget(target, "_children") == nil then
+			error("require expects a ModuleScript, got " .. tostring(target), 2)
+		end
+		local found = cache[target]
+		if found ~= nil then
+			return found
+		end
+		if loading[target] then
+			error("circular require of " .. target:GetFullName(), 2)
+		end
+		local path = rawget(target, "_path")
+		assert(path and rawget(target, "ClassName") == "ModuleScript", target:GetFullName() .. " is not a ModuleScript")
+		loading[target] = true
+		local result = loadmodule(readfile(path), path, envFor(target))()
+		loading[target] = nil
+		if result == nil then
+			error(target:GetFullName() .. " did not return a value")
+		end
+		cache[target] = result
+		return result
 	end
-	if loading[target] then
-		error("circular require of " .. target:GetFullName(), 2)
+	-- Runs a Script or LocalScript instance with the same globals.
+	local function runScript(target)
+		local path = rawget(target, "_path")
+		return loadmodule(readfile(path), path, envFor(target))()
 	end
-	local path = rawget(target, "_path")
-	assert(path and rawget(target, "ClassName") == "ModuleScript", target:GetFullName() .. " is not a ModuleScript")
-	loading[target] = true
-	local env = setmetatable({ script = target, require = requireModule, game = game }, { __index = _G })
-	local result = loadmodule(readfile(path), path, env)()
-	loading[target] = nil
-	if result == nil then
-		error(target:GetFullName() .. " did not return a value")
-	end
-	cache[target] = result
-	return result
+	return requireModule, runScript
 end
+
+local requireModule = makeRequire(nil)
 
 -- The Rojo tree ---------------------------------------------------------------
 
 game = makeInstance("game", "DataModel", nil, nil)
+local Harness = { makeRequire = makeRequire, makeInstance = makeInstance, InstanceMeta = InstanceMeta, root = ROOT }
 local ReplicatedStorage = makeInstance("ReplicatedStorage", "ReplicatedStorage", nil, game)
 local ServerScriptService = makeInstance("ServerScriptService", "ServerScriptService", nil, game)
 local StarterPlayerScripts = makeInstance("StarterPlayerScripts", "StarterPlayerScripts", nil, game)
@@ -231,6 +251,7 @@ for _, e in listdir(ROOT .. "/tests") do
 			Helpers = Helpers,
 			game = game,
 			require = requireModule,
+			Harness = Harness,
 		}, { __index = _G })
 		loadmodule(readfile(ROOT .. "/tests/" .. e.name), "tests/" .. e.name, env)()
 	end
