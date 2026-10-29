@@ -1,70 +1,42 @@
 --!strict
--- HUD: Coins / Gems / level + XP bar / Barn counter, paperwork buttons (Orders, Barn,
+-- HUD: level star + XP bar, Coins / Gems / Barn pills, paperwork buttons (Orders, Barn,
 -- Buildings, Town), the big context action button and Sprint for touch, toasts and reward pop-ups.
--- Layout follows Design/11 UI & UX loosely; it is a greybox, not the final look.
+-- Layout follows Design/11 UI & UX; the look comes from the UiTheme (Design/25 UI Style Guide).
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Ui = require(script.Parent.Ui)
 
+local Kit = Ui.theme.Kit
+local Motion = Ui.theme.Motion
+local Palette = Ui.theme.Palette
+local Type = Ui.theme.Type
+
 local Hud = {}
 
+type Pill = { frame: Frame, label: TextLabel, icon: Frame }
+type Bar = { track: Frame, fill: Frame }
+
 local gui: ScreenGui
-local coinsLabel: TextLabel
-local gemsLabel: TextLabel
+local coins: Pill
+local gems: Pill
+local barn: Pill
 local levelLabel: TextLabel
-local xpFill: Frame
-local barnLabel: TextLabel
+local levelStar: Frame
+local xpLabel: TextLabel
+local xpBar: Bar
 local toastStack: Frame
+local shown: { [string]: number } = {} -- last values on screen, to tick up and bump on change
 local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
 Hud.sprintButton = nil :: TextButton?
 
-local function statChip(parent: Instance, color: Color3, order: number): TextLabel
-	local chip = Ui.new("Frame", {
-		BackgroundColor3 = Ui.colors.bar,
-		BackgroundTransparency = 0.25,
-		Size = UDim2.fromOffset(110, 34),
-		LayoutOrder = order,
-		Parent = parent,
-	}, { Ui.corner(17) })
-	Ui.new(
-		"Frame",
-		{ BackgroundColor3 = color, Size = UDim2.fromOffset(22, 22), Position = UDim2.fromOffset(6, 6), Parent = chip },
-		{ Ui.corner(11) }
-	)
-	return Ui.label("0", {
-		Position = UDim2.fromOffset(34, 0),
-		Size = UDim2.new(1, -40, 1, 0),
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		TextSize = 17,
-		Parent = chip,
-	})
-end
-
-function Hud.toast(message: string)
-	local label = Ui.label(message, {
-		BackgroundColor3 = Ui.colors.bar,
-		BackgroundTransparency = 0.2,
-		TextColor3 = Color3.new(1, 1, 1),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextWrapped = true,
-		Size = UDim2.new(1, 0, 0, 34),
-		Parent = toastStack,
-	})
-	Ui.corner(8).Parent = label
-	task.delay(3, function()
-		local tween =
-			TweenService:Create(label, TweenInfo.new(0.4), { TextTransparency = 1, BackgroundTransparency = 1 })
-		tween:Play()
-		tween.Completed:Wait()
-		label:Destroy()
-	end)
+function Hud.toast(message: string, variant: string?)
+	Kit.toast(toastStack, message, variant)
 end
 
 function Hud.popup(payload: { [string]: any })
@@ -76,13 +48,14 @@ function Hud.popup(payload: { [string]: any })
 		if (payload.gems or 0) > 0 then
 			table.insert(parts, string.format("+%d %s", payload.gems, if payload.gems == 1 then "Gem" else "Gems"))
 		end
-		Hud.toast(table.concat(parts, "   "))
-	elseif payload.kind == "Field" then
-		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
+		Hud.toast(table.concat(parts, "   "), "celebrate")
+		Motion.bump(levelStar, 1.35)
 	elseif payload.kind == "BarnUpgrade" then
 		Hud.toast(string.format("Barn upgraded: room for %d!", payload.capacity))
 	elseif payload.kind == "Drop" then
 		Hud.toast(string.format("Found 1 %s!", payload.name))
+	elseif payload.kind == "Field" then
+		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
 	elseif payload.kind == "Order" then
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
 	elseif payload.kind == "Daily" then
@@ -93,15 +66,62 @@ function Hud.popup(payload: { [string]: any })
 	end
 end
 
+-- Counts a pill up or down to its new value and bumps its icon when it grows.
+local function showNumber(key: string, label: TextLabel, icon: Instance, value: number)
+	local before = shown[key]
+	shown[key] = value
+	if before == nil then
+		label.Text = Ui.short(value)
+		return
+	end
+	if value ~= before then
+		Motion.tick(label, before, value, Ui.short)
+		if value > before then
+			Motion.bump(icon)
+		end
+	end
+end
+
 function Hud.render(state: { [string]: any })
-	coinsLabel.Text = tostring(state.currencies.Coins)
-	gemsLabel.Text = tostring(state.currencies.Gems)
-	levelLabel.Text = if state.atCap
-		then string.format("Lv %d (max)", state.level)
-		else string.format("Lv %d   %d / %d XP", state.level, state.xpIntoLevel, state.xpToNext)
-	local ratio = if state.atCap or state.xpToNext == 0 then 1 else math.clamp(state.xpIntoLevel / state.xpToNext, 0, 1)
-	xpFill.Size = UDim2.fromScale(ratio, 1)
-	barnLabel.Text = string.format("Barn %d/%d", state.barnUsed, state.barnCapacity)
+	showNumber("Coins", coins.label, coins.icon, state.currencies.Coins)
+	showNumber("Gems", gems.label, gems.icon, state.currencies.Gems)
+	levelLabel.Text = tostring(state.level)
+	xpLabel.Text = if state.atCap then "Max level" else string.format("%d / %d", state.xpIntoLevel, state.xpToNext)
+	local ratio = if state.atCap or state.xpToNext == 0 then 1 else state.xpIntoLevel / state.xpToNext
+	Kit.setBar(xpBar, ratio)
+	barn.label.Text = string.format("%d/%d", state.barnUsed, state.barnCapacity)
+	-- Orange when the Barn is 90% full (11 UI & UX)
+	local nearlyFull = state.barnCapacity > 0 and state.barnUsed >= state.barnCapacity * 0.9
+	barn.label.TextColor3 = if nearlyFull then Palette.accentText else Palette.text
+end
+
+-- A square HUD button: a big glyph over a small caption, plus a key hint on keyboards.
+local function hudButton(glyph: string, caption: string, key: string, order: number, onClick: () -> ()): TextButton
+	local button = Ui.button(string.format('%s\n<font size="15">%s</font>', glyph, caption), onClick, {
+		Size = UDim2.fromOffset(70, 62),
+		LayoutOrder = order,
+		RichText = true,
+		TextSize = 22,
+		LineHeight = 0.9,
+		TextColor3 = Palette.text,
+		BackgroundColor3 = Palette.button.neutral.face,
+	})
+	if UserInputService.KeyboardEnabled then
+		Ui.new("TextLabel", {
+			Name = "KeyHint",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = Palette.cocoa,
+			Position = UDim2.fromOffset(6, 6),
+			Size = UDim2.fromOffset(20, 20),
+			Font = Type.display,
+			TextSize = Type.size.small,
+			TextColor3 = Palette.textOnColor,
+			Text = key,
+			ZIndex = 6,
+			Parent = button,
+		}, { Ui.corner(6) })
+	end
+	return button
 end
 
 function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) -> ())
@@ -115,71 +135,100 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		Parent = player:WaitForChild("PlayerGui"),
 	})
 
-	-- Top-left: currencies, level, Barn
+	-- Top-left: level star on the XP bar, then Coins, Gems and Barn pills. Icons hang off
+	-- each pill's left end, so the row leaves room for them.
 	local top = Ui.new("Frame", {
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(12, 8),
-		Size = UDim2.new(1, -24, 0, 34),
+		Position = UDim2.fromOffset(16, 10),
+		Size = UDim2.new(1, -32, 0, 40),
 		Parent = gui,
-	}, { Ui.list(8, true) })
-	coinsLabel = statChip(top, Ui.colors.coins, 1)
-	gemsLabel = statChip(top, Ui.colors.gems, 2)
+	}, { Ui.list(24, true) })
 
-	local levelChip = Ui.new("Frame", {
-		BackgroundColor3 = Ui.colors.bar,
-		BackgroundTransparency = 0.25,
-		Size = UDim2.fromOffset(200, 34),
-		LayoutOrder = 3,
-		ClipsDescendants = true,
+	local xpPill = Ui.new("Frame", {
+		Name = "XpPill",
+		BackgroundColor3 = Palette.cream,
+		Size = UDim2.fromOffset(170, 32),
+		LayoutOrder = 1,
 		Parent = top,
-	}, { Ui.corner(17) })
-	xpFill = Ui.new("Frame", {
-		BackgroundColor3 = Ui.colors.xp,
-		BackgroundTransparency = 0.3,
-		Size = UDim2.fromScale(0, 1),
-		Parent = levelChip,
+	}, { Ui.new("UICorner", { CornerRadius = UDim.new(1, 0) }), Kit.stroke(Palette.cocoa, 2, 0.1, true) })
+	xpBar = Kit.bar(Palette.xp, {
+		Position = UDim2.fromOffset(30, 6),
+		Size = UDim2.new(1, -36, 1, -12),
+		Parent = xpPill,
 	})
-	levelLabel = Ui.label("Lv 1", {
-		Size = UDim2.fromScale(1, 1),
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextColor3 = Color3.new(1, 1, 1),
-		Font = Enum.Font.GothamBold,
-		TextSize = 15,
-		Parent = levelChip,
-	})
-	barnLabel = statChip(top, Ui.colors.panelEdge, 4)
-	barnLabel.TextSize = 15
-
-	-- Right column: paperwork that works from anywhere on your plot
-	local column = Ui.new("Frame", {
+	xpLabel = Ui.new("TextLabel", {
 		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 0, 52),
-		Size = UDim2.fromOffset(110, 260),
+		Position = UDim2.fromOffset(30, 0),
+		Size = UDim2.new(1, -36, 1, 0),
+		Font = Type.display,
+		TextSize = Type.size.small,
+		TextColor3 = Palette.textOnColor,
+		Text = "",
+		ZIndex = 2,
+		Parent = xpPill,
+	})
+	Kit.textOutline(xpLabel, Palette.cocoa)
+	levelStar = Kit.icon("XP", 54)
+	levelStar.AnchorPoint = Vector2.new(0, 0.5)
+	levelStar.Position = UDim2.new(0, -20, 0.5, 0)
+	levelStar.ZIndex = 3
+	levelStar.Parent = xpPill
+	levelLabel = Ui.new("TextLabel", {
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Font = Type.display,
+		TextSize = 20,
+		TextColor3 = Palette.textOnColor,
+		Text = "1",
+		ZIndex = 4,
+		Parent = levelStar,
+	})
+	Kit.textOutline(levelLabel, Palette.shade(Palette.xp, 0.45))
+
+	coins = Kit.pill("Coins", 116, { LayoutOrder = 2, Parent = top })
+	gems = Kit.pill("Gems", 96, { LayoutOrder = 3, Parent = top })
+	barn = Kit.pill("Barn", 104, { LayoutOrder = 4, Parent = top })
+
+	-- Bottom row, left of Sprint: paperwork that works from anywhere on your plot. Kept off the
+	-- right edge so it doesn't cover in-world bubbles, and clear of the touch thumbstick.
+	-- Each entry: glyph, caption, keyboard hint, panel.
+	local row = Ui.new("Frame", {
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -214, 1, -14),
+		Size = UDim2.fromOffset(440, 64),
 		Parent = gui,
-	}, { Ui.list(8) })
+	}, {
+		Ui.new("UIListLayout", {
+			Padding = UDim.new(0, 8),
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Right,
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
 	local buttons = {
-		{ "Orders (O)", "Orders" },
-		{ "Barn (B)", "Barn" },
-		{ "Buildings (F)", "Buildings" },
-		{ "Town (T)", "Town" },
+		{ "📋", "Orders", "O", "Orders" },
+		{ "🧺", "Barn", "B", "Barn" },
+		{ "🏠", "Build", "F", "Buildings" },
+		{ "🏘️", "Town", "T", "Town" },
 	}
 	if RunService:IsStudio() then
-		table.insert(buttons, { "Debug (`)", "Debug" })
+		table.insert(buttons, { "🔧", "Debug", "`", "Debug" })
 	end
 	for i, spec in buttons do
-		Ui.button(spec[1], function()
-			openPanel(spec[2])
-		end, { Size = UDim2.fromOffset(110, 38), LayoutOrder = i, Parent = column })
+		hudButton(spec[1], spec[2], spec[3], i, function()
+			openPanel(spec[4])
+		end).Parent = row
 	end
 
 	-- Bottom-right: the context action button (hold to sweep) and Sprint, mainly for touch
 	local action = Ui.button("Use", function() end, {
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -24, 1, -110),
-		Size = UDim2.fromOffset(88, 88),
-		TextSize = 16,
-		BackgroundColor3 = Color3.fromRGB(230, 160, 50),
+		Size = UDim2.fromOffset(92, 92),
+		TextSize = Type.size.button,
+		BackgroundColor3 = Ui.colors.accent,
 		Parent = gui,
 	})
 	local round = action:FindFirstChildOfClass("UICorner") :: UICorner
@@ -206,24 +255,36 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		ClientStore.setSetting("sprinting", not ClientStore.settings.sprinting)
 	end, {
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -124, 1, -120),
-		Size = UDim2.fromOffset(64, 40),
+		Position = UDim2.new(1, -128, 1, -118),
+		Size = UDim2.fromOffset(72, 44),
 		Parent = gui,
 	})
+	local function showSprint(on: boolean)
+		sprint.BackgroundColor3 = if on then Ui.colors.selected else Palette.button.neutral.face
+		sprint.TextColor3 = if on then Palette.textOnColor else Palette.text
+	end
+	showSprint(ClientStore.settings.sprinting == true)
 	Hud.sprintButton = sprint
 	ClientStore.settingsChanged.Event:Connect(function(key, value)
 		if key == "sprinting" then
-			Ui.setEnabled(sprint, true, if value then Color3.fromRGB(70, 120, 200) else nil)
+			showSprint(value == true)
 		end
 	end)
 
 	toastStack = Ui.new("Frame", {
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 52),
-		Size = UDim2.new(0.5, 0, 0, 200),
+		Position = UDim2.new(0.5, 0, 0, 60),
+		Size = UDim2.new(0.5, 0, 0, 220),
 		Parent = gui,
-	}, { Ui.list(4), Ui.new("UISizeConstraint", { MaxSize = Vector2.new(420, 200) }) })
+	}, {
+		Ui.new("UIListLayout", {
+			Padding = UDim.new(0, 6),
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+		Ui.new("UISizeConstraint", { MaxSize = Vector2.new(420, 220) }),
+	})
 
 	Remotes.get("Toast").OnClientEvent:Connect(Hud.toast)
 	Remotes.get("Reward_Popup").OnClientEvent:Connect(Hud.popup)

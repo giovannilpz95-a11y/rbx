@@ -1,45 +1,45 @@
 --!strict
--- Tiny helpers for building greybox UI in code.
+-- Helpers for building the farm UI in code. The look comes from the shared UiTheme
+-- (Design/25 UI Style Guide): build with Ui.button / Ui.label / Ui.card and use Ui.colors
+-- rather than raw Color3 values, so screens stay consistent when the theme changes.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local UiTheme = require(ReplicatedStorage:WaitForChild("UiTheme"))
+
+local Kit = UiTheme.Kit
+local Palette = UiTheme.Palette
+local Type = UiTheme.Type
 
 local Ui = {}
 
+Ui.theme = UiTheme
+
 Ui.colors = {
-	panel = Color3.fromRGB(250, 244, 228),
-	panelEdge = Color3.fromRGB(150, 110, 70),
-	text = Color3.fromRGB(60, 45, 30),
-	muted = Color3.fromRGB(130, 115, 95),
-	button = Color3.fromRGB(110, 170, 80),
-	buttonText = Color3.new(1, 1, 1),
-	disabled = Color3.fromRGB(180, 175, 165),
-	danger = Color3.fromRGB(200, 90, 70),
-	bar = Color3.fromRGB(40, 40, 40),
-	coins = Color3.fromRGB(240, 190, 40),
-	gems = Color3.fromRGB(80, 200, 220),
-	xp = Color3.fromRGB(120, 200, 90),
+	panel = Palette.panel,
+	panelEdge = Palette.edge,
+	text = Palette.text,
+	muted = Palette.muted,
+	button = Palette.button.primary.face,
+	buttonText = Palette.textOnColor,
+	disabled = Palette.button.disabled.face,
+	danger = Palette.button.danger.face,
+	selected = Palette.button.secondary.face, -- the picked option in a row of choices
+	accent = Palette.button.attention.face, -- the big action button, an armed confirm
+	bar = Palette.timer, -- dark status bubbles and counters
+	ready = Palette.ready,
+	warn = Palette.warn,
+	coins = Palette.coins,
+	gems = Palette.gems,
+	xp = Palette.xp,
 }
 
 function Ui.new(className: string, props: { [string]: any }?, children: { Instance }?): any
-	local instance = Instance.new(className)
-	if props then
-		for key, value in props do
-			if key ~= "Parent" then
-				(instance :: any)[key] = value
-			end
-		end
-	end
-	if children then
-		for _, child in children do
-			child.Parent = instance
-		end
-	end
-	if props and props.Parent then
-		instance.Parent = props.Parent
-	end
-	return instance
+	return Kit.make(className, props, children)
 end
 
 function Ui.corner(radius: number?): UICorner
-	return Ui.new("UICorner", { CornerRadius = UDim.new(0, radius or 8) })
+	return Kit.corner(radius or 10)
 end
 
 function Ui.padding(px: number): UIPadding
@@ -56,52 +56,73 @@ function Ui.list(padding: number?, horizontal: boolean?): UIListLayout
 	})
 end
 
+-- Body text in the plain face. Bold labels (Font = GothamBold) are headings, so they get the
+-- rounded display face instead.
 function Ui.label(text: string, props: { [string]: any }?): TextLabel
 	local label = Ui.new("TextLabel", {
 		BackgroundTransparency = 1,
-		Font = Enum.Font.GothamMedium,
+		Font = Type.body,
 		TextColor3 = Ui.colors.text,
-		TextSize = 16,
+		TextSize = Type.size.body,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Size = UDim2.new(1, 0, 0, 22),
 		Text = text,
 	})
 	if props then
 		for key, value in props do
+			if key == "Font" and value == Enum.Font.GothamBold then
+				value = Type.display
+			end
 			(label :: any)[key] = value
 		end
 	end
 	return label
 end
 
+-- A chunky themed button. Setting BackgroundColor3 (here or later) recolours the face and lip.
 function Ui.button(text: string, onClick: () -> (), props: { [string]: any }?): TextButton
 	local button = Ui.new("TextButton", {
 		BackgroundColor3 = Ui.colors.button,
-		Font = Enum.Font.GothamBold,
+		Font = Type.display,
 		TextColor3 = Ui.colors.buttonText,
-		TextSize = 15,
-		AutoButtonColor = true,
-		Size = UDim2.fromOffset(90, 30),
+		TextSize = 16,
+		Size = UDim2.fromOffset(90, 32),
 		Text = text,
-	}, { Ui.corner(6) })
+	}, { Ui.corner(10) })
+	local parent = nil
 	if props then
 		for key, value in props do
-			(button :: any)[key] = value
+			if key == "Parent" then
+				parent = value
+			else
+				(button :: any)[key] = value
+			end
 		end
 	end
+	Kit.skinButton(button, nil, 4)
 	button.Activated:Connect(function()
 		if button.Active then
 			onClick()
 		end
 	end)
+	if parent then
+		button.Parent = parent
+	end
 	return button
 end
 
 function Ui.setEnabled(button: TextButton, enabled: boolean, color: Color3?)
 	button.Active = enabled
-	button.AutoButtonColor = enabled
 	button.BackgroundColor3 = if enabled then (color or Ui.colors.button) else Ui.colors.disabled
 end
+
+-- A white rounded row for panel lists.
+function Ui.card(props: { [string]: any }?): Frame
+	return Kit.card(props)
+end
+
+-- 12400 -> "12.4K"
+Ui.short = Kit.short
 
 function Ui.clear(frame: Instance)
 	for _, child in frame:GetChildren() do

@@ -115,6 +115,7 @@ function Guide.init()
 		ResetOnSpawn = false,
 		IgnoreGuiInset = true,
 		DisplayOrder = 5,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = player:WaitForChild("PlayerGui"),
 	})
 	card = Ui.new("Frame", {
@@ -154,10 +155,11 @@ function Guide.init()
 	nextButton = Ui.button("Got it", function()
 		Remotes.fire("Tutorial_Next")
 	end, table.clone(buttonProps))
+	local skipProps = table.clone(buttonProps)
+	skipProps.BackgroundColor3 = Ui.colors.selected
 	skipButton = Ui.button("Skip", function()
 		Remotes.fire("Tutorial_Skip")
-	end, table.clone(buttonProps))
-	skipButton.BackgroundColor3 = Ui.colors.disabled
+	end, skipProps)
 
 	pointer = Ui.new("BillboardGui", {
 		Name = "GuidePointer",

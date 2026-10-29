@@ -168,6 +168,8 @@ local ReplicatedStorage = makeInstance("ReplicatedStorage", "ReplicatedStorage",
 local ServerScriptService = makeInstance("ServerScriptService", "ServerScriptService", nil, game)
 local StarterPlayerScripts = makeInstance("StarterPlayerScripts", "StarterPlayerScripts", nil, game)
 buildDir(ROOT .. "/src/shared", "CropPop", ReplicatedStorage)
+-- The shared UI theme lives next to croppop/ (Rojo maps ../uitheme/src the same way)
+buildDir(ROOT .. "/../uitheme/src", "UiTheme", ReplicatedStorage)
 buildDir(ROOT .. "/src/server", "CropPopServer", ServerScriptService)
 buildDir(ROOT .. "/src/client", "CropPopClient", StarterPlayerScripts)
 
@@ -188,6 +190,7 @@ local function compileTree(path)
 	end
 end
 compileTree(ROOT .. "/src")
+compileTree(ROOT .. "/../uitheme/src")
 compileTree(ROOT .. "/tests")
 
 -- Tiny test framework ---------------------------------------------------------

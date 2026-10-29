@@ -30,13 +30,35 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 - **Hearts:** 5 at most, one back every 30 minutes, even offline. Starting a level holds a heart and a win gives it back, so only losses (and quitting) cost one. When they're all gone, a full refill costs 36 Gems (Township's 5 lives for 900 T-cash, rescaled).
 - **Boosters:** before a level, Sprayer Start, Bomb Start and Sunflower Start put that power-up on the starting board; they're charged when the level starts. During a level, the Trowel breaks one tile or bale layer, the Rake clears a row, Garden Gloves swap any two neighbours without needing a match, and Shake-Up shuffles. They don't cost a move, go into the action list with the swaps, and are charged after the server's replay. New players get 2 of each. Spends over 10 Gems ask "Spend X Gems?" first and go through on a second tap. Prices follow Township's (its boosters come in 3s, so per booster after the T-cash rescale), apart from Sprayer Start and Garden Gloves, which are first-pass.
 - **Continues:** running out of moves offers +5 moves for Gems: 10, then 20 (with a Seed Sprayer), 35, then 50 each (with a Hay Bomb), up to 10 per run. The price is on the button, there's no countdown, and "Give up" ends the level. The server replays the run before selling one (it has to be out of moves), and the final replay can't use more continues than were paid for. Township's first continue was 10 T-cash; the later steps are first-pass.
+- **Hot Streak:** win levels in a row and the next level starts with free power-ups: a Seed Sprayer after 1 win, plus a Hay Bomb after 2, plus a Sunflower from 3. A loss or leaving a level part-way ends it (the X asks first). The streak is in the save, and a save made mid-level stores 0, so dropping out ends it too.
 - **Not enough Gems:** if the farm shares the balance (`ServerStorage.CropPopGetGems(player)`), offers the player can't afford are greyed with "Not enough 💎" before any tap. Without it, the same state shows after a charge fails.
 - **Saving and Gems:** the farm owns the save. It calls `ServerStorage.CropPopLoadSave(player, puzzleBlock)` when the profile loads and reads `CropPopGetSave(player)` before each save. Until the save loads, levels can't start (Studio without the farm falls back to a fresh state after 10 seconds). Buying calls the farm's `CropPopSpendGems(player, amount, reason)`.
-- **Levels** are Luau tables in `Levels.luau` (layout strings, colours, goals, moves, rewards). The Studio level editor (P2) will write the same format.
+- **Levels:** 100 of them, as Luau tables (layout strings, colours, goals, moves, rewards) in `Levels/Set01.luau` to `Set04.luau`, 25 each. Every 5th level is Tough and every 10th from 20 is Super Tough. Thick mud comes in at level 13, 2-layer bales at 9, 3-layer bales at 26, and six tile colours on some hard levels from 30. The Trail shows the levels you've reached and the next 4 locked ones.
+
+## Making levels
+
+Levels 6 to 100 come from `tools/levelgen.luau`. It builds each one from original shape and obstacle patterns (seeded by the level id, so the same id always gives the same level) and gives it the fewest moves (15 to 35) at which the test bot reaches a target win rate. The bot plays randomly, so its targets read low: 80% on Normal levels up to 12, falling to 50% by level 51; Tough 45% to 32%; Super Tough 25% then 20%. Levels 1 to 5 are hand-made.
+
+```sh
+luaurun tools/levelgen.luau 6 100 > levels.txt   # prints each level as Luau, with the bot's win rate
+```
+
+Hand changes go through the level editor below; once a level ships, change it there rather than regenerating it.
+
+## Level editor (Studio only)
+
+On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode.
+- Paint the board with the brushes: cell, hole, mud, double mud, and hay bales with 1–3 layers.
+- Set the size, moves, difficulty, tile colours (3–6) and up to 3 goals.
+- The status line says what's wrong while the level isn't valid.
+- **Test play** plays the level offline, with no hearts, rewards or streak.
+- **Bot check** has the test bot (`Bot.luau`) play it 50 times and shows its win rate. The bot plays randomly, so people do better; use it to compare levels.
+- **Export** writes the level as Luau (`LevelText.luau`), shown in the box and printed to Output, ready to paste into the level's set file (the editor says which).
+- **Load** brings an existing level in to edit.
 
 ## Not in yet
 
-Hot Streak, Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, the level editor and real tile art.
+Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, and real tile art.
 
 ## Tests
 

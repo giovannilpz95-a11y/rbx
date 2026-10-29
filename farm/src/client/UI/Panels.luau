@@ -115,7 +115,7 @@ local function gemButton(key: string, text: string, price: number, fire: () -> (
 	Ui.setEnabled(
 		button,
 		price > 0 and state ~= nil and state.currencies.Gems >= price,
-		if armedNow then Color3.fromRGB(220, 150, 40) else Ui.colors.gems
+		if armedNow then Ui.colors.accent else Ui.colors.gems
 	)
 	return button
 end
@@ -164,13 +164,13 @@ local function wantsText(wants: { [string]: number }): (string, boolean)
 end
 
 local function row(height: number, order: number): Frame
-	return Ui.new("Frame", {
-		BackgroundColor3 = Color3.new(1, 1, 1),
-		BackgroundTransparency = 0.3,
-		Size = UDim2.new(1, -4, 0, height),
+	local card = Ui.card({
+		Size = UDim2.new(1, -8, 0, height),
 		LayoutOrder = order,
 		Parent = body,
-	}, { Ui.corner(6), Ui.padding(6) })
+	})
+	Ui.padding(6).Parent = card
+	return card
 end
 
 ---------------------------------------------------------------------------------------------
@@ -1049,7 +1049,7 @@ local function choiceRow(
 			choose(option)
 		end, { Size = UDim2.fromOffset(52, 28), LayoutOrder = i, Parent = holder })
 		if isCurrent(option) then
-			button.BackgroundColor3 = Color3.fromRGB(70, 120, 200)
+			button.BackgroundColor3 = Ui.colors.selected
 		end
 	end
 end
@@ -1135,7 +1135,7 @@ end
 Panels.refresh = render
 
 local FULL_SIZE = UDim2.fromScale(0.9, 0.62)
-local COMPACT: { [string]: number } = { Field = 110 }
+local COMPACT: { [string]: number } = { Field = 124 }
 
 function Panels.open(name: string, arg: string?)
 	if name == "Debug" and not RunService:IsStudio() then
@@ -1149,6 +1149,9 @@ function Panels.open(name: string, arg: string?)
 	currentArg = arg
 	-- One-row panels get a short frame instead of the full-size one
 	frame.Size = if COMPACT[name] then UDim2.new(0.9, 0, 0, COMPACT[name]) else FULL_SIZE
+	if not frame.Visible then
+		Ui.theme.Motion.popIn(frame)
+	end
 	frame.Visible = true
 	render()
 end
@@ -1167,45 +1170,33 @@ function Panels.init()
 	gui = Ui.new("ScreenGui", {
 		Name = "FarmPanels",
 		ResetOnSpawn = false,
+		-- The themed window layers its parts by ZIndex among siblings; Global would draw
+		-- the card over every label built at the default ZIndex.
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		DisplayOrder = 5,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	})
-	frame = Ui.new("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.55),
-		Size = FULL_SIZE,
-		BackgroundColor3 = Ui.colors.panel,
-		Visible = false,
-		Parent = gui,
-	}, {
-		Ui.corner(12),
-		Ui.new("UIStroke", { Color = Ui.colors.panelEdge, Thickness = 3 }),
-		Ui.new("UISizeConstraint", { MaxSize = Vector2.new(480, 420) }),
-	})
-	titleLabel = Ui.label("", {
-		Position = UDim2.fromOffset(14, 8),
-		Size = UDim2.new(1, -60, 0, 30),
-		Font = Enum.Font.GothamBold,
-		TextSize = 20,
-		Parent = frame,
-	})
-	Ui.button("X", Panels.close, {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -8, 0, 8),
-		Size = UDim2.fromOffset(32, 32),
-		BackgroundColor3 = Ui.colors.danger,
-		Parent = frame,
-	})
+	-- The window look (ribbon title, round close button, paper inset) comes from the theme
+	local window = Ui.theme.Kit.panel(Panels.close)
+	frame = window.root
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.fromScale(0.5, 0.55)
+	frame.Size = FULL_SIZE
+	frame.Visible = false
+	Ui.new("UISizeConstraint", { MaxSize = Vector2.new(480, 420) }).Parent = frame
+	frame.Parent = gui
+	titleLabel = window.title
 	body = Ui.new("ScrollingFrame", {
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(10, 46),
-		Size = UDim2.new(1, -20, 1, -56),
+		Position = UDim2.fromOffset(6, 6),
+		Size = UDim2.new(1, -12, 1, -12),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(),
 		ScrollBarThickness = 6,
-		Parent = frame,
-	}, { Ui.list(6) })
+		ScrollBarImageColor3 = Ui.colors.panelEdge,
+		Parent = window.body,
+	}, { Ui.list(6), Ui.new("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4) }) })
 
 	ClientStore.changed.Event:Connect(render)
 	ClientStore.settingsChanged.Event:Connect(render)
