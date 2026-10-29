@@ -1,6 +1,6 @@
 --[[
-	Writes a level as Luau source in the same layout as Levels.luau, so the
-	level editor's output can be pasted straight into Levels.List.
+	Writes a level as Luau source in the same layout as the Levels set files,
+	so the level editor's output can be pasted straight into one.
 ]]
 
 local LevelText = {}

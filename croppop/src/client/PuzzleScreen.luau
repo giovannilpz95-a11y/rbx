@@ -29,6 +29,8 @@ local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
 local Colors = TileStyle.Board
+local LOCKED_AHEAD = 4 -- locked levels shown on the trail past the next one
+local ROW_STEP = 60 -- a trail row plus the list padding, in pixels
 local Glyphs = TileStyle.BoosterGlyphs
 
 local PuzzleScreen = {}
@@ -760,6 +762,12 @@ renderTrail = function()
 	local highest = progress and progress.highestBeaten or 0
 	local unlockAll = progress and progress.unlockAll
 	for _, level in Levels.List do
+		-- Show a few locked levels ahead, not the whole trail.
+		if not unlockAll and level.id > highest + 1 + LOCKED_AHEAD then
+			local more = label(ui.list, "MoreAhead", string.format("🔒 %d more levels ahead", #Levels.List - level.id + 1), UDim2.new(1, -10, 0, 40), UDim2.new())
+			more.LayoutOrder = level.id
+			break
+		end
 		local unlocked = unlockAll or level.id <= highest + 1
 		local beaten = level.id <= highest
 		local text = string.format("%d  %s%s", level.id, level.name, if level.difficulty ~= "Normal" then "  (" .. level.difficulty .. ")" else "")
@@ -780,6 +788,8 @@ renderTrail = function()
 			end)
 		end
 	end
+	-- Scroll so the next level to play is in view.
+	ui.list.CanvasPosition = Vector2.new(0, math.max(0, (highest - 2) * ROW_STEP))
 end
 
 -- Ticks the hearts countdown once a second while the Trail is showing, and
