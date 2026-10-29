@@ -1,0 +1,75 @@
+--[[
+	A simple test player for tuning levels. It plays a level on many seeds
+	and reports how often it wins. Its moves are random, but it prefers
+	setting off power-ups and making big matches, so its win rate is a rough
+	lower bound on a person's. Use it to compare levels, not as the final
+	word on difficulty.
+]]
+
+local Engine = require(script.Parent.Engine)
+local Rng = require(script.Parent.Rng)
+
+local Bot = {}
+
+export type Report = {
+	games: number,
+	wins: number,
+	winRate: number,
+	avgMovesLeft: number, -- on wins
+	avgGoalShare: number, -- on losses: how much of the goals it got done (0..1)
+}
+
+local function goalShare(pop): number
+	local done, total = 0, 0
+	for _, goal in pop.goals.list do
+		done += math.min(goal.progress, goal.target)
+		total += goal.target
+	end
+	return if total > 0 then done / total else 1
+end
+
+-- Picks a move: a power-up swap if there is one, otherwise a random move.
+local function chooseMove(pop, rng)
+	local moves = pop:listPossibleMoves()
+	local board = pop.board
+	local powered = {}
+	for _, m in moves do
+		local a, b = board:get(m[1], m[2]), board:get(m[3], m[4])
+		if (a.piece and a.piece.power) or (b.piece and b.piece.power) then
+			table.insert(powered, m)
+		end
+	end
+	if #powered > 0 and rng:int(1, 3) > 1 then
+		return rng:pick(powered)
+	end
+	return rng:pick(moves)
+end
+
+function Bot.play(level, games: number?, firstSeed: number?): Report
+	games = games or 50
+	local rng = Rng.new(firstSeed or 1)
+	local wins, movesLeft, share = 0, 0, 0
+	for _ = 1, games :: number do
+		local pop = Engine.new(level, rng:int(1, 2 ^ 31 - 1))
+		while pop.status == "Playing" do
+			local m = chooseMove(pop, rng)
+			pop:trySwap(m[1], m[2], m[3], m[4])
+		end
+		if pop.status == "Won" then
+			wins += 1
+			movesLeft += if pop.bonus then pop.bonus.moves else pop.movesLeft
+		else
+			share += goalShare(pop)
+		end
+	end
+	local losses = (games :: number) - wins
+	return {
+		games = games :: number,
+		wins = wins,
+		winRate = wins / (games :: number),
+		avgMovesLeft = if wins > 0 then movesLeft / wins else 0,
+		avgGoalShare = if losses > 0 then share / losses else 1,
+	}
+end
+
+return Bot
