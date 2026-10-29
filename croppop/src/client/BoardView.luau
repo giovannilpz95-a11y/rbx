@@ -63,8 +63,8 @@ function BoardView.new(parent: GuiObject, onSwap: (number, number, number, numbe
 
 	local frame = Instance.new("Frame")
 	frame.Name = "Board"
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.Position = UDim2.fromScale(0.5, 0.5)
+	frame.AnchorPoint = Vector2.new(0.5, 0)
+	frame.Position = UDim2.fromScale(0.5, 0)
 	frame.Size = UDim2.fromScale(1, 1)
 	frame.BackgroundTransparency = 1
 	frame.ClipsDescendants = true

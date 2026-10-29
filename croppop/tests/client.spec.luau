@@ -177,17 +177,40 @@ test("every test level can be played through the screen", function()
 	print(string.format("    %d of the screen runs were wins the server accepted", #wins))
 end)
 
-test("wide screens move the top bar to a side panel", function()
+test("wide screens move the top bar to a side panel next to the board", function()
 	PuzzleScreen.open(1)
 	local screen = playerGui.CropPop
-	local bar = screen.Backdrop.Play.TopBar
-	eq(bar.Size, Mock.UDim2.new(0.96, 0, 0.12, 0), "tall layout by default")
-	screen.AbsoluteSize = { X = 844, Y = 390 }
-	screen:GetPropertyChangedSignal("AbsoluteSize"):Fire()
-	eq(bar.Size, Mock.UDim2.new(0.28, 0, 1, -76), "side panel on a landscape phone")
-	screen.AbsoluteSize = { X = 390, Y = 844 }
-	screen:GetPropertyChangedSignal("AbsoluteSize"):Fire()
-	eq(bar.Size, Mock.UDim2.new(0.96, 0, 0.12, 0), "back to the top bar in portrait")
+	local play = screen.Backdrop.Play
+	local function resize(x, y)
+		screen.AbsoluteSize = { X = x, Y = y }
+		screen:GetPropertyChangedSignal("AbsoluteSize"):Fire()
+	end
+
+	resize(1668, 878)
+	local bar, holder = play.TopBar, play.BoardHolder
+	eq(bar.Size.X.Offset, 340, "panel width is capped")
+	eq(holder.Position.X.Offset, 12 + 340 + 12, "board area starts right after the panel")
+	eq(holder.Position.X.Offset + holder.Size.X.Offset, 1668 - 12, "and runs to the right margin")
+	eq(holder.Position.Y.Offset, bar.Position.Y.Offset, "board top lines up with the panel top")
+
+	resize(844, 390)
+	eq(bar.Size.Y.Offset, 390 - 64 - 12)
+	truthy(holder.Size.Y.Offset >= 300, "landscape phone keeps the full height for the board")
+
+	resize(390, 844)
+	eq(bar.Size.X.Offset, 390 * 0.96, "portrait: bar across the top")
+	eq(holder.Position.Y.Offset, 64 + 844 * 0.12 + 8, "board area starts under the bar")
+	eq(holder.Position.Y.Offset + holder.Size.Y.Offset, 844 - 8)
+end)
+
+test("the out-of-moves message depends on how close the player got", function()
+	PuzzleScreen.open(1)
+	local run = PuzzleScreen.currentRun()
+	playerGui.CropPop.Backdrop.Play.TopBar.DevOneMove.Activated:Fire()
+	local m = Matcher.listPossibleMoves(run.game.board)[1]
+	swipe(run.view, m[1], m[2], m[3], m[4])
+	eq(run.game.status, "Lost")
+	eq(playerGui.CropPop.Backdrop.EndPanel.Body.Text, "Give it another go!")
 end)
 
 test("closing hides the screen", function()

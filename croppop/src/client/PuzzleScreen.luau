@@ -127,11 +127,18 @@ local function buildUi()
 	topBar.BackgroundColor3 = Colors.panel
 	topBar.Parent = play
 	corner(topBar, 0.2)
-	local barSize = Instance.new("UISizeConstraint")
-	barSize.Parent = topBar
+	local barPadding = Instance.new("UIPadding")
+	barPadding.PaddingLeft = UDim.new(0, 14)
+	barPadding.PaddingRight = UDim.new(0, 14)
+	barPadding.PaddingTop = UDim.new(0, 6)
+	barPadding.PaddingBottom = UDim.new(0, 6)
+	barPadding.Parent = topBar
 
 	local levelName = label(topBar, "LevelName", "", UDim2.new(), UDim2.new())
 	levelName.TextXAlignment = Enum.TextXAlignment.Left
+	local nameSize = Instance.new("UITextSizeConstraint")
+	nameSize.MaxTextSize = 34
+	nameSize.Parent = levelName
 	local difficulty = label(topBar, "Difficulty", "", UDim2.new(), UDim2.new())
 	difficulty.TextXAlignment = Enum.TextXAlignment.Left
 	difficulty.TextColor3 = Colors.accent
@@ -238,7 +245,6 @@ local function buildUi()
 		closePlay = closePlay,
 		devOneMove = devOneMove,
 		topBar = topBar,
-		barSize = barSize,
 		movesBox = movesBox,
 		boardHolder = boardHolder,
 		select = levelSelect,
@@ -256,49 +262,73 @@ end
 
 -- Layout -----------------------------------------------------------------------
 -- Tall screens get a bar across the top; wide screens (landscape phones, PCs)
--- get a panel on the left so the board can use the full height.
+-- get a panel on the left so the board can use the full height. The bar and
+-- the board area are placed in pixels from the screen size; the board sits at
+-- the top of its area, centred across it.
 
 local ROBLOX_TOPBAR = 64 -- clear of Roblox's own buttons (58px)
+local MARGIN = 12
 
-local LAYOUTS = {
+-- Where things sit inside the bar / panel, by scale.
+local INNER = {
 	tall = {
-		topBar = { anchor = Vector2.new(0.5, 0), position = UDim2.new(0.5, 0, 0, ROBLOX_TOPBAR), size = UDim2.new(0.96, 0, 0.12, 0), max = Vector2.new(720, 110) },
 		levelName = { position = UDim2.fromScale(0.03, 0.08), size = UDim2.fromScale(0.3, 0.4) },
 		difficulty = { position = UDim2.fromScale(0.03, 0.55), size = UDim2.fromScale(0.3, 0.3) },
 		movesBox = { position = UDim2.fromScale(0.42, 0.5), size = UDim2.fromScale(0.16, 0.84) },
 		goals = { position = UDim2.fromScale(0.52, 0.1), size = UDim2.fromScale(0.36, 0.8) },
 		closePlay = { position = UDim2.fromScale(0.9, 0.2), size = UDim2.fromScale(0.08, 0.6) },
 		devOneMove = { position = UDim2.fromScale(0.22, 0.55), size = UDim2.fromScale(0.12, 0.35) },
-		boardHolder = { anchor = Vector2.new(0.5, 0), position = UDim2.new(0.5, 0, 0.12, ROBLOX_TOPBAR + 8), size = UDim2.new(0.96, 0, 0.88, -(ROBLOX_TOPBAR + 16)) },
 	},
 	wide = {
-		topBar = { anchor = Vector2.new(0, 0), position = UDim2.new(0, 12, 0, ROBLOX_TOPBAR), size = UDim2.new(0.28, 0, 1, -(ROBLOX_TOPBAR + 12)), max = Vector2.new(340, 520) },
-		levelName = { position = UDim2.fromScale(0.06, 0.03), size = UDim2.fromScale(0.88, 0.1) },
-		difficulty = { position = UDim2.fromScale(0.06, 0.13), size = UDim2.fromScale(0.88, 0.06) },
+		levelName = { position = UDim2.fromScale(0, 0.03), size = UDim2.fromScale(1, 0.1) },
+		difficulty = { position = UDim2.fromScale(0, 0.13), size = UDim2.fromScale(1, 0.06) },
 		movesBox = { position = UDim2.fromScale(0.5, 0.33), size = UDim2.fromScale(0.5, 0.2) },
-		goals = { position = UDim2.fromScale(0.05, 0.47), size = UDim2.fromScale(0.9, 0.24) },
+		goals = { position = UDim2.fromScale(0, 0.47), size = UDim2.fromScale(1, 0.24) },
 		closePlay = { position = UDim2.fromScale(0.25, 0.8), size = UDim2.fromScale(0.5, 0.13) },
 		devOneMove = { position = UDim2.fromScale(0.25, 0.72), size = UDim2.fromScale(0.5, 0.06) },
-		boardHolder = { anchor = Vector2.new(1, 0.5), position = UDim2.new(1, -12, 0.5, 0), size = UDim2.new(0.72, -36, 1, -24) },
 	},
 }
 
 local function applyLayout()
 	local screen = ui.gui.AbsoluteSize
-	local mode = if screen.X > screen.Y * 1.25 then "wide" else "tall"
+	local w, h = screen.X, screen.Y
+	if w <= 0 or h <= 0 then
+		return -- not measured yet; AbsoluteSize changes again once it is
+	end
+	local mode = if w > h * 1.25 then "wide" else "tall"
 	ui.layout = mode
-	for key, spec in LAYOUTS[mode] do
+
+	local barX, barW, barH, holderX, holderY, holderW, holderH
+	if mode == "wide" then
+		barX = MARGIN
+		barW = math.min(w * 0.28, 340)
+		barH = math.min(h - ROBLOX_TOPBAR - MARGIN, 520)
+		holderX = barX + barW + MARGIN
+		holderY = ROBLOX_TOPBAR -- board top lines up with the panel top
+		holderW = w - holderX - MARGIN
+		holderH = h - holderY - MARGIN
+	else
+		barW = math.min(w * 0.96, 720)
+		barX = (w - barW) / 2
+		barH = math.min(h * 0.12, 110)
+		holderX = w * 0.02
+		holderY = ROBLOX_TOPBAR + barH + 8
+		holderW = w * 0.96
+		holderH = h - holderY - 8
+	end
+
+	ui.topBar.AnchorPoint = Vector2.new(0, 0)
+	ui.topBar.Position = UDim2.fromOffset(barX, ROBLOX_TOPBAR)
+	ui.topBar.Size = UDim2.fromOffset(barW, barH)
+	ui.boardHolder.AnchorPoint = Vector2.new(0, 0)
+	ui.boardHolder.Position = UDim2.fromOffset(holderX, holderY)
+	ui.boardHolder.Size = UDim2.fromOffset(holderW, holderH)
+
+	for key, spec in INNER[mode] do
 		local item = ui[key]
-		if not item then
-			continue -- the Studio-only button
-		end
-		if spec.anchor then
-			item.AnchorPoint = spec.anchor
-		end
-		item.Position = spec.position
-		item.Size = spec.size
-		if spec.max then
-			ui.barSize.MaxSize = spec.max
+		if item then -- devOneMove only exists in Studio
+			item.Position = spec.position
+			item.Size = spec.size
 		end
 	end
 end
@@ -348,7 +378,26 @@ local function showPanel(title: string, body: string, primaryText: string, onPri
 	ui.secondary.Text = secondaryText
 	ui.panelActions.primary = onPrimary
 	ui.panelActions.secondary = onSecondary
+	-- Centre on the board (not the screen) when one is showing.
+	local board = current and current.view.frame
+	if board and ui.play.Visible then
+		local origin = ui.panel.Parent.AbsolutePosition
+		ui.panel.Position = UDim2.fromOffset(
+			board.AbsolutePosition.X - origin.X + board.AbsoluteSize.X / 2,
+			board.AbsolutePosition.Y - origin.Y + board.AbsoluteSize.Y / 2
+		)
+	else
+		ui.panel.Position = UDim2.fromScale(0.5, 0.5)
+	end
+	-- Ignore clicks for a moment so a tap meant for the board can't hit a panel button.
+	ui.panelShownAt = os.clock()
 	ui.panel.Visible = true
+end
+
+local PANEL_CLICK_DELAY = 0.5
+
+local function panelReady(): boolean
+	return os.clock() - (ui.panelShownAt or 0) >= PANEL_CLICK_DELAY
 end
 
 local function hidePanel()
@@ -408,7 +457,13 @@ local function onLevelEnded()
 		)
 	else
 		-- Paid continues (+5 moves) arrive with P2.
-		showPanel("Out of moves", "So close! Give it another go.", "Retry", function()
+		local done, total = 0, 0
+		for _, goal in run.game.goals.list do
+			done += math.min(goal.progress, goal.target)
+			total += goal.target
+		end
+		local body = if total > 0 and done / total >= 0.75 then "So close! Give it another go." else "Give it another go!"
+		showPanel("Out of moves", body, "Retry", function()
 			startLevel(run.levelId)
 		end, "Trail", showLevelSelect)
 	end
@@ -532,12 +587,18 @@ local function ensureUi()
 		PuzzleScreen.close()
 	end)
 	ui.primary.Activated:Connect(function()
+		if not panelReady() then
+			return
+		end
 		local action = ui.panelActions.primary
 		if action then
 			action()
 		end
 	end)
 	ui.secondary.Activated:Connect(function()
+		if not panelReady() then
+			return
+		end
 		local action = ui.panelActions.secondary
 		if action then
 			action()
