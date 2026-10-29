@@ -27,7 +27,7 @@ The sound system for the farm and Crop Pop: one shared module that plays named s
 
 | Kind | Now | Later |
 |---|---|---|
-| 36 sound effects | Our originals in `sfx/`, **not uploaded yet**, so silent. Studio prints each name once the first time it's asked for, so hooks can be checked. | Upload, then put each asset id in the sound's `id` |
+| 37 sound effects | Our originals in `sfx/`, **not uploaded yet**, so silent. Studio prints each name once the first time it's asked for, so hooks can be checked. | Upload, then put each asset id in the sound's `id` |
 | Level up, Crop Pop win and lose, match pop | A free **APM Music** / **Pro Sound Effects** sound from Roblox's library (the `fallback` field), until our original has an `id` | Our original |
 | Music (Farm, Puzzle, Visit) | **APM Music** tracks from Roblox's library, free in experiences | Our own theme (open question in *12 Art & Audio Direction*) |
 | Farm ambience | A **Pro Sound Effects** countryside loop | Our own bed |

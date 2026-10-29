@@ -68,6 +68,42 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 			end
 		end
 	end
+	-- Pens (shared/Pen): an animal with no readyAt is hungry; fed, it gets one; collected,
+	-- it's hungry again.
+	local fed, gathered, newAnimals = 0, 0, 0
+	for id, pen in nextState.pens or {} do
+		local before = (prev.pens or {})[id]
+		if before then
+			if not before.built and pen.built then
+				buildStarted += 1
+			end
+			local animalsBefore = before.animals or {}
+			for i, animal in pen.animals or {} do
+				local was = animalsBefore[i]
+				if was == nil then
+					newAnimals += 1
+				elseif was.readyAt == nil and animal.readyAt ~= nil then
+					fed += 1
+				elseif was.readyAt ~= nil and animal.readyAt == nil then
+					gathered += 1
+				end
+			end
+		end
+	end
+
+	-- Town (shared/TownRules): a new house or community building is a build starting.
+	local town, townBefore = nextState.town, prev.town
+	if type(town) == "table" and type(townBefore) == "table" then
+		if #(town.houses or {}) > #(townBefore.houses or {}) then
+			buildStarted += 1
+		end
+		for id in town.community or {} do
+			if (townBefore.community or {})[id] == nil then
+				buildStarted += 1
+			end
+		end
+	end
+
 	if buildStarted > 0 then
 		table.insert(cues, { sound = "BuildStart" })
 	end
@@ -75,6 +111,13 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		table.insert(cues, { sound = "FactoryStart" })
 	end
 	chain(cues, "FactoryCollect", collected, 2)
+	if fed > 0 then
+		table.insert(cues, { sound = "Feed" })
+	end
+	chain(cues, "FactoryCollect", gathered, 2)
+	if newAnimals > 0 then
+		table.insert(cues, { sound = "Unlock" })
+	end
 
 	-- Currencies. Selling from the Barn: items went down and Coins went up.
 	local coinsUp = amount(nextState.currencies, "Coins") > amount(prev.currencies, "Coins")
@@ -104,8 +147,9 @@ local function crossed(t: number?, fromTime: number, toTime: number): boolean
 end
 
 -- Timers that ran out between fromTime and toTime (server clock): a factory job finishing
--- and a building finishing construction. Crops ripening stay quiet, since a whole farm of
--- them would chime constantly; the ready bubbles show them.
+-- and a building (factory, pen, house or community building) finishing construction.
+-- Crops ripening and animals finishing stay quiet, since a whole farm of them would chime
+-- constantly; the ready bubbles show them.
 function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: number): { Cue }
 	local cues: { Cue } = {}
 	if state == nil then
@@ -131,6 +175,24 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 			end
 		end
 	end
+	for _, pen in state.pens or {} do
+		if crossed(pen.constructionReadyAt, fromTime, toTime) then
+			buildDone = true
+		end
+	end
+	local town = state.town
+	if type(town) == "table" then
+		for _, house in town.houses or {} do
+			if crossed(house.readyAt, fromTime, toTime) then
+				buildDone = true
+			end
+		end
+		for _, building in town.community or {} do
+			if type(building) == "table" and crossed(building.readyAt, fromTime, toTime) then
+				buildDone = true
+			end
+		end
+	end
 	if buildDone then
 		table.insert(cues, { sound = "BuildDone" })
 	end
@@ -140,13 +202,15 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 	return cues
 end
 
--- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order", ... }).
+-- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order" | "Drop", ... }).
 function FarmCues.popup(payload: { [string]: any }?): { Cue }
 	local kind = type(payload) == "table" and payload.kind
 	if kind == "LevelUp" then
 		return { { sound = "LevelUp" } }
 	elseif kind == "Order" then
 		return { { sound = "OrderComplete" }, { sound = "Coin", delay = 0.35 } }
+	elseif kind == "Drop" then
+		return { { sound = "Unlock" } } -- a tool dropped (Shovel, Axe, Saw...)
 	end
 	return {}
 end

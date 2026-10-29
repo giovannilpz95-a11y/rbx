@@ -70,6 +70,7 @@ local Sounds: { [string]: Sound } = {
 	-- Farm -------------------------------------------------------------------
 	Plant = original("plant", "Effects", 0.55, { cooldown = 0.05, voices = 3, length = 0.16 }),
 	Harvest = original("harvest", "Effects", 0.6, { cooldown = 0.05, voices = 3, length = 0.15 }),
+	Feed = original("feed", "Effects", 0.5, { cooldown = 0.08, voices = 2, length = 0.25 }),
 	Ready = original("ready", "Effects", 0.35, { cooldown = 4, voices = 1, length = 0.59 }),
 	BuildStart = original("build_hammer", "Effects", 0.55, { cooldown = 0.5, length = 0.38 }),
 	BuildDone = original("build_done", "Effects", 0.65, { cooldown = 1, duck = true, length = 0.96 }),

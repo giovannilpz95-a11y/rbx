@@ -7,21 +7,22 @@ audio/ folder:
     python3 tools/make_sfx.py            # writes sfx/*.ogg (needs numpy and ffmpeg)
     python3 tools/make_sfx.py --wav      # also keeps the .wav files
 
-The output is deterministic (fixed noise seed), so the files only change when
-this script does. Upload the .ogg files to Roblox and put the asset ids in
-src/shared/Sounds.luau.
+The output is deterministic (each sound seeds its own noise from its name), so a
+file only changes when its own function does. Upload the .ogg files to Roblox and
+put the asset ids in src/shared/Sounds.luau.
 """
 
 import subprocess
 import sys
 import wave
+import zlib
 from pathlib import Path
 
 import numpy as np
 
 RATE = 44100
 OUT = Path(__file__).resolve().parent.parent / "sfx"
-rng = np.random.default_rng(20261029)
+rng = np.random.default_rng(0)  # reseeded per sound in main(), so sounds don't affect each other
 
 
 # Building blocks ---------------------------------------------------------------
@@ -266,6 +267,14 @@ def harvest():
     return sequence([(0, swish), (0.07, pop * 0.8)])
 
 
+def feed():
+    # A scoop of grain poured into a trough: a short rattle of tiny grains, then a soft thump.
+    grains = sequence([(rng.uniform(0, 0.16), noise(0.004) * rng.uniform(0.3, 1.0)) for _ in range(40)])
+    grains = bandpass(grains, 4200, 1.5) * 2
+    trough = glide(220, 160, 0.08) * decay(0.08, 40) * 0.5
+    return sequence([(0, grains), (0.15, trough)])
+
+
 def ready():
     return sequence([(0, bell(note("E6"), 0.4, 8) * 0.7), (0.09, bell(note("A6"), 0.5, 7) * 0.6)])
 
@@ -418,6 +427,7 @@ SOUNDS = {
     "unlock": unlock,
     "plant": plant,
     "harvest": harvest,
+    "feed": feed,
     "ready": ready,
     "build_hammer": build_hammer,
     "build_done": build_done,
@@ -455,7 +465,9 @@ def write_wav(path, x):
 def main():
     keep_wav = "--wav" in sys.argv
     OUT.mkdir(exist_ok=True)
+    global rng
     for name, make in SOUNDS.items():
+        rng = np.random.default_rng(zlib.crc32(name.encode()))
         x = finish(make())
         wav = OUT / f"{name}.wav"
         write_wav(wav, x)
