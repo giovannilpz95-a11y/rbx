@@ -59,7 +59,7 @@ local LAYOUT = {
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
 	truck = Vector3.new(26, 0, 36),
-	spawn = Vector3.new(0, 0, 40),
+	spawn = Vector3.new(0, 0, 16), -- far enough inside that the camera behind you clears the gate
 }
 PlotService.LAYOUT = LAYOUT
 
