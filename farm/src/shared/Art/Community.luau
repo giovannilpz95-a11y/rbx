@@ -578,6 +578,38 @@ TYPES.StargazingTower = function(b, s)
 	return body
 end
 
+-- Rose Garden (content bank, level 19): a lawn of rose bushes around a small round glass
+-- garden house with a domed glass roof, behind a rose arch on the path from the street.
+TYPES.RoseGarden = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grassLight, { collide = true })
+	local t = b.into(body, true)
+	t.block("Path", Vector3.new(1.8, 0.1, w / 2), Vector3.new(0, 0.45, -w / 4), Palette.path, { shadow = false })
+	-- The glass house at the back of the lawn
+	local back = w / 6
+	t.post("Floor", 0.4, 5.4, Vector3.new(0, 0.6, back), Palette.stoneLight)
+	t.post("Walls", 3.6, 4.6, Vector3.new(0, 2.6, back), Palette.glass)
+	t.ball("Dome", 4.8, Vector3.new(0, 4.4, back), Palette.glass)
+	t.ball("Finial", 0.6, Vector3.new(0, 6.9, back), Palette.coins, { shadow = false })
+	Kit.door(t, "Door", CFrame.new(0, 0.8, back - 2.3), 1.6, 3, Palette.cream, Palette.woodLight)
+	-- Sign object: a rose arch over the path, roses on the crossbar
+	local arch = -w / 2 + 1
+	for _, x in { -1.4, 1.4 } do
+		t.block("ArchPost", Vector3.new(0.4, 4.4, 0.4), Vector3.new(x, 2.6, arch), Palette.cream)
+	end
+	t.block("ArchTop", Vector3.new(3.6, 0.5, 0.6), Vector3.new(0, 5, arch), Palette.leaf)
+	for _, x in { -0.9, 0.9 } do
+		t.ball("Rose", 0.9, Vector3.new(x, 5.4, arch - 0.2), Palette.roofRed, { shadow = false })
+	end
+	-- Rose bushes in the four corners
+	local c = w / 2 - 1.4
+	for i, at in { Vector3.new(-c, 0.4, -c), Vector3.new(c, 0.4, -c), Vector3.new(-c, 0.4, c), Vector3.new(c, 0.4, c) } do
+		Kit.bush(t, "RoseBush", at, 0.9, Palette.leaf, if i % 2 == 0 then Palette.flowerPink else Palette.roofRed)
+	end
+	Kit.sproutTag(t, Vector3.new(c, 0.4, 0), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)

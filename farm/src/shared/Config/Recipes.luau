@@ -6,7 +6,7 @@
 export type RecipeDef = {
 	id: string, -- also the output item key
 	displayName: string,
-	factory: string,
+	factory: string, -- also made by its copies (Factories `makes`)
 	unlockLevel: number,
 	inputs: { [string]: number },
 	outputQty: number,
@@ -44,6 +44,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Snack Factory (content bank)
 	Popcorn = { id = "Popcorn", displayName = "Popcorn", factory = "SnackFactory", unlockLevel = 14, inputs = { Corn = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 12, xp = 5 },
 	RoastedPumpkinSeeds = { id = "RoastedPumpkinSeeds", displayName = "Roasted Pumpkin Seeds", factory = "SnackFactory", unlockLevel = 18, inputs = { Pumpkins = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 45, xp = 19 },
+	TomatoKetchup = { id = "TomatoKetchup", displayName = "Tomato Ketchup", factory = "SnackFactory", unlockLevel = 19, inputs = { Tomatoes = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 29, xp = 12 },
 	CornChips = { id = "CornChips", displayName = "Corn Chips", factory = "SnackFactory", unlockLevel = 17, inputs = { Corn = 3 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 19, xp = 8 },
 	-- Diner (content bank)
 	StrawberryMilkshake = { id = "StrawberryMilkshake", displayName = "Strawberry Milkshake", factory = "Diner", unlockLevel = 16, inputs = { Milk = 2, Strawberries = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 30, xp = 13 },

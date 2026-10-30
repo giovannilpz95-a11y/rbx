@@ -30,6 +30,7 @@ local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtTown = require("../src/shared/Art/Town")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Crops = require("../src/shared/Config/Crops")
+local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
 local Levels = require("../src/shared/Config/Levels")
@@ -37,7 +38,7 @@ local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
 local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
-local FACTORIES = { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill", "SnackFactory", "Diner" }
+local FACTORIES = { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill", "SnackFactory", "Diner", "FeedMill2" }
 local PLOT_PARTS_MAX = 2500 -- whole plot at full expansion (15 §5)
 
 return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), ok: (any, string) -> ())
@@ -556,7 +557,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			add(ArtAnimals.animal(id, CFrame.new()), 6)
 			add(ArtAnimals.product(id, CFrame.new()), 6)
 		end
-		-- Every factory with a full output tray (8 goods) of its biggest prop
+		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest prop
 		local biggestProp = 0
 		for id in Items do
 			biggestProp = math.max(biggestProp, Kit.countParts(ArtItemProps.build(id)))
@@ -565,7 +566,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			local m = Instance.new("Model")
 			ArtFactories.build(id, m, CFrame.new())
 			add(m, 1)
-			total += biggestProp * 8
+			total += biggestProp * Factories[id].trayCapacity
 		end
 		-- Barn, board, dock, truck, gate, decoration: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25 + 40

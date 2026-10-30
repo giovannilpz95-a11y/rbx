@@ -23,6 +23,7 @@ export type Spec = {
 ArtMotion.SPECS = {
 	Bakery = { kind = "glow", pivot = "OvenGlow", speed = 3, color = Palette.carrot },
 	FeedMill = { kind = "spin", pivot = "Wheel", speed = 1.2 },
+	FeedMill2 = { kind = "spin", pivot = "Wheel", speed = 1.2 },
 	Dairy = { kind = "bob", pivot = "Plunger", speed = 5, amplitude = 0.6 },
 	SugarMill = { kind = "spin", pivot = "Hub", speed = 0.8 },
 	TextileMill = { kind = "spin", pivot = "Spool", speed = 2.5 },

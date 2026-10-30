@@ -920,8 +920,9 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 	-- Recipes (paperwork: queue from anywhere)
 	local order = 1
 	local recipeIds = {}
+	local makes = def.makes or factoryId -- a second copy makes its original's recipes
 	for id, recipe in Recipes do
-		if recipe.factory == factoryId then
+		if recipe.factory == makes then
 			table.insert(recipeIds, id)
 		end
 	end

@@ -1,7 +1,8 @@
 --!strict
 -- Factory buildings from Design/04 Factories & Recipes and Township Baseline Numbers §4
 -- (Township baseline): the five factories of the level-12 MVP, then the content bank's
--- (Config/Levels.built), which stand in the East Meadow.
+-- (Config/Levels.built), which stand in the East Meadow. Only the Feed Mill gets a second copy
+-- (level 19), as in Township; the copy has its own id and queue and makes the same recipes.
 
 export type FactoryDef = {
 	id: string,
@@ -16,6 +17,7 @@ export type FactoryDef = {
 	order: number, -- unlock order (UI sort)
 	color: { number }, -- greybox RGB
 	land: number?, -- the land expansion its spot is on, which must be cleared first
+	makes: string?, -- a second copy: the factory whose recipes it makes
 }
 
 local HOUR = 3600
@@ -30,6 +32,7 @@ local Factories: { [string]: FactoryDef } = {
 	-- content bank (level 13+)
 	SnackFactory = { id = "SnackFactory", displayName = "Snack Factory", unlockLevel = 14, population = 300, buildCost = 1300, buildSeconds = 12 * HOUR, xp = 58, queueSlots = 2, trayCapacity = 6, order = 6, color = { 240, 200, 90 }, land = 2 },
 	Diner = { id = "Diner", displayName = "Diner", unlockLevel = 16, population = 425, buildCost = 2100, buildSeconds = 16 * HOUR, xp = 91, queueSlots = 2, trayCapacity = 6, order = 7, color = { 150, 215, 200 }, land = 2 },
+	FeedMill2 = { id = "FeedMill2", displayName = "Second Feed Mill", unlockLevel = 19, population = 655, buildCost = 2800, buildSeconds = 16 * HOUR, xp = 120, queueSlots = 3, trayCapacity = 6, order = 8, color = { 200, 150, 110 }, land = 2, makes = "FeedMill" },
 }
 
 return table.freeze(Factories)

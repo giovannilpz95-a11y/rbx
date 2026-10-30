@@ -97,7 +97,7 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	local data = DataService.get(player) :: { [string]: any }
 	local factory = data.factories[factoryId]
 	local recipe = Recipes[recipeId]
-	if factory == nil or recipe == nil or recipe.factory ~= factoryId then
+	if factory == nil or recipe == nil or recipe.factory ~= (Factories[factoryId].makes or factoryId) then
 		return false
 	end
 	FactoryService.advance(player)

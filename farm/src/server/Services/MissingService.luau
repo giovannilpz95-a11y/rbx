@@ -8,6 +8,7 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local BarnRules = require(Shared.BarnRules)
+local Factories = require(Shared.Config.Factories)
 local Missing = require(Shared.Missing)
 local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
@@ -38,7 +39,7 @@ local function resolve(
 			return nil, nil
 		end
 		local recipe = Recipes[b]
-		if recipe == nil or recipe.factory ~= a or data.factories[a] == nil then
+		if recipe == nil or data.factories[a] == nil or recipe.factory ~= (Factories[a].makes or a) then
 			return nil, nil
 		end
 		return recipe.inputs, function()
