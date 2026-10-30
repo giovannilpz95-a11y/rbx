@@ -10,7 +10,7 @@
 	  { kind = "Swap", from = {x, y}, to = {x, y}, ok = boolean, combo = boolean? }
 	  { kind = "Pop", removed = {{id, x, y, cause}}, created = {{piece, x, y}},
 	    transformed = {{id, power}}, bales = {{x, y, hp, weed?}}, mud = {{x, y, layers}},
-	    frost = {{x, y, layers}},
+	    frost = {{x, y, layers}}, clover = {{x, y}},
 	    effects = {{type = "Spray" | "Bomb" | "Bee" | "Sun" | "Everything" | "Grow", ...}} }
 	  { kind = "Drop", moves = {Board.Move}, spawns = {Board.Spawn} }
 	  { kind = "Shuffle", moves = {Board.Move} }
@@ -21,6 +21,9 @@
 	Weeds: after a swap that pulls no weed, one weed spreads onto a plain tile
 	next to a weed (a Pop phase with a "Grow" effect; the tile is removed with
 	cause "weed" and the cell gets a weed).
+
+	Clover: a match with a tile on clover plants clover on every cell of the
+	match, and a power-up going off on clover plants it on every cell it hits.
 
 	Pumpkins: a pumpkin that reaches the bottom cell of its column is collected
 	(a Pop phase with a "Pumpkin" effect, removed with cause "pumpkin"). Refills
@@ -137,8 +140,10 @@ local function newWave()
 		bales = {},
 		mud = {},
 		frost = {},
+		clover = {},
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
+		spread = false, -- the power-up going off started on clover
 		pendingCreates = {},
 		balesTouched = {}, -- bales already hit by a neighbouring match this wave
 	}
@@ -184,11 +189,22 @@ function Engine._damageBale(self, wave, cell)
 	end
 end
 
+function Engine._plantClover(self, wave, cell)
+	if not cell.clover then
+		cell.clover = true
+		table.insert(wave.clover, { x = cell.x, y = cell.y })
+		self.goals:onClover()
+	end
+end
+
 -- A power-up blast reaching (x, y).
 function Engine._hit(self, wave, x: number, y: number)
 	local cell = self.board:get(x, y)
 	if not cell then
 		return
+	end
+	if wave.spread then
+		self:_plantClover(wave, cell)
 	end
 	if cell.bale > 0 then
 		self:_damageBale(wave, cell)
@@ -200,7 +216,14 @@ end
 function Engine._popGroups(self, wave, groups)
 	local board = self.board
 	for _, group in groups do
+		local onClover = false
 		for _, cell in group.cells do
+			onClover = onClover or cell.clover
+		end
+		for _, cell in group.cells do
+			if onClover then
+				self:_plantClover(wave, cell)
+			end
 			self:_removePiece(wave, cell, "match")
 		end
 		-- Matches next to a hay bale knock off one layer (once per bale per wave).
@@ -274,6 +297,8 @@ end
 function Engine._activate(self, wave, act)
 	local board = self.board
 	local power = act.power
+	local origin = board:get(act.x, act.y)
+	wave.spread = act.clover == true or (origin ~= nil and origin.clover)
 	if power == Power.SprayerRow then
 		table.insert(wave.effects, { type = "Spray", dir = "Row", x = act.x, y = act.y })
 		for x = 1, board.width do
@@ -303,6 +328,9 @@ function Engine._activate(self, wave, act)
 		if color then
 			board:eachCell(function(cell)
 				if cell.piece and cell.bale == 0 and cell.piece.color == color then
+					if wave.spread then
+						self:_plantClover(wave, cell)
+					end
 					self:_removePiece(wave, cell, "power")
 				end
 			end)
@@ -337,8 +365,20 @@ function Engine._activate(self, wave, act)
 	end
 end
 
--- Swapping two power-ups together, or a Sunflower with anything.
+-- Swapping two power-ups together, or a Sunflower with anything. If either
+-- cell is on clover, whatever the combo sets off spreads it.
 function Engine._combo(self, wave, a, b)
+	local queued = #wave.queue
+	local onClover = a.clover or b.clover
+	self:_comboParts(wave, a, b)
+	if onClover then
+		for i = queued + 1, #wave.queue do
+			wave.queue[i].clover = true
+		end
+	end
+end
+
+function Engine._comboParts(self, wave, a, b)
 	local pa, pb = a.piece, b.piece
 	local queue = wave.queue
 	local x, y = b.x, b.y
@@ -430,6 +470,7 @@ function Engine._finishWave(self, wave, phases)
 		guard += 1
 		self:_activate(wave, table.remove(wave.queue, 1))
 	end
+	wave.spread = false
 	for _, create in wave.pendingCreates do
 		local cell = create.cell
 		if Board.isEmptySlot(cell) then
@@ -450,6 +491,7 @@ function Engine._finishWave(self, wave, phases)
 		bales = wave.bales,
 		mud = wave.mud,
 		frost = wave.frost,
+		clover = wave.clover,
 		effects = wave.effects,
 	})
 end
@@ -807,7 +849,7 @@ function Engine.continue(self): (boolean, { any })
 	local phases = {}
 	if step.power then
 		local placed, shuffle = self:_placePowerUps({ step.power })
-		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, effects = {} })
+		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, effects = {} })
 		if shuffle then
 			table.insert(phases, shuffle)
 		end

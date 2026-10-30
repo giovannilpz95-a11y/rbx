@@ -44,7 +44,7 @@ end
 	  1-6   a tile of that colour          1r 2c 3b 1h  that tile as a power-up
 	  S     Sunflower                      B1 B2 B3     hay bale
 	  W     weed                           1f 2F        frosted tile (1 or 2 layers)
-	  P     pumpkin
+	  P     pumpkin                        any token + "+"  on clover (1+, x+, B1+)
 	  x     filler (a 4/5 checkerboard that never matches on its own)
 	  #     hole (must also be a hole in the layout)
 	Tests use colours 1-3 for the tiles they care about.
@@ -63,6 +63,10 @@ function Helpers.setBoard(pop, rows)
 				cell.bale = 0
 				cell.weed = false
 				cell.frost = 0
+				cell.clover = string.sub(token, -1) == "+"
+				if cell.clover then
+					token = string.sub(token, 1, -2)
+				end
 				if token == "x" then
 					cell.piece = board:newPiece(if (x + y) % 2 == 0 then 4 else 5)
 				elseif token == "S" then

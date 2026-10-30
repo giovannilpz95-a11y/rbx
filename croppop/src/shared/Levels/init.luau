@@ -8,6 +8,7 @@
 	  f  frost, 1 layer      F  frost, 2 layers (the tile is frozen in place)
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
+	  c  clover (matches on it spread it; a Clover goal covers the board)
 	  1 2 3  hay bale with that many layers
 
 	Difficulty: every 5th level is Tough, and every 10th from level 20 is
@@ -20,7 +21,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -54,6 +55,7 @@ local VALID_CHARS = {
 	F = true,
 	w = true,
 	p = true,
+	c = true,
 	["1"] = true,
 	["2"] = true,
 	["3"] = true,
@@ -88,7 +90,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins = 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover = 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -106,6 +108,8 @@ function Levels.validate(level): string?
 				frost += 1
 			elseif ch == "w" then
 				weeds += 1
+			elseif ch == "c" then
+				clover += 1
 			elseif ch == "p" then
 				pumpkins += 1
 				local below = false
@@ -153,6 +157,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Weeds" then
 			if weeds == 0 then
 				return "weeds goal but no weeds in the layout"
+			end
+		elseif goal.kind == "Clover" then
+			if clover == 0 then
+				return "clover goal but no clover in the layout"
 			end
 		elseif goal.kind == "Pumpkins" then
 			if type(goal.count) ~= "number" or goal.count < math.max(1, pumpkins) then

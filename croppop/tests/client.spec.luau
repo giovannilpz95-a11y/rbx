@@ -736,6 +736,32 @@ test("a pumpkin level shows pumpkins and exit arrows and plays in step", functio
 	PuzzleScreen.close()
 end)
 
+test("clover shows on the board and spreads as the level plays", function()
+	local level = table.clone(CropPop.Levels.get(1))
+	level.id = 997
+	level.layout = {
+		"........",
+		"........",
+		"........",
+		"...cc...",
+		"...cc...",
+		"........",
+		"........",
+	}
+	level.goals = { { kind = "Clover" } }
+	level.moves = 40
+	PuzzleScreen.playTest(level, function() end)
+	local run = PuzzleScreen.currentRun()
+	truthy(run.view.cellGuis[4][4].clover.Visible)
+	falsy(run.view.cellGuis[1][1].clover.Visible)
+	run = playToEnd(80, false)
+	run.game.board:eachCell(function(cell)
+		eq(run.view.cellGuis[cell.y][cell.x].clover.Visible, cell.clover, "clover at " .. cell.x .. "," .. cell.y)
+	end)
+	eq(mismatches, 0, "tiles out of step before sync")
+	PuzzleScreen.close()
+end)
+
 test("the Trail's Dev: Editor button opens the level editor", function()
 	PuzzleScreen.open()
 	playerGui.CropPop.Backdrop.LevelSelect.DevEditor.Activated:Fire()

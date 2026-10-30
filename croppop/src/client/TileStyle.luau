@@ -50,6 +50,7 @@ TileStyle.GoalGlyphs = {
 	Frost = "❄️",
 	Weeds = "🌿",
 	Pumpkins = "🎃",
+	Clover = "🍀",
 }
 
 TileStyle.BoosterGlyphs = {
@@ -72,6 +73,7 @@ TileStyle.Board = {
 	baleText = Color3.fromRGB(110, 76, 30),
 	frost = Color3.fromRGB(196, 232, 255),
 	weed = Color3.fromRGB(96, 158, 66),
+	clover = Color3.fromRGB(72, 170, 92),
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream
