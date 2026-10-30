@@ -12,6 +12,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
+local ArtIcons = require(Shared.Art.Icons)
 local Balance = require(Shared.Config.Balance)
 local Barn = require(Shared.Config.Barn)
 local BarnRules = require(Shared.BarnRules)
@@ -177,22 +178,72 @@ local function itemName(id: string): string
 	return if item then item.displayName else id
 end
 
-local function wantsText(wants: { [string]: number }): (string, boolean)
-	local parts = {}
-	local complete = true
+-- Item icons are ViewportFrames holding the item's 3D prop, too costly to rebuild on every
+-- one-second refresh, so they are kept between renders and handed out again per item.
+local iconPool: { [string]: { ViewportFrame } } = {}
+local iconsUsed: { [string]: number } = {}
+
+local function itemIcon(id: string, parent: Instance, size: number, position: UDim2?): ViewportFrame
+	local n = (iconsUsed[id] or 0) + 1
+	iconsUsed[id] = n
+	local list = iconPool[id] or {}
+	iconPool[id] = list
+	local icon = list[n]
+	if icon == nil then
+		icon = ArtIcons.viewport(id, size)
+		list[n] = icon
+	end
+	icon.Size = UDim2.fromOffset(size, size)
+	icon.Position = position or UDim2.new()
+	icon.Parent = parent
+	return icon
+end
+
+-- Takes the icons out of the panel before it is cleared, so they survive for the next render.
+local function releaseIcons()
+	for _, list in iconPool do
+		for _, icon in list do
+			icon.Parent = nil
+		end
+	end
+	table.clear(iconsUsed)
+end
+
+-- An order's wanted items as icon chips with have / need counts (green once there's enough).
+local function wantsChips(wants: { [string]: number }, parent: Instance): boolean
+	local strip = Ui.new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -110, 0, 30),
+		Parent = parent,
+	}, { Ui.list(10, true) })
 	local ids = {}
 	for id in wants do
 		table.insert(ids, id)
 	end
 	table.sort(ids)
-	for _, id in ids do
+	local complete = true
+	for i, id in ids do
 		local have = ClientStore.itemCount(id)
-		if have < wants[id] then
-			complete = false
-		end
-		table.insert(parts, string.format("%s %d/%d", itemName(id), math.min(have, wants[id]), wants[id]))
+		local enough = have >= wants[id]
+		complete = complete and enough
+		local chip = Ui.new("Frame", {
+			Name = id,
+			BackgroundTransparency = 1,
+			Size = UDim2.fromOffset(76, 30),
+			LayoutOrder = i,
+			Parent = strip,
+		})
+		itemIcon(id, chip, 30)
+		Ui.label(string.format("%d/%d", math.min(have, wants[id]), wants[id]), {
+			Position = UDim2.fromOffset(32, 0),
+			Size = UDim2.new(1, -32, 1, 0),
+			Font = Enum.Font.GothamBold,
+			TextSize = 16,
+			TextColor3 = if enough then Ui.colors.ready else Ui.colors.text,
+			Parent = chip,
+		})
 	end
-	return table.concat(parts, "   "), complete
+	return complete
 end
 
 local function row(height: number, order: number): Frame
@@ -213,12 +264,11 @@ local function renderOrders(state: { [string]: any })
 	titleLabel.Text = "Order Board"
 	local now = ClientStore.now()
 	for i, slot in state.board do
-		local card = row(64, i)
+		local card = row(if slot.order then 70 else 44, i)
 		if slot.order then
-			local text, complete = wantsText(slot.order.wants)
-			Ui.label(text, { Size = UDim2.new(1, -110, 0, 22), TextWrapped = true, Parent = card })
+			local complete = wantsChips(slot.order.wants, card)
 			Ui.label(string.format("+%d Coins   +%d XP", slot.order.rewardCoins, slot.order.rewardXP), {
-				Position = UDim2.fromOffset(0, 26),
+				Position = UDim2.fromOffset(0, 36),
 				Size = UDim2.new(1, -110, 0, 20),
 				TextColor3 = Ui.colors.muted,
 				TextSize = 14,
@@ -304,8 +354,10 @@ local function renderBarn(state: { [string]: any })
 		local line = row(42, order)
 		order += 1
 		local have = ClientStore.itemCount(material)
+		itemIcon(material, line, 30)
 		Ui.label(string.format("%s   %d / %d", Barn.materials[material].displayName, have, cost[material]), {
-			Size = UDim2.new(1, -170, 1, 0),
+			Position = UDim2.fromOffset(36, 0),
+			Size = UDim2.new(1, -206, 1, 0),
 			TextColor3 = if have >= cost[material] then Ui.colors.text else Ui.colors.muted,
 			Parent = line,
 		})
@@ -347,6 +399,7 @@ local function renderBarn(state: { [string]: any })
 		local qty = state.inventory[id]
 		local item = Items[id]
 		local line = row(42, order + i)
+		itemIcon(id, line, 30)
 		if item == nil or item.sellPrice <= 0 then
 			Ui.label(
 				string.format(
@@ -355,13 +408,13 @@ local function renderBarn(state: { [string]: any })
 					qty,
 					if Barn.materials[id] then "for Barn upgrades" else "for building"
 				),
-				{ Size = UDim2.new(1, 0, 1, 0), Parent = line }
+				{ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -36, 1, 0), Parent = line }
 			)
 			continue
 		end
 		Ui.label(
 			string.format("%s  x%d   (sells for %d each)", itemName(id), qty, item.sellPrice),
-			{ Size = UDim2.new(1, -150, 1, 0), Parent = line }
+			{ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -186, 1, 0), Parent = line }
 		)
 		Ui.button("Sell 1", function()
 			Remotes.fire("Barn_Sell", id, 1)
@@ -1190,6 +1243,25 @@ local function renderField(state: { [string]: any }, fieldId: string)
 		Size = UDim2.fromOffset(160, 30),
 		Parent = line,
 	})
+	-- Speed Up All: every growing field of this crop
+	local total, count = Speedup.allFields(state.fields, field.crop, now)
+	-- The short Field frame holds one row; grow it by one row for Finish all
+	frame.Size = UDim2.new(0.9, 0, 0, if count >= 2 then 124 + 48 else 124)
+	if count >= 2 then
+		local allLine = row(42, 2)
+		Ui.label(
+			string.format("All %d growing %s fields", count, crop.displayName),
+			{ Size = UDim2.new(1, -170, 1, 0), Parent = allLine }
+		)
+		gemButton("fields:" .. field.crop, "Finish all", total, function()
+			Remotes.fire("Farm_SpeedUpAll", field.crop)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = allLine,
+		})
+	end
 end
 
 local function renderSeeds(state: { [string]: any })
@@ -1405,6 +1477,7 @@ local function render()
 	if current == nil or state == nil then
 		return
 	end
+	releaseIcons()
 	Ui.clear(body)
 	if current == "Orders" then
 		renderOrders(state)

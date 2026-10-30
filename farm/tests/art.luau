@@ -19,6 +19,8 @@ local ArtAnimals = require("../src/shared/Art/Animals")
 local ArtBuildings = require("../src/shared/Art/Buildings")
 local ArtCommunity = require("../src/shared/Art/Community")
 local ArtCrops = require("../src/shared/Art/Crops")
+local ArtDecor = require("../src/shared/Art/Decor")
+local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
@@ -122,6 +124,28 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ok(parts.window:IsDescendantOf(m) and parts.chimney:IsDescendantOf(m), id .. " window and chimney")
 			-- The plot puts the table at LAYOUT.factoryOutputOffset (10 studs in front)
 			ok(math.abs(parts.outputTable.CFrame.Position.Z - ArtFactories.TABLE_Z) < 0.01, id .. " table position")
+		end
+	end)
+
+	test("art: every decoration builds inside its footprint and budget", function()
+		for id, def in Decor.items do
+			ok(ArtDecor.has(id), "decoration model for " .. id)
+			local root = Instance.new("Part")
+			root.CanTouch = false
+			ArtDecor.build(id, root, CFrame.new())
+			local max = if ArtDecor.isPath(id) then ArtDecor.PATH_PARTS_MAX else ArtDecor.PARTS_MAX
+			-- Count only the parts under root
+			local n = Kit.countParts(root) - 1
+			ok(n > 0 and n <= max, string.format("%s has %d parts, budget %d", id, n, max))
+			paletteRules(root, id)
+			local hw, hd = def.size[1] * Decor.tile / 2, def.size[2] * Decor.tile / 2
+			Kit.eachPart(root, function(p)
+				if p ~= root then
+					local c = p.CFrame.Position
+					ok(math.abs(c.X) <= hw and math.abs(c.Z) <= hd, id .. ": " .. p.Name .. " inside its footprint")
+					ok(p.CanQuery, id .. ": " .. p.Name .. " can be tapped")
+				end
+			end)
 		end
 	end)
 
