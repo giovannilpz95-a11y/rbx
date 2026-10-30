@@ -129,6 +129,9 @@ local LAYOUT = {
 		CowBarn = Vector3.new(-12, 0, 6),
 		ChickenCoop = Vector3.new(-26, 0, 6),
 		SheepFold = Vector3.new(-40, 0, 6),
+		-- Content bank: more Cow Barns carry the row on into the West Meadow (land expansion 1)
+		CowBarn2 = Vector3.new(-56, 0, 6),
+		CowBarn3 = Vector3.new(-70, 0, 6),
 	} :: { [string]: Vector3 },
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
@@ -394,6 +397,7 @@ local ANIMAL_TURNS = { 160, 200, 175, 20, -15, 200 }
 -- up to six animals, each with the product it shows when ready.
 local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
 	local def = Animals.pens[id]
+	local kind = def.copyOf or id -- a copy looks like its original
 	local pos = LAYOUT.pens[id]
 	local pen = Instance.new("Model")
 	pen.Name = id
@@ -401,7 +405,7 @@ local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame
 		Name = "Floor",
 		Size = Vector3.new(12, 0.4, 12),
 		CFrame = at(pos, 0.4),
-		Color = ArtAnimals.FLOOR_COLOR[id] or Palette.grassLight,
+		Color = ArtAnimals.FLOOR_COLOR[kind] or Palette.grassLight,
 		Parent = pen,
 	})
 	floor:SetAttribute("Interact", "Pen")
@@ -410,15 +414,15 @@ local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame
 	-- through to the floor.
 	local facing = at(pos, 0.6) * Kit.yaw(180)
 	pen:SetAttribute("BaseCFrame", facing)
-	ArtAnimals.pen(id, facing, pen)
-	local height = ArtAnimals.HEIGHT[id] or 2.5
+	ArtAnimals.pen(kind, facing, pen)
+	local height = ArtAnimals.HEIGHT[kind] or 2.5
 	for i, spot in ANIMAL_SPOTS do
 		local stand = facing * CFrame.new(spot) * Kit.yaw(ANIMAL_TURNS[i])
-		local animal = ArtAnimals.animal(id, stand, "Animal_" .. i)
+		local animal = ArtAnimals.animal(kind, stand, "Animal_" .. i)
 		Kit.fade(animal, 1)
 		animal.Parent = pen
 		local product =
-			ArtAnimals.product(id, facing * CFrame.new(spot + Vector3.new(0, height + 0.3, 0)), "Product_" .. i)
+			ArtAnimals.product(kind, facing * CFrame.new(spot + Vector3.new(0, height + 0.3, 0)), "Product_" .. i)
 		Kit.fade(product, 1)
 		product.Parent = pen
 	end
@@ -1026,7 +1030,7 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	cache[id] = state
 
 	local shell = if not pen.built then 0.75 elseif underConstruction then 0.4 else 0
-	ArtAnimals.setPenLevel(building, id, level)
+	ArtAnimals.setPenLevel(building, def.copyOf or id, level)
 	setScaffold(building, underConstruction, 12, 12, 6)
 	for _, child in building:GetChildren() do
 		local name = child.Name

@@ -147,6 +147,21 @@ test("Township baseline rows for animals, factories and recipes", function()
 	eq(Animals.pens.CowBarn.produceSeconds, 20 * 60, "Milk time")
 	eq(Animals.pens.ChickenCoop.unlockLevel, 5, "Chickens level")
 	eq(Animals.pens.SheepFold.buildCost, 600, "Sheep Fold cost")
+	-- More Cow Barns in the content bank: their own price, the Cow Barn's cows
+	eq(Animals.pens.CowBarn2.unlockLevel, 15, "second Cow Barn at 15")
+	eq(Animals.pens.CowBarn2.buildCost, 1000, "second Cow Barn cost")
+	eq(Animals.pens.CowBarn3.unlockLevel, 22, "third Cow Barn at 22")
+	eq(Animals.pens.CowBarn3.extraAnimalCosts[1], 750, "third Cow Barn's 4th Cow")
+	for id, def in Animals.pens do
+		if def.copyOf then
+			local original = Animals.pens[def.copyOf]
+			ok(original ~= nil and original.copyOf == nil, id .. " copies an original pen")
+			eq(def.feed, original.feed, id .. " eats the same feed")
+			eq(def.product, original.product, id .. " makes the same product")
+			ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
+			ok(def.land ~= nil, id .. " waits for its land")
+		end
+	end
 	eq(Factories.FeedMill.unlockLevel, 3, "Feed Mill level")
 	eq(Factories.TextileMill.queueSlots, 2, "Textile Mill slots")
 	eq(Recipes.CowFeed.outputQty, 3, "feed batch")
