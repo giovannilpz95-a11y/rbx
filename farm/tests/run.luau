@@ -14,6 +14,7 @@ local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
 local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
+local Drops = require("../src/shared/Drops")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
@@ -399,8 +400,28 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	eq(Items.Bricks.sellPrice, 0, "not sellable")
 	local data = Profile.migrate(nil) :: any
 	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
-	ok(math.abs(TownRules.harvestDropChance(0) - 0.04) < 1e-9, "building + Barn materials")
-	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.12) < 1e-9, "x3 cap")
+end)
+
+test("harvests drop tools and materials on one roll, with a pity tool", function()
+	local data = Profile.migrate(nil) :: any
+	ok(math.abs(Drops.chance(0) - 0.105) < 1e-9, "3% + 2% + 1.5% tools, 2% + 2% materials")
+	ok(math.abs(Drops.chance(8 * 3600) - 0.315) < 1e-9, "x3 cap")
+	eq(Drops.harvest(data, 0, 0), nil, "nothing before level 5")
+	eq(data.toolShed.dry, 0, "and no pity count")
+	data.level = 5
+	eq(Drops.harvest(data, 0, 0.01), "Shovel", "low rolls are Shovels")
+	eq(Drops.harvest(data, 0, 0.06), "Saw", "then Axes, then Saws")
+	eq(Drops.harvest(data, 0, 0.07), "Bricks", "then materials")
+	eq(data.toolShed.dry, 1, "a material isn't a tool")
+	eq(Drops.harvest(data, 0, 0.2), nil, "high rolls drop nothing")
+	eq(Drops.harvest(data, 8 * 3600, 0.2), "Bricks", "long crops roll better")
+	data.toolShed.items = { Shovel = 2, Axe = 1 }
+	data.toolShed.dry = 39
+	eq(Drops.harvest(data, 0, 0.99), nil, "harvest 40 can still miss")
+	eq(Drops.harvest(data, 0, 0.99), "Saw", "harvest 41 gives the scarcest tool")
+	eq(data.toolShed.dry, 0, "and resets the count")
+	data.toolShed.items.Saw = 1
+	eq(Drops.scarcestTool(data), "Axe", "ties go to the commoner tool")
 end)
 
 test("the first-session guide walks the opening loop", function()

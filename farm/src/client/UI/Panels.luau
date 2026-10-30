@@ -21,6 +21,7 @@ local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Land = require(Shared.Config.Land)
 local Speedup = require(Shared.Speedup)
+local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 local Tutorial = require(Shared.Tutorial)
@@ -376,6 +377,34 @@ local function renderBarn(state: { [string]: any })
 			Parent = line,
 		})
 	end
+
+	-- Tool Shed: tools never take Barn space
+	order += #ids + 1
+	local tools = state.tools or {}
+	Ui.label("Tool Shed", { Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body })
+	for i, id in sortedKeys(Tools.tools) do
+		local def = Tools.tools[id]
+		Ui.label(string.format("%s  x%d", def.plural, tools[id] or 0), {
+			TextColor3 = if (tools[id] or 0) > 0 then Ui.colors.text else Ui.colors.muted,
+			LayoutOrder = order + i,
+			Parent = body,
+		})
+	end
+	Ui.label(
+		if state.level >= Tools.fromLevel
+			then "Tools drop from harvests and orders and don't use Barn space. Bigger land clearings will need them."
+			else string.format(
+				"Shovels, Axes and Saws start dropping at level %d. Bigger land clearings will need them.",
+				Tools.fromLevel
+			),
+		{
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			TextWrapped = true,
+			LayoutOrder = order + 4,
+			Parent = body,
+		}
+	)
 end
 
 local function renderFactory(state: { [string]: any }, factoryId: string)
