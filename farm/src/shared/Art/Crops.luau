@@ -293,6 +293,26 @@ READY.Potatoes = function(b, color)
 	end
 end
 
+-- Cocoa (level 25): little cocoa saplings, then four small cocoa trees, each with a fat golden pod
+-- hanging from its trunk.
+GROWING.Cocoa = function(b)
+	for _, x in { -2, 2 } do
+		for _, z in { -2, 2 } do
+			b.post("Trunk", 1.2, 0.35, Vector3.new(x, 1, z), Palette.trunk)
+			b.ball("Leaves", 1.5, Vector3.new(x, 1.9, z), Palette.leaf)
+		end
+	end
+end
+READY.Cocoa = function(b, color)
+	for _, x in { -2, 2 } do
+		for _, z in { -2, 2 } do
+			b.post("Trunk", 2.6, 0.5, Vector3.new(x, 1.7, z), Palette.trunk)
+			b.ball("Canopy", 2.6, Vector3.new(x, 3.5, z), Palette.leaf)
+			b.ball("Pod", 0.9, Vector3.new(x - 0.35, 1.8, z - 0.35), Palette.bread:Lerp(color, 0.3), { shadow = false })
+		end
+	end
+end
+
 -- Crops past the content bank: green rows, then rows of fruit in the crop's own color.
 local function genericGrowing(b: Kit.Builder, _color: Color3)
 	for _, z in ArtCrops.ROWS do
