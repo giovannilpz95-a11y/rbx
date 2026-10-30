@@ -32,6 +32,7 @@ local Motion = TileStyle.Theme.Motion
 local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
+local ScoreTracks = CropPop.ScoreTracks
 local TrailChest = CropPop.TrailChest
 local Colors = TileStyle.Board
 local LOCKED_AHEAD = 4 -- locked levels shown on the trail past the next one
@@ -43,6 +44,7 @@ local PuzzleScreen = {}
 local ui = nil -- built on first open
 local current = nil -- the level being played
 local busy = false
+local trackOpen = false -- the score track's step list is showing on the Trail
 local progress = nil -- the latest hearts / boosters / unlocks from the server
 local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 
@@ -257,7 +259,7 @@ local function buildUi()
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
 	-- Studio only: empty the hearts to check the refill offer.
-	local devNoHearts, devEditor, devLock, devBoosters, devGift = nil, nil, nil, nil, nil
+	local devNoHearts, devEditor, devLock, devBoosters, devGift, devTrack = nil, nil, nil, nil, nil, nil
 	if RunService:IsStudio() then
 		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
 		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
@@ -272,6 +274,9 @@ local function buildUi()
 		-- And a heart gift from a pretend neighbor, to check claiming.
 		devGift = button(levelSelect, "DevGift", "Dev 🎁", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.82, 0.03))
 		devGift.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+		-- And score track points, to walk through the steps.
+		devTrack = button(levelSelect, "DevTrack", "Dev +10🏁", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.1, 0.03))
+		devTrack.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
 	-- End-of-level panel.
@@ -419,6 +424,7 @@ local function buildUi()
 		devLock = devLock,
 		devBoosters = devBoosters,
 		devGift = devGift,
+		devTrack = devTrack,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -814,6 +820,123 @@ local function addGiftRow()
 	note.TextWrapped = true
 end
 
+-- Score tracks -------------------------------------------------------------------
+
+local function minutesText(minutes: number): string
+	if minutes >= 60 and minutes % 60 == 0 then
+		return string.format("%d h", minutes // 60)
+	end
+	return string.format("%d min", minutes)
+end
+
+-- "2d 4h", "3h 12m" or "12m"
+local function durationText(seconds: number): string
+	seconds = math.max(0, math.floor(seconds))
+	if seconds >= 86400 then
+		return string.format("%dd %dh", seconds // 86400, seconds % 86400 // 3600)
+	elseif seconds >= 3600 then
+		return string.format("%dh %dm", seconds // 3600, seconds % 3600 // 60)
+	end
+	return string.format("%dm", math.max(1, seconds // 60))
+end
+
+-- "8 💎", "+1 💦, +1 💥", "30 min free 💦", "15 min x2 points"
+local function trackRewardText(reward): string
+	local parts = {}
+	if reward.gems then
+		table.insert(parts, reward.gems .. " 💎")
+	end
+	if reward.coins then
+		table.insert(parts, reward.coins .. " Coins")
+	end
+	for _, list in { Boosters.PreLevel, Boosters.InLevel } do
+		for _, kind in list do
+			local n = reward.boosters and reward.boosters[kind]
+			if n then
+				table.insert(parts, string.format("+%d %s", n, Glyphs[kind]))
+			end
+		end
+	end
+	if reward.unlimitedMinutes then
+		table.insert(parts, minutesText(reward.unlimitedMinutes) .. " unlimited ❤️")
+	end
+	if reward.doubleMinutes then
+		table.insert(parts, minutesText(reward.doubleMinutes) .. " x2 points")
+	end
+	if reward.freeStart then
+		table.insert(parts, string.format("%s free %s", minutesText(reward.freeStart.minutes), Glyphs[reward.freeStart.kind]))
+	end
+	return table.concat(parts, ", ")
+end
+
+-- The running track at the top of the Trail; a tap lists its steps.
+local function addTrackRows()
+	local state = progress and progress.track
+	local track = state and ScoreTracks.Tracks[state.id]
+	if not track then
+		return
+	end
+	local totals = ScoreTracks.totals(track.id)
+	local steps = track.steps
+	local text
+	if state.paid >= #steps then
+		text = string.format("%s %s: all %d steps done! %d points", track.glyph, track.name, #steps, state.points)
+	else
+		local nextStep = state.paid + 1
+		text = string.format(
+			"%s %s  %d/%d  next: %s",
+			track.glyph,
+			track.name,
+			state.points,
+			totals[nextStep],
+			trackRewardText(steps[nextStep].reward)
+		)
+	end
+	local left = since(state.secondsLeft)
+	text ..= string.format("\n%s · ends in %s", track.unit, durationText(left or 0))
+	local double = since(state.doubleSeconds)
+	if double and double > 0 then
+		text ..= "  ·  ⏱ x2 points " .. clockText(double)
+	end
+	local row = button(ui.list, "Track", text .. (if trackOpen then "  ▲" else "  ▼"), UDim2.new(1, -10, 0, 60), UDim2.new())
+	row.LayoutOrder = -100
+	row.TextWrapped = true
+	row.TextXAlignment = Enum.TextXAlignment.Left
+	row.BackgroundColor3 = Color3.fromRGB(232, 168, 48)
+	row.Activated:Connect(function()
+		trackOpen = not trackOpen
+		renderTrail()
+		if trackOpen then
+			ui.list.CanvasPosition = Vector2.new()
+		end
+	end)
+	if not trackOpen then
+		return
+	end
+	for i, s in steps do
+		local done = i <= state.paid
+		local line = string.format("%s %d. %d points: %s", if done then "✅" else "⬜", i, totals[i], trackRewardText(s.reward))
+		local stepRow = label(ui.list, "TrackStep" .. i, line, UDim2.new(1, -10, 0, 30), UDim2.new())
+		stepRow.LayoutOrder = -100 + i
+		stepRow.TextXAlignment = Enum.TextXAlignment.Left
+		stepRow.TextWrapped = true
+	end
+end
+
+-- "🌽 +34 Corn Harvest points (x2)" and what any steps reached paid.
+local function trackResultText(result): string?
+	local t = result.track
+	local track = t and ScoreTracks.Tracks[t.id]
+	if not track or t.gained <= 0 then
+		return nil
+	end
+	local text = string.format("%s +%d %s points%s", track.glyph, t.gained, track.name, if t.doubled then " (x2)" else "")
+	for _, i in t.steps do
+		text ..= string.format("\n%s Step %d: %s", track.glyph, i, trackRewardText(track.steps[i].reward))
+	end
+	return text
+end
+
 renderTrail = function()
 	for _, child in ui.list:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -821,6 +944,7 @@ renderTrail = function()
 		end
 	end
 	ui.heartsLine.Text = heartsText()
+	addTrackRows()
 	addGiftRow()
 	addHeartShop()
 	local highest = progress and progress.highestBeaten or 0
@@ -896,9 +1020,12 @@ local function renderPreLevel()
 		local info = Boosters.Info[kind]
 		local have = stock[kind] or 0
 		local picked = ui.preSelected[kind] == true
-		b.BackgroundColor3 = if picked then Colors.accent else Colors.option
-		b.TextColor3 = if picked then Color3.new(1, 1, 1) else Colors.text
-		if ui.pendingSpend == kind then
+		local free = since(progress and progress.freeStarts and progress.freeStarts[kind])
+		b.BackgroundColor3 = if picked or (free and free > 0) then Colors.accent else Colors.option
+		b.TextColor3 = if picked or (free and free > 0) then Color3.new(1, 1, 1) else Colors.text
+		if free and free > 0 then
+			b.Text = string.format("%s  %s  ⏱ free for %s", Glyphs[kind], info.name, clockText(free))
+		elseif ui.pendingSpend == kind then
 			b.Text = string.format("%s  Spend %d 💎 on a %s?", Glyphs[kind], info.gems, info.name)
 		elseif picked then
 			b.Text = string.format("%s  %s  ✅", Glyphs[kind], info.name)
@@ -916,6 +1043,10 @@ local function renderPreLevel()
 end
 
 local function onPreBooster(kind: string)
+	local free = since(progress and progress.freeStarts and progress.freeStarts[kind])
+	if free and free > 0 then
+		return -- it goes on every level for now, nothing to pick
+	end
 	if ui.preSelected[kind] then
 		ui.preSelected[kind] = nil
 	elseif ((progress and progress.boosters[kind]) or 0) > 0 then
@@ -1026,6 +1157,10 @@ local function finishRun(run)
 		local body = rewardText(result.rewards)
 		if result.chest then
 			body ..= "\n" .. chestText(result.chest)
+		end
+		local trackText = trackResultText(result)
+		if trackText then
+			body ..= "\n" .. trackText
 		end
 		if streak() >= 2 then
 			body ..= string.format("\n🔥 Hot Streak: %d wins in a row!", streak())
@@ -1383,6 +1518,9 @@ local function ensureUi()
 		ui.devGift.Activated:Connect(function()
 			PuzzleScreen.debugGiftHeart()
 		end)
+		ui.devTrack.Activated:Connect(function()
+			PuzzleScreen.debugTrackPoints()
+		end)
 		ui.devLock.Activated:Connect(function()
 			devLocked = not devLocked
 			ui.devLock.Text = if devLocked then "Dev 🔓" else "Dev 🔒"
@@ -1554,6 +1692,24 @@ function PuzzleScreen.debugGiftHeart()
 	local result = invoke("DevGiftHeart")
 	if not result.error then
 		setProgress(result)
+	end
+	if ui.select.Visible then
+		renderTrail()
+	end
+end
+
+-- Studio only: +10 score track points (the "Dev +10🏁" button on the Trail).
+function PuzzleScreen.debugTrackPoints()
+	if not RunService:IsStudio() or current then
+		return
+	end
+	local result = invoke("DevTrackPoints", 10)
+	if not result.error then
+		setProgress(result.progress)
+		local text = trackResultText(result)
+		if text then
+			ui.status.Text = (string.gsub(text, "\n", "   "))
+		end
 	end
 	if ui.select.Visible then
 		renderTrail()

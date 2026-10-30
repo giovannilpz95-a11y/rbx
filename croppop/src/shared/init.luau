@@ -20,6 +20,7 @@ return {
 	Matcher = require(script.Matcher),
 	Replay = require(script.Replay),
 	Rng = require(script.Rng),
+	ScoreTracks = require(script.ScoreTracks),
 	Tiles = require(script.Tiles),
 	TrailChest = require(script.TrailChest),
 }

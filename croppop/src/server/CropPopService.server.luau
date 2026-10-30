@@ -4,16 +4,18 @@
 
 	Remotes (created in ReplicatedStorage.CropPopRemotes):
 	  GetProgress()                       -> progress (see RunStore.getProgress)
-	  StartLevel(levelId, preBoosters?)   -> { token, levelId, seed, startPowerUps, progress } | { error }
-	  FinishLevel(token, actions)         -> { won, levelId, rewards?, chest?, firstWin?, progress } | { error }
-	                                         (rewards.coins includes leftover-move and Trail Chest coins)
+	  StartLevel(levelId, preBoosters?)   -> { token, levelId, seed, startPowerUps, freeStarts, progress } | { error }
+	  FinishLevel(token, actions)         -> { won, levelId, rewards?, chest?, track?, firstWin?, progress } | { error }
+	                                         (rewards.coins includes leftover-move, Trail Chest and score track
+	                                         coins; rewards.gems is score track Gems)
 	  BuyHearts(packIndex)                -> progress | { error }
 	  BuyBooster(kind)                    -> progress | { error }
 	  BuyContinue(token, actions)         -> { continues, progress } | { error }   (+5 moves once out of moves)
 	  ClaimHeartGifts()                   -> { claimed, from, progress } | { error }  (neighbors' hearts into empty ones)
 
 	Farm hooks in ServerStorage:
-	  CropPopLevelWon (BindableEvent, fired)     (player, levelId, rewards, firstWin) after a verified win
+	  CropPopLevelWon (BindableEvent, fired)     (player, levelId, rewards, firstWin) after a verified win;
+	                                             rewards = { coins, xp, gems? } for the farm to pay
 	  CropPopLoadSave (BindableFunction, ours)   (player, puzzleBlock?) once the farm profile loads
 	  CropPopGetSave  (BindableFunction, ours)   (player) -> puzzleBlock, for the farm's saves
 	  CropPopSpendGems (BindableFunction, farm's) (player, amount, reason) -> boolean
@@ -219,6 +221,13 @@ if RunService:IsStudio() then
 	end)
 	remote("DevGiftHeart", function(player)
 		return reply(store:devGiftSelf(player.UserId))
+	end)
+	remote("DevTrackPoints", function(player, points)
+		local result, err = store:devTrackPoints(player.UserId, if type(points) == "number" then math.clamp(points, 1, 1000) else 10)
+		if result then
+			levelWon:Fire(player, 0, result.rewards, false)
+		end
+		return reply(result, err)
 	end)
 end
 
