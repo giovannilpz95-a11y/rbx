@@ -81,6 +81,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		Panels.open(panel)
 	elseif input.KeyCode == Enum.KeyCode.Escape then
 		Panels.close()
+	elseif input.KeyCode == Enum.KeyCode.Z or input.KeyCode == Enum.KeyCode.ButtonL1 then
+		Panels.cycleTab(-1) -- the open panel's tabs (Barn, Build)
+	elseif input.KeyCode == Enum.KeyCode.X or input.KeyCode == Enum.KeyCode.ButtonR1 then
+		Panels.cycleTab(1)
 	elseif input.KeyCode == Enum.KeyCode.RightBracket and RunService:IsStudio() then
 		tourStep = tourStep % #TOUR + 1
 		local step = TOUR[tourStep]

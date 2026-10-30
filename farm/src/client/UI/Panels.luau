@@ -365,6 +365,272 @@ local function renderOrders(state: { [string]: any })
 	end
 end
 
+-- Tabs (C13): the picked tab per panel, and the names on screen for the Z / X keys
+local tabPicked: { [string]: string } = {}
+local tabNames: { string } = {}
+
+local function tabRow(panel: string, names: { string }, order: number, badges: { [string]: string }?): string
+	local picked = tabPicked[panel]
+	if picked == nil or table.find(names, picked) == nil then
+		picked = names[1]
+		tabPicked[panel] = picked
+	end
+	tabNames = names
+	Ui.theme.Kit.tabs(names, picked, function(name)
+		tabPicked[panel] = name
+		Panels.refresh()
+	end, { Size = UDim2.new(1, -8, 0, 44), LayoutOrder = order, Parent = body }, badges)
+	return picked
+end
+
+-- Z / X (or a gamepad's shoulder buttons via Main.client) step through the open panel's tabs
+function Panels.cycleTab(step: number)
+	if current == nil or #tabNames == 0 then
+		return
+	end
+	local at = table.find(tabNames, tabPicked[current] or tabNames[1]) or 1
+	tabPicked[current] = tabNames[(at - 1 + step) % #tabNames + 1]
+	Panels.refresh()
+end
+
+-- A grid of cards that grows with its contents (vertical scrolling only: mobile checklist)
+local function grid(order: number, cell: Vector2): Frame
+	return Ui.new("Frame", {
+		Name = "Grid",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -8, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = order,
+		Parent = body,
+	}, {
+		Ui.new("UIGridLayout", {
+			CellSize = UDim2.fromOffset(cell.X, cell.Y),
+			CellPadding = UDim2.fromOffset(6, 6),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+end
+
+-- Building pictures are bigger than item icons: one kept per building, reused every render
+local picturePool: { [string]: ViewportFrame } = {}
+
+local function buildingPicture(kind: string, id: string, parent: Instance, size: number): ViewportFrame?
+	local key = kind .. ":" .. id
+	local picture = picturePool[key]
+	if picture == nil then
+		local ok, built = pcall(ArtIcons.building, kind, id, size)
+		if not ok then
+			return nil
+		end
+		picture = built
+		picturePool[key] = built
+	end
+	picture.Size = UDim2.fromOffset(size, size)
+	picture.AnchorPoint = Vector2.new(0.5, 0)
+	picture.Position = UDim2.new(0.5, 0, 0, 2)
+	picture.Parent = parent
+	return picture
+end
+
+local function releasePictures()
+	for _, picture in picturePool do
+		picture.Parent = nil
+	end
+end
+
+-- Text that shrinks to fit its box, down to `min`
+local function fitText(text: string, props: { [string]: any }, max: number, min: number?): TextLabel
+	local label = Ui.label(text, props)
+	label.TextScaled = true
+	Ui.new("UITextSizeConstraint", { MaxTextSize = max, MinTextSize = min or 10 }).Parent = label
+	return label
+end
+
+---------------------------------------------------------------------------------------------
+-- Barn (G5): tabs, a grid of item tiles, and a sell drawer with a quantity picker
+---------------------------------------------------------------------------------------------
+
+local BARN_TABS = { "All", "Crops", "Goods", "Materials", "Prizes", "Tools" }
+local barnPick: string? = nil -- the tile whose sell drawer is open
+local sellQty = 1
+
+local function barnTabOf(id: string): string
+	local item = Items[id]
+	if item == nil then
+		return "Goods"
+	elseif item.kind == "Crop" then
+		return "Crops"
+	elseif item.kind == "Material" then
+		return "Materials"
+	end
+	return "Goods"
+end
+
+local function barnTile(parent: Instance, id: string, qty: number, order: number)
+	local picked = barnPick == id
+	local tile = Ui.card({ Name = id, LayoutOrder = order, Parent = parent })
+	if picked then
+		local stroke = tile:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = Ui.colors.selected
+			stroke.Thickness = 3
+			stroke.Transparency = 0
+		end
+	end
+	itemIcon(id, tile, 48, UDim2.new(0.5, -24, 0, 4))
+	fitText("x" .. qty, {
+		Position = UDim2.new(0, 4, 1, -24),
+		Size = UDim2.new(1, -8, 0, 20),
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = tile,
+	}, 16)
+	-- The whole tile is the button
+	local hit = Ui.new("TextButton", {
+		Name = "Pick",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Text = "",
+		ZIndex = 5,
+		Parent = tile,
+	})
+	Ui.theme.Kit.onTap(hit, function()
+		if barnPick == id then
+			barnPick = nil
+		else
+			barnPick = id
+			sellQty = 1
+		end
+		Panels.refresh()
+	end)
+end
+
+-- The sell drawer for the picked item: − qty +, "Sell N for X", and Sell all (two taps)
+local function sellDrawer(state: { [string]: any }, order: number)
+	local id = barnPick
+	local have = if id then state.inventory[id] or 0 else 0
+	if id == nil or have <= 0 then
+		barnPick = nil
+		return
+	end
+	local item = Items[id]
+	local line = row(if item and item.sellPrice > 0 then 96 else 52, order)
+	itemIcon(id, line, 40)
+	local sellable = item ~= nil and item.sellPrice > 0
+	Ui.label(string.format("%s  x%d", itemName(id), have), {
+		Position = UDim2.fromOffset(46, 0),
+		Size = UDim2.new(1, -90, 0, 22),
+		Font = Enum.Font.GothamBold,
+		Parent = line,
+	})
+	Ui.label(
+		if sellable
+			then string.format("Sells for %d Coins each", item.sellPrice)
+			elseif Barn.materials[id] then "For Barn upgrades. Can't be sold."
+			else "For building. Can't be sold.",
+		{
+			Position = UDim2.fromOffset(46, 20),
+			Size = UDim2.new(1, -90, 0, 18),
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			Parent = line,
+		}
+	)
+	Ui.button("✕", function()
+		barnPick = nil
+		Panels.refresh()
+	end, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.fromOffset(36, 32),
+		TextColor3 = Ui.colors.text,
+		BackgroundColor3 = Ui.theme.Palette.button.neutral.face,
+		Parent = line,
+	})
+	if not sellable or item == nil then
+		return
+	end
+	sellQty = math.clamp(sellQty, 1, have)
+	Ui.theme.Kit.stepper(sellQty, 1, have, function(v)
+		sellQty = v
+		Panels.refresh()
+	end, { Position = UDim2.fromOffset(0, 44), Size = UDim2.fromOffset(140, 40), Parent = line })
+	Ui.button(string.format("Sell %d for %d", sellQty, sellQty * item.sellPrice), function()
+		Remotes.fire("Barn_Sell", id, sellQty)
+	end, {
+		Position = UDim2.fromOffset(148, 46),
+		Size = UDim2.new(1, -264, 0, 36),
+		BackgroundColor3 = Ui.colors.coins,
+		TextScaled = true,
+		Parent = line,
+	})
+	confirmButton("sellall:" .. id, "Sell all", string.format("Sure? +%d", have * item.sellPrice), function()
+		Remotes.fire("Barn_Sell", id, have)
+	end, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 46),
+		Size = UDim2.fromOffset(108, 36),
+		TextScaled = true,
+	}, true, Ui.colors.danger).Parent =
+		line
+end
+
+-- The next Barn upgrade: n of each Barn material (Buy missing when short)
+local function barnUpgradeRow(state: { [string]: any }, order: number, withMaterials: boolean): number
+	local n = (state.barnUpgrades or 0) + 1
+	local cost = BarnRules.upgradeCost(n)
+	local canUpgrade = true
+	for material, qty in cost do
+		canUpgrade = canUpgrade and ClientStore.itemCount(material) >= qty
+	end
+	local upgradeRow = row(if withMaterials then 84 else 46, order)
+	order += 1
+	local buyUpgrade = if canUpgrade
+		then nil
+		else missingButton("barn", cost, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(170, 32),
+		}, "Barn")
+	Ui.label(string.format("Upgrade %d: room for %d (now %d)", n, BarnRules.capacity(n), state.barnCapacity), {
+		Size = UDim2.new(1, if buyUpgrade then -180 else -110, 0, 32),
+		Font = Enum.Font.GothamBold,
+		TextWrapped = true,
+		Parent = upgradeRow,
+	})
+	if buyUpgrade then
+		buyUpgrade.Parent = upgradeRow
+	else
+		local upgrade = Ui.button("Upgrade", function()
+			Remotes.fire("Barn_Upgrade")
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(100, 32),
+			Parent = upgradeRow,
+		})
+		Ui.setEnabled(upgrade, canUpgrade)
+	end
+	if withMaterials then
+		-- Have / need for each material (C5)
+		local strip = Ui.new("Frame", {
+			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(0, 36),
+			Size = UDim2.new(1, 0, 0, 36),
+			Parent = upgradeRow,
+		}, { Ui.list(10, true) })
+		for i, material in sortedKeys(Barn.materials) do
+			local chip = Ui.theme.Kit.needChip(
+				ClientStore.itemCount(material),
+				cost[material],
+				{ LayoutOrder = i, Parent = strip }
+			)
+			itemIcon(material, chip.iconSlot, 34)
+		end
+	end
+	return order
+end
+
 local function renderBarn(state: { [string]: any })
 	titleLabel.Text = string.format("Barn  %d / %d", state.barnUsed, state.barnCapacity)
 	-- "Full" once a typical harvest (2) no longer fits, so the banner shows when it bites
@@ -380,74 +646,149 @@ local function renderBarn(state: { [string]: any })
 		})
 		order += 1
 	end
-
-	-- Next upgrade: n of each Barn material
-	local n = (state.barnUpgrades or 0) + 1
-	local cost = BarnRules.upgradeCost(n)
-	local canUpgrade = true
-	for material, qty in cost do
-		canUpgrade = canUpgrade and ClientStore.itemCount(material) >= qty
-	end
-	local upgradeRow = row(42, order)
+	local prizes = state.prizes or {}
+	local tab = tabRow("Barn", BARN_TABS, order, { Prizes = if #prizes > 0 then tostring(#prizes) else "" })
 	order += 1
-	local buyUpgrade = if canUpgrade
-		then nil
-		else missingButton("barn", cost, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(170, 30),
-		}, "Barn")
-	Ui.label(string.format("Upgrade %d: room for %d (now %d)", n, BarnRules.capacity(n), state.barnCapacity), {
-		Size = UDim2.new(1, if buyUpgrade then -180 else -110, 1, 0),
-		Font = Enum.Font.GothamBold,
-		TextWrapped = true,
-		Parent = upgradeRow,
-	})
-	if buyUpgrade then
-		buyUpgrade.Parent = upgradeRow
-	else
-		local upgrade = Ui.button("Upgrade", function()
-			Remotes.fire("Barn_Upgrade")
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(100, 30),
-			Parent = upgradeRow,
-		})
-		Ui.setEnabled(upgrade, canUpgrade)
+
+	if tab == "All" or tab == "Materials" then
+		order = barnUpgradeRow(state, order, tab == "Materials")
 	end
-	for _, material in sortedKeys(Barn.materials) do
-		local line = row(42, order)
+
+	if tab == "Prizes" then
+		barnPick = nil
+		-- Prize Basket: Prize Crops sell at the Prize Stand for a multiple of the crop's price
+		local prizes = state.prizes or {}
+		Ui.label(
+			string.format("Prize Basket  %d / %d", #prizes, Prize.basketSlots),
+			{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
+		)
 		order += 1
-		local have = ClientStore.itemCount(material)
-		itemIcon(material, line, 30)
-		Ui.label(string.format("%s   %d / %d", Barn.materials[material].displayName, have, cost[material]), {
-			Position = UDim2.fromOffset(36, 0),
-			Size = UDim2.new(1, -206, 1, 0),
-			TextColor3 = if have >= cost[material] then Ui.colors.text else Ui.colors.muted,
-			Parent = line,
-		})
-		gemButton("barn:" .. material, "Buy 1", Barn.materialGemPrice, function()
-			Remotes.fire("Town_BuyMaterial", material)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(160, 30),
-			Parent = line,
-		})
-	end
-	Ui.label("Nails, Hinges and Paint drop from harvests and orders (level 5+).", {
-		TextColor3 = Ui.colors.muted,
-		TextSize = 13,
-		LayoutOrder = order,
-		Parent = body,
-	})
-	order += 1
+		if #prizes == 0 then
+			Ui.label("Now and then a harvest turns up a Sunkissed or Heirloom crop. They land here.", {
+				TextColor3 = Ui.colors.muted,
+				TextSize = 13,
+				TextWrapped = true,
+				LayoutOrder = order,
+				Parent = body,
+			})
+			order += 1
+		end
+		for i, entry in prizes do
+			local line = row(42, order)
+			order += 1
+			local value = PrizeRules.value(entry.crop, entry.tier)
+			Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
+				Size = UDim2.new(1, -230, 1, 0),
+				TextColor3 = Ui.colors.accent,
+				Parent = line,
+			})
+			Ui.button("Show", function()
+				Remotes.fire("Prize_Shelve", i)
+			end, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -150, 0, 0),
+				Size = UDim2.fromOffset(72, 30),
+				Parent = line,
+			})
+			confirmButton(
+				"prize:" .. i,
+				string.format("Sell for %d Coins", value),
+				string.format("Sure? Sell for %d", value),
+				function()
+					Remotes.fire("Prize_Sell", i)
+				end,
+				{
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, 0),
+					Size = UDim2.fromOffset(140, 30),
+					Parent = line,
+				},
+				true,
+				Ui.colors.coins
+			)
+		end
 
-	-- Contents, most-stocked first so the quick Sell buttons for them are on top
+		-- Prize Shelf: on show on the plot by the Barn
+		local shelf = state.prizeShelf or {}
+		Ui.label(
+			string.format("Prize Shelf  %d / %d", #shelf, Prize.shelfSlots),
+			{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
+		)
+		order += 1
+		if #shelf == 0 then
+			Ui.label("Tap Show on a Prize Crop to put it on the shelf by your Barn for visitors to see.", {
+				TextColor3 = Ui.colors.muted,
+				TextSize = 13,
+				TextWrapped = true,
+				LayoutOrder = order,
+				Parent = body,
+			})
+			order += 1
+		end
+		for i, entry in shelf do
+			local line = row(42, order)
+			order += 1
+			Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
+				Size = UDim2.new(1, -150, 1, 0),
+				TextColor3 = Ui.colors.accent,
+				Parent = line,
+			})
+			Ui.button("Take down", function()
+				Remotes.fire("Prize_Unshelve", i)
+			end, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(120, 30),
+				Parent = line,
+			})
+		end
+
+		return
+	end
+
+	if tab == "Tools" then
+		barnPick = nil
+		local tools = state.tools or {}
+		local shelf = grid(order, Vector2.new(96, 96))
+		order += 1
+		for i, id in sortedKeys(Tools.tools) do
+			local def = Tools.tools[id]
+			local tile = Ui.card({ Name = id, LayoutOrder = i, Parent = shelf })
+			itemIcon(id, tile, 52, UDim2.new(0.5, -26, 0, 4))
+			fitText(string.format("%s x%d", def.plural, tools[id] or 0), {
+				Position = UDim2.new(0, 4, 1, -30),
+				Size = UDim2.new(1, -8, 0, 24),
+				Font = Enum.Font.GothamBold,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextColor3 = if (tools[id] or 0) > 0 then Ui.colors.text else Ui.colors.muted,
+				Parent = tile,
+			}, 15)
+		end
+		Ui.label(
+			if state.level >= Tools.fromLevel
+				then "Tools drop from harvests and orders and don't use Barn space. Bigger land clearings will need them."
+				else string.format(
+					"Shovels, Axes and Saws start dropping at level %d. Bigger land clearings will need them.",
+					Tools.fromLevel
+				),
+			{
+				Size = UDim2.new(1, -8, 0, 36),
+				TextColor3 = Ui.colors.muted,
+				TextSize = 13,
+				TextWrapped = true,
+				LayoutOrder = order,
+				Parent = body,
+			}
+		)
+		return
+	end
+
+	-- Item tiles: the picked tab's items, most-stocked first
 	local ids = {}
 	for id in state.inventory do
-		table.insert(ids, id)
+		if tab == "All" or barnTabOf(id) == tab then
+			table.insert(ids, id)
+		end
 	end
 	table.sort(ids, function(a, b)
 		if state.inventory[a] ~= state.inventory[b] then
@@ -455,166 +796,60 @@ local function renderBarn(state: { [string]: any })
 		end
 		return a < b
 	end)
-	if #ids == 0 then
-		Ui.label(
-			"Empty. Harvest a field to fill it.",
-			{ TextColor3 = Ui.colors.muted, LayoutOrder = order, Parent = body }
-		)
+	if barnPick and table.find(ids, barnPick) == nil then
+		barnPick = nil
 	end
-	for i, id in ids do
-		local qty = state.inventory[id]
-		local item = Items[id]
-		local line = row(42, order + i)
-		itemIcon(id, line, 30)
-		if item == nil or item.sellPrice <= 0 then
-			Ui.label(
-				string.format(
-					"%s  x%d   (%s)",
-					itemName(id),
-					qty,
-					if Barn.materials[id] then "for Barn upgrades" else "for building"
-				),
-				{ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -36, 1, 0), Parent = line }
-			)
-			continue
-		end
-		Ui.label(
-			string.format("%s  x%d   (sells for %d each)", itemName(id), qty, item.sellPrice),
-			{ Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -186, 1, 0), Parent = line }
-		)
-		Ui.button("Sell 1", function()
-			Remotes.fire("Barn_Sell", id, 1)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -74, 0, 0),
-			Size = UDim2.fromOffset(64, 30),
-			Parent = line,
-		})
-		Ui.button("Sell all", function()
-			Remotes.fire("Barn_Sell", id, qty)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(70, 30),
-			BackgroundColor3 = Ui.colors.danger,
-			Parent = line,
-		})
-	end
-
-	-- Prize Basket: Prize Crops sell at the Prize Stand for a multiple of the crop's price
-	order += #ids + 1
-	local prizes = state.prizes or {}
-	Ui.label(
-		string.format("Prize Basket  %d / %d", #prizes, Prize.basketSlots),
-		{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
-	)
+	sellDrawer(state, order)
 	order += 1
-	if #prizes == 0 then
-		Ui.label("Now and then a harvest turns up a Sunkissed or Heirloom crop. They land here.", {
+	if #ids == 0 then
+		Ui.label(if tab == "All" then "Empty. Harvest a field to fill it." else "Nothing here yet.", {
+			TextColor3 = Ui.colors.muted,
+			LayoutOrder = order,
+			Parent = body,
+		})
+	else
+		Ui.label("Tap an item to sell some.", {
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			LayoutOrder = order,
+			Parent = body,
+		})
+	end
+	order += 1
+	local tiles = grid(order, Vector2.new(80, 80))
+	order += 1
+	for i, id in ids do
+		barnTile(tiles, id, state.inventory[id], i)
+	end
+	if tab == "Materials" then
+		Ui.label("Nails, Hinges and Paint drop from harvests and orders (level 5+), or buy one:", {
 			TextColor3 = Ui.colors.muted,
 			TextSize = 13,
 			TextWrapped = true,
+			Size = UDim2.new(1, -8, 0, 32),
 			LayoutOrder = order,
 			Parent = body,
 		})
 		order += 1
-	end
-	for i, entry in prizes do
-		local line = row(42, order)
-		order += 1
-		local value = PrizeRules.value(entry.crop, entry.tier)
-		Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
-			Size = UDim2.new(1, -230, 1, 0),
-			TextColor3 = Ui.colors.accent,
-			Parent = line,
-		})
-		Ui.button("Show", function()
-			Remotes.fire("Prize_Shelve", i)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, -150, 0, 0),
-			Size = UDim2.fromOffset(72, 30),
-			Parent = line,
-		})
-		confirmButton(
-			"prize:" .. i,
-			string.format("Sell for %d Coins", value),
-			string.format("Sure? Sell for %d", value),
-			function()
-				Remotes.fire("Prize_Sell", i)
-			end,
-			{
+		for _, material in sortedKeys(Barn.materials) do
+			local line = row(42, order)
+			order += 1
+			itemIcon(material, line, 30)
+			Ui.label(string.format("%s   x%d", Barn.materials[material].displayName, ClientStore.itemCount(material)), {
+				Position = UDim2.fromOffset(36, 0),
+				Size = UDim2.new(1, -206, 1, 0),
+				Parent = line,
+			})
+			gemButton("barn:" .. material, "Buy 1", Barn.materialGemPrice, function()
+				Remotes.fire("Town_BuyMaterial", material)
+			end, {
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, 0, 0, 0),
-				Size = UDim2.fromOffset(140, 30),
+				Size = UDim2.fromOffset(160, 30),
 				Parent = line,
-			},
-			true,
-			Ui.colors.coins
-		)
+			})
+		end
 	end
-
-	-- Prize Shelf: on show on the plot by the Barn
-	local shelf = state.prizeShelf or {}
-	Ui.label(
-		string.format("Prize Shelf  %d / %d", #shelf, Prize.shelfSlots),
-		{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
-	)
-	order += 1
-	if #shelf == 0 then
-		Ui.label("Tap Show on a Prize Crop to put it on the shelf by your Barn for visitors to see.", {
-			TextColor3 = Ui.colors.muted,
-			TextSize = 13,
-			TextWrapped = true,
-			LayoutOrder = order,
-			Parent = body,
-		})
-		order += 1
-	end
-	for i, entry in shelf do
-		local line = row(42, order)
-		order += 1
-		Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
-			Size = UDim2.new(1, -150, 1, 0),
-			TextColor3 = Ui.colors.accent,
-			Parent = line,
-		})
-		Ui.button("Take down", function()
-			Remotes.fire("Prize_Unshelve", i)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(120, 30),
-			Parent = line,
-		})
-	end
-
-	-- Tool Shed: tools never take Barn space
-	local tools = state.tools or {}
-	Ui.label("Tool Shed", { Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body })
-	for i, id in sortedKeys(Tools.tools) do
-		local def = Tools.tools[id]
-		Ui.label(string.format("%s  x%d", def.plural, tools[id] or 0), {
-			TextColor3 = if (tools[id] or 0) > 0 then Ui.colors.text else Ui.colors.muted,
-			LayoutOrder = order + i,
-			Parent = body,
-		})
-	end
-	Ui.label(
-		if state.level >= Tools.fromLevel
-			then "Tools drop from harvests and orders and don't use Barn space. Bigger land clearings will need them."
-			else string.format(
-				"Shovels, Axes and Saws start dropping at level %d. Bigger land clearings will need them.",
-				Tools.fromLevel
-			),
-		{
-			TextColor3 = Ui.colors.muted,
-			TextSize = 13,
-			TextWrapped = true,
-			LayoutOrder = order + 4,
-			Parent = body,
-		}
-	)
 end
 
 local function renderFactory(state: { [string]: any }, factoryId: string)
@@ -856,37 +1091,286 @@ local function penStatus(state: { [string]: any }, penId: string): string
 	return string.format("%s in %s", def.productName, Timer.format(Timer.remaining(counts.nextReadyAt or now, now)))
 end
 
+---------------------------------------------------------------------------------------------
+-- Build menu (G4): tabs and picture cards for every building and decoration
+---------------------------------------------------------------------------------------------
+
+local BUILD_TABS = { "Factories", "Animals", "Houses", "Town", "Decor" }
+local CARD = Vector2.new(140, 178)
+
+-- One picture card: the building, its name, two short lines, and a button (or none).
+-- `locked` greys the picture and shows the unlock level on it.
+local function buildCard(
+	parent: Instance,
+	order: number,
+	picture: { kind: string, id: string },
+	name: string,
+	line1: string,
+	line2: string,
+	line2Color: Color3?,
+	locked: number?
+): Frame
+	local card = Ui.card({ Name = picture.id, LayoutOrder = order, Parent = parent })
+	local pic = buildingPicture(picture.kind, picture.id, card, 84)
+	if pic then
+		pic.ImageTransparency = if locked then 0.55 else 0
+	end
+	if locked then
+		Ui.new("TextLabel", {
+			AnchorPoint = Vector2.new(0.5, 0),
+			BackgroundColor3 = Ui.theme.Palette.locked,
+			Position = UDim2.new(0.5, 0, 0, 30),
+			Size = UDim2.fromOffset(80, 24),
+			Font = Ui.theme.Type.display,
+			TextSize = 15,
+			TextColor3 = Ui.colors.text,
+			Text = "🔒 Level " .. locked,
+			ZIndex = 3,
+			Parent = card,
+		}, { Ui.corner(12) })
+	end
+	fitText(name, {
+		Position = UDim2.fromOffset(6, 88),
+		Size = UDim2.new(1, -12, 0, 20),
+		Font = Enum.Font.GothamBold,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = card,
+	}, 16)
+	fitText(line1, {
+		Position = UDim2.fromOffset(6, 108),
+		Size = UDim2.new(1, -12, 0, 16),
+		TextColor3 = Ui.colors.muted,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = card,
+	}, 13)
+	fitText(line2, {
+		Position = UDim2.fromOffset(6, 124),
+		Size = UDim2.new(1, -12, 0, 16),
+		TextColor3 = line2Color or Ui.colors.muted,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = card,
+	}, 13)
+	return card
+end
+
+-- The card's bottom button
+local function cardButton(card: Frame, text: string, enabled: boolean, onClick: () -> ()): TextButton
+	local button = Ui.button(text, onClick, {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -6),
+		Size = UDim2.new(1, -12, 0, 32),
+		TextScaled = true,
+		Parent = card,
+	})
+	Ui.setEnabled(button, enabled)
+	return button
+end
+
+local function cardProps(): { [string]: any }
+	return {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -6),
+		Size = UDim2.new(1, -12, 0, 32),
+		TextScaled = true,
+	}
+end
+
+local function coinsText(n: number): string
+	return string.format("%s Coin%s", Ui.short(n), if n == 1 then "" else "s")
+end
+
 local function renderBuildings(state: { [string]: any })
-	titleLabel.Text = "Buildings"
-	local order = 1
-	local function line(name: string, status: string, open: () -> ())
-		local card = row(42, order)
-		order += 1
-		Ui.label(name, { Size = UDim2.new(0.4, 0, 1, 0), Font = Enum.Font.GothamBold, Parent = card })
-		Ui.label(status, {
-			Position = UDim2.fromScale(0.4, 0),
-			Size = UDim2.new(0.6, -76, 1, 0),
+	titleLabel.Text = "Build"
+	local now = ClientStore.now()
+	local tab = tabRow("Buildings", BUILD_TABS, 1)
+	local cards = grid(2, CARD)
+	local scale = state.timeScale or 1
+	local danger = Ui.colors.danger
+
+	if tab == "Factories" then
+		for i, id in sortedIds(Factories, Balance.enabledFactories) do
+			local def = Factories[id]
+			local preview = ClientStore.factoryPreview(id)
+			local built = preview ~= nil and preview.built
+			local locked = state.level < def.unlockLevel
+			local card = buildCard(
+				cards,
+				i,
+				{ kind = "Factory", id = id },
+				def.displayName,
+				if built
+					then string.format("Queue %d / %d", #preview.queue, preview.slots)
+					else string.format(
+						"%s · %s",
+						coinsText(def.buildCost),
+						Timer.format(def.buildSeconds * scale)
+					),
+				factoryStatus(state, id),
+				if not built and not locked and TownRules.population(state, now) < def.population then danger else nil,
+				if locked and not built then def.unlockLevel else nil
+			)
+			if not locked or built then
+				cardButton(card, if built then "Open" else "Build", true, function()
+					Panels.open(id)
+				end)
+			end
+		end
+	elseif tab == "Animals" then
+		for i, id in sortedIds(Animals.pens, Balance.enabledPens) do
+			local def = Animals.pens[id]
+			local pen = state.pens[id]
+			local built = pen ~= nil and pen.built
+			local locked = state.level < def.unlockLevel
+			local card = buildCard(
+				cards,
+				i,
+				{ kind = "Pen", id = id },
+				def.displayName,
+				if built
+					then string.format("%d %s", #pen.animals, def.animalPlural)
+					else string.format(
+						"%s · %s",
+						coinsText(def.buildCost),
+						Timer.format(def.buildSeconds * scale)
+					),
+				penStatus(state, id),
+				nil,
+				if locked and not built then def.unlockLevel else nil
+			)
+			if not locked or built then
+				cardButton(card, if built then "Open" else "Build", true, function()
+					Panels.open("Pen", id)
+				end)
+			end
+		end
+	elseif tab == "Houses" then
+		for i, id in sortedKeys(Town.houses) do
+			local def = Town.houses[id]
+			local built = TownRules.copiesBuilt(state, id)
+			local allowed = TownRules.copiesAllowed(id, state.level)
+			local nextLevel = TownRules.nextCopyLevel(state, id)
+			local ok, reason = TownRules.canBuildHouse(state, id, now)
+			local locked = if allowed == 0 then def.copyLevels[1] else nil
+			local card = buildCard(
+				cards,
+				i,
+				{ kind = "House", id = id },
+				def.displayName,
+				string.format(
+					"+%d people · %s · %s",
+					def.population,
+					coinsText(def.coinCost),
+					Timer.format(def.buildSeconds * scale)
+				),
+				if ok
+					then string.format("%d built, %d more allowed", built, allowed - built)
+					elseif built >= #def.copyLevels then string.format("All %d built", built)
+					elseif built >= allowed and nextLevel then string.format(
+						"%d built · next at level %d",
+						built,
+						nextLevel
+					)
+					else reason or "",
+				if ok then nil else danger,
+				locked
+			)
+			if locked == nil then
+				cardButton(card, "Build", ok and state.currencies.Coins >= def.coinCost, function()
+					Remotes.fire("Town_BuildHouse", id)
+				end)
+			end
+		end
+	elseif tab == "Town" then
+		for i, id in sortedKeys(Town.community) do
+			local def = Town.community[id]
+			local entry = state.town.community[id]
+			local locked = state.level < def.unlockLevel
+			local parts, enough = {}, true
+			for _, material in sortedKeys(Town.materials) do
+				local need = def.materials[material]
+				if need then
+					local have = ClientStore.itemCount(material)
+					enough = enough and have >= need
+					table.insert(
+						parts,
+						string.format("%s %d/%d", Town.materials[material].displayName, math.min(have, need), need)
+					)
+				end
+			end
+			local status = if entry == nil
+				then table.concat(parts, "  ")
+				elseif TownRules.isDone(entry, now) then "Built"
+				else "Building " .. Timer.format(Timer.remaining(entry.readyAt, now))
+			local card = buildCard(
+				cards,
+				i,
+				{ kind = "Community", id = id },
+				def.displayName,
+				string.format(
+					"Cap +%d · %s · %s",
+					def.capBonus,
+					coinsText(def.coinCost),
+					Timer.format(def.buildSeconds * scale)
+				),
+				status,
+				if entry == nil and not enough then danger else nil,
+				if locked and entry == nil then def.unlockLevel else nil
+			)
+			if entry == nil and not locked then
+				local canPay = state.currencies.Coins >= def.coinCost
+				local buy = if not enough and canPay
+					then missingButton("community:" .. id, def.materials, cardProps(), "Community", id)
+					else nil
+				if buy then
+					buy.Parent = card
+				else
+					cardButton(card, "Build", enough and canPay, function()
+						Remotes.fire("Town_BuildCommunity", id)
+					end)
+				end
+			end
+		end
+	elseif tab == "Decor" then
+		local coupons = state.decorCoupons or {}
+		for i, id in sortedKeys(Decor.items) do
+			local def = Decor.items[id]
+			local unlocked = state.level >= def.unlockLevel
+			local room, full = DecorRules.hasRoom(state, id)
+			local prepaid = coupons[id] or 0
+			local card = buildCard(
+				cards,
+				i,
+				{ kind = "Decor", id = id },
+				def.displayName,
+				if prepaid > 0
+					then string.format("Prepaid x%d · +%d XP", prepaid, def.xp)
+					else string.format("%s · +%d XP", coinsText(def.coinCost), def.xp),
+				if not room
+					then full :: string
+					else string.format("%s, %d x %d tiles", def.category, def.size[1], def.size[2]),
+				if room then nil else danger,
+				if unlocked then nil else def.unlockLevel
+			)
+			if unlocked then
+				cardButton(
+					card,
+					if prepaid > 0 then "Place free" else "Place",
+					room and (prepaid > 0 or state.currencies.Coins >= def.coinCost),
+					function()
+						Panels.close()
+						DecorPlacer.start(id)
+					end
+				)
+			end
+		end
+		Ui.label("Decorations go down in front of you: walk to move, Turn to rotate, Place to put down.", {
+			Size = UDim2.new(1, -8, 0, 36),
 			TextColor3 = Ui.colors.muted,
-			TextSize = 14,
+			TextSize = 13,
 			TextWrapped = true,
-			Parent = card,
+			LayoutOrder = 3,
+			Parent = body,
 		})
-		Ui.button("Open", open, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(64, 30),
-			Parent = card,
-		})
-	end
-	for _, id in sortedIds(Factories, Balance.enabledFactories) do
-		line(Factories[id].displayName, factoryStatus(state, id), function()
-			Panels.open(id)
-		end)
-	end
-	for _, id in sortedIds(Animals.pens, Balance.enabledPens) do
-		line(Animals.pens[id].displayName, penStatus(state, id), function()
-			Panels.open("Pen", id)
-		end)
 	end
 end
 
@@ -1276,17 +1760,25 @@ local function renderTown(state: { [string]: any })
 		end
 		local unlocked = state.level >= def.unlockLevel
 		local room, full = DecorRules.hasRoom(state, id)
+		local prepaid = (state.decorCoupons or {})[id] or 0
 		local card = line(
-			string.format("%s   %d Coins   +%d XP", def.displayName, def.coinCost, def.xp),
+			if prepaid > 0
+				then string.format("%s   Prepaid x%d   +%d XP", def.displayName, prepaid, def.xp)
+				else string.format("%s   %d Coins   +%d XP", def.displayName, def.coinCost, def.xp),
 			if not unlocked
 				then string.format("Unlocks at level %d", def.unlockLevel)
 				elseif not room then full :: string
 				else string.format("%s, %d x %d tiles", def.category, def.size[1], def.size[2])
 		)
-		rightButton(card, "Place", unlocked and room and state.currencies.Coins >= def.coinCost, function()
-			Panels.close()
-			DecorPlacer.start(id)
-		end)
+		rightButton(
+			card,
+			if prepaid > 0 then "Free" else "Place",
+			unlocked and room and (prepaid > 0 or state.currencies.Coins >= def.coinCost),
+			function()
+				Panels.close()
+				DecorPlacer.start(id)
+			end
+		)
 	end
 end
 
@@ -1645,6 +2137,8 @@ local function render()
 	end
 	local selected = selectionPath()
 	releaseIcons()
+	releasePictures()
+	tabNames = {}
 	Ui.clear(body)
 	if current == "Orders" then
 		renderOrders(state)
