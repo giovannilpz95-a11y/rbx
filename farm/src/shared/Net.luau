@@ -51,6 +51,7 @@ return table.freeze({
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Missing_Buy = "Missing_Buy", -- "Recipe", factoryId, recipeId | "Order", slot | "Community", id | "Barn" (Gems)
 	Settings_Set = "Settings_Set", -- key, value (shared/Settings checks both)
+	Records_Claim = "Records_Claim", -- recordId: the next tier of a Town Record (Gems and XP)
 	Quest_Claim = "Quest_Claim", -- index: a finished Daily Quest's reward
 	Quest_Reroll = "Quest_Reroll", -- index: swap an unfinished quest (once a day, free)
 	Quest_Chest = "Quest_Chest", -- the bonus chest for all three

@@ -410,6 +410,11 @@ function Panels.cycleTab(step: number)
 	Panels.refresh()
 end
 
+-- A tab row for a registered panel (Panels.register): returns the picked tab, kept per panel
+function Panels.tabs(names: { string }, order: number, badges: { [string]: string }?): string
+	return tabRow(current :: string, names, order, badges)
+end
+
 -- A grid of cards that grows with its contents (vertical scrolling only: mobile checklist)
 local function grid(order: number, cell: Vector2): Frame
 	return Ui.new("Frame", {

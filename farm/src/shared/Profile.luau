@@ -141,6 +141,10 @@ function Profile.template(): { [string]: any }
 			rerolled = false,
 			chest = false, -- the all-three bonus chest taken
 		},
+		records = { -- Town Records (shared/Records)
+			stats = {}, -- counters the save doesn't keep elsewhere: harvest, goods, animal, coins, decor, help
+			claimed = {}, -- record id -> tiers claimed (1-3)
+		},
 		seedCart = { -- the Seed Cart in the Town Square (shared/SeedCart)
 			period = -1, -- restock window of `bought`
 			bought = {}, -- slot index (string) -> true

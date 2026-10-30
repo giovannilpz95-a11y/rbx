@@ -27,6 +27,7 @@ local SocialUi = require(script.Parent.UI.Social)
 local LevelUp = require(script.Parent.UI.LevelUp)
 local SettingsUi = require(script.Parent.UI.Settings)
 local DailyGift = require(script.Parent.UI.DailyGift)
+local FarmerCard = require(script.Parent.UI.FarmerCard)
 local EdgeStack = require(script.Parent.UI.EdgeStack)
 
 local player = Players.LocalPlayer
@@ -51,6 +52,7 @@ SeedCartUi.init()
 LevelUp.init()
 SettingsUi.init()
 DailyGift.init()
+FarmerCard.init()
 EdgeStack.init()
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
@@ -63,6 +65,7 @@ local SHORTCUTS = {
 	[Enum.KeyCode.Q] = "Quests",
 	[Enum.KeyCode.K] = "Settings",
 	[Enum.KeyCode.Y] = "DailyGift",
+	[Enum.KeyCode.P] = "FarmerCard",
 	[Enum.KeyCode.Backquote] = "Debug",
 }
 -- Studio only: ] steps through every screen, for phone screenshots in the device emulator
@@ -77,6 +80,7 @@ local TOUR = {
 	{ "Quests", "Quests" },
 	{ "Settings", "Settings" },
 	{ "Daily gift", "DailyGift" },
+	{ "Farmer Card", "FarmerCard" },
 	{ "Seeds (F1)", "Seeds", "F1" },
 	{ "Debug", "Debug" },
 }

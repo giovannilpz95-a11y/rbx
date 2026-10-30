@@ -13,6 +13,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
 local Crops = require(Shared.Config.Crops)
 local Drops = require(Shared.Drops)
+local Records = require(Shared.Records)
 local Net = require(Shared.Net)
 local Social = require(Shared.Config.Social)
 local SocialRules = require(Shared.Social)
@@ -89,6 +90,7 @@ end
 local function finish(helper: Player, owner: Player, action: string, cropName: string, coins: number, xp: number)
 	local helperData = DataService.get(helper) :: { [string]: any }
 	SocialRules.spendHelp(helperData.social, owner.UserId, SocialRules.utcDay(Clock.now()))
+	Records.add(helperData, "help", 1)
 	local teamwork = ownerWorking(owner)
 	local tool: string? = nil
 	if rewardsAllowed(helper) then
