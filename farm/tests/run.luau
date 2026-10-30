@@ -9,6 +9,7 @@ local process = require("@lune/process")
 local Animals = require("../src/shared/Config/Animals")
 local Away = require("../src/shared/Away")
 local Balance = require("../src/shared/Config/Balance")
+local Barn = require("../src/shared/Config/Barn")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
@@ -30,6 +31,7 @@ local Pen = require("../src/shared/Pen")
 local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Recipes = require("../src/shared/Config/Recipes")
+local Missing = require("../src/shared/Missing")
 local Rng = require("../src/shared/Rng")
 local Settings = require("../src/shared/Settings")
 local Social = require("../src/shared/Config/Social")
@@ -1080,6 +1082,30 @@ test("each level's unlocks come from the configs", function()
 	local list = Unlocks.at(5)
 	for i = 2, #list do
 		ok(list[i - 1].kind ~= "Feature" or list[i].kind == "Feature", "features last")
+	end
+end)
+
+test("buying what's missing: only the short items, priced from the item's production", function()
+	local stock = { Wheat = 5, Eggs = 1 }
+	local lines = Missing.list({ Wheat = 2, Eggs = 3, Sugar = 1 }, function(item)
+		return stock[item] or 0
+	end)
+	eq(#lines, 2, "Wheat is covered")
+	eq(lines[1].item, "Eggs", "sorted by name")
+	eq(lines[1].qty, 2, "2 Eggs short")
+	eq(Missing.describe(lines), "2 Eggs, 1 Sugar")
+	eq(Missing.unitPrice("Bricks"), Town.materialGemPrice, "building material")
+	eq(Missing.unitPrice("Nails"), Barn.materialGemPrice, "Barn material")
+	eq(Missing.unitPrice("Wheat"), math.max(1, Speedup.production(Items.Wheat.unitSeconds)), "crop")
+	ok(Missing.unitPrice("Bagel") :: number >= Missing.unitPrice("Bread") :: number, "longer chains cost more")
+	ok(Missing.unitPrice("Nope") == nil, "unknown items can't be bought")
+	eq(Missing.price({}), 0, "nothing missing is free")
+	eq(Missing.price({ { item = "Bricks", qty = 2 } }), 2 * Town.materialGemPrice, "per unit")
+	eq(Missing.price({ { item = "Nope", qty = 1 } }), nil, "a list with an unknown item")
+	for id, item in Items do
+		if item.kind ~= "Material" then
+			ok((Missing.unitPrice(id) :: number) >= 1, id .. " costs at least 1 Gem")
+		end
 	end
 end)
 
