@@ -560,6 +560,23 @@ test("the first-session guide walks the opening loop", function()
 	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
 end)
 
+test("the guide moves on when the player does the next step first", function()
+	local data = Profile.migrate(nil) :: any
+	Profile.welcome(data, 100)
+	Tutorial.start(data, 100)
+	-- Harvested two of the three ripe fields and replanted one; the third is still ripe
+	data.fields.F1 = { crop = "Wheat", plantedAt = 110, readyAt = 140 }
+	data.fields.F2 = {}
+	eq(table.concat(Tutorial.advance(data, 110), ","), "Harvest,Plant", "went around the last ripe field")
+	eq(Tutorial.current(data).id, "Ship", "on to the order")
+	-- The replanted Wheat ripens before the order ships: the guide doesn't fall back
+	data.orders.delivered = 1
+	eq(table.concat(Tutorial.advance(data, 200), ","), "Ship", "shipped")
+	eq(Tutorial.current(data).id, "Level2", "next")
+	-- Nothing ahead done: it waits
+	eq(#Tutorial.advance(data, 200), 0, "waits for level 2")
+end)
+
 test("decorations snap to the grid, stay on owned land and don't overlap", function()
 	local data = Profile.migrate(nil) :: any
 	local x, z = DecorRules.snap("OakTree", 0, 9, 1)
