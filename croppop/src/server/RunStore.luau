@@ -11,12 +11,18 @@
 	Pure Luau with injectable clocks and Gem spending so it can be tested
 	outside Roblox. Saving is done by the farm through exportSave/importSave
 	(the `puzzle` block, see 21 Security & Saving).
+
+	Heart gifts: sendHeart() puts a heart in a neighbor's gift box (see
+	GiftInbox), and claimGifts() moves gifts from a player's own box into
+	their empty hearts. Daily counts live in the puzzle save block.
 ]]
 
 local CropPop = require(game:GetService("ReplicatedStorage"):WaitForChild("CropPop"))
 
 local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
+local Gifts = Hearts.Gifts
+local GiftInbox = require(script.Parent.GiftInbox)
 
 local RunStore = {}
 RunStore.__index = RunStore
@@ -24,6 +30,8 @@ RunStore.__index = RunStore
 local MIN_START_GAP = 1 -- seconds between level starts per player
 local MAX_RUN_SECONDS = 2 * 60 * 60
 local SAVE_VERSION = 1
+local GIFT_CHECK_SECONDS = 30 -- how often a player's gift box is read again
+local DAY = 24 * 60 * 60
 
 export type Config = {
 	clock: () -> number, -- monotonic seconds, for rate limits
@@ -38,6 +46,8 @@ export type Config = {
 	devActions: boolean?, -- Studio testing: accept the "Dev: 1 move" action in replays
 	-- false: players can't start until importSave/markLoaded (the live server waits for the farm save)
 	autoLoad: boolean?,
+	-- Where heart gifts wait (see GiftInbox); defaults to an in-memory store.
+	giftInbox: any?,
 }
 
 function RunStore.new(config: Config)
@@ -51,6 +61,7 @@ function RunStore.new(config: Config)
 		unlockAll = config.unlockAll == true,
 		devActions = config.devActions == true,
 		autoLoad = config.autoLoad ~= false,
+		giftInbox = config.giftInbox or GiftInbox.memory(),
 		players = {},
 	}, RunStore)
 end
@@ -61,6 +72,8 @@ function RunStore._fresh(self)
 		streak = 0, -- Hot Streak: levels won in a row
 		hearts = Hearts.new(self.now()),
 		boosters = Boosters.newStock(),
+		-- Today's heart gifts: who this player sent to, and how many they claimed.
+		gifts = { day = 0, sentTo = {}, claimed = 0 },
 	}
 end
 
@@ -73,6 +86,8 @@ function RunStore._player(self, userId: number)
 			nextToken = 1,
 			loaded = self.autoLoad,
 			state = self:_fresh(),
+			giftsWaiting = 0, -- gifts in this player's box, as last read
+			giftsReadAt = -math.huge,
 		}
 		self.players[userId] = record
 	end
@@ -95,6 +110,7 @@ function RunStore.exportSave(self, userId: number)
 		streak = if record.run then 0 else state.streak,
 		hearts = table.clone(state.hearts),
 		boosters = table.clone(state.boosters),
+		gifts = { day = state.gifts.day, sentTo = table.clone(state.gifts.sentTo), claimed = state.gifts.claimed },
 	}
 end
 
@@ -114,6 +130,17 @@ function RunStore.importSave(self, userId: number, block: any)
 		end
 		state.hearts = Hearts.fromSave(block.hearts, self.now())
 		state.boosters = Boosters.fromSave(block.boosters)
+		local gifts = block.gifts
+		if type(gifts) == "table" and type(gifts.day) == "number" and type(gifts.sentTo) == "table" then
+			local sentTo = {}
+			for _, id in gifts.sentTo do
+				if type(id) == "number" and #sentTo < Gifts.SEND_PER_DAY then
+					table.insert(sentTo, id)
+				end
+			end
+			local claimed = if type(gifts.claimed) == "number" and gifts.claimed == gifts.claimed then gifts.claimed else 0
+			state.gifts = { day = gifts.day, sentTo = sentTo, claimed = math.clamp(math.floor(claimed), 0, Gifts.CLAIM_PER_DAY) }
+		end
 	end
 	record.state = state
 	record.run = nil -- a run from before the load belongs to the old state
@@ -147,6 +174,7 @@ function RunStore.getProgress(self, userId: number)
 		boosters = table.clone(state.boosters),
 		canBuy = self.spendGems ~= nil,
 		gems = self.getGems and self.getGems(userId) or nil,
+		gifts = self:_giftProgress(record),
 	}
 end
 
@@ -404,6 +432,168 @@ function RunStore.buyBooster(self, userId: number, kind: any)
 	return self:getProgress(userId)
 end
 
+
+-- Heart gifts -----------------------------------------------------------------
+
+-- Today's gift counts, starting over each UTC day.
+function RunStore._giftDay(self, state)
+	local today = self.now() // DAY
+	if state.gifts.day ~= today then
+		state.gifts = { day = today, sentTo = {}, claimed = 0 }
+	end
+	return state.gifts
+end
+
+-- How many waiting gifts would go into hearts now.
+function RunStore._claimable(self, record): number
+	local hearts = record.state.hearts
+	Hearts.refresh(hearts, self.now())
+	local gifts = self:_giftDay(record.state)
+	return math.max(0, math.min(record.giftsWaiting, Hearts.MAX - hearts.count, Gifts.CLAIM_PER_DAY - gifts.claimed))
+end
+
+function RunStore._giftProgress(self, record)
+	local gifts = self:_giftDay(record.state)
+	return {
+		waiting = record.giftsWaiting,
+		claimable = self:_claimable(record),
+		claimedToday = gifts.claimed,
+		claimPerDay = Gifts.CLAIM_PER_DAY,
+		sendLeft = Gifts.SEND_PER_DAY - #gifts.sentTo,
+	}
+end
+
+-- What the neighbors UI needs: who this player already sent a heart today.
+function RunStore.giftStatus(self, userId: number)
+	local gifts = self:_giftDay(self:_player(userId).state)
+	return {
+		sentTo = table.clone(gifts.sentTo),
+		left = Gifts.SEND_PER_DAY - #gifts.sentTo,
+		perDay = Gifts.SEND_PER_DAY,
+	}
+end
+
+--[[
+	Sends one heart from `fromId` to `toId`'s gift box: once per neighbor per
+	day, SEND_PER_DAY a day. The caller checks they're neighbors. May yield
+	(the box is a DataStore on live servers). Returns giftStatus or nil and a reason.
+]]
+function RunStore.sendHeart(self, fromId: number, toId: any)
+	if type(toId) ~= "number" or toId ~= toId or toId % 1 ~= 0 or toId == 0 then
+		return nil, "no such player"
+	end
+	if toId == fromId then
+		return nil, "that's you"
+	end
+	local record = self:_player(fromId)
+	if not record.loaded then
+		return nil, "loading"
+	end
+	local gifts = self:_giftDay(record.state)
+	if table.find(gifts.sentTo, toId) then
+		return nil, "already sent today"
+	end
+	if #gifts.sentTo >= Gifts.SEND_PER_DAY then
+		return nil, "no gifts left today"
+	end
+	-- Hold the slot while the box is written, so a double tap can't send twice.
+	table.insert(gifts.sentTo, toId)
+	local now = self.now()
+	local full = false
+	local ok, box = self.giftInbox.update(toId, function(old)
+		local live = GiftInbox.clean(old, now)
+		full = #live >= Gifts.BOX_MAX
+		if full then
+			return nil
+		end
+		table.insert(live, { from = fromId, t = now })
+		return live
+	end)
+	if not ok or full then
+		local at = table.find(gifts.sentTo, toId)
+		if at then
+			table.remove(gifts.sentTo, at)
+		end
+		return nil, if full then "their gift box is full" else "couldn't send"
+	end
+	-- A neighbor on this server sees it right away.
+	local receiver = self.players[toId]
+	if receiver and type(box) == "table" then
+		receiver.giftsWaiting = #box
+		receiver.giftsReadAt = self.clock()
+	end
+	return self:giftStatus(fromId)
+end
+
+-- Reads this player's gift box again if it's been a while (or `force`). May yield.
+function RunStore.refreshGifts(self, userId: number, force: boolean?)
+	local record = self:_player(userId)
+	if not force and self.clock() - record.giftsReadAt < GIFT_CHECK_SECONDS then
+		return
+	end
+	record.giftsReadAt = self.clock()
+	local ok, box = self.giftInbox.read(userId)
+	if ok then
+		record.giftsWaiting = #GiftInbox.clean(box, self.now())
+	end
+end
+
+--[[
+	Moves waiting gifts into empty hearts, oldest first, up to CLAIM_PER_DAY a
+	day. Gifts that don't fit stay in the box. May yield. Returns
+	{ claimed, from = { userId }, progress } or nil and a reason.
+]]
+function RunStore.claimGifts(self, userId: number)
+	local record = self:_player(userId)
+	if not record.loaded then
+		return nil, "loading"
+	end
+	if record.claiming then
+		return nil, "busy"
+	end
+	local state = record.state
+	local gifts = self:_giftDay(state)
+	if gifts.claimed >= Gifts.CLAIM_PER_DAY then
+		return nil, "no more gifts today"
+	end
+	Hearts.refresh(state.hearts, self.now())
+	local room = math.min(Hearts.MAX - state.hearts.count, Gifts.CLAIM_PER_DAY - gifts.claimed)
+	if room <= 0 then
+		return nil, "hearts are full"
+	end
+	local now = self.now()
+	local taken = {}
+	record.claiming = true
+	local ok, box = self.giftInbox.update(userId, function(old)
+		local live = GiftInbox.clean(old, now)
+		taken = {}
+		while #taken < room and #live > 0 do
+			table.insert(taken, table.remove(live, 1))
+		end
+		return if #taken > 0 then live else nil
+	end)
+	record.claiming = false
+	if not ok then
+		return nil, "couldn't open the gift box"
+	end
+	record.giftsReadAt = self.clock()
+	if #taken == 0 then
+		record.giftsWaiting = #GiftInbox.clean(box, now)
+		return nil, "no gifts waiting"
+	end
+	record.giftsWaiting = if type(box) == "table" then #box else 0
+	-- The state may have been replaced by a save load while the box was open.
+	state = record.state
+	gifts = self:_giftDay(state)
+	gifts.claimed = math.min(Gifts.CLAIM_PER_DAY, gifts.claimed + #taken)
+	Hearts.give(state.hearts, #taken, self.now())
+	local from = {}
+	for _, gift in taken do
+		table.insert(from, gift.from)
+	end
+	return { claimed = #taken, from = from, progress = self:getProgress(userId) }
+end
+
 -- Studio testing: set the hearts count (the "Dev: 0 hearts" button).
 function RunStore.devSetHearts(self, userId: number, count: number)
 	if not self.devActions then
@@ -425,6 +615,27 @@ function RunStore.devAddBoosters(self, userId: number, count: number)
 	for kind in Boosters.Info do
 		stock[kind] = math.clamp((stock[kind] or 0) + math.floor(count), 0, Boosters.MAX_STOCK)
 	end
+	return self:getProgress(userId)
+end
+
+-- Studio testing: a heart gift from a pretend neighbor (the "Dev 🎁" button).
+function RunStore.devGiftSelf(self, userId: number)
+	if not self.devActions then
+		return nil, "not in Studio"
+	end
+	local now = self.now()
+	local ok = self.giftInbox.update(userId, function(old)
+		local live = GiftInbox.clean(old, now)
+		if #live >= Gifts.BOX_MAX then
+			return nil
+		end
+		table.insert(live, { from = -1, t = now })
+		return live
+	end)
+	if not ok then
+		return nil, "couldn't send"
+	end
+	self:refreshGifts(userId, true)
 	return self:getProgress(userId)
 end
 

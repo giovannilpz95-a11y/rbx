@@ -16,9 +16,9 @@ The match-3 side game for the farm (design: `Design/Features/F12 Crop Pop Puzzle
 
 ## Playing it in Studio
 
-Press Play and click the **🍅 Crop Pop** button in the bottom-left. Pick a level from the Crop Pop Trail, pick any start boosters, and press Play. Swipe a tile, or tap one tile and then a neighbour. The booster bar (⛏️ 🧹 🧤 🔀) sits under the board, or in the side panel on a wide screen: tap one, then tap the board. In Studio every test level is unlocked (live servers unlock them in order), and **Dev: 1 move** (or the L key) jumps to the last move. That jump goes in the action list and the Studio server's replay accepts it, so you can test buying continues; live servers refuse it. **Dev: 0 hearts** on the Trail (or the H key) empties your hearts so the refill offer shows.
+Press Play and click the **🍅 Crop Pop** button in the bottom-left (Studio only; in the game the Puzzle Porch cabinet in the Town Square opens it). Pick a level from the Crop Pop Trail, pick any start boosters, and press Play. Swipe a tile, or tap one tile and then a neighbour. The booster bar (⛏️ 🧹 🧤 🔀) sits under the board, or in the side panel on a wide screen: tap one, then tap the board. In Studio every test level is unlocked (live servers unlock them in order), and **Dev: 1 move** (or the L key) jumps to the last move. That jump goes in the action list and the Studio server's replay accepts it, so you can test buying continues; live servers refuse it. **Dev: 0 hearts** on the Trail (or the H key) empties your hearts so the refill offer shows.
 
-The button is temporary. The Puzzle Porch and the Town Square cabinet should call `PuzzleScreen.open()` (or `open(levelId)`) instead.
+The farm opens the screen by firing `ReplicatedStorage.CropPopOpen`, a client-side BindableEvent. Whichever client script runs first creates it (`FindFirstChild`, or else a new `BindableEvent` with that name).
 
 ## How it fits together
 
@@ -32,6 +32,7 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 - **Continues:** running out of moves offers +5 moves for Gems: 10, then 20 (with a Seed Sprayer), 35, then 50 each (with a Hay Bomb), up to 10 per run. The price is on the button, there's no countdown, and "Give up" ends the level. The server replays the run before selling one (it has to be out of moves), and the final replay can't use more continues than were paid for. Township's first continue was 10 T-cash; the later steps are first-pass.
 - **Hot Streak:** win levels in a row and the next level starts with free power-ups: a Seed Sprayer after 1 win, plus a Hay Bomb after 2, plus a Sunflower from 3. A loss or leaving a level part-way ends it (the X asks first). The streak is in the save, and a save made mid-level stores 0, so dropping out ends it too.
 - **Trail Chests:** beating every 10th level for the first time opens a 🎁 Trail Chest (`TrailChest.luau`): Coins (100, then 20 more per chest), one pre-level and one or two in-level boosters (rotating), and 15 minutes of Unlimited Hearts (30 on every 3rd chest). Contents are fixed, never random. The server pays it after the replay check; its Coins go into the `CropPopLevelWon` rewards (as `rewards.chestCoins` too). First-pass numbers.
+- **Heart gifts:** neighbors send each other hearts from the farm's Neighbors panel. The farm checks that they're neighbors, then calls `ServerStorage.CropPopGiftHeart:Invoke(fromPlayer, toUserId)`, which returns `(ok, message)`; the message is for the sender. `CropPopHeartGiftStatus:Invoke(player)` returns `{ sentTo, left, perDay }` for greying out buttons. Each player can send 10 a day, one per neighbor. Gifts wait in a gift box (the `CropPopHeartGifts` DataStore, so they reach players who are offline or on another server; in memory in Studio). The Trail shows a **🎁 Claim** button that moves them into empty hearts, at most 5 a day. A box holds 20, and gifts expire after 7 days. Township lets co-op members send lives but gives no numbers, so these are first-pass (`Hearts.Gifts`).
 - **Not enough Gems:** if the farm shares the balance (`ServerStorage.CropPopGetGems(player)`), offers the player can't afford are greyed with "Not enough 💎" before any tap. Without it, the same state shows after a charge fails.
 - **Saving and Gems:** the farm owns the save. It calls `ServerStorage.CropPopLoadSave(player, puzzleBlock)` when the profile loads and reads `CropPopGetSave(player)` before each save. Until the save loads, levels can't start (Studio without the farm falls back to a fresh state after 10 seconds). Buying calls the farm's `CropPopSpendGems(player, amount, reason)`.
 - **Levels:** 100 of them, as Luau tables (layout strings, colours, goals, moves, rewards) in `Levels/Set01.luau` to `Set04.luau`, 25 each. Every 5th level is Tough and every 10th from 20 is Super Tough. 2-layer bales come in at level 9, thick mud at 13, frost at 21 (its intro level), 3-layer bales at 26, six tile colours on some hard levels from 30, thick frost at 33, and weeds at 41 (its intro level). Level names that promise an obstacle ("Muddy Boots", "Rolling Bales") get it. The Trail shows the levels you've reached and the next 4 locked ones.
@@ -48,7 +49,7 @@ Hand changes go through the level editor below; once a level ships, change it th
 
 ## Level editor (Studio only)
 
-On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode. Studio unlocks every level; **Dev 🔒** on the Trail shows it locked to your real progress, as a player sees it. **Dev +5🎒** adds 5 of every booster, and **Dev: 0 hearts** empties the hearts.
+On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode. Studio unlocks every level; **Dev 🔒** on the Trail shows it locked to your real progress, as a player sees it. **Dev +5🎒** adds 5 of every booster, **Dev 🎁** puts a heart gift from a pretend neighbor in your gift box, and **Dev: 0 hearts** empties the hearts.
 - Paint the board with the brushes: cell, hole, mud, double mud, hay bales with 1–3 layers, frost with 1–2 layers, and weeds.
 - Set the size, moves, difficulty, tile colours (3–6) and up to 3 goals.
 - The status line says what's wrong while the level isn't valid.
@@ -59,7 +60,7 @@ On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key
 
 ## Not in yet
 
-Unlimited Hearts rewards (the timer is in `Hearts`), the obstacles beyond the MVP's four (crates, chains, honey and the rest in F12), and real tile art.
+The obstacles beyond the MVP's four (crates, chains, honey and the rest in F12), and real tile art.
 
 ## Tests
 
