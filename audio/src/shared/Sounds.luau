@@ -66,6 +66,12 @@ local Sounds: { [string]: Sound } = {
 	}),
 	OrderComplete = original("order_complete", "Effects", 0.7, { cooldown = 0.5, voices = 1, duck = true, length = 0.97 }),
 	Unlock = original("unlock", "Effects", 0.6, { cooldown = 0.5, length = 0.85 }),
+	ToolDrop = original("tool_drop", "Effects", 0.6, { cooldown = 0.5, length = 0.6 }),
+	PrizeFind = original("prize_find", "Effects", 0.65, { cooldown = 0.5, voices = 1, length = 0.8 }),
+	PrizeHeirloom = original("prize_heirloom", "Effects", 0.75, { cooldown = 1, voices = 1, duck = true, length = 1.5 }),
+	PrizeLost = original("prize_lost", "Effects", 0.45, { cooldown = 0.5, voices = 1, length = 0.6 }),
+	Purchase = original("purchase", "Effects", 0.7, { cooldown = 1, voices = 1, duck = true, length = 0.95 }),
+	CrierBell = original("crier_bell", "Ui", 0.5, { cooldown = 2, voices = 1, length = 1.2 }),
 
 	-- Farm -------------------------------------------------------------------
 	Plant = original("plant", "Effects", 0.55, { cooldown = 0.05, voices = 3, length = 0.16 }),
@@ -76,6 +82,8 @@ local Sounds: { [string]: Sound } = {
 	BuildDone = original("build_done", "Effects", 0.65, { cooldown = 1, duck = true, length = 0.96 }),
 	FactoryStart = original("factory_start", "Effects", 0.45, { cooldown = 0.2, length = 0.4 }),
 	FactoryCollect = original("factory_collect", "Effects", 0.6, { cooldown = 0.1, length = 0.45 }),
+	DecorPlace = original("decor_place", "Effects", 0.55, { cooldown = 0.1, length = 0.4 }),
+	DecorRotate = original("decor_rotate", "Effects", 0.45, { cooldown = 0.08, length = 0.12 }),
 	Sell = original("sell", "Effects", 0.6, { cooldown = 0.1, length = 0.41 }),
 
 	-- Crop Pop -----------------------------------------------------------------
@@ -94,6 +102,9 @@ local Sounds: { [string]: Sound } = {
 	PopSun = original("pop_sun", "Effects", 0.65, { cooldown = 0.1, length = 0.8 }),
 	PopBale = original("pop_bale", "Effects", 0.5, { cooldown = 0.05, length = 0.16 }),
 	PopMud = original("pop_mud", "Effects", 0.5, { cooldown = 0.05, length = 0.18 }),
+	PopFrost = original("pop_frost", "Effects", 0.5, { cooldown = 0.05, length = 0.25 }),
+	PopWeed = original("pop_weed", "Effects", 0.5, { cooldown = 0.05, length = 0.16 }),
+	PopWeedGrow = original("pop_weed_grow", "Effects", 0.45, { cooldown = 0.2, length = 0.3 }),
 	PopShuffle = original("pop_shuffle", "Effects", 0.5, { cooldown = 0.5, length = 0.47 }),
 	PopBooster = original("pop_booster", "Effects", 0.55, { cooldown = 0.1, length = 0.3 }),
 	PopMoreMoves = original("pop_more_moves", "Effects", 0.65, { cooldown = 0.5, length = 0.53 }),
@@ -140,6 +151,13 @@ local Music: { [string]: { { id: string, name: string, volume: number } } } = {
 	},
 }
 
+-- The ambience bed that goes with each music context. Crop Pop has none: the puzzle sits on
+-- its own screen, so the farm's birds fade out while it's open.
+local ContextAmbience: { [string]: string } = {
+	Farm = "AmbienceFarm",
+	Visit = "AmbienceFarm",
+}
+
 -- Default volume per group (Design/26 Audio Style Guide, "Mix"). First-pass.
 local Groups: { [string]: number } = {
 	Music = 0.35,
@@ -156,6 +174,7 @@ end
 return table.freeze({
 	list = table.freeze(Sounds),
 	music = table.freeze(Music),
+	contextAmbience = table.freeze(ContextAmbience),
 	groups = table.freeze(Groups),
 	assetFor = assetFor,
 	MUSIC_GAP = 6, -- seconds of quiet between tracks in a context

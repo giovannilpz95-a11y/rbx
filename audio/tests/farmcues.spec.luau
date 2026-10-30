@@ -159,3 +159,53 @@ test("missing blocks in a snapshot don't break it (newer farm builds add more)",
 	expect.eq(names(FarmCues.diff({}, {})), "")
 	expect.eq(names(FarmCues.diff({ fields = {} }, { factories = { Dairy = { built = true } } })), "")
 end)
+
+test("decorations: placing, turning, moving and selling", function()
+	local bench = { id = "Bench", x = 10, z = 4, r = 0 }
+	local before = state({ decor = { bench } })
+	-- Placing costs Coins, so only the place sound plays.
+	local placed = state({
+		decor = { bench, { id = "Lamp", x = 2, z = 2, r = 0 } },
+		currencies = { Coins = 450, Gems = 30, XP = 2 },
+	})
+	expect.eq(names(FarmCues.diff(before, placed)), "DecorPlace")
+	-- Turning re-snaps the spot, which is still a turn.
+	local turned = state({ decor = { { id = "Bench", x = 11, z = 3, r = 1 } } })
+	expect.eq(names(FarmCues.diff(before, turned)), "DecorRotate")
+	local moved = state({ decor = { { id = "Bench", x = 20, z = 4, r = 0 } } })
+	expect.eq(names(FarmCues.diff(before, moved)), "DecorPlace")
+	-- Selling gives Coins back: the sell sound, not a plain coin.
+	local sold = state({ decor = {}, currencies = { Coins = 520, Gems = 30, XP = 0 } })
+	expect.eq(names(FarmCues.diff(before, sold)), "Sell")
+	expect.eq(names(FarmCues.diff(state(), state({ decor = {} }))), "")
+end)
+
+test("tool drops, prize crops and the Town Crier", function()
+	expect.eq(names(FarmCues.popup({ kind = "Drop", item = "Shovel", name = "Shovel", tool = true })), "ToolDrop")
+	expect.eq(names(FarmCues.popup({ kind = "Drop", item = "Wheat", name = "Wheat" })), "Unlock")
+	expect.eq(names(FarmCues.popup({ kind = "Prize", crop = "Wheat", tier = "Sunkissed", name = "Sunkissed Wheat" })), "PrizeFind")
+	expect.eq(names(FarmCues.popup({ kind = "Prize", crop = "Wheat", tier = "Heirloom", name = "Heirloom Wheat" })), "PrizeHeirloom")
+	expect.eq(names(FarmCues.popup({ kind = "PrizeLost", crop = "Wheat", tier = "Sunkissed" })), "PrizeLost")
+	expect.eq(names(FarmCues.popup({ kind = "Crier", text = "An Heirloom Wheat was grown!" })), "CrierBell")
+end)
+
+test("selling a prize crop at the Prize Stand", function()
+	local before = state({ prizes = { { crop = "Wheat", tier = "Sunkissed" } } })
+	local after = state({ prizes = {}, currencies = { Coins = 530, Gems = 30, XP = 0 } })
+	expect.eq(names(FarmCues.diff(before, after)), "Sell")
+	-- A new prize in the basket on its own is quiet (its popup plays the sound).
+	expect.eq(names(FarmCues.diff(state({ prizes = {} }), before)), "")
+end)
+
+test("putting a prize crop on the Prize Shelf and taking it back", function()
+	local prize = { crop = "Wheat", tier = "Sunkissed" }
+	local inBasket = state({ prizes = { prize }, prizeShelf = {} })
+	local onShelf = state({ prizes = {}, prizeShelf = { prize } })
+	expect.eq(names(FarmCues.diff(inBasket, onShelf)), "DecorPlace")
+	expect.eq(names(FarmCues.diff(onShelf, inBasket)), "DecorRotate")
+end)
+
+test("shop purchases", function()
+	expect.eq(names(FarmCues.popup({ kind = "Purchase", key = "Gems100", name = "Pile of Gems", gems = 100 })), "Purchase,Gem")
+	expect.eq(names(FarmCues.popup({ kind = "Purchase", key = "VIP", name = "Farm Pass" })), "Purchase")
+end)

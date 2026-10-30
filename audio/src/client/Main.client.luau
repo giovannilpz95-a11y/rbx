@@ -10,7 +10,6 @@ local GameAudio = require(ReplicatedStorage:WaitForChild("GameAudio"))
 local UiTaps = require(script.Parent.UiTaps)
 local FarmHooks = require(script.Parent.FarmHooks)
 
-GameAudio.setMusic("Farm")
-GameAudio.setAmbience("AmbienceFarm")
+GameAudio.setMusic("Farm") -- brings the farm ambience with it (Sounds.contextAmbience)
 UiTaps.start(GameAudio)
 task.spawn(FarmHooks.start, GameAudio)

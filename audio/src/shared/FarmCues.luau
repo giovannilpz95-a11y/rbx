@@ -119,6 +119,47 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		table.insert(cues, { sound = "Unlock" })
 	end
 
+	-- Decorations (shared/DecorRules): { id, x, z, r } each. More of them: one was placed;
+	-- fewer: one was sold; the same number: moved or turned.
+	local decorBefore, decor = prev.decor, nextState.decor
+	local decorSold = false
+	if type(decorBefore) == "table" and type(decor) == "table" then
+		if #decor > #decorBefore then
+			table.insert(cues, { sound = "DecorPlace" })
+		elseif #decor < #decorBefore then
+			decorSold = true
+		else
+			local moved, turned = false, false
+			for i, d in decor do
+				local was = decorBefore[i]
+				if was and was.id == d.id then
+					-- Turning re-snaps the spot too (DecorRules.snap), so check r first.
+					if was.r ~= d.r then
+						turned = true
+					elseif was.x ~= d.x or was.z ~= d.z then
+						moved = true
+					end
+				end
+			end
+			if turned then
+				table.insert(cues, { sound = "DecorRotate" })
+			elseif moved then
+				table.insert(cues, { sound = "DecorPlace" })
+			end
+		end
+	end
+
+	-- The Prize Shelf (same { crop, tier } entries as the basket): setting a prize on show
+	-- sounds like placing a decoration; taking one back down is a quick swish.
+	local shelfBefore, shelf = prev.prizeShelf, nextState.prizeShelf
+	if type(shelfBefore) == "table" and type(shelf) == "table" then
+		if #shelf > #shelfBefore then
+			table.insert(cues, { sound = "DecorPlace" })
+		elseif #shelf < #shelfBefore then
+			table.insert(cues, { sound = "DecorRotate" })
+		end
+	end
+
 	-- The tutorial moving to a new step (tutorial.step: 0 = off).
 	local stepBefore = amount(prev.tutorial, "step")
 	local step = amount(nextState.tutorial, "step")
@@ -137,7 +178,11 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 				break
 			end
 		end
-		if coinsUp and itemsDown and started == 0 then
+		-- The Prize Stand: a prize crop left the Prize Basket for Coins.
+		local prizesSold = type(prev.prizes) == "table"
+			and type(nextState.prizes) == "table"
+			and #nextState.prizes < #prev.prizes
+		if coinsUp and (decorSold or prizesSold or (itemsDown and started == 0)) then
 			table.insert(cues, { sound = "Sell" })
 		elseif coinsUp then
 			table.insert(cues, { sound = "Coin" })
@@ -218,14 +263,29 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 	return cues
 end
 
--- Reward_Popup payloads from the farm server
--- ({ kind = "LevelUp" | "Order" | "Drop" | "Field" | "BarnUpgrade", ... }).
+-- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order" | "Drop" |
+-- "Field" | "BarnUpgrade" | "Prize" | "PrizeLost" | "Crier" | "Purchase", ... }).
 function FarmCues.popup(payload: { [string]: any }?): { Cue }
 	local kind = type(payload) == "table" and payload.kind
 	if kind == "LevelUp" then
 		return { { sound = "LevelUp" } }
 	elseif kind == "Order" then
 		return { { sound = "OrderComplete" }, { sound = "Coin", delay = 0.35 } }
+	elseif kind == "Drop" and payload.tool then
+		return { { sound = "ToolDrop" } } -- a Shovel, Axe or Saw for the Tool Shed
+	elseif kind == "Prize" then
+		return { { sound = if payload.tier == "Heirloom" then "PrizeHeirloom" else "PrizeFind" } }
+	elseif kind == "PrizeLost" then
+		return { { sound = "PrizeLost" } } -- a prize crop, but the Prize Basket was full
+	elseif kind == "Purchase" then
+		-- A shop purchase; a Gem pack adds the Gem shimmer (its snapshot's Gems stay quiet).
+		local cues = { { sound = "Purchase" } }
+		if type(payload.gems) == "number" and payload.gems > 0 then
+			table.insert(cues, { sound = "Gem", delay = 0.45 })
+		end
+		return cues
+	elseif kind == "Crier" then
+		return { { sound = "CrierBell" } } -- news from another player's farm
 	elseif kind == "Drop" or kind == "Field" or kind == "BarnUpgrade" then
 		return { { sound = "Unlock" } } -- a tool dropped, a new field placed, a bigger Barn
 	end

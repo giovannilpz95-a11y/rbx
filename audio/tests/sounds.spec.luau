@@ -68,6 +68,10 @@ test("music contexts have tracks with ids and volumes", function()
 			expect.truthy(track.volume > 0 and track.volume <= 1, context .. " volume")
 		end
 	end
+	for context, name in Sounds.contextAmbience do
+		expect.truthy(Sounds.music[context], context .. " has music")
+		expect.truthy(Sounds.list[name] and Sounds.list[name].looped, context .. " ambience " .. name)
+	end
 	for group, v in Sounds.groups do
 		expect.truthy(GROUPS[group] and v >= 0 and v <= 1, group)
 	end
