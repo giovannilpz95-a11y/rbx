@@ -42,6 +42,7 @@ The plot is dressed with our own cartoon models in the spirit of Township's look
 | `Factories` | Bakery, Feed Mill, Dairy, Sugar Mill, Textile Mill, each with an output table and a moving part |
 | `Buildings` | Barn, Order Board, loading dock, delivery truck, plot gate |
 | `Houses` / `Community` | The 7 House types and 9 Community Buildings |
+| `Decor` | The 12 decorations players place: paths, fences, hedges, flower beds, trees, hay, pond, lamp, bench, picnic table, fountain |
 | `Lighting` | Sunny afternoon lighting, color grade, bloom and haze |
 
 Part budgets (Design/15 §5) are checked by `tests/art.luau`: crop stage ≤ 12, bed ≤ 4, animal ≤ 12, pen ≤ 40, factory ≤ 80, House and Community Building ≤ 40, and a full level-12 plot under 2,500. To look at the models without Studio, see `tools/artpreview/README.md`.
