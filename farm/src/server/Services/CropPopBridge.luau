@@ -1,7 +1,8 @@
 --!strict
 -- Glue between the farm and Crop Pop (croppop/), both server-side, through ServerStorage:
 --   * CropPopLevelWon (BindableEvent, theirs): (player, levelId, rewards, firstWin) after the
---     replay check; rewards = { coins, xp } are paid through EconomyService.
+--     replay check; rewards = { coins, xp, gems? } are paid through EconomyService. Gems
+--     come from the score tracks (8 midway, 56 at a big step, 400 at a weekly track's end).
 --   * CropPopLoadSave / CropPopGetSave (BindableFunctions, theirs): Crop Pop's save block
 --     (Hearts, boosters, progress) lives in the farm profile as `puzzle`. We hand it over
 --     once the profile loads and copy it back before every save.
@@ -21,6 +22,7 @@ local CropPopBridge = {}
 
 local MAX_REWARD = 10000
 local MAX_GEM_SPEND = 1000
+local MAX_GEM_REWARD = 1000 -- per win; a track's biggest step pays 400
 local FIND_TIMEOUT = 8 -- Crop Pop starts a fresh run if it hears nothing within 10 s
 
 -- Players whose saved block Crop Pop has accepted. Until then its live state may be a
@@ -50,6 +52,10 @@ local function onLevelWon(player: Player, levelId: any, rewards: any, _firstWin:
 	end
 	if xp > 0 then
 		EconomyService.add(player, "XP", xp, reason)
+	end
+	local gems = amount(rewards.gems, MAX_GEM_REWARD)
+	if gems > 0 then
+		EconomyService.add(player, "Gems", gems, "croppop_track")
 	end
 	DataService.markDirty(player, true)
 	NetService.pushState(player)
