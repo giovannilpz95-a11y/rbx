@@ -21,6 +21,8 @@ local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Land = require(Shared.Config.Land)
 local Speedup = require(Shared.Speedup)
+local Prize = require(Shared.Config.Prize)
+local PrizeRules = require(Shared.Prize)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
@@ -354,8 +356,44 @@ local function renderBarn(state: { [string]: any })
 		})
 	end
 
-	-- Tool Shed: tools never take Barn space
+	-- Prize Basket: Prize Crops sell at the Prize Stand for a multiple of the crop's price
 	order += #ids + 1
+	local prizes = state.prizes or {}
+	Ui.label(
+		string.format("Prize Basket  %d / %d", #prizes, Prize.basketSlots),
+		{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
+	)
+	order += 1
+	if #prizes == 0 then
+		Ui.label("Now and then a harvest turns up a Sunkissed or Heirloom crop. They land here.", {
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			TextWrapped = true,
+			LayoutOrder = order,
+			Parent = body,
+		})
+		order += 1
+	end
+	for i, entry in prizes do
+		local line = row(42, order)
+		order += 1
+		local value = PrizeRules.value(entry.crop, entry.tier)
+		Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
+			Size = UDim2.new(1, -150, 1, 0),
+			TextColor3 = Ui.colors.accent,
+			Parent = line,
+		})
+		Ui.button(string.format("Sell for %d Coins", value), function()
+			Remotes.fire("Prize_Sell", i)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(140, 30),
+			Parent = line,
+		})
+	end
+
+	-- Tool Shed: tools never take Barn space
 	local tools = state.tools or {}
 	Ui.label("Tool Shed", { Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body })
 	for i, id in sortedKeys(Tools.tools) do

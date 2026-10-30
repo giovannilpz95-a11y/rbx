@@ -56,6 +56,12 @@ function Hud.popup(payload: { [string]: any })
 		Hud.toast(
 			string.format("Found 1 %s!%s", payload.name, if payload.tool then "  It's in the Tool Shed (Barn)." else "")
 		)
+	elseif payload.kind == "Prize" then
+		Hud.toast(string.format("A Prize Crop: %s! It's in your Prize Basket (Barn).", payload.name))
+	elseif payload.kind == "PrizeLost" then
+		Hud.toast("A Prize Crop grew, but your Prize Basket is full, so it went to the Barn.")
+	elseif payload.kind == "Crier" then
+		Hud.toast(payload.text)
 	elseif payload.kind == "Field" then
 		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
 	elseif payload.kind == "Order" then

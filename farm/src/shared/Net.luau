@@ -30,6 +30,7 @@ return table.freeze({
 	Order_SkipWait = "Order_SkipWait", -- slotIndex: a new card now (Gems)
 	Barn_Sell = "Barn_Sell", -- itemId, qty
 	Barn_Upgrade = "Barn_Upgrade", -- (the next upgrade)
+	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)

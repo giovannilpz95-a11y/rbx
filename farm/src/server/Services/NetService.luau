@@ -85,6 +85,7 @@ local function snapshot(data: { [string]: any })
 		land = data.land,
 		decor = data.decor,
 		tools = data.toolShed.items,
+		prizes = data.prizes,
 		board = data.orders.board,
 		settings = data.settings,
 		tutorial = data.tutorial,

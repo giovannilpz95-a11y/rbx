@@ -15,6 +15,8 @@ local DailyRules = require("../src/shared/Daily")
 local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
 local Drops = require("../src/shared/Drops")
+local Prize = require("../src/shared/Config/Prize")
+local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
@@ -400,6 +402,24 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	eq(Items.Bricks.sellPrice, 0, "not sellable")
 	local data = Profile.migrate(nil) :: any
 	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
+end)
+
+test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#data.prizes, 0, "empty basket")
+	data.tutorial.step = 2
+	eq(PrizeRules.roll(data, 0), nil, "none while the guide runs")
+	data.tutorial.step = 0
+	eq(PrizeRules.roll(data, 0.001), "Heirloom", "0.2% Heirloom")
+	eq(PrizeRules.roll(data, 0.01), "Sunkissed", "then 2% Sunkissed")
+	eq(PrizeRules.roll(data, 0.023), nil, "the rest are ordinary")
+	eq(PrizeRules.value("Corn", "Sunkissed"), 9, "x3 the sell price")
+	eq(PrizeRules.value("Corn", "Heirloom"), 45, "x15")
+	for i = 1, Prize.basketSlots do
+		ok(PrizeRules.hasRoom(data), "room for " .. i)
+		table.insert(data.prizes, { crop = "Wheat", tier = "Sunkissed" })
+	end
+	eq(PrizeRules.hasRoom(data), false, "basket full at 10")
 end)
 
 test("harvests drop tools and materials on one roll, with a pity tool", function()
