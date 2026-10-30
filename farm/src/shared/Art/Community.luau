@@ -809,6 +809,37 @@ TYPES.SculpturePark = function(b, s)
 	return body
 end
 
+-- Big Top (content bank, level 26): a round circus tent in red and cream rings on a sandy
+-- ring, a pole through the peak with a pennant, and a dark entrance flap at the front.
+TYPES.BigTop = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grassLight, { collide = true })
+	local t = b.into(body, true)
+	t.post("Ring", 0.1, w - 0.4, Vector3.new(0, 0.45, 0), Palette.straw, { shadow = false })
+	local r = w - 2
+	t.post("Wall", 3.2, r, Vector3.new(0, 2, 0), Palette.roofRed)
+	-- The roof: rings narrowing to the peak, red and cream in turn
+	for i, d in { r + 0.6, r * 0.75, r * 0.5, r * 0.26 } do
+		t.post(
+			"Canvas",
+			0.9,
+			d,
+			Vector3.new(0, 3.6 + i * 0.85, 0),
+			if i % 2 == 1 then Palette.cream else Palette.roofRed
+		)
+	end
+	t.post("Pole", 2.4, 0.3, Vector3.new(0, 8.4, 0), Palette.woodDark)
+	t.block("Pennant", Vector3.new(1.2, 0.7, 0.1), Vector3.new(0.6, 9.2, 0), Palette.roofMustard, { shadow = false })
+	-- Sign object: the entrance, a dark doorway with its flaps tied back in stripes
+	local face = -r / 2
+	t.block("Entrance", Vector3.new(2.2, 2.8, 0.4), Vector3.new(0, 1.8, face - 0.05), Palette.cocoa)
+	for _, x in { -1.3, 1.3 } do
+		t.wedge("Flap", Vector3.new(0.6, 2.8, 0.4), CFrame.new(x, 1.8, face - 0.3), Palette.cream)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
