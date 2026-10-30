@@ -436,6 +436,7 @@ function Mock.environment(tree)
 		TweenInfo = TweenInfo,
 		Enum = Enum,
 		task = tasks,
+		time = os.clock,
 		warn = function(...)
 			print("    warn:", ...)
 		end,

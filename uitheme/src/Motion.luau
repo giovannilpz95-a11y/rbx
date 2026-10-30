@@ -132,6 +132,43 @@ function Motion.loop(instance: Instance, props: { [string]: any }, seconds: numb
 	return tween
 end
 
+-- A reward icon flying from where it was earned to its HUD counter (convention C12). `gui`
+-- must sit in a full-screen layer (a ScreenGui); `from` and `to` are pixel positions in that
+-- layer. The icon is destroyed on arrival, then onArrive runs (bump the pill there). With
+-- Reduce Motion on it arrives at once.
+function Motion.flyTo(gui: GuiObject, from: Vector2, to: Vector2, onArrive: (() -> ())?, seconds: number?)
+	local function arrive()
+		gui:Destroy()
+		if onArrive then
+			onArrive()
+		end
+	end
+	if Motion.reduced then
+		arrive()
+		return
+	end
+	gui.AnchorPoint = Vector2.new(0.5, 0.5)
+	gui.Position = UDim2.fromOffset(from.X, from.Y)
+	local scale = Motion.scaleOf(gui)
+	scale.Scale = 0.4
+	Motion.tween(scale, Motion.time.popIn, { Scale = 1.15 }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	local flight = seconds or 0.7
+	task.delay(Motion.time.popIn, function()
+		if gui.Parent == nil then
+			return
+		end
+		Motion.tween(
+			gui,
+			flight,
+			{ Position = UDim2.fromOffset(to.X, to.Y) },
+			Enum.EasingStyle.Quad,
+			Enum.EasingDirection.In
+		)
+		Motion.tween(scale, flight, { Scale = 0.6 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(flight, arrive)
+	end)
+end
+
 -- Counts a label from one number to another. A newer tick on the same label wins.
 local ticking: { [Instance]: number } = setmetatable({}, { __mode = "k" }) :: any
 
