@@ -517,6 +517,29 @@ TYPES.ArtStudio = function(b, s)
 	return body
 end
 
+-- Music Hall (content bank, level 17): a plum concert hall with a cream gable, a row of
+-- golden organ pipes on the roof and a big music note over the door.
+TYPES.MusicHall = function(b, s)
+	local w, d, h = s * 0.8, s * 0.6, 5.4
+	local body = hall(b, w, d, h, Palette.plum)
+	local t = b.into(body, true)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.6, Palette.cream)
+	for i, x in { -1.2, 0, 1.2 } do
+		local tall = 3 + (if i == 2 then 1.4 else 0)
+		t.post("Pipe", tall, 0.8, Vector3.new(x, PLINTH + h + 2 + tall / 2, d / 4), Palette.coins)
+	end
+	-- Sign object: a music note (head and stem) over the door
+	local note = Vector3.new(0, PLINTH + h - 1.2, -d / 2 - 0.4)
+	t.ball("NoteHead", 1.2, note, Palette.cocoa, { shadow = false })
+	t.block("NoteStem", Vector3.new(0.25, 2, 0.25), note + Vector3.new(0.5, 1, 0), Palette.cocoa, { shadow = false })
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.6, 3.8, Palette.woodDark, Palette.cream)
+	for _, x in { -w / 3, w / 3 } do
+		Kit.window(t, "Window", CFrame.new(x, PLINTH + 2.8, -d / 2), 1.4, 2.2, Palette.cream, Palette.glass)
+	end
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1.2, PLINTH + h + 1.2, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)

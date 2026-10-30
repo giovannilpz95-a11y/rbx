@@ -317,6 +317,26 @@ TYPES.GardenVilla = {
 	end,
 }
 
+-- Thatched Longhouse (content bank, level 17): a long, low timber house under a deep straw
+-- roof, with a stone chimney at one end and a flower box under the windows.
+TYPES.ThatchedLonghouse = {
+	roof = Palette.straw,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.9, s * 0.6, STORY - 1
+		local body = walls(b, w, d, h, Palette.woodLight)
+		local t = b.into(body, true)
+		Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1.6, d + 2, 4, roof)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, front(d)), 2, 4, Palette.woodDark, Palette.cream)
+		for _, x in { -1, 1 } do
+			Kit.window(t, "Window", CFrame.new(x * w / 3, PLINTH + 3, front(d)), 1.6, 1.6, Palette.cream, Palette.glass)
+		end
+		flowerBox(t, CFrame.new(-w / 3, PLINTH + 2, front(d)), 2)
+		chimney(t, Vector3.new(w / 2 - 1, PLINTH + h, d / 4), 4.5, Palette.stone)
+		Kit.sproutTag(t, Vector3.new(-w / 4, PLINTH + h + 3.6, 0), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)

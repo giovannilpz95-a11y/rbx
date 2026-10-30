@@ -239,6 +239,18 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Pop", 0.8, at(0.35, 1.55, 0.15), Palette.cream, QUIET)
 		b.ball("Pop", 0.7, at(0, 1.85, -0.2), Palette.cream, QUIET)
 	end,
+	CornChips = function(b)
+		b.block("Bag", Vector3.new(1.3, 1.6, 0.6), at(0, 0.8, 0), Palette.corn, QUIET)
+		b.block("Band", Vector3.new(1.32, 0.4, 0.62), at(0, 1.1, 0), Palette.roofRed, QUIET)
+		b.wedge("Chip", Vector3.new(0.6, 0.5, 0.15), tilt(-0.2, 1.8, 0, 0, 0, 15), Palette.straw, QUIET)
+		b.wedge("Chip", Vector3.new(0.6, 0.5, 0.15), tilt(0.3, 1.75, 0.1, 0, 30, -10), Palette.straw, QUIET)
+	end,
+	CaneSyrup = function(b)
+		b.post("Bottle", 1.4, 1, at(0, 0.7, 0), Palette.cocoa, QUIET)
+		b.post("Label", 0.6, 1.04, at(0, 0.7, 0), Palette.cream, QUIET)
+		b.post("Neck", 0.6, 0.45, at(0, 1.7, 0), Palette.cocoa, QUIET)
+		b.post("Cork", 0.3, 0.5, at(0, 2.1, 0), Palette.wood, QUIET)
+	end,
 	StrawberryMilkshake = function(b)
 		b.post("Glass", 1.5, 0.95, at(0, 0.75, 0), Palette.flowerPink, QUIET)
 		b.ball("Cream", 0.95, at(0, 1.6, 0), Palette.cream, QUIET)
