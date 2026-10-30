@@ -3,6 +3,7 @@
 -- exists. All game state comes from the server; the client only sends intents.
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
@@ -41,6 +42,20 @@ local SHORTCUTS = {
 	[Enum.KeyCode.G] = "Shop",
 	[Enum.KeyCode.Backquote] = "Debug",
 }
+-- Studio only: ] steps through every screen, for phone screenshots in the device emulator
+-- (11 UI & UX mobile check). Each step prints its name to Output.
+local TOUR = {
+	{ "HUD only" },
+	{ "Barn", "Barn" },
+	{ "Orders", "Orders" },
+	{ "Shop", "Shop" },
+	{ "Buildings", "Buildings" },
+	{ "Town", "Town" },
+	{ "Field (F1)", "Field", "F1" },
+	{ "Debug", "Debug" },
+}
+local tourStep = 0
+
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
 		return
@@ -50,6 +65,15 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		Panels.open(panel)
 	elseif input.KeyCode == Enum.KeyCode.Escape then
 		Panels.close()
+	elseif input.KeyCode == Enum.KeyCode.RightBracket and RunService:IsStudio() then
+		tourStep = tourStep % #TOUR + 1
+		local step = TOUR[tourStep]
+		Panels.close()
+		if step[2] then
+			Panels.open(step[2], step[3])
+		end
+		local viewport = Workspace.CurrentCamera.ViewportSize
+		print(string.format("[Tour] %d/%d %s at %dx%d", tourStep, #TOUR, step[1], viewport.X, viewport.Y))
 	end
 end)
 
