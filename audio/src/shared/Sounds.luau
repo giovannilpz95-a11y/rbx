@@ -140,6 +140,13 @@ local Music: { [string]: { { id: string, name: string, volume: number } } } = {
 	},
 }
 
+-- The ambience bed that goes with each music context. Crop Pop has none: the puzzle sits on
+-- its own screen, so the farm's birds fade out while it's open.
+local ContextAmbience: { [string]: string } = {
+	Farm = "AmbienceFarm",
+	Visit = "AmbienceFarm",
+}
+
 -- Default volume per group (Design/26 Audio Style Guide, "Mix"). First-pass.
 local Groups: { [string]: number } = {
 	Music = 0.35,
@@ -156,6 +163,7 @@ end
 return table.freeze({
 	list = table.freeze(Sounds),
 	music = table.freeze(Music),
+	contextAmbience = table.freeze(ContextAmbience),
 	groups = table.freeze(Groups),
 	assetFor = assetFor,
 	MUSIC_GAP = 6, -- seconds of quiet between tracks in a context

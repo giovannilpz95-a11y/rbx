@@ -18,7 +18,7 @@ local function fakeRoblox()
 	local created = {}
 	local delayed = {}
 	local function newInstance(className)
-		local inst = { ClassName = className, Name = className, Volume = 0.5, PlaybackSpeed = 1, IsPlaying = false, Ended = signal(), children = {} }
+		local inst = { ClassName = className, Name = className, Volume = 1, PlaybackSpeed = 1, IsPlaying = false, Ended = signal(), children = {} }
 		function inst:Play()
 			self.IsPlaying = true
 			self.played = (self.played or 0) + 1
@@ -138,6 +138,33 @@ test("music: a playlist context, then a single looping track with a crossfade", 
 	GameAudio.setMusic("Puzzle")
 	expect.eq(#find(function(i) return i.Name == "Music_Puzzle" end), 1, "same context does nothing")
 	expect.eq(GameAudio.getMusic(), "Puzzle")
+end)
+
+test("the farm ambience fades out under Crop Pop and comes back after", function()
+	local GameAudio, find = fresh()
+	GameAudio.setMusic("Farm")
+	local beds = find(function(i) return i.Name == "Ambience_AmbienceFarm" end)
+	expect.eq(#beds, 1)
+	expect.eq(beds[1].Volume, 0.5)
+	GameAudio.setMusic("Puzzle")
+	expect.eq(beds[1].Volume, 0, "faded out")
+	GameAudio.setMusic("Farm")
+	beds = find(function(i) return i.Name == "Ambience_AmbienceFarm" end)
+	expect.eq(#beds, 2, "a fresh bed")
+	expect.eq(beds[2].Volume, 0.5)
+end)
+
+test("coming back to the farm picks the music up where it left off", function()
+	local GameAudio, find = fresh()
+	GameAudio.setMusic("Farm")
+	local first = find(function(i) return i.Name == "Music_Farm" end)[1]
+	first.TimePosition = 42
+	GameAudio.setMusic("Puzzle")
+	GameAudio.setMusic("Farm")
+	local tracks = find(function(i) return i.Name == "Music_Farm" end)
+	expect.eq(#tracks, 2)
+	expect.eq(tracks[2].SoundId, first.SoundId, "same track")
+	expect.eq(tracks[2].TimePosition, 42, "same spot")
 end)
 
 test("the playlist moves on after a track ends", function()

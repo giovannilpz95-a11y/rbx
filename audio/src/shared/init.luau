@@ -5,8 +5,8 @@
 		GameAudio.play("Coin")                       -- a named sound from Sounds.luau
 		GameAudio.play("PopMatch", { pitch = 4 })    -- 4 semitones up
 		GameAudio.playCues(cues)                     -- a list from FarmCues / CropPopCues
-		GameAudio.setMusic("Puzzle")                 -- crossfade to another context's music
-		GameAudio.setAmbience("AmbienceFarm")
+		GameAudio.setMusic("Puzzle")                 -- crossfade to another context's music (and ambience)
+		GameAudio.setAmbience("AmbienceFarm")        -- or set the ambience bed by hand
 		GameAudio.setVolume("Music", 0.5)            -- groups: Music, Ambience, Effects, Ui
 		GameAudio.setMuted("Music", true)
 
@@ -114,9 +114,15 @@ end
 
 -- Music ---------------------------------------------------------------------------
 
+local ambienceName: string? = nil
+local ambienceSound: Sound? = nil
+
 local musicContext: string? = nil
 local musicToken = 0
 local musicSound: Sound? = nil
+local musicIndex = 1
+-- Where each context's music was when we left it, so coming back picks up mid-track.
+local resumeAt: { [string]: { index: number, position: number } } = {}
 
 local function fadeOut(sound: Sound)
 	local t = TweenService:Create(sound, TweenInfo.new(Sounds.MUSIC_FADE), { Volume = 0 })
@@ -126,11 +132,12 @@ local function fadeOut(sound: Sound)
 	t:Play()
 end
 
-local function playTrack(context: string, index: number, token: number)
+local function playTrack(context: string, index: number, token: number, startAt: number?)
 	local list = Sounds.music[context]
 	if list == nil or #list == 0 or token ~= musicToken then
 		return
 	end
+	musicIndex = index
 	local track = list[(index - 1) % #list + 1]
 	local s = Instance.new("Sound")
 	s.Name = "Music_" .. context
@@ -139,6 +146,7 @@ local function playTrack(context: string, index: number, token: number)
 	s.Looped = #list == 1
 	s.SoundGroup = groups.Music
 	s.Parent = soundFolder
+	s.TimePosition = startAt or 0
 	s:Play()
 	musicSound = s
 	TweenService:Create(s, TweenInfo.new(Sounds.MUSIC_FADE), { Volume = track.volume }):Play()
@@ -155,6 +163,9 @@ function GameAudio.setMusic(context: string?)
 	if context == musicContext then
 		return
 	end
+	if musicSound and musicContext then
+		resumeAt[musicContext] = { index = musicIndex, position = musicSound.TimePosition }
+	end
 	musicContext = context
 	musicToken += 1
 	if musicSound then
@@ -162,16 +173,21 @@ function GameAudio.setMusic(context: string?)
 		musicSound = nil
 	end
 	if context then
-		playTrack(context, 1, musicToken)
+		local resume = resumeAt[context]
+		resumeAt[context] = nil
+		if resume then
+			playTrack(context, resume.index, musicToken, resume.position)
+		else
+			playTrack(context, 1, musicToken)
+		end
 	end
+	-- Each context brings its own ambience bed, or none (Crop Pop).
+	GameAudio.setAmbience(if context then Sounds.contextAmbience[context] else nil)
 end
 
 function GameAudio.getMusic(): string?
 	return musicContext
 end
-
-local ambienceName: string? = nil
-local ambienceSound: Sound? = nil
 
 function GameAudio.setAmbience(name: string?)
 	setup()
