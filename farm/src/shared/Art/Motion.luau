@@ -124,6 +124,8 @@ export type AnimalRig = {
 	parts: { BasePart },
 	base: { CFrame },
 	phase: number, -- so a pen of animals doesn't move in step
+	wool: { BasePart }, -- a sheep's wool puffs, which regrow (setWool)
+	woolSize: { Vector3 },
 }
 
 function ArtMotion.bindAnimal(model: Instance, phase: number?): AnimalRig?
@@ -134,13 +136,44 @@ function ArtMotion.bindAnimal(model: Instance, phase: number?): AnimalRig?
 	end
 	local parts: { BasePart } = {}
 	local base: { CFrame } = {}
+	local wool: { BasePart } = {}
+	local woolSize: { Vector3 } = {}
 	for _, d in model:GetDescendants() do
 		if d:IsA("BasePart") then
 			table.insert(parts, d)
 			table.insert(base, d.CFrame)
+			if penId == "SheepFold" and (d.Name == "Wool" or d.Name == "Fringe") then
+				table.insert(wool, d)
+				table.insert(woolSize, d.Size)
+			end
 		end
 	end
-	return { penId = penId, feet = feet, parts = parts, base = base, phase = phase or 0 }
+	return {
+		penId = penId,
+		feet = feet,
+		parts = parts,
+		base = base,
+		phase = phase or 0,
+		wool = wool,
+		woolSize = woolSize,
+	}
+end
+
+-- Wool regrow (Model List: Sheep): just shorn (hungry) the puffs are at 0.6 of full size,
+-- they grow back over the eating timer (`progress` 0-1) and are full when the Wool is ready.
+function ArtMotion.woolScale(mood: string?, progress: number): number
+	if mood == "ready" then
+		return 1
+	elseif mood == "hungry" then
+		return 0.6
+	end
+	return 0.6 + 0.4 * math.clamp(progress, 0, 1)
+end
+
+function ArtMotion.setWool(rig: AnimalRig, scale: number)
+	for i, p in rig.wool do
+		p.Size = rig.woolSize[i] * scale
+	end
 end
 
 -- The body's offset from rest, in the animal's own space, at time t.
@@ -176,6 +209,43 @@ function ArtMotion.resetAnimal(rig: AnimalRig)
 	for i, p in rig.parts do
 		p.CFrame = rig.base[i]
 	end
+end
+
+---------------------------------------------------------------------------------------------
+-- Pen gates, ready crops and harvests
+---------------------------------------------------------------------------------------------
+
+-- Where a pen's Gate (Art/Animals) stands when `open` (0 shut, 1 fully open) of the way.
+function ArtMotion.gateCFrame(gate: BasePart, open: number): CFrame?
+	local closed = gate:GetAttribute("ClosedCFrame")
+	local hinge = gate:GetAttribute("HingeCFrame")
+	local swing = gate:GetAttribute("Swing")
+	if typeof(closed) ~= "CFrame" or typeof(hinge) ~= "CFrame" or type(swing) ~= "number" then
+		return nil
+	end
+	local eased = (1 - math.cos(math.clamp(open, 0, 1) * math.pi)) / 2
+	return hinge * CFrame.Angles(0, math.rad(swing * eased), 0) * hinge:ToObjectSpace(closed)
+end
+
+-- A ready crop's gentle sway about its base, at time t (Model List: Ready sparkle).
+function ArtMotion.cropSway(t: number): CFrame
+	return CFrame.Angles(math.rad(math.sin(t * 1.7) * 3), 0, math.rad(math.sin(t * 1.3 + 1) * 3))
+end
+
+ArtMotion.HARVEST_SECONDS = 0.9
+
+-- The harvest hop: a crop (or product) pops up from `from`, then arcs over to `to` (the Barn)
+-- shrinking as it goes. `a` runs 0-1 over HARVEST_SECONDS; returns the position and scale.
+function ArtMotion.harvestPath(from: Vector3, to: Vector3, a: number): (Vector3, number)
+	local hop = 0.25
+	if a <= hop then
+		local u = a / hop
+		return from + Vector3.new(0, 2.2 * math.sin(u * math.pi / 2), 0), 1 + 0.15 * u
+	end
+	local u = math.clamp((a - hop) / (1 - hop), 0, 1)
+	local start = from + Vector3.new(0, 2.2, 0)
+	local arc = math.sin(u * math.pi) * 6
+	return start:Lerp(to, u * u) + Vector3.new(0, arc, 0), 1.15 - 0.9 * u
 end
 
 return ArtMotion

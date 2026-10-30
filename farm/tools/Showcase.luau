@@ -10,6 +10,7 @@ local ArtHouses = require("../src/shared/Art/Houses")
 local ArtCommunity = require("../src/shared/Art/Community")
 local ArtDecor = require("../src/shared/Art/Decor")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
+local ArtMotion = require("../src/shared/Art/Motion")
 local Items = require("../src/shared/Items")
 
 local Showcase = {}
@@ -81,6 +82,49 @@ SCENES.animals = function(root)
 				p.Parent = root
 			end
 		end
+	end
+end
+
+-- Pen upgrade looks: the Cow Barn at levels 1-5, then the Coop and the Fold at level 5 with
+-- their gates swung open
+SCENES.upgrades = function(root)
+	ground(root, 110)
+	local rows = {
+		{ "CowBarn", 1 },
+		{ "CowBarn", 2 },
+		{ "CowBarn", 3 },
+		{ "CowBarn", 4 },
+		{ "CowBarn", 5 },
+		{ "ChickenCoop", 5 },
+		{ "SheepFold", 5 },
+	}
+	for i, row in rows do
+		local penId, level = row[1], row[2]
+		local at = if i <= 5 then CFrame.new((i - 3) * 16, 0, -10) else CFrame.new((i - 6.5) * 16, 0, 10)
+		local b = Kit.builder(root, at, true)
+		b.block("Floor", Vector3.new(12, 0.4, 12), Vector3.new(0, 0.2, 0), ArtAnimals.FLOOR_COLOR[penId])
+		local pen = Kit.model(penId, root)
+		ArtAnimals.pen(penId, at * CFrame.new(0, 0.4, 0), pen)
+		ArtAnimals.setPenLevel(pen, penId, level)
+		if i > 5 then
+			local gate = pen:FindFirstChild("Gate", true) :: BasePart
+			gate.CFrame = ArtMotion.gateCFrame(gate, 1) :: CFrame
+		end
+	end
+end
+
+-- Barn look 2 with a full overflow pile, the Tool Shed with every tool, and the held tools
+SCENES.barn2 = function(root)
+	ground(root, 80)
+	local barnAt = CFrame.new(0, 0, 0)
+	local barn = ArtBuildings.barn(root, barnAt, 14, 16)
+	ArtBuildings.setBarnLook(barn, 2)
+	ArtBuildings.setBarnOverflow(barn, 1)
+	local shed = ArtBuildings.toolShed(root, barnAt * CFrame.new(-14 / 2 - 2.2, 0, 1) * Kit.yaw(90))
+	ArtBuildings.setToolShedTools(shed, { Shovel = 1, Axe = 1, Saw = 1 })
+	for i, id in { "Tool_Scythe", "Tool_SeedBag", "Tool_WateringCan" } do
+		local tool = ArtItemProps.held(id, CFrame.new(-6 + i * 3, 2, -16)) :: Model
+		tool.Parent = root
 	end
 end
 

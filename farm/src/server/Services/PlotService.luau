@@ -19,8 +19,10 @@ local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
 local Pen = require(Shared.Pen)
 local Profile = require(Shared.Profile)
+local Shop = require(Shared.Shop)
 local Timer = require(Shared.Timer)
 local Land = require(Shared.Config.Land)
+local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local ArtAnimals = require(Shared.Art.Animals)
 local ArtBuildings = require(Shared.Art.Buildings)
@@ -540,9 +542,14 @@ local function buildPlot(player: Player, slot: Slot): Model
 	end
 
 	-- Barn, door facing east toward the spine path
-	local barn = ArtBuildings.barn(model, at(LAYOUT.barn, 0) * Kit.yaw(-90), 14, 16)
+	local barnAt = at(LAYOUT.barn, 0) * Kit.yaw(-90)
+	local barn = ArtBuildings.barn(model, barnAt, 14, 16)
 	barn:SetAttribute("Interact", "Barn")
 	label(barn, "Barn", 12)
+	-- Tool Shed: a lean-to on the Barn's north side, open toward the pens. A tap opens the
+	-- Barn panel, where the Tool Shed list lives.
+	local shed = ArtBuildings.toolShed(model, barnAt * CFrame.new(-14 / 2 - 2.2, 0, 1) * Kit.yaw(90))
+	shed:SetAttribute("Interact", "Barn")
 
 	for _, id in Balance.enabledFactories do
 		buildFactory(model, id, at)
@@ -810,6 +817,8 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 			local crop = ArtCrops.build(field.crop, stage, top, def and def.color)
 			if prize then
 				ArtCrops.prizeShimmer(crop, prize, top, bed.Size.X)
+			elseif stage == 4 then
+				ArtCrops.readySparkle(crop)
 			end
 			crop.Parent = bed
 		end
@@ -897,7 +906,9 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	for i, animal in pen.animals do
 		marks[i] = if animal.readyAt == nil then "h" elseif now >= animal.readyAt then "r" else "p"
 	end
-	local state = string.format("%s:%s:%s", tostring(pen.built), tostring(underConstruction), table.concat(marks))
+	local level = pen.level or 1 -- pen upgrades (Design/03) aren't in the game yet: always 1
+	local state =
+		string.format("%s:%s:%s:%d", tostring(pen.built), tostring(underConstruction), table.concat(marks), level)
 	local cache = penVisualState[player]
 	if cache[id] == state then
 		return
@@ -905,6 +916,7 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	cache[id] = state
 
 	local shell = if not pen.built then 0.75 elseif underConstruction then 0.4 else 0
+	ArtAnimals.setPenLevel(building, id, level)
 	setScaffold(building, underConstruction, 12, 12, 6)
 	for _, child in building:GetChildren() do
 		local name = child.Name
@@ -927,11 +939,54 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 			Kit.fade(animal, if mark == nil then 1 elseif underConstruction then 0.5 else 0)
 			-- The client's AnimalMotion: hungry ones droop, fed ones eat, ready ones wiggle
 			animal:SetAttribute("Mood", if mark == "h" then "hungry" elseif mark == "r" then "ready" else "eating")
+			-- For the wool regrow: how far through its timer the animal is
+			local fed = pen.animals[i]
+			animal:SetAttribute("ReadyAt", fed and fed.readyAt)
+			animal:SetAttribute("Span", Clock.duration(def.produceSeconds))
 		end
 		if product then
 			Kit.fade(product, if mark == "r" then 0 else 1)
 		end
 	end
+end
+
+-- The Barn's look follows its upgrades, crates pile up outside as it fills, and the Tool Shed
+-- shows the tools the player owns (from the level tools start dropping).
+local barnVisualState: { [Player]: string } = {}
+
+local function refreshBarn(player: Player, model: Model, data: { [string]: any })
+	local barn = model:FindFirstChild("Barn") :: BasePart?
+	local shed = model:FindFirstChild("ToolShed") :: BasePart?
+	if barn == nil or shed == nil then
+		return
+	end
+	local used = 0
+	for _, qty in data.inventory.items do
+		used += qty
+	end
+	local fill = used / math.max(1, Shop.barnCapacity(data))
+	local pile = if fill >= 1 then 1 elseif fill >= 0.75 then 0.75 else 0
+	local look = ArtBuildings.barnLookFor(data.inventory.upgrades)
+	local owned = data.toolShed.items
+	local open = data.level >= Tools.fromLevel
+	local key = string.format(
+		"%d:%s:%s:%d:%d:%d",
+		look,
+		tostring(pile),
+		tostring(open),
+		owned.Shovel or 0,
+		owned.Axe or 0,
+		owned.Saw or 0
+	)
+	if barnVisualState[player] == key then
+		return
+	end
+	barnVisualState[player] = key
+	ArtBuildings.setBarnLook(barn, look)
+	ArtBuildings.setBarnOverflow(barn, pile)
+	ArtBuildings.setToolShedTools(shed, owned)
+	Kit.fade(shed, if open then 0 else 1)
+	shed.CanQuery = open
 end
 
 -- Decorations: rebuilt whole when the saved list changes (it's small)
@@ -1017,6 +1072,7 @@ function PlotService.refresh(player: Player)
 	refreshLand(player, model, data, now)
 	refreshDecor(player, model, data)
 	refreshShelf(player, model, data)
+	refreshBarn(player, model, data)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -1081,6 +1137,7 @@ function PlotService.release(player: Player)
 	landVisualState[player] = nil
 	decorVisualState[player] = nil
 	shelfVisualState[player] = nil
+	barnVisualState[player] = nil
 	truckBusy[player] = nil
 end
 
