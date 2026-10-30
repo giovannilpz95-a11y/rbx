@@ -288,8 +288,9 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 	local sprint = Ui.button("Sprint", function()
 		ClientStore.setSetting("sprinting", not ClientStore.settings.sprinting)
 	end, {
+		-- Stacked above Use: beside it, the guide card covered it on phones
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -128, 1, -118),
+		Position = UDim2.new(1, -34, 1, -212),
 		Size = UDim2.fromOffset(72, 44),
 		Parent = gui,
 	})

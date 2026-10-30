@@ -11,6 +11,7 @@ local Tutorial = require(Shared.Tutorial)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
+local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
 
 local Guide = {}
@@ -24,6 +25,7 @@ local skipButton: TextButton
 local nextButton: TextButton
 local pointer: BillboardGui
 local target: string? = nil
+local active = false -- a guide step is showing (the card hides while a panel is open)
 
 local function bedsWhere(test: (bed: BasePart) -> boolean): { BasePart }
 	local out = {}
@@ -93,7 +95,8 @@ end
 
 local function render(state: { [string]: any }?)
 	local step = state and Tutorial.current(state)
-	card.Visible = step ~= nil
+	active = step ~= nil
+	card.Visible = active and not Panels.isOpen()
 	target = step and step.target
 	if step == nil or state == nil then
 		pointer.Adornee = nil
@@ -189,6 +192,8 @@ function Guide.init()
 		end
 	end)
 	RunService.RenderStepped:Connect(function()
+		-- Out of the way while a panel is open: on a phone it sat across the panel's rows
+		card.Visible = active and not Panels.isOpen()
 		pointer.StudsOffset = Vector3.new(0, 7 + math.abs(math.sin(time() * 4)) * 1.5, 0)
 	end)
 end
