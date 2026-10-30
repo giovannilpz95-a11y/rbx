@@ -30,6 +30,7 @@ local Kit = TileStyle.Theme.Kit
 local Motion = TileStyle.Theme.Motion
 
 local Boosters = CropPop.Boosters
+local Cup = CropPop.Cup
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
 local ScoreTracks = CropPop.ScoreTracks
@@ -45,6 +46,7 @@ local ui = nil -- built on first open
 local current = nil -- the level being played
 local busy = false
 local trackOpen = false -- the score track's step list is showing on the Trail
+local cupOpen = false -- the Harvest Cup standings are showing on the Trail
 local progress = nil -- the latest hearts / boosters / unlocks from the server
 local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 
@@ -937,6 +939,127 @@ local function trackResultText(result): string?
 	return text
 end
 
+-- Harvest Cup ------------------------------------------------------------------------
+
+local function ordinal(n: number): string
+	local tens = n % 100
+	local suffix = if tens >= 11 and tens <= 13 then "th" elseif n % 10 == 1 then "st" elseif n % 10 == 2 then "nd" elseif n % 10 == 3 then "rd" else "th"
+	return n .. suffix
+end
+
+-- Player names for the standings, looked up once each.
+local names = {}
+local function nameOf(userId: number): string
+	local me = Players.LocalPlayer
+	if me and userId == me.UserId then
+		return "You"
+	end
+	if names[userId] == nil then
+		local ok, name = pcall(function()
+			return Players:GetNameFromUserIdAsync(userId)
+		end)
+		names[userId] = if ok and type(name) == "string" then name else "Player " .. userId
+	end
+	return names[userId]
+end
+
+local function claimCup()
+	local result = invoke("ClaimCup")
+	if result.error then
+		ui.status.Text = "Couldn't claim the cup prize: " .. tostring(result.error)
+	else
+		setProgress(result.progress)
+		ui.status.Text = if result.prize
+			then string.format("%s %s prize: %s", Cup.GLYPH, ordinal(result.place), trackRewardText(result.prize))
+			else string.format("%s You came %s of %d. Win more levels next cup!", Cup.GLYPH, ordinal(result.place), result.players or 0)
+		if result.prize then
+			Sfx.event("Open")
+		end
+	end
+	renderTrail()
+end
+
+-- The cup at the top of the Trail; a tap shows the group's standings.
+local function addCupRows()
+	local cup = progress and progress.cup
+	if not cup then
+		return
+	end
+	local ended = cup.ended
+	if ended then
+		if ended.place then
+			local text = if ended.prize
+				then string.format("%s The last %s is over: you came %s of %d! Claim your prize", Cup.GLYPH, Cup.NAME, ordinal(ended.place), ended.players)
+				elseif ended.place > 0 then string.format("%s The last %s is over: you came %s of %d. OK", Cup.GLYPH, Cup.NAME, ordinal(ended.place), ended.players)
+				else string.format("%s The last %s is over. OK", Cup.GLYPH, Cup.NAME)
+			local b = button(ui.list, "CupEnded", text, UDim2.new(1, -10, 0, 52), UDim2.new())
+			b.LayoutOrder = -70
+			b.TextWrapped = true
+			if ended.prize then
+				b.BackgroundColor3 = Color3.fromRGB(214, 160, 40)
+			end
+			b.Activated:Connect(claimCup)
+		end
+	end
+	local left = durationText(since(cup.secondsLeft) or 0)
+	local standings = cup.standings
+	local text
+	if not cup.entered then
+		text = string.format("%s %s: win a level to enter · ends in %s", Cup.GLYPH, Cup.NAME, left)
+	else
+		local place = if standings and standings.place then string.format(" · %s of %d", ordinal(standings.place), standings.players) else ""
+		text = string.format("%s %s  %d cups%s · ends in %s", Cup.GLYPH, Cup.NAME, cup.cups, place, left)
+	end
+	text ..= string.format(
+		"\nWins score 1 / 3 / 5 cups. %d cups: %s %s",
+		cup.goal,
+		trackRewardText(Cup.PersonalPrize),
+		if cup.goalPaid then "✅" else ""
+	)
+	local row = button(ui.list, "Cup", text .. (if cupOpen then "  ▲" else "  ▼"), UDim2.new(1, -10, 0, 60), UDim2.new())
+	row.LayoutOrder = -60
+	row.TextWrapped = true
+	row.TextXAlignment = Enum.TextXAlignment.Left
+	row.BackgroundColor3 = Color3.fromRGB(196, 132, 48)
+	row.Activated:Connect(function()
+		cupOpen = not cupOpen
+		renderTrail()
+		if cupOpen then
+			ui.list.CanvasPosition = Vector2.new()
+		end
+	end)
+	if not cupOpen then
+		return
+	end
+	local rows = standings and standings.rows or {}
+	if #rows == 0 then
+		local note = label(ui.list, "CupNobody", "Nobody has scored yet. Win a level to be first!", UDim2.new(1, -10, 0, 30), UDim2.new())
+		note.LayoutOrder = -59
+		return
+	end
+	local medals = { "🥇", "🥈", "🥉" }
+	for i, entry in rows do
+		local mark = medals[i] or (if Cup.Places[i] then "🎁" else "")
+		local line = string.format("%s %d. %s  %d %s", mark, i, nameOf(entry.userId), entry.cups, Cup.GLYPH)
+		local r = label(ui.list, "CupRow" .. i, line, UDim2.new(1, -10, 0, 30), UDim2.new())
+		r.LayoutOrder = -60 + i
+		r.TextXAlignment = Enum.TextXAlignment.Left
+	end
+end
+
+-- "🏆 +3 cups (12 in the Harvest Cup)", and the personal goal if just reached.
+local function cupResultText(result): string?
+	local c = result.cup
+	if not c then
+		return nil
+	end
+	local text = string.format("%s +%d cups (%d in the %s)", Cup.GLYPH, c.gained, c.cups, Cup.NAME)
+	if c.goalReached then
+		text ..= string.format("\n%s %d cups reached: %s", Cup.GLYPH, Cup.PERSONAL_GOAL, trackRewardText(Cup.PersonalPrize))
+	end
+	return text
+end
+
 renderTrail = function()
 	for _, child in ui.list:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -945,6 +1068,7 @@ renderTrail = function()
 	end
 	ui.heartsLine.Text = heartsText()
 	addTrackRows()
+	addCupRows()
 	addGiftRow()
 	addHeartShop()
 	local highest = progress and progress.highestBeaten or 0
@@ -1157,6 +1281,10 @@ local function finishRun(run)
 		local body = rewardText(result.rewards)
 		if result.chest then
 			body ..= "\n" .. chestText(result.chest)
+		end
+		local cupText = cupResultText(result)
+		if cupText then
+			body ..= "\n" .. cupText
 		end
 		local trackText = trackResultText(result)
 		if trackText then
@@ -1534,6 +1662,10 @@ local function ensureUi()
 				PuzzleScreen.debugEmptyHearts()
 			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.J and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugPlayMove()
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.K and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugCup("add")
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.E and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugCup("end")
 			end
 		end)
 	end
@@ -1691,6 +1823,22 @@ function PuzzleScreen.debugGiftHeart()
 	end
 	local result = invoke("DevGiftHeart")
 	if not result.error then
+		setProgress(result)
+	end
+	if ui.select.Visible then
+		renderTrail()
+	end
+end
+
+-- Studio only: "add" scores 10 cups (the K key), "end" ends your cup now (the E key).
+function PuzzleScreen.debugCup(action: string)
+	if not RunService:IsStudio() or current then
+		return
+	end
+	local result = invoke("DevCups", action)
+	if result.error then
+		ui.status.Text = "Dev cup: " .. tostring(result.error)
+	else
 		setProgress(result)
 	end
 	if ui.select.Visible then

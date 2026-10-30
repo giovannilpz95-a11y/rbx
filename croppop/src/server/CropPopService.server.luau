@@ -12,6 +12,7 @@
 	  BuyBooster(kind)                    -> progress | { error }
 	  BuyContinue(token, actions)         -> { continues, progress } | { error }   (+5 moves once out of moves)
 	  ClaimHeartGifts()                   -> { claimed, from, progress } | { error }  (neighbors' hearts into empty ones)
+	  ClaimCup()                          -> { place, players, prize?, progress } | { error }  (a finished Harvest Cup)
 
 	Farm hooks in ServerStorage:
 	  CropPopLevelWon (BindableEvent, fired)     (player, levelId, rewards, firstWin) after a verified win;
@@ -27,7 +28,9 @@
 	  CropPopHeartGiftStatus (BindableFunction, ours) (player) -> { sentTo = { userId }, left, perDay }
 
 	Gift boxes live in the CropPopHeartGifts DataStore so they reach players who
-	are offline or on another server; Studio keeps them in memory.
+	are offline or on another server; Studio keeps them in memory. Harvest Cup
+	groups count entrants in the CropPopCups DataStore and keep scores in one
+	OrderedDataStore per group (CropPopCup<key>g<group>); Studio keeps them in memory.
 ]]
 
 local Players = game:GetService("Players")
@@ -35,6 +38,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
+local CupBoard = require(script.Parent.CupBoard)
 local GiftInbox = require(script.Parent.GiftInbox)
 local RunStore = require(script.Parent.RunStore)
 
@@ -80,6 +84,22 @@ local function giftInbox()
 	return GiftInbox.dataStore(store)
 end
 
+local function cupBoard()
+	if RunService:IsStudio() then
+		return CupBoard.memory()
+	end
+	local ok, counts = pcall(function()
+		return game:GetService("DataStoreService"):GetDataStore("CropPopCups")
+	end)
+	if not ok then
+		warn("[CropPop] no cup store:", counts)
+		return CupBoard.memory()
+	end
+	return CupBoard.dataStore(counts, function(name)
+		return game:GetService("DataStoreService"):GetOrderedDataStore(name)
+	end)
+end
+
 local random = Random.new()
 local store = RunStore.new({
 	clock = os.clock,
@@ -94,6 +114,7 @@ local store = RunStore.new({
 	devActions = RunService:IsStudio(), -- the "Dev: 1 move" button
 	autoLoad = false,
 	giftInbox = giftInbox(),
+	cupBoard = cupBoard(),
 })
 
 local remotes = Instance.new("Folder")
@@ -134,6 +155,7 @@ getSave.Parent = ServerStorage
 
 remote("GetProgress", function(player)
 	store:refreshGifts(player.UserId)
+	store:refreshCup(player.UserId)
 	local progress = store:getProgress(player.UserId)
 	progress.unlockAll = store.unlockAll
 	return progress
@@ -180,6 +202,11 @@ remote("ClaimHeartGifts", function(player)
 	return reply(store:claimGifts(player.UserId))
 end)
 
+remote("ClaimCup", function(player)
+	store:refreshCup(player.UserId)
+	return reply(store:claimCup(player.UserId))
+end)
+
 -- What the sender sees when a gift doesn't go.
 local GIFT_MESSAGES = {
 	["already sent today"] = "You already sent them a heart today.",
@@ -221,6 +248,9 @@ if RunService:IsStudio() then
 	end)
 	remote("DevGiftHeart", function(player)
 		return reply(store:devGiftSelf(player.UserId))
+	end)
+	remote("DevCups", function(player, action)
+		return reply(store:devCup(player.UserId, action))
 	end)
 	remote("DevTrackPoints", function(player, points)
 		local result, err = store:devTrackPoints(player.UserId, if type(points) == "number" then math.clamp(points, 1, 1000) else 10)
