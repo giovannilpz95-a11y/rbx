@@ -129,6 +129,13 @@ function Profile.template(): { [string]: any }
 		tutorial = {
 			step = 0, -- the first-session guide (shared/Tutorial); 0 = off
 		},
+		quests = { -- Daily Quests (shared/Quests)
+			day = -1, -- UTC day of the current list
+			seed = 0,
+			list = {}, -- { kind, target, progress, claimed }
+			rerolled = false,
+			chest = false, -- the all-three bonus chest taken
+		},
 		social = { -- visiting, Helping Hands and boosts (shared/Social)
 			privacy = Social.defaultPrivacy, -- who may visit: Open / Friends / Closed
 			helpers = Social.defaultHelpers, -- who may help: Nobody / Friends / Anyone

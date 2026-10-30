@@ -18,6 +18,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local QuestService = require(script.Parent.QuestService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local AnimalService = {}
@@ -130,6 +131,7 @@ function AnimalService.collect(player: Player, penId: any): (boolean, string?)
 	end
 	InventoryService.add(player, { [def.product] = taken })
 	EconomyService.add(player, "XP", def.productXP * taken, "collect_" .. def.product)
+	QuestService.progress(player, "animal", taken)
 	feedPen(player, def, pen)
 	PlotService.refresh(player)
 	return true
