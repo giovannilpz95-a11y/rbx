@@ -337,6 +337,38 @@ TYPES.ThatchedLonghouse = {
 	end,
 }
 
+-- Corner Flats (content bank, level 20): a two-storey block of flats in warm brick with a
+-- cream cornice, two front doors, and a lower side wing with a flat roof and a planter.
+TYPES.CornerFlats = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.75, STORY * 1.7
+		local x = -s * 0.15
+		local body = walls(b, w, d, h, Palette.brick, x)
+		local t = b.into(body, true)
+		t.block("Cornice", Vector3.new(w + 0.8, 0.8, d + 0.8), Vector3.new(x, PLINTH + h + 0.4, 0), Palette.cream)
+		-- The side wing, one storey, its flat roof in the house's tint
+		local ww, wx = s * 0.32, s * 0.31
+		t.block("Wing", Vector3.new(ww, STORY - 1, d - 1), Vector3.new(wx, PLINTH + (STORY - 1) / 2, 0.5), Palette.oat)
+		t.block("WingRoof", Vector3.new(ww + 0.6, 0.6, d - 0.4), Vector3.new(wx, PLINTH + STORY - 0.7, 0.5), roof)
+		for _, dx in { -w / 4, w / 4 } do
+			Kit.door(t, "Door", CFrame.new(x + dx, PLINTH, front(d)), 1.6, 3.6, roof, Palette.cream)
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x + dx, PLINTH + STORY + 1.6, front(d)),
+				1.6,
+				1.8,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		flowerBox(t, CFrame.new(wx, PLINTH + STORY - 0.2, front(d) + 0.5), ww)
+		Kit.sproutTag(t, Vector3.new(x, PLINTH + h + 0.8, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)

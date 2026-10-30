@@ -230,7 +230,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 19, "levels 17 to 19 are banked")
+	eq(Levels.built, 20, "levels 17 to 20 are banked")
+	eq(Levels.list[20].xpToNext, 6736, "L20 row")
+	eq(Recipes.IceCreamCone.factory, "IceCreamParlor", "Ice Cream Cone")
+	eq(Recipes.PatchworkQuilt.inputs.Yarn, 1, "Patchwork Quilt")
+	eq(Town.houses.CornerFlats.copyLevels[1], 20, "Corner Flats")
 	eq(Levels.list[19].xpToNext, 5771, "L19 row")
 	eq(Recipes.TomatoKetchup.inputs.Tomatoes, 2, "Tomato Ketchup")
 	-- The second Feed Mill: its own building and queue, making the Feed Mill's recipes
@@ -259,7 +263,7 @@ test("the content bank stays locked at the live cap", function()
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[def.order].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "FeedMill2" } do
+	for _, id in { "SnackFactory", "Diner", "FeedMill2", "IceCreamParlor" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
