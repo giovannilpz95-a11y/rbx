@@ -406,6 +406,20 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
 end)
 
+test("Speed Up All prices every growing field of one crop", function()
+	local fields = {
+		F1 = { crop = "Corn", readyAt = 100 + 300 },
+		F2 = { crop = "Corn", readyAt = 100 + 60 },
+		F3 = { crop = "Corn", readyAt = 50 }, -- ready already
+		F4 = { crop = "Wheat", readyAt = 100 + 120 },
+		F5 = {},
+	}
+	local total, count = Speedup.allFields(fields, "Corn", 100)
+	eq(count, 2, "only growing Corn")
+	eq(total, Speedup.production(300) + Speedup.production(60), "summed")
+	eq(select(2, Speedup.allFields(fields, "Carrot", 100)), 0, "none")
+end)
+
 test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", function()
 	local data = Profile.migrate(nil) :: any
 	eq(#data.prizes, 0, "empty basket")

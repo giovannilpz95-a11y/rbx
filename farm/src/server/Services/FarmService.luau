@@ -187,10 +187,35 @@ function FarmService.speedUp(player: Player, fieldId: any): (boolean, string?)
 	return true
 end
 
+-- Speed Up All: every growing field of one crop, for the summed price (paperwork)
+function FarmService.speedUpAll(player: Player, cropId: any): (boolean, string?)
+	if not NetService.check.id(cropId) or Crops[cropId] == nil then
+		return false
+	end
+	local data = DataService.get(player) :: { [string]: any }
+	local now = Clock.now()
+	local gems, count = Speedup.allFields(data.fields, cropId, now)
+	if count == 0 then
+		return false
+	end
+	if not EconomyService.spend(player, "Gems", gems, "speedup_all_" .. cropId) then
+		return false, "Not enough Gems"
+	end
+	for _, field in data.fields do
+		if field.crop == cropId and field.readyAt ~= nil and field.readyAt > now then
+			field.readyAt = now
+		end
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	return true
+end
+
 function FarmService.init()
 	NetService.on(Net.Farm_Plant, 20, 30, FarmService.plant)
 	NetService.on(Net.Farm_Harvest, 20, 30, FarmService.harvest)
 	NetService.on(Net.Farm_SpeedUp, 2, 3, FarmService.speedUp)
+	NetService.on(Net.Farm_SpeedUpAll, 2, 3, FarmService.speedUpAll)
 	NetService.on(Net.Prize_Sell, 3, 5, FarmService.sellPrize)
 	NetService.on(Net.Prize_Shelve, 3, 5, FarmService.shelvePrize)
 	NetService.on(Net.Prize_Unshelve, 3, 5, FarmService.unshelvePrize)

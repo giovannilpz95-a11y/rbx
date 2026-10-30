@@ -11,17 +11,29 @@ local Prize = require(Shared.Config.Prize)
 
 local NoticeService = {}
 
-local lines: { string } = {}
+local lines: { { text: string, count: number } } = {} -- newest first; repeats grouped
 local text: TextLabel? = nil
 
 local function render()
 	if text then
-		text.Text = if #lines == 0 then "Prize Crop finds show up here." else table.concat(lines, "\n")
+		local shown = {}
+		for _, entry in lines do
+			table.insert(
+				shown,
+				if entry.count > 1 then string.format("%s  x%d", entry.text, entry.count) else entry.text
+			)
+		end
+		text.Text = if #shown == 0 then "Prize Crop finds show up here." else table.concat(shown, "\n")
 	end
 end
 
 function NoticeService.post(line: string)
-	table.insert(lines, 1, line)
+	if lines[1] and lines[1].text == line then
+		lines[1].count += 1
+		render()
+		return
+	end
+	table.insert(lines, 1, { text = line, count = 1 })
 	while #lines > Prize.noticeLines do
 		table.remove(lines)
 	end

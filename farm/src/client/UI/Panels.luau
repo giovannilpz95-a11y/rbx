@@ -1243,6 +1243,25 @@ local function renderField(state: { [string]: any }, fieldId: string)
 		Size = UDim2.fromOffset(160, 30),
 		Parent = line,
 	})
+	-- Speed Up All: every growing field of this crop
+	local total, count = Speedup.allFields(state.fields, field.crop, now)
+	-- The short Field frame holds one row; grow it by one row for Finish all
+	frame.Size = UDim2.new(0.9, 0, 0, if count >= 2 then 124 + 48 else 124)
+	if count >= 2 then
+		local allLine = row(42, 2)
+		Ui.label(
+			string.format("All %d growing %s fields", count, crop.displayName),
+			{ Size = UDim2.new(1, -170, 1, 0), Parent = allLine }
+		)
+		gemButton("fields:" .. field.crop, "Finish all", total, function()
+			Remotes.fire("Farm_SpeedUpAll", field.crop)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(160, 30),
+			Parent = allLine,
+		})
+	end
 end
 
 local function renderSeeds(state: { [string]: any })
