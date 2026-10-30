@@ -52,6 +52,7 @@ local FACTORIES = {
 	"TextileMill",
 	"SnackFactory",
 	"Diner",
+	"PaperMill",
 	"FeedMill2",
 	"IceCreamParlor",
 }

@@ -122,6 +122,7 @@ local LAYOUT = {
 		Diner = Vector3.new(66, 0, 2),
 		FeedMill2 = Vector3.new(66, 0, -12),
 		IceCreamParlor = Vector3.new(66, 0, -26),
+		PaperMill = Vector3.new(66, 0, -40),
 	} :: { [string]: Vector3 },
 	factoryOutputOffset = Vector3.new(-10, 0, 0),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine

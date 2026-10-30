@@ -459,6 +459,53 @@ local function diner(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Paper Mill (content bank, level 18): a timber-framed mill with cream walls, a teal gable
+-- roof and a giant paper roll on a cradle above the door that turns while it works.
+local function paperMill(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cream, Palette.stone)
+	local d = b.into(body, true)
+	for _, x in { -4.8, 4.8 } do
+		for _, z in { -5.8, 5.8 } do
+			d.block("Post", Vector3.new(0.6, WALL, 0.6), Vector3.new(x, PLINTH + WALL / 2, z), Palette.woodDark)
+		end
+	end
+	d.block(
+		"Beam",
+		Vector3.new(ArtFactories.WIDTH + 0.3, 0.5, ArtFactories.DEPTH + 0.3),
+		Vector3.new(0, TOP - 0.25, 0),
+		Palette.woodDark,
+		{ shadow = false }
+	)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 13.4, 3.6, Palette.roofTeal)
+	local chimney = d.block("Chimney", Vector3.new(1.4, 3.4, 1.4), Vector3.new(-3.4, TOP + 2.6, 3.6), Palette.brick)
+	-- The roll: two cradle arms on the roof ridge hold a fat cream roll with a teal core
+	local rollAt = Vector3.new(1.4, TOP + 5.2, 0)
+	for _, x in { -1.6, 1.6 } do
+		d.block(
+			"Cradle",
+			Vector3.new(0.4, 2.2, 0.8),
+			Vector3.new(rollAt.X + x * 1.6, TOP + 4, 0),
+			Palette.wood,
+			{ shadow = false }
+		)
+	end
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.cyl("Roll", 4.4, 2.6, CFrame.new(rollAt), Palette.cream)
+	a.cyl("Core", 4.6, 0.9, CFrame.new(rollAt), Palette.roofTeal, { shadow = false })
+	a.block("Tail", Vector3.new(3.6, 0.1, 2.2), CFrame.new(rollAt + Vector3.new(0, -1.25, -1.1)), Palette.cream, {
+		shadow = false,
+	})
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.woodDark, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofTeal, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("Sheet", Vector3.new(1.1, 1.4, 0.15), at, Palette.cream, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(-3.6, TOP + 1.6, -4.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Ice Cream Parlor (content bank, level 20): a strawberry-pink parlor with a cream roof, a
 -- striped awning over the serving hatch, and a giant cone on the roof whose cherry bobs
 -- while it works.
@@ -506,6 +553,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	TextileMill = textileMill,
 	SnackFactory = snackFactory,
 	Diner = diner,
+	PaperMill = paperMill,
 	-- The second Feed Mill (level 19): the same mill under a red roof, so the two tell apart
 	FeedMill2 = function(model: Model, b: Kit.Builder): Parts
 		return feedMill(model, b, Palette.roofRed)
