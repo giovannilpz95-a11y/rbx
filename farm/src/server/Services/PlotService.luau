@@ -890,10 +890,10 @@ local function refreshDecor(player: Player, model: Model, data: { [string]: any 
 		return
 	end
 	decorVisualState[player] = key
-	local folder = model:FindFirstChild("Decor")
+	local folder = model:FindFirstChild("Placed")
 	if folder == nil then
 		folder = Instance.new("Folder")
-		folder.Name = "Decor"
+		folder.Name = "Placed"
 		folder.Parent = model
 	end
 	folder:ClearAllChildren()
@@ -967,7 +967,8 @@ function PlotService.release(player: Player)
 end
 
 -- Is anything solid on the plot (a building, field, fence...) inside this plot-local
--- footprint? Flat ground and paths don't count, and decorations are checked by DecorRules.
+-- footprint? Flat ground and paths don't count, and placed decorations (the "Placed" folder) are
+-- checked by DecorRules. The built-in scenery trees in "Decor" do block.
 function PlotService.blocked(player: Player, x: number, z: number, width: number, depth: number): boolean
 	local model = plotsByPlayer[player]
 	local slot = slotByPlayer[player]
@@ -976,7 +977,7 @@ function PlotService.blocked(player: Player, x: number, z: number, width: number
 	end
 	local include = {}
 	for _, child in model:GetChildren() do
-		if child.Name ~= "Decor" then
+		if child.Name ~= "Placed" then
 			table.insert(include, child)
 		end
 	end

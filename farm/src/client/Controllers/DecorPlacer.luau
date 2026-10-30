@@ -33,7 +33,7 @@ local function blockedHere(origin: CFrame, w: number, d: number): boolean
 	end
 	local include = {}
 	for _, child in plot:GetChildren() do
-		if child.Name ~= "Decor" then
+		if child.Name ~= "Placed" then
 			table.insert(include, child)
 		end
 	end
