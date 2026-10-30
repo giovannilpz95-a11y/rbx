@@ -8,6 +8,7 @@
 -- the Cap has room for it on top of every House already finished or still building.
 
 local Land = require("./Config/Land")
+local Lots = require("./Lots")
 local Town = require("./Config/Town")
 
 local TownRules = {}
@@ -108,6 +109,29 @@ function TownRules.freeLot(data: { [string]: any }, lotCount: number): number?
 		end
 	end
 	return nil
+end
+
+-- How many House lots are open: North Lane's wait for the North Fields to be cleared.
+-- Lots needing land come after Main Street's, so the open ones are always a prefix.
+function TownRules.houseLotCount(data: { [string]: any }, now: number): number
+	for i, lot in Lots.houses do
+		if lot.land > 0 and not TownRules.landDone(data, lot.land, now) then
+			return i - 1
+		end
+	end
+	return #Lots.houses
+end
+
+-- Whether a Community Building's lot is open, and the land expansion it waits for if not.
+function TownRules.communityLotOpen(data: { [string]: any }, id: string, now: number): (boolean, number?)
+	local lot = Lots.community[Town.community[id].order]
+	if lot == nil then
+		return false, nil
+	end
+	if lot.land > 0 and not TownRules.landDone(data, lot.land, now) then
+		return false, lot.land
+	end
+	return true, nil
 end
 
 -- Land expansion
