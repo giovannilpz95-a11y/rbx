@@ -35,6 +35,7 @@ local TownRules = require(Shared.TownRules)
 
 local DataService = require(script.Parent.DataService)
 local Clock = require(script.Parent.Parent.Util.Clock)
+local DecorModels = require(script.Parent.Parent.Util.DecorModels)
 
 local PlotService = {}
 
@@ -112,13 +113,13 @@ local LAYOUT = {
 		return fields
 	end)(),
 	-- Land expansions 1-4: the plot-local rectangles each one clears (min corner, max corner)
-	land = {
-		{ Vector3.new(-96, 0, -48), Vector3.new(-48, 0, 48) },
-		{ Vector3.new(48, 0, -48), Vector3.new(96, 0, 48) },
-		{ Vector3.new(-48, 0, -96), Vector3.new(48, 0, -48) },
-		{ Vector3.new(-96, 0, -96), Vector3.new(-48, 0, -48) },
-		{ Vector3.new(48, 0, -96), Vector3.new(96, 0, -48) }, -- stage 4 clears both corners
-	},
+	land = (function()
+		local rects = {}
+		for _, rect in Land.rects do -- stage 4 clears both corners (rects 4 and 5)
+			table.insert(rects, { Vector3.new(rect.minX, 0, rect.minZ), Vector3.new(rect.maxX, 0, rect.maxZ) })
+		end
+		return rects
+	end)(),
 	-- Factory row on the east side, the first one nearest the spawn. Each output table stands
 	-- on the factory's west side, facing the spine path.
 	factories = {
@@ -396,6 +397,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 	model.Name = "Plot_" .. slot.index
 	model:SetAttribute("OwnerUserId", player.UserId)
 	model:SetAttribute("SlotIndex", slot.index)
+	model:SetAttribute("PlotOrigin", origin) -- plot-local space for the client's placement ghost
 
 	part({
 		Name = "StartArea",
@@ -458,6 +460,12 @@ local function buildPlot(player: Player, slot: Slot): Model
 	end
 	for i, spot in DECOR_BUSHES do
 		Kit.bush(d, "Bush", spot, 1, Palette.treeTop, if i % 2 == 0 then Palette.flowerPink else Palette.flowerYellow)
+	end
+	-- Kit leaves non-colliding parts out of queries; placed decorations must still see them
+	for _, part in decor:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.CanQuery = true
+		end
 	end
 
 	local spawnPad = part({
@@ -875,6 +883,33 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	end
 end
 
+-- Decorations: rebuilt whole when the saved list changes (it's small)
+local decorVisualState: { [Player]: string } = {}
+
+local function refreshDecor(player: Player, model: Model, data: { [string]: any })
+	local parts = {}
+	for _, p in data.decor do
+		table.insert(parts, string.format("%s:%d:%d:%d", p.id, p.x, p.z, p.r))
+	end
+	local key = table.concat(parts, ";")
+	if decorVisualState[player] == key then
+		return
+	end
+	decorVisualState[player] = key
+	local folder = model:FindFirstChild("Placed")
+	if folder == nil then
+		folder = Instance.new("Folder")
+		folder.Name = "Placed"
+		folder.Parent = model
+	end
+	folder:ClearAllChildren()
+	local slot = slotByPlayer[player]
+	for i, p in data.decor do
+		local origin = slot.cframe * CFrame.new(p.x, 0.25, p.z) * CFrame.Angles(0, p.r * math.pi / 2, 0)
+		DecorModels.build(p.id, origin, i).Parent = folder
+	end
+end
+
 function PlotService.refresh(player: Player)
 	local model = plotsByPlayer[player]
 	local data = DataService.get(player)
@@ -891,6 +926,7 @@ function PlotService.refresh(player: Player)
 	end
 	refreshTown(player, model, data, now)
 	refreshLand(player, model, data, now)
+	refreshDecor(player, model, data)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -932,7 +968,31 @@ function PlotService.release(player: Player)
 	penVisualState[player] = nil
 	townVisualState[player] = nil
 	landVisualState[player] = nil
+	decorVisualState[player] = nil
 	truckBusy[player] = nil
+end
+
+-- Is anything solid on the plot (a building, field, fence...) inside this plot-local
+-- footprint? Flat ground and paths don't count, and placed decorations (the "Placed" folder) are
+-- checked by DecorRules. The built-in scenery trees in "Decor" do block.
+function PlotService.blocked(player: Player, x: number, z: number, width: number, depth: number): boolean
+	local model = plotsByPlayer[player]
+	local slot = slotByPlayer[player]
+	if model == nil or slot == nil then
+		return true
+	end
+	local include = {}
+	for _, child in model:GetChildren() do
+		if child.Name ~= "Placed" then
+			table.insert(include, child)
+		end
+	end
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = include
+	-- From just above flat ground (paths, the start area) to head height
+	local box = slot.cframe * CFrame.new(x, 3.3, z)
+	return #Workspace:GetPartBoundsInBox(box, Vector3.new(width - 0.4, 5.4, depth - 0.4), params) > 0
 end
 
 function PlotService.getPlot(player: Player): Model?

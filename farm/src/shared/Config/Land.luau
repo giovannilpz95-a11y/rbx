@@ -3,6 +3,8 @@
 -- 07 Town Building and Township Baseline Numbers §2 and §7 (Township baseline).
 -- Only what a level-12 farm can reach (Population Cap 390) is listed.
 
+export type Rect = { stage: number, minX: number, minZ: number, maxX: number, maxZ: number }
+
 export type FieldUnlock = { field: number, population: number, xp: number }
 
 export type ExpansionDef = {
@@ -70,6 +72,16 @@ return table.freeze({
 		{ "North Fields", 90, 40, 30 * MIN, 8 },
 		{ "Far Corners", 105, 50, 35 * MIN, 11 },
 	}),
+	-- The plot-local rectangles (min, max corner, in studs) each expansion clears: West, East,
+	-- North, then both north corners for stage 4. The start area is -48..48 on both axes.
+	rects = table.freeze({ -- { Rect }
+		table.freeze({ stage = 1, minX = -96, minZ = -48, maxX = -48, maxZ = 48 }),
+		table.freeze({ stage = 2, minX = 48, minZ = -48, maxX = 96, maxZ = 48 }),
+		table.freeze({ stage = 3, minX = -48, minZ = -96, maxX = 48, maxZ = -48 }),
+		table.freeze({ stage = 4, minX = -96, minZ = -96, maxX = -48, maxZ = -48 }),
+		table.freeze({ stage = 4, minX = 48, minZ = -96, maxX = 96, maxZ = -48 }),
+	}),
+	startArea = 48, -- half-size of the start area in studs
 	-- Fields up to this number fit in the start area; later ones need this expansion
 	startAreaFields = 10,
 	extraFieldsStage = 1,

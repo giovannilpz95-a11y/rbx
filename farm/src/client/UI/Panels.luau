@@ -24,11 +24,14 @@ local Speedup = require(Shared.Speedup)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 local Tutorial = require(Shared.Tutorial)
+local Decor = require(Shared.Config.Decor)
+local DecorRules = require(Shared.DecorRules)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Ui = require(script.Parent.Ui)
+local DecorPlacer = require(script.Parent.Parent.Controllers.DecorPlacer)
 
 local Panels = {}
 
@@ -77,6 +80,50 @@ local function gems(n: number): string
 	return string.format("%d Gem%s", n, if n == 1 then "" else "s")
 end
 
+-- A button that acts on a confirming second tap (the first arms it and shows `armedText`).
+-- `once`: act on the first tap (nothing to confirm). Acts on the press itself, so a panel
+-- refresh between press and release can't swallow the tap.
+local function confirmButton(
+	key: string,
+	text: string,
+	armedText: string,
+	fire: () -> (),
+	props: { [string]: any },
+	enabled: boolean,
+	color: Color3,
+	once: boolean?
+): TextButton
+	local armedNow = isArmed(key)
+	local button: TextButton
+	local function tap()
+		-- Press and Activated can both arrive for one tap; take the first
+		if time() - lastGemTap < 0.35 or not button.Active then
+			return
+		end
+		lastGemTap = time()
+		if once or isArmed(key) then
+			armed[key] = nil
+			fire()
+		else
+			table.clear(armed) -- one armed button at a time
+			armed[key] = time()
+			Panels.refresh()
+			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
+		end
+	end
+	button = Ui.button(if armedNow then armedText else text, tap, props)
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			tap()
+		end
+	end)
+	Ui.setEnabled(button, enabled, if armedNow then Ui.colors.accent else color)
+	return button
+end
+
 -- A button that spends Gems after a confirming second tap.
 -- `free`: a price of 0 is a gift (one tap, always on) rather than "nothing to speed up"
 local function gemButton(
@@ -88,44 +135,16 @@ local function gemButton(
 	free: boolean?
 )
 	local state = ClientStore.state
-	local armedNow = isArmed(key)
-	local button: TextButton
-	local function tap()
-		-- Press and Activated can both arrive for one tap; take the first
-		if time() - lastGemTap < 0.35 or not button.Active then
-			return
-		end
-		lastGemTap = time()
-		if free or isArmed(key) then
-			armed[key] = nil
-			fire()
-		else
-			table.clear(armed) -- one armed button at a time
-			armed[key] = time()
-			Panels.refresh()
-			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
-		end
-	end
-	button = Ui.button(
-		if armedNow then string.format("Spend %s?", gems(price)) else string.format("%s  %s", text, gems(price)),
-		tap,
-		props
-	)
-	-- Act on the press itself, so a panel refresh between press and release can't swallow it
-	button.InputBegan:Connect(function(input)
-		if
-			input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch
-		then
-			tap()
-		end
-	end)
-	Ui.setEnabled(
-		button,
+	return confirmButton(
+		key,
+		string.format("%s  %s", text, gems(price)),
+		string.format("Spend %s?", gems(price)),
+		fire,
+		props,
 		free == true or (price > 0 and state ~= nil and state.currencies.Gems >= price),
-		if armedNow then Ui.colors.accent else Ui.colors.gems
+		Ui.colors.gems,
+		free
 	)
-	return button
 end
 
 -- Every key of a config table, in its `order`.
@@ -974,6 +993,61 @@ local function renderTown(state: { [string]: any })
 		Ui.label("All land for now is cleared.", { TextColor3 = Ui.colors.muted, LayoutOrder = order, Parent = body })
 		order += 1
 	end
+
+	heading("Decorations (placed in front of you)")
+	for _, id in sortedKeys(Decor.items) do
+		local def = Decor.items[id]
+		if def.unlockLevel > state.level + 2 then
+			continue
+		end
+		local unlocked = state.level >= def.unlockLevel
+		local room, full = DecorRules.hasRoom(state, id)
+		local card = line(
+			string.format("%s   %d Coins   +%d XP", def.displayName, def.coinCost, def.xp),
+			if not unlocked
+				then string.format("Unlocks at level %d", def.unlockLevel)
+				elseif not room then full :: string
+				else string.format("%s, %d x %d tiles", def.category, def.size[1], def.size[2])
+		)
+		rightButton(card, "Place", unlocked and room and state.currencies.Coins >= def.coinCost, function()
+			Panels.close()
+			DecorPlacer.start(id)
+		end)
+	end
+end
+
+-- A placed decoration: turn it or sell it back
+local function renderDecor(state: { [string]: any }, index: number)
+	local placed = state.decor[index]
+	if placed == nil then
+		Panels.close()
+		return
+	end
+	local def = Decor.items[placed.id]
+	titleLabel.Text = def.displayName
+	local line = row(42, 1)
+	Ui.button("Turn", function()
+		Remotes.fire("Decor_Rotate", index)
+	end, { Size = UDim2.fromOffset(100, 30), Parent = line })
+	-- Two taps: the first arms it ("Sure?"), the second sells
+	local refund = DecorRules.refund(placed.id)
+	confirmButton(
+		"sell:" .. index,
+		string.format("Sell for %d Coins", refund),
+		string.format("Sure? Sell for %d", refund),
+		function()
+			Remotes.fire("Decor_Sell", index)
+			Panels.close()
+		end,
+		{
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(180, 30),
+			Parent = line,
+		},
+		true,
+		Ui.colors.danger
+	)
 end
 
 local function renderField(state: { [string]: any }, fieldId: string)
@@ -1136,6 +1210,8 @@ local function render()
 		renderField(state, currentArg)
 	elseif current == "Seeds" then
 		renderSeeds(state)
+	elseif current == "Decor" and currentArg then
+		renderDecor(state, tonumber(currentArg) :: number)
 	elseif current == "Away" then
 		renderAway()
 	elseif current == "Debug" then

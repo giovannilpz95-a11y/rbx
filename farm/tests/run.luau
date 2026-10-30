@@ -12,6 +12,8 @@ local Balance = require("../src/shared/Config/Balance")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
+local Decor = require("../src/shared/Config/Decor")
+local DecorRules = require("../src/shared/DecorRules")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
@@ -449,6 +451,41 @@ test("the first-session guide walks the opening loop", function()
 	ok(not Tutorial.freeFinish(data, "Dairy"), "free only while its step is on")
 	eq(Tutorial.current(data).id, "WrapUp", "ends on a tap")
 	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
+end)
+
+test("decorations snap to the grid, stay on owned land and don't overlap", function()
+	local data = Profile.migrate(nil) :: any
+	local x, z = DecorRules.snap("OakTree", 0, 9, 1)
+	eq(x, 8, "2x2 centres on a grid line")
+	eq(z, 0, "z too")
+	x, z = DecorRules.snap("GravelPath", 0, 9, 1)
+	eq(x, 10, "1x1 centres mid-tile")
+	local w, d = DecorRules.footprint("Bench", 1)
+	eq(w * 10 + d, 12, "a turned bench is 1 x 2")
+	local tree = { id = "OakTree", x = 8, z = 0, r = 0 }
+	ok((DecorRules.canPlace(data, tree, 0)), "fits")
+	table.insert(data.decor, tree)
+	local bench = { id = "Bench", x = 12, z = 2, r = 0 }
+	local fits, why = DecorRules.canPlace(data, bench, 0)
+	eq(fits, false, "overlaps the tree")
+	eq(why, "Something is already there", "says why")
+	ok((DecorRules.canPlace(data, { id = "Bench", x = 16, z = 2, r = 0 }, 0)), "touching edges are fine")
+	eq((DecorRules.canPlace(data, { id = "GravelPath", x = -50, z = 0, r = 0 }, 0)), false, "West Meadow not cleared")
+	data.land[1] = { readyAt = 10 }
+	ok((DecorRules.canPlace(data, { id = "GravelPath", x = -50, z = 0, r = 0 }, 10)), "cleared land is yours")
+	ok((DecorRules.canPlace(data, { id = "OakTree", x = -48, z = 0, r = 0 }, 10)), "across the edge")
+	eq(DecorRules.refund("StoneFountain"), 500, "25% back")
+	ok(DecorRules.isBig("OakTree") and not DecorRules.isBig("Bench"), "2 x 2 and up is big")
+	data.decor = {}
+	for i = 1, Decor.maxBig do
+		data.decor[i] = { id = "OakTree", x = 0, z = 0, r = 0 }
+	end
+	eq((DecorRules.hasRoom(data, "Pond")), false, "big cap")
+	ok((DecorRules.hasRoom(data, "GravelPath")), "small ones still fit")
+	for i = Decor.maxBig + 1, Decor.maxPlaced do
+		data.decor[i] = { id = "GravelPath", x = 0, z = 0, r = 0 }
+	end
+	eq((DecorRules.hasRoom(data, "GravelPath")), false, "overall cap")
 end)
 
 test("the daily calendar pauses instead of resetting", function()
