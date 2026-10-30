@@ -265,6 +265,16 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Swirl", 0.7, at(0, 1.75, 0), Palette.flowerWhite, QUIET)
 		b.ball("Berry", 0.35, at(0.15, 2.1, 0), Palette.roofRed, QUIET)
 	end,
+	Brownie = function(b)
+		b.block("Square", Vector3.new(1.3, 0.7, 1.3), at(0, 0.35, 0), Palette.cocoa, QUIET)
+		b.block("Square", Vector3.new(1, 0.6, 1), at(0.15, 1, -0.1), Palette.cocoa:Lerp(Palette.bread, 0.25), QUIET)
+		b.ball("Nut", 0.35, at(0.2, 1.4, -0.1), Palette.cream, QUIET)
+	end,
+	StrawberryJam = function(b)
+		b.post("Jar", 1.2, 1.1, at(0, 0.6, 0), Palette.roofRed, QUIET)
+		b.post("Label", 0.5, 1.14, at(0, 0.55, 0), Palette.cream, QUIET)
+		b.post("Lid", 0.3, 1.2, at(0, 1.35, 0), Palette.roofMustard, QUIET)
+	end,
 	PotatoBread = function(b)
 		b.block("Loaf", Vector3.new(1.8, 0.9, 1.1), at(0, 0.45, 0), Palette.bread, QUIET)
 		b.ball("Crust", 1.2, at(0, 0.95, 0), Palette.woodLight, QUIET)

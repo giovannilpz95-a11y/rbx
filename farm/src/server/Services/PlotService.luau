@@ -124,6 +124,8 @@ local LAYOUT = {
 		IceCreamParlor = Vector3.new(66, 0, -26),
 		PaperMill = Vector3.new(66, 0, -40),
 		PastryShop = Vector3.new(66, 0, 30),
+		-- A third column further east, its tables facing the second row's backs
+		JamKitchen = Vector3.new(88, 0, 30),
 	} :: { [string]: Vector3 },
 	factoryOutputOffset = Vector3.new(-10, 0, 0),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine

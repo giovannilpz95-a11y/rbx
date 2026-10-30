@@ -77,6 +77,7 @@ local Community: { [string]: CommunityDef } = {
 	Amphitheatre = { id = "Amphitheatre", displayName = "Amphitheatre", unlockLevel = 24, capBonus = 115, coinCost = 1350, materials = { Bricks = 6, Planks = 7, Panes = 10 }, buildSeconds = 10 * HOUR, xp = 230, order = 21, color = { 215, 200, 175 } },
 	SculpturePark = { id = "SculpturePark", displayName = "Sculpture Park", unlockLevel = 25, capBonus = 120, coinCost = 1600, materials = { Bricks = 7, Planks = 10, Panes = 8 }, buildSeconds = 11 * HOUR, xp = 240, order = 22, color = { 190, 210, 170 } },
 	BigTop = { id = "BigTop", displayName = "Big Top", unlockLevel = 26, capBonus = 125, coinCost = 1900, materials = { Bricks = 8, Planks = 7, Panes = 12 }, buildSeconds = 12 * HOUR, xp = 250, order = 23, color = { 220, 70, 70 } },
+	BusDepot = { id = "BusDepot", displayName = "Bus Depot", unlockLevel = 27, capBonus = 130, coinCost = 2200, materials = { Bricks = 6, Planks = 9, Panes = 14 }, buildSeconds = 13 * HOUR, xp = 260, order = 24, color = { 240, 200, 80 } },
 }
 
 for _, def in Houses do
