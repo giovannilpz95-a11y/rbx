@@ -53,6 +53,7 @@ return table.freeze({
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)
 	Debug_TestNeighbor = "Debug_TestNeighbor", -- make (or go to) a test neighbor's farm (Studio only)
 	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
+	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client

@@ -6,10 +6,12 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Net = require(Shared.Net)
+local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 
 local DataService = require(script.Parent.DataService)
+local EconomyService = require(script.Parent.EconomyService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
 
@@ -49,8 +51,32 @@ function DebugService.buildAll(player: Player): (boolean, string?)
 	return true
 end
 
+DebugService.GRANT = { gems = 500, coins = 5000, tools = 5 }
+
+-- Gems, Coins and a few of each tool, for checking speed-ups, the Shop's paid paths and
+-- anything that costs more than a test farm has. Logged under the "debug" reason.
+function DebugService.grant(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local grant = DebugService.GRANT
+	EconomyService.add(player, "Gems", grant.gems, "debug")
+	EconomyService.add(player, "Coins", grant.coins, "debug")
+	for id in Tools.tools do
+		data.toolShed.items[id] = (data.toolShed.items[id] or 0) + grant.tools
+	end
+	DataService.markDirty(player, true)
+	NetService.toast(
+		player,
+		string.format("Dev grant: +%d Gems, +%d Coins, +%d of each tool", grant.gems, grant.coins, grant.tools)
+	)
+	return true
+end
+
 function DebugService.init()
 	NetService.on(Net.Debug_BuildAll, 1, 2, DebugService.buildAll)
+	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
 end
 
 return DebugService

@@ -62,6 +62,7 @@ end
 local armed: { [string]: number } = {}
 local ARM_SECONDS = 4
 local lastGemTap = 0
+local lastDevTap = 0 -- Debug panel buttons (renderDebug)
 
 local function isArmed(key: string): boolean
 	return armed[key] ~= nil and time() - armed[key] < ARM_SECONDS
@@ -1459,15 +1460,32 @@ local function renderDebug(state: { [string]: any })
 			Parent = body,
 		}
 	)
-	Ui.button("Replay the first-session guide", function()
-		Remotes.fire("Debug_RestartTutorial")
-	end, { Size = UDim2.fromOffset(260, 34), LayoutOrder = 5, Parent = body })
-	Ui.button("Build everything (ignores level and Population)", function()
-		Remotes.fire("Debug_BuildAll")
-	end, { Size = UDim2.fromOffset(360, 34), LayoutOrder = 7, Parent = body })
-	Ui.button("Pretend I was away (summary + daily gift)", function()
-		Remotes.fire("Debug_Away")
-	end, { Size = UDim2.fromOffset(320, 34), LayoutOrder = 6, Parent = body })
+	-- One tap, acting on press: the panel re-renders on every state push, which can swap a
+	-- button out between press and release and lose a plain click. Press and Activated can
+	-- both arrive for one tap, so the first one wins.
+	local function devButton(text: string, remote: string, width: number, order: number)
+		local function fire()
+			if time() - lastDevTap < 0.35 then
+				return
+			end
+			lastDevTap = time()
+			print("[Dev] " .. remote)
+			Remotes.fire(remote)
+		end
+		local button = Ui.button(text, fire, { Size = UDim2.fromOffset(width, 34), LayoutOrder = order, Parent = body })
+		button.InputBegan:Connect(function(input)
+			if
+				input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch
+			then
+				fire()
+			end
+		end)
+	end
+	devButton("Replay the first-session guide", "Debug_RestartTutorial", 260, 5)
+	devButton("Pretend I was away (summary + daily gift)", "Debug_Away", 320, 6)
+	devButton("Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
+	devButton("+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
 end
 
 ---------------------------------------------------------------------------------------------

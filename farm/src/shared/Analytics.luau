@@ -95,6 +95,7 @@ local PREFIX_SKU: { [string]: string } = {
 	tutorial = "Tutorial",
 	croppop = "CropPop",
 	drop = "HarvestDrop",
+	debug = "DevGrant", -- Studio only; never reaches live analytics
 }
 
 -- An EconomyService reason ("seed_wheat", "speedup_bakery", "robux_Pouch") -> the SKU
