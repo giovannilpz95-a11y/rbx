@@ -46,6 +46,8 @@ TileStyle.Sunflower = { color = Color3.fromRGB(255, 196, 30), glyph = "🌻" }
 TileStyle.GoalGlyphs = {
 	Mud = "🟫",
 	HayBale = "🌾",
+	Frost = "❄️",
+	Weeds = "🌿",
 }
 
 TileStyle.BoosterGlyphs = {
@@ -66,6 +68,8 @@ TileStyle.Board = {
 	mud = Color3.fromRGB(122, 84, 52),
 	bale = Color3.fromRGB(226, 188, 92),
 	baleText = Color3.fromRGB(110, 76, 30),
+	frost = Color3.fromRGB(196, 232, 255),
+	weed = Color3.fromRGB(96, 158, 66),
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

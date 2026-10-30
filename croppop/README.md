@@ -24,7 +24,7 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 
 - **Engine** (`Engine.new(level, seed, options)`, then `trySwap(x1, y1, x2, y2)`) runs the whole move: the swap, matches, power-ups, cascades, refills and a shuffle if the board is stuck. It returns phases (`Swap`, `Pop`, `Drop`, `Shuffle`) that `BoardView` animates.
 - **Rules (first-pass):** a line of 3+ or a 2x2 square matches. 4 in a line makes a **Seed Sprayer** (a row of 4 clears a row, a column of 4 a column), a 2x2 square makes a **Bumblebee**, a T or L makes a **Hay Bomb** (clears a diamond 2 steps out), 5 in a line makes a **Sunflower**. Swapping two power-ups combines them; a Sunflower swapped with a tile clears that colour.
-- **Obstacles and goals:** holes in the board shape, **mud** under tiles (1 or 2 layers) and **hay bales** (1 to 3 layers, hit by neighbouring matches and blasts). Goals: collect N of a tile, clear all mud, break all hay bales.
+- **Obstacles and goals:** holes in the board shape, **mud** under tiles (1 or 2 layers), **hay bales** (1 to 3 layers, hit by neighbouring matches and blasts), **frost** over a tile (1 or 2 layers: the tile is frozen in place and can't be swapped, but still matches; each match or blast through it breaks a layer and the tile stays), and **weeds** (block a cell like a 1-layer bale; after any swap that pulls no weed, one spreads onto a plain tile next to a weed). Goals: collect N of a tile, clear all mud, break all hay bales, break all frost, pull all weeds (a spread adds one to pull).
 - **Determinism:** every random choice comes from `Rng` (xorshift32) seeded by the server, so the same seed and swaps always give the same board.
 - **Anti-cheat:** `StartLevel` gives the client a seed and a token. When the level ends, the client sends its swaps to `FinishLevel`; the server replays them and only fires `ServerStorage.CropPopLevelWon(player, levelId, rewards, firstWin)` if the replay wins. The farm economy should listen to that event to pay Coins and XP.
 - **Hearts:** 5 at most, one back every 30 minutes, even offline. Starting a level holds a heart and a win gives it back, so only losses (and quitting) cost one. When they're all gone, a full refill costs 36 Gems (Township's 5 lives for 900 T-cash, rescaled).
@@ -33,7 +33,7 @@ The button is temporary. The Puzzle Porch and the Town Square cabinet should cal
 - **Hot Streak:** win levels in a row and the next level starts with free power-ups: a Seed Sprayer after 1 win, plus a Hay Bomb after 2, plus a Sunflower from 3. A loss or leaving a level part-way ends it (the X asks first). The streak is in the save, and a save made mid-level stores 0, so dropping out ends it too.
 - **Not enough Gems:** if the farm shares the balance (`ServerStorage.CropPopGetGems(player)`), offers the player can't afford are greyed with "Not enough 💎" before any tap. Without it, the same state shows after a charge fails.
 - **Saving and Gems:** the farm owns the save. It calls `ServerStorage.CropPopLoadSave(player, puzzleBlock)` when the profile loads and reads `CropPopGetSave(player)` before each save. Until the save loads, levels can't start (Studio without the farm falls back to a fresh state after 10 seconds). Buying calls the farm's `CropPopSpendGems(player, amount, reason)`.
-- **Levels:** 100 of them, as Luau tables (layout strings, colours, goals, moves, rewards) in `Levels/Set01.luau` to `Set04.luau`, 25 each. Every 5th level is Tough and every 10th from 20 is Super Tough. Thick mud comes in at level 13, 2-layer bales at 9, 3-layer bales at 26, and six tile colours on some hard levels from 30. The Trail shows the levels you've reached and the next 4 locked ones.
+- **Levels:** 100 of them, as Luau tables (layout strings, colours, goals, moves, rewards) in `Levels/Set01.luau` to `Set04.luau`, 25 each. Every 5th level is Tough and every 10th from 20 is Super Tough. 2-layer bales come in at level 9, thick mud at 13, frost at 21 (its intro level), 3-layer bales at 26, six tile colours on some hard levels from 30, thick frost at 33, and weeds at 41 (its intro level). Level names that promise an obstacle ("Muddy Boots", "Rolling Bales") get it. The Trail shows the levels you've reached and the next 4 locked ones.
 
 ## Making levels
 
@@ -47,8 +47,8 @@ Hand changes go through the level editor below; once a level ships, change it th
 
 ## Level editor (Studio only)
 
-On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode.
-- Paint the board with the brushes: cell, hole, mud, double mud, and hay bales with 1–3 layers.
+On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode. Studio unlocks every level; **Dev 🔒** on the Trail shows it locked to your real progress, as a player sees it.
+- Paint the board with the brushes: cell, hole, mud, double mud, hay bales with 1–3 layers, frost with 1–2 layers, and weeds.
 - Set the size, moves, difficulty, tile colours (3–6) and up to 3 goals.
 - The status line says what's wrong while the level isn't valid.
 - **Test play** plays the level offline, with no hearts, rewards or streak.
@@ -58,7 +58,7 @@ On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key
 
 ## Not in yet
 
-Unlimited Hearts rewards (the timer is in `Hearts`), the other obstacles, and real tile art.
+Unlimited Hearts rewards (the timer is in `Hearts`), the obstacles beyond the MVP's four (crates, chains, honey and the rest in F12), and real tile art.
 
 ## Tests
 
