@@ -16,6 +16,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local SocialService = require(script.Parent.SocialService)
 local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
@@ -90,9 +91,15 @@ function OrderService.fulfill(player: Player, slotIndex: any): (boolean, string?
 	data.orders.delivered += 1
 	slot.order = nil
 	slot.refreshAt = Clock.now() + Clock.duration(OrderConfig.truckReturnSeconds)
+	-- Good Neighbors: a little more with friends around (14 Multiplayer Features G1)
+	local bonus = SocialService.neighborBonusCoins(player, order.rewardCoins)
 	EconomyService.add(player, "Coins", order.rewardCoins, "order")
+	EconomyService.add(player, "Coins", bonus, "order_goodneighbors")
 	EconomyService.add(player, "XP", order.rewardXP, "order")
-	NetService.popup(player, { kind = "Order", coins = order.rewardCoins, xp = order.rewardXP })
+	NetService.popup(
+		player,
+		{ kind = "Order", coins = order.rewardCoins + bonus, xp = order.rewardXP, neighbors = bonus }
+	)
 	PlotService.driveTruck(player, Clock.duration(OrderConfig.truckReturnSeconds))
 	TownService.onOrderDelivered(player)
 	return true

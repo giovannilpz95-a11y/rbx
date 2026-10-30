@@ -121,6 +121,87 @@ function SocialService.canHelp(helper: Player, owner: Player): (boolean, string?
 	return false, string.format("%s isn't taking help right now", owner.DisplayName)
 end
 
+-- Good Neighbors (14 G1): friends on the server who count toward the bonus: level 5+ (Studio
+-- skips the level) and active in the last 5 minutes, so idle alts don't.
+function SocialService.goodNeighbors(player: Player): number
+	local count = 0
+	for _, friend in SocialService.friendsOnServer(player) do
+		local data = DataService.get(friend)
+		if
+			data
+			and (data.level >= Social.neighborMinLevel or RunService:IsStudio())
+			and NetService.idleSeconds(friend) <= Social.neighborActiveSeconds
+		then
+			count += 1
+		end
+	end
+	return count
+end
+
+-- The extra Coins Good Neighbors adds to an order payout.
+function SocialService.neighborBonusCoins(player: Player, coins: number): number
+	return SocialRules.bonusCoins(coins, SocialRules.neighborBonus(SocialService.goodNeighbors(player)))
+end
+
+-- Who this player came to play with: the friend they followed into the game, or whose
+-- invite they accepted (Roblox Friend Referral: ReferredByPlayerId, or our invite's
+-- LaunchData). Studio has neither, so there it's anyone already on the server.
+local function joinedWith(player: Player): Player?
+	local candidates = { player.FollowUserId }
+	local ok, joinData = pcall(function()
+		return player:GetJoinData()
+	end)
+	if ok and type(joinData) == "table" then
+		table.insert(candidates, tonumber(joinData.ReferredByPlayerId) or 0)
+		table.insert(candidates, tonumber(joinData.LaunchData) or 0)
+	end
+	for _, userId in candidates do
+		local other = if userId ~= 0 then Players:GetPlayerByUserId(userId) else nil
+		if other and other ~= player then
+			return other
+		end
+	end
+	if RunService:IsStudio() then
+		for _, other in Players:GetPlayers() do
+			if other ~= player and DataService.get(other) then
+				return other
+			end
+		end
+	end
+	return nil
+end
+
+local function giveBoost(player: Player, friend: Player): boolean
+	local data = DataService.get(player)
+	if data == nil or not SocialRules.grantBoost(data.social, friend.UserId, Clock.now()) then
+		return false
+	end
+	DataService.markDirty(player, true)
+	NetService.pushState(player)
+	NetService.whenReady(player, function()
+		NetService.popup(player, { kind = "WelcomeBoost", name = friend.DisplayName })
+	end)
+	return true
+end
+
+-- The friend-join Welcome Boost (14 G3): playing together, not sending invites, is what's
+-- rewarded. The joiner always gets it; the friend they joined gets it too when the joiner is
+-- level 5+ (alts). Once per friend pair per UTC day.
+function SocialService.welcome(player: Player)
+	local friend = joinedWith(player)
+	if friend == nil or not SocialService.isFriend(player, friend) or SocialService.isBlocked(player, friend) then
+		return
+	end
+	local data = DataService.get(player)
+	if data == nil or DataService.get(friend) == nil then
+		return
+	end
+	giveBoost(player, friend)
+	if data.level >= Social.welcomeMinLevel or RunService:IsStudio() then
+		giveBoost(friend, player)
+	end
+end
+
 local function rootOf(player: Player): BasePart?
 	local character = player.Character
 	return character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -273,6 +354,10 @@ local function presenceTick()
 		local data = DataService.get(player)
 		if data then
 			player:SetAttribute("FarmLevel", data.level)
+			local neighbors = math.min(SocialService.goodNeighbors(player), 2)
+			if player:GetAttribute("GoodNeighbors") ~= neighbors then
+				player:SetAttribute("GoodNeighbors", neighbors)
+			end
 		end
 		local root = rootOf(player)
 		local owner = if root then PlotService.ownerAt(root.Position) else nil
