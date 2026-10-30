@@ -8,6 +8,7 @@ local Balance = require(Shared.Config.Balance)
 local Factories = require(Shared.Config.Factories)
 local Land = require(Shared.Config.Land)
 local Net = require(Shared.Net)
+local Quarry = require(Shared.Quarry)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
@@ -110,8 +111,13 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	if #factory.queue >= factory.slots then
 		return false, "The queue is full"
 	end
-	-- Inputs are taken right away, so a queued item can never stall.
-	if not InventoryService.remove(player, recipe.inputs) then
+	-- Inputs are taken right away, so a queued item can never stall. Bars smelt Quarry ore.
+	if recipe.fromOreShed then
+		if not Quarry.takeOre(data, recipe.inputs) then
+			return false, "Not enough ore in the Ore Shed. Dig for more in the Quarry."
+		end
+		DataService.markDirty(player)
+	elseif not InventoryService.remove(player, recipe.inputs) then
 		return false, "Not enough ingredients in the Barn"
 	end
 	local seconds = Tutorial.seconds(data, recipeId, recipe.seconds)
@@ -209,7 +215,7 @@ function FactoryService.buySlot(player: Player, factoryId: any): (boolean, strin
 	if factory == nil or def == nil or not factory.built then
 		return false
 	end
-	local gems = Speedup.nextSlotCost(def.queueSlots, factory.slots)
+	local gems = if def.fixedSlots then nil else Speedup.nextSlotCost(def.queueSlots, factory.slots)
 	if gems == nil then
 		return false, "This queue is as long as it gets"
 	end

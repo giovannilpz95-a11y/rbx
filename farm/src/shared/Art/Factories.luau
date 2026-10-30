@@ -624,6 +624,55 @@ local function jamKitchen(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
+-- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
+-- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
+local function smelter(model: Model, b: Kit.Builder, roof: Color3?): Parts
+	local body = shell(b, Palette.stoneLight, Palette.stoneDark)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 13.4, 3, roof or Palette.stoneDark, Palette.cream)
+	d.post("Stack", 9, 2.6, Vector3.new(-3, TOP + 3.5, 3.4), Palette.brick, { collide = true })
+	d.post("StackBand", 0.6, 2.9, Vector3.new(-3, TOP + 6.4, 3.4), Palette.stoneDark, { shadow = false })
+	local chimney = d.post("Chimney", 0.6, 2.2, Vector3.new(-3, TOP + 8.3, 3.4), Palette.stoneDark)
+	-- The furnace mouth: a brick surround, a dark throat and the glow
+	d.block("Furnace", Vector3.new(3.6, 3.4, 0.8), Vector3.new(-2.2, PLINTH + 1.7, FRONT - 0.3), Palette.brick)
+	d.block("Throat", Vector3.new(2.4, 1.8, 0.2), Vector3.new(-2.2, PLINTH + 1.5, FRONT - 0.75), Palette.stoneDark)
+	d.block(
+		"FurnaceGlow",
+		Vector3.new(2, 0.8, 0.2),
+		Vector3.new(-2.2, PLINTH + 1.1, FRONT - 0.9),
+		Palette.carrot,
+		{ shadow = false }
+	)
+	Kit.window(d, "Window", CFrame.new(-2.2, PLINTH + 5, FRONT), 2.6, 1.6, Palette.woodDark, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.6, 4.6, Palette.woodDark, Palette.stoneDark)
+	-- The anvil by the door
+	local anvil = Vector3.new(4.4, 0, FRONT - 2.6)
+	d.block("AnvilFoot", Vector3.new(0.9, 1.2, 0.9), anvil + Vector3.new(0, 0.6, 0), Palette.woodDark)
+	d.block("Anvil", Vector3.new(1.8, 0.6, 0.9), anvil + Vector3.new(0, 1.5, 0), Palette.metal)
+	-- Bars on a pallet against the wall
+	local pallet = Vector3.new(-4.4, 0, FRONT - 2.4)
+	d.block("Pallet", Vector3.new(1.8, 0.3, 1.8), pallet + Vector3.new(0, 0.15, 0), Palette.wood, { shadow = false })
+	for i, bar in
+		{ { -0.4, 0, Palette.brick:Lerp(Palette.carrot, 0.5) }, { 0.4, 0, Palette.coins }, { 0, 1, Palette.metal } }
+	do
+		d.block(
+			"Bar",
+			Vector3.new(0.7, 0.4, 1.4),
+			CFrame.new(pallet + Vector3.new(bar[1], 0.5 + bar[2] * 0.42, 0)) * Kit.yaw(if i == 3 then 90 else 0),
+			bar[3],
+			{ shadow = false }
+		)
+	end
+	local anim = animFolder(model)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("BarIcon", Vector3.new(1.4, 0.6, 0.3), at, Palette.coins, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(3.6, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Bakery = bakery,
 	FeedMill = feedMill,
@@ -640,6 +689,10 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	IceCreamParlor = iceCreamParlor,
 	PastryShop = pastryShop,
 	JamKitchen = jamKitchen,
+	Smelter = smelter,
+	Smelter2 = function(model: Model, b: Kit.Builder): Parts
+		return smelter(model, b, Palette.roofTeal)
+	end,
 }
 
 function ArtFactories.has(id: string): boolean

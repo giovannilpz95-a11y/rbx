@@ -45,18 +45,16 @@ local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
 local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
-local FACTORIES = {
-	"Bakery",
-	"FeedMill",
-	"Dairy",
-	"SugarMill",
-	"TextileMill",
-	"SnackFactory",
-	"Diner",
-	"PaperMill",
-	"FeedMill2",
-	"IceCreamParlor",
-}
+-- Every factory up to the highest built level, in unlock order
+local FACTORIES = {}
+for id, def in Factories do
+	if def.unlockLevel <= Levels.built then
+		table.insert(FACTORIES, id)
+	end
+end
+table.sort(FACTORIES, function(a, b)
+	return Factories[a].order < Factories[b].order
+end)
 local PLOT_PARTS_MAX = 2500 -- whole plot at full expansion (15 §5)
 
 return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), ok: (any, string) -> ())

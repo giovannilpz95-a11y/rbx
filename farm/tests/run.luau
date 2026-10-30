@@ -96,7 +96,9 @@ test("every recipe input and factory exists", function()
 		eq(recipe.id, id, "recipe id")
 		ok(Factories[recipe.factory] ~= nil, id .. " factory " .. recipe.factory)
 		for input in recipe.inputs do
-			ok(Items[input] ~= nil, id .. " input " .. input)
+			-- Bars smelt Quarry ore, which lives in the Ore Shed rather than the Barn
+			local exists = if recipe.fromOreShed then QuarryConfig.ores[input] ~= nil else Items[input] ~= nil
+			ok(exists, id .. " input " .. input)
 		end
 	end
 end)
@@ -120,6 +122,9 @@ test("every recipe of an enabled factory can be made in the MVP", function()
 	end
 	for _, id in Balance.enabledPens do
 		enabled[Animals.pens[id].product] = true
+	end
+	for id in QuarryConfig.ores do
+		enabled[id] = QuarryConfig.unlockLevel <= Levels.built -- dug in the Quarry
 	end
 	for id, recipe in Recipes do
 		enabled[id] = table.find(Balance.enabledFactories, recipe.factory) ~= nil
@@ -419,7 +424,7 @@ test("the Quarry: Township's numbers, a fixed shaft and Pickaxe digging", functi
 	for _, id in Quarry.ORE_IDS do
 		ok((seen[id] or 0) > 0, id .. " turns up somewhere in 400 m")
 	end
-	ok(seen.CopperOre > seen.GoldOre, "copper is commoner than gold")
+	ok(seen.CopperOre > seen.PlatinumOre, "copper is commoner than platinum")
 	-- Digging: only next to an open spot, Stone takes two swings, a Pickaxe a swing
 	eq((Quarry.canDig(data, 2, 1, now)), false, "row 2 is out of reach from the surface")
 	local col = 1
@@ -470,6 +475,45 @@ test("the Quarry: Township's numbers, a fixed shaft and Pickaxe digging", functi
 	eq(Quarry.claimFree(data, 7, now), QuarryConfig.dailyFree, "free Pickaxes")
 	eq(Quarry.claimFree(data, 7, now), 0, "once a day")
 	eq(Quarry.claimFree(data, 8, now), QuarryConfig.dailyFree, "next day")
+end)
+
+test("the Smelters: Township's Foundry numbers, Bars from Ore Shed ore", function()
+	local s1, s2 = Factories.Smelter, Factories.Smelter2
+	eq(s1.unlockLevel, 21, "Smelter level")
+	eq(s1.population, 730, "Smelter Population")
+	eq(s1.buildCost, 2000, "Smelter Coins")
+	eq(s1.buildSeconds, 36 * 3600, "Smelter build time")
+	eq(s1.xp, 87, "Smelter XP")
+	eq(s2.population, 920, "second Smelter Population")
+	eq(s2.buildCost, 8000, "second Smelter Coins")
+	eq(s2.xp, 335, "second Smelter XP")
+	eq(s2.makes, "Smelter", "second Smelter makes Bars")
+	ok(s1.queueSlots == 1 and s1.fixedSlots and s2.queueSlots == 1 and s2.fixedSlots, "one Bar at a time")
+	local bars = {
+		CopperBar = { "CopperOre", 1, 96, 41 },
+		SilverBar = { "SilverOre", 2, 144, 62 },
+		GoldBar = { "GoldOre", 3, 204, 87 },
+		PlatinumBar = { "PlatinumOre", 4, 300, 129 },
+	}
+	for id, want in bars do
+		local r = Recipes[id]
+		eq(r.factory, "Smelter", id .. " factory")
+		eq(r.inputs[want[1]], 5, id .. " takes 5 ore")
+		eq(r.seconds, want[2] * 3600, id .. " time")
+		eq(r.sellPrice, want[3], id .. " price")
+		eq(r.xp, want[4], id .. " XP")
+		ok(r.fromOreShed, id .. " smelts Ore Shed ore")
+		ok(Items[id] ~= nil and Items[id].kind == "Product", id .. " goes to the Barn")
+	end
+	local data = Profile.migrate(nil) :: any
+	data.oreShed.CopperOre = 7
+	ok(not Quarry.takeOre(data, { CopperOre = 8 }), "not enough ore takes nothing")
+	eq(data.oreShed.CopperOre, 7, "ore untouched")
+	ok(Quarry.takeOre(data, { CopperOre = 5 }), "5 ore for a Bar")
+	eq(data.oreShed.CopperOre, 2, "2 ore left")
+	ok(Quarry.takeOre(data, { CopperOre = 2 }), "the rest")
+	eq(data.oreShed.CopperOre, nil, "empty ore cleared")
+	eq(table.find(OrderGen.makeablePool(data), "CopperBar"), nil, "Bars never show up on orders")
 end)
 
 test("level rewards", function()

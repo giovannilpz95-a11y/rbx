@@ -225,4 +225,19 @@ function Quarry.claimFree(data: { [string]: any }, day: number, now: number): nu
 	return Config.dailyFree
 end
 
+-- Takes ore from the Ore Shed for a Smelter batch, all or nothing.
+function Quarry.takeOre(data: { [string]: any }, wants: { [string]: number }): boolean
+	local shed = data.oreShed
+	for id, qty in wants do
+		if (shed[id] or 0) < qty then
+			return false
+		end
+	end
+	for id, qty in wants do
+		local left = shed[id] - qty
+		shed[id] = if left > 0 then left else nil
+	end
+	return true
+end
+
 return Quarry

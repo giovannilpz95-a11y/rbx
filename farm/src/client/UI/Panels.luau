@@ -28,6 +28,7 @@ local Missing = require(Shared.Missing)
 local Settings = require(Shared.Settings)
 local Speedup = require(Shared.Speedup)
 local Prize = require(Shared.Config.Prize)
+local QuarryConfig = require(Shared.Config.Quarry)
 local Products = require(Shared.Config.Products)
 local PrizeRules = require(Shared.Prize)
 local Tools = require(Shared.Config.Tools)
@@ -217,7 +218,7 @@ local function sortedIds(defs: { [string]: { order: number } }, enabled: { strin
 end
 
 local function itemName(id: string): string
-	local item = Items[id]
+	local item = Items[id] or QuarryConfig.ores[id] -- ore isn't a Barn item
 	return if item then item.displayName else id
 end
 
@@ -1003,7 +1004,7 @@ local function factoryQueueAndShelf(
 			end
 		end
 	end
-	local slotCost = Speedup.nextSlotCost(def.queueSlots, preview.slots)
+	local slotCost = if def.fixedSlots then nil else Speedup.nextSlotCost(def.queueSlots, preview.slots)
 	if slotCost then
 		local buy = gemButton("slot:" .. factoryId, "+", slotCost, function()
 			Remotes.fire("Factory_BuySlot", factoryId)
@@ -1133,7 +1134,7 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		end
 		local hasRoom = #preview.queue < preview.slots
 		local buy, what = nil, nil
-		if not enough and not locked and hasRoom then
+		if not enough and not locked and hasRoom and not recipe.fromOreShed then
 			buy, what = missingButton("recipe:" .. id, recipe.inputs, {
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, 0, 0, 0),

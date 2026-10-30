@@ -33,6 +33,8 @@ ArtMotion.SPECS = {
 	PaperMill = { kind = "spin", pivot = "Roll", speed = 1.5 },
 	PastryShop = { kind = "spin", pivot = "Pin", speed = 2 },
 	JamKitchen = { kind = "bob", pivot = "Lid", speed = 4, amplitude = 0.6 },
+	Smelter = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
+	Smelter2 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 } :: { [string]: Spec }
 
 export type Rig = {
