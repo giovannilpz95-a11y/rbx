@@ -461,6 +461,12 @@ local function buildPlot(player: Player, slot: Slot): Model
 	for i, spot in DECOR_BUSHES do
 		Kit.bush(d, "Bush", spot, 1, Palette.treeTop, if i % 2 == 0 then Palette.flowerPink else Palette.flowerYellow)
 	end
+	-- Kit leaves non-colliding parts out of queries; placed decorations must still see them
+	for _, part in decor:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.CanQuery = true
+		end
+	end
 
 	local spawnPad = part({
 		Name = "SpawnPad",

@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Net = require(Shared.Net)
 local Progression = require(Shared.Progression)
+local Shop = require(Shared.Shop)
 local Timer = require(Shared.Timer)
 
 local DataService = require(script.Parent.DataService)
@@ -76,7 +77,8 @@ local function snapshot(data: { [string]: any })
 		atCap = info.atCap,
 		inventory = data.inventory.items,
 		barnUsed = itemsTotal,
-		barnCapacity = data.inventory.barnCapacity,
+		barnCapacity = Shop.barnCapacity(data), -- with the Big Barn pass
+		purchases = { bought = data.purchases.bought, passes = data.purchases.passes },
 		barnUpgrades = data.inventory.upgrades,
 		fields = data.fields,
 		factories = factories,

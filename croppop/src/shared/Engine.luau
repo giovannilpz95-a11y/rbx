@@ -9,13 +9,18 @@
 
 	  { kind = "Swap", from = {x, y}, to = {x, y}, ok = boolean, combo = boolean? }
 	  { kind = "Pop", removed = {{id, x, y, cause}}, created = {{piece, x, y}},
-	    transformed = {{id, power}}, bales = {{x, y, hp}}, mud = {{x, y, layers}},
-	    effects = {{type = "Spray" | "Bomb" | "Bee" | "Sun" | "Everything", ...}} }
+	    transformed = {{id, power}}, bales = {{x, y, hp, weed?}}, mud = {{x, y, layers}},
+	    frost = {{x, y, layers}},
+	    effects = {{type = "Spray" | "Bomb" | "Bee" | "Sun" | "Everything" | "Grow", ...}} }
 	  { kind = "Drop", moves = {Board.Move}, spawns = {Board.Spawn} }
 	  { kind = "Shuffle", moves = {Board.Move} }
 
 	A winning move with moves left over also plays the bonus round: a Pop phase
 	(with `bonus = { moves, coins }`) where leftover moves become Seed Sprayers.
+
+	Weeds: after a swap that pulls no weed, one weed spreads onto a plain tile
+	next to a weed (a Pop phase with a "Grow" effect; the tile is removed with
+	cause "weed" and the cell gets a weed).
 
 	The same level, seed, options and swaps always give the same result, which is
 	what lets the server replay a client's run (see Replay.luau).
@@ -35,6 +40,7 @@ local BOMB_RADIUS = 2 -- Hay Bomb clears every cell within this many steps (diam
 local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
+local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
 
 local NEIGHBORS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
 
@@ -68,6 +74,7 @@ function Engine.new(level, seed: number, options: Options?)
 		stats = { powerUpsMade = 0, combos = 0, cascades = 0 },
 		boostersUsed = {}, -- in-level booster kind -> times used
 		continues = 0, -- paid +5-move continues taken
+		weedsPulled = 0, -- during the current action (stops weeds spreading)
 	}, Engine)
 
 	if options and options.startPowerUps then
@@ -117,6 +124,7 @@ local function newWave()
 		transformed = {},
 		bales = {},
 		mud = {},
+		frost = {},
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
 		pendingCreates = {},
@@ -127,6 +135,13 @@ end
 function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolean?)
 	local piece = cell.piece
 	if not piece then
+		return
+	end
+	if cell.frost > 0 then
+		-- The tile stays; only one frost layer breaks.
+		cell.frost -= 1
+		table.insert(wave.frost, { x = cell.x, y = cell.y, layers = cell.frost })
+		self.goals:onFrost()
 		return
 	end
 	cell.piece = nil
@@ -144,6 +159,13 @@ end
 
 function Engine._damageBale(self, wave, cell)
 	cell.bale -= 1
+	if cell.weed then
+		cell.weed = false
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, weed = true })
+		self.goals:onWeed()
+		self.weedsPulled += 1
+		return
+	end
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale })
 	if cell.bale == 0 then
 		self.goals:onBale()
@@ -208,15 +230,19 @@ function Engine._mostCommonColor(self): number?
 	return best
 end
 
--- Bumblebees go for what the level needs: hay bales, then mud, then goal tiles.
+-- Bumblebees go for what the level needs: weeds and hay bales, then mud and
+-- frost, then goal tiles.
 function Engine._chooseBeeTarget(self)
 	local goals = self.goals
 	local tiers = { {}, {}, {}, {} }
 	self.board:eachCell(function(cell)
 		if cell.bale > 0 then
-			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
+			local wanted = if cell.weed then goals:wants("Weeds") else goals:wants("HayBale")
+			table.insert(if wanted then tiers[1] else tiers[4], cell)
 		elseif cell.piece then
-			if cell.mud > 0 and goals:wants("Mud") then
+			if cell.frost > 0 and goals:wants("Frost") then
+				table.insert(tiers[2], cell)
+			elseif cell.mud > 0 and goals:wants("Mud") then
 				table.insert(tiers[2], cell)
 			elseif goals:wants("Collect", cell.piece.color) then
 				table.insert(tiers[3], cell)
@@ -332,7 +358,7 @@ function Engine._combo(self, wave, a, b)
 		local targets = { otherCell }
 		self.board:eachCell(function(cell)
 			local piece = cell.piece
-			if piece and cell.bale == 0 and piece.power == nil and piece.color == other.color then
+			if piece and cell.bale == 0 and cell.frost == 0 and piece.power == nil and piece.color == other.color then
 				if Tiles.isSprayer(other.power) then
 					piece.power = if self.rng:int(1, 2) == 1 then Power.SprayerRow else Power.SprayerColumn
 				else
@@ -411,8 +437,60 @@ function Engine._finishWave(self, wave, phases)
 		transformed = wave.transformed,
 		bales = wave.bales,
 		mud = wave.mud,
+		frost = wave.frost,
 		effects = wave.effects,
 	})
+end
+
+-- After a swap that pulled no weed, one weed spreads onto a neighbouring plain
+-- tile, until weeds cover a third of the board.
+function Engine._growWeeds(self, phases)
+	local board = self.board
+	local candidates, seen = {}, {}
+	local cells, weeds = 0, 0
+	board:eachCell(function(cell)
+		cells += 1
+		if cell.weed then
+			weeds += 1
+		end
+	end)
+	if weeds * WEED_COVER_LIMIT >= cells then
+		return
+	end
+	board:eachCell(function(cell)
+		if cell.weed then
+			for _, d in NEIGHBORS do
+				local n = board:get(cell.x + d[1], cell.y + d[2])
+				if n and not seen[n] and Board.isMovable(n) and n.piece.power == nil then
+					seen[n] = true
+					table.insert(candidates, n)
+				end
+			end
+		end
+	end)
+	if #candidates == 0 then
+		return
+	end
+	-- Row-major order keeps the pick the same on client and server.
+	table.sort(candidates, function(a, b)
+		if a.y ~= b.y then
+			return a.y < b.y
+		end
+		return a.x < b.x
+	end)
+	local cell = candidates[self.rng:int(1, #candidates)]
+	local wave = newWave()
+	table.insert(wave.removed, { id = cell.piece.id, x = cell.x, y = cell.y, cause = "weed" })
+	cell.piece = nil
+	cell.bale = 1
+	cell.weed = true
+	self.goals:onWeedGrown()
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, weed = true })
+	table.insert(wave.effects, { type = "Grow", x = cell.x, y = cell.y })
+	self:_finishWave(wave, phases)
+	if not Matcher.hasPossibleMove(board) then
+		table.insert(phases, { kind = "Shuffle", moves = board:shuffle(self.rng, self.colors) })
+	end
 end
 
 -- Drops, refills and cascades until the board is still, then shuffles if stuck.
@@ -490,6 +568,10 @@ function Engine._updateStatus(self)
 		self.status = "Won"
 	elseif self.movesLeft <= 0 then
 		self.status = "Lost"
+	elseif not Matcher.hasPossibleMove(self.board) then
+		-- Even a shuffle found no swap (frost or weeds have taken too much room).
+		self.status = "Lost"
+		self.stuck = true
 	end
 end
 
@@ -517,6 +599,7 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 	local phases = {}
 	local swapPhase = { kind = "Swap", from = { x1, y1 }, to = { x2, y2 }, ok = true }
 
+	self.weedsPulled = 0
 	local isCombo = (pa.power ~= nil and pb.power ~= nil)
 		or pa.power == Power.Sunflower
 		or pb.power == Power.Sunflower
@@ -543,13 +626,16 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 		self:_finishWave(wave, phases)
 	end
 
-	self:_afterAction(phases)
+	self:_afterAction(phases, true)
 	return true, phases
 end
 
--- Cascades, then win/lose, then the leftover-moves bonus.
-function Engine._afterAction(self, phases)
+-- Cascades, weeds spreading (after a swap), then win/lose, then the leftover-moves bonus.
+function Engine._afterAction(self, phases, wasSwap: boolean?)
 	self:_settle(phases)
+	if wasSwap and self.weedsPulled == 0 and not self.goals:isComplete() then
+		self:_growWeeds(phases)
+	end
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then
 		self:_bonusRound(phases)
@@ -595,7 +681,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 		for x = 1, board.width do
 			self:_hit(wave, x, y)
 		end
-		if #wave.removed == 0 and #wave.bales == 0 then
+		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 then
 			return false, {} -- an empty row
 		end
 		self:_finishWave(wave, phases)
@@ -659,7 +745,7 @@ end
 -- A paid continue after running out of moves: +5 moves, and from the second
 -- one a power-up on the board (Boosters.Continue). Only when the level is lost.
 function Engine.continue(self): (boolean, { any })
-	if self.status ~= "Lost" then
+	if self.status ~= "Lost" or self.stuck then
 		return false, {}
 	end
 	self.continues += 1
@@ -668,7 +754,7 @@ function Engine.continue(self): (boolean, { any })
 	local phases = {}
 	if step.power then
 		local placed, shuffle = self:_placePowerUps({ step.power })
-		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, effects = {} })
+		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, effects = {} })
 		if shuffle then
 			table.insert(phases, shuffle)
 		end

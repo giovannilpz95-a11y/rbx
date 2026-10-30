@@ -35,8 +35,26 @@ local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
 Hud.sprintButton = nil :: TextButton?
 
+-- At most this many toasts at once; a burst (Build everything, several new fields) drops
+-- the oldest instead of covering the top of the screen
+local MAX_TOASTS = 3
+local toastCount = 0
+
 function Hud.toast(message: string, variant: string?)
-	Kit.toast(toastStack, message, variant)
+	toastCount += 1
+	Kit.toast(toastStack, message, variant).LayoutOrder = toastCount
+	local shown = {}
+	for _, child in toastStack:GetChildren() do
+		if child:IsA("TextLabel") then
+			table.insert(shown, child)
+		end
+	end
+	table.sort(shown, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i = 1, #shown - MAX_TOASTS do
+		shown[i]:Destroy()
+	end
 end
 
 function Hud.popup(payload: { [string]: any })
@@ -60,6 +78,13 @@ function Hud.popup(payload: { [string]: any })
 		Hud.toast(string.format("A Prize Crop: %s! It's in your Prize Basket (Barn).", payload.name))
 	elseif payload.kind == "PrizeLost" then
 		Hud.toast("A Prize Crop grew, but your Prize Basket is full, so it went to the Barn.")
+	elseif payload.kind == "Purchase" then
+		Hud.toast(
+			if payload.gems
+				then string.format("Thank you! %s: +%d Gems", payload.name, payload.gems)
+				else string.format("Thank you! %s is yours.", payload.name),
+			"celebrate"
+		)
 	elseif payload.kind == "Crier" then
 		Hud.toast(payload.text)
 	elseif payload.kind == "Field" then
@@ -204,7 +229,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -214, 1, -14),
-		Size = UDim2.fromOffset(440, 64),
+		Size = UDim2.fromOffset(540, 64),
 		Parent = gui,
 	}, {
 		Ui.new("UIListLayout", {
@@ -220,6 +245,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		{ "🧺", "Barn", "B", "Barn" },
 		{ "🏠", "Build", "F", "Buildings" },
 		{ "🏘️", "Town", "T", "Town" },
+		{ "💎", "Shop", "G", "Shop" },
 	}
 	if RunService:IsStudio() then
 		table.insert(buttons, { "🔧", "Debug", "`", "Debug" })
