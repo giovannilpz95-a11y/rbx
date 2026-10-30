@@ -37,6 +37,8 @@ local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
 -- Set by UI/LevelUp: shows the celebration window instead of the level-up toast
 Hud.levelUpHandler = nil :: ((payload: { [string]: any }) -> ())?
+-- Screens that take over a pop-up kind instead of its toast (UI/DailyGift: "Daily")
+Hud.handlers = {} :: { [string]: (payload: { [string]: any }) -> () }
 Hud.sprintButton = nil :: TextButton?
 
 -- At most this many toasts at once; a burst (Build everything, several new fields) drops
@@ -62,7 +64,9 @@ function Hud.toast(message: string, variant: string?)
 end
 
 function Hud.popup(payload: { [string]: any })
-	if payload.kind == "LevelUp" and Hud.levelUpHandler then
+	if Hud.handlers[payload.kind] then
+		Hud.handlers[payload.kind](payload)
+	elseif payload.kind == "LevelUp" and Hud.levelUpHandler then
 		Hud.levelUpHandler(payload)
 	elseif payload.kind == "LevelUp" then
 		local parts = { string.format("Level %d!", payload.level) }

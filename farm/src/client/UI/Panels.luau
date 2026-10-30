@@ -852,6 +852,162 @@ local function renderBarn(state: { [string]: any })
 	end
 end
 
+-- The factory's queue as square slots (the running one fills up with a bar and shows its
+-- time) and the shelf of finished goods with Collect all (G8, Township's factory window).
+local function factoryQueueAndShelf(
+	def: { [string]: any },
+	preview: { [string]: any },
+	factoryId: string,
+	order: number
+): number
+	local Kit = Ui.theme.Kit
+	local now = ClientStore.now()
+
+	-- Shelf: finished goods waiting on the output table
+	local shelf = row(76, order)
+	order += 1
+	Ui.label(string.format("Ready  %d / %d", preview.outputCount, def.trayCapacity), {
+		Size = UDim2.new(1, -110, 0, 20),
+		Font = Enum.Font.GothamBold,
+		Parent = shelf,
+	})
+	local goods = Ui.new("Frame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(0, 22),
+		Size = UDim2.new(1, -110, 0, 42),
+		Parent = shelf,
+	}, { Ui.list(6, true) })
+	local outputIds = {}
+	for item, qty in preview.output do
+		if qty > 0 then
+			table.insert(outputIds, item)
+		end
+	end
+	table.sort(outputIds)
+	if #outputIds == 0 then
+		Ui.label("Nothing ready yet.", { Size = UDim2.new(1, 0, 1, 0), TextColor3 = Ui.colors.muted, Parent = goods })
+	end
+	for n, item in outputIds do
+		local slot = Ui.new("Frame", {
+			Name = item,
+			BackgroundTransparency = 1,
+			Size = UDim2.fromOffset(42, 42),
+			LayoutOrder = n,
+			Parent = goods,
+		})
+		itemIcon(item, slot, 40)
+		local count = Ui.label("x" .. preview.output[item], {
+			AnchorPoint = Vector2.new(1, 1),
+			Position = UDim2.fromScale(1, 1),
+			Size = UDim2.fromOffset(30, 16),
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Parent = slot,
+		})
+		Kit.textOutline(count, Color3.new(1, 1, 1))
+	end
+	local near = Panels.canCollect(factoryId)
+	local collect = Ui.button("Collect all", function()
+		Remotes.fire("Factory_Collect", factoryId)
+	end, {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		Size = UDim2.fromOffset(100, 40),
+		TextScaled = true,
+		Parent = shelf,
+	})
+	Ui.setEnabled(collect, preview.outputCount > 0 and near)
+	if preview.outputCount > 0 and not near then
+		Ui.label("Walk to the output table to collect.", {
+			LayoutOrder = order,
+			TextColor3 = Ui.colors.muted,
+			TextSize = 14,
+			Parent = body,
+		})
+		order += 1
+	end
+
+	-- Queue: one square per slot, then a + to buy another
+	local queueRow = row(118, order)
+	order += 1
+	Ui.label(string.format("Queue  %d / %d", #preview.queue, preview.slots), {
+		Size = UDim2.new(1, -170, 0, 20),
+		Font = Enum.Font.GothamBold,
+		Parent = queueRow,
+	})
+	local slots = Ui.new("ScrollingFrame", {
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Position = UDim2.fromOffset(0, 24),
+		Size = UDim2.new(1, 0, 0, 62),
+		AutomaticCanvasSize = Enum.AutomaticSize.X,
+		CanvasSize = UDim2.new(),
+		ScrollingDirection = Enum.ScrollingDirection.X,
+		ScrollBarThickness = 4,
+		Selectable = false,
+		Parent = queueRow,
+	}, { Ui.list(6, true) })
+	for i = 1, preview.slots do
+		local job = preview.queue[i]
+		local slot = Ui.card({ Name = "Slot" .. i, Size = UDim2.fromOffset(56, 56), LayoutOrder = i, Parent = slots })
+		if job then
+			itemIcon(job.recipe, slot, 40, UDim2.fromOffset(8, 2))
+			local running = job.readyAt ~= nil and job.readyAt > now
+			if running then
+				local seconds = math.max(job.seconds or 1, 1)
+				local bar = Kit.bar(Ui.colors.ready, {
+					Position = UDim2.new(0, 4, 1, -10),
+					Size = UDim2.new(1, -8, 0, 7),
+					Parent = slot,
+				})
+				Kit.setBar(bar, 1 - Timer.remaining(job.readyAt, now) / seconds)
+				local stroke = slot:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					stroke.Color = Ui.colors.ready
+					stroke.Thickness = 2.5
+					stroke.Transparency = 0
+				end
+			end
+		end
+	end
+	local slotCost = Speedup.nextSlotCost(def.queueSlots, preview.slots)
+	if slotCost then
+		gemButton("slot:" .. factoryId, "+", slotCost, function()
+			Remotes.fire("Factory_BuySlot", factoryId)
+		end, {
+			Size = UDim2.fromOffset(56, 56),
+			TextScaled = true,
+			LayoutOrder = preview.slots + 1,
+			Parent = slots,
+		})
+	end
+	-- The running job: name, time left and Finish
+	local first = preview.queue[1]
+	if first and first.readyAt and first.readyAt > now then
+		Ui.label(
+			string.format("%s  %s left", itemName(first.recipe), Timer.format(Timer.remaining(first.readyAt, now))),
+			{
+				Position = UDim2.fromOffset(0, 88),
+				Size = UDim2.new(1, -170, 0, 22),
+				TextColor3 = Ui.colors.muted,
+				Parent = queueRow,
+			}
+		)
+		gemButton("job:" .. factoryId, "Finish", Speedup.production(first.readyAt - now), function()
+			Remotes.fire("Factory_SpeedUp", factoryId)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 84),
+			Size = UDim2.fromOffset(160, 28),
+			Parent = queueRow,
+		})
+	else
+		queueRow.Size = UDim2.new(1, -8, 0, 96)
+	end
+	return order
+end
+
 local function renderFactory(state: { [string]: any }, factoryId: string)
 	local def = Factories[factoryId]
 	local preview = ClientStore.factoryPreview(factoryId)
@@ -900,8 +1056,9 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		return
 	end
 
+	local order = factoryQueueAndShelf(def, preview, factoryId, 1)
+
 	-- Recipes (paperwork: queue from anywhere)
-	local order = 1
 	local recipeIds = {}
 	for id, recipe in Recipes do
 		if recipe.factory == factoryId then
@@ -969,73 +1126,6 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 			})
 			Ui.setEnabled(make, enough and not locked and hasRoom)
 		end
-	end
-
-	-- Queue
-	local queueLine = row(42, order)
-	order += 1
-	Ui.label(
-		string.format("Queue  %d / %d", #preview.queue, preview.slots),
-		{ Size = UDim2.new(1, -170, 1, 0), Font = Enum.Font.GothamBold, Parent = queueLine }
-	)
-	local slotCost = Speedup.nextSlotCost(def.queueSlots, preview.slots)
-	if slotCost then
-		gemButton("slot:" .. factoryId, "+1 slot", slotCost, function()
-			Remotes.fire("Factory_BuySlot", factoryId)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(160, 30),
-			Parent = queueLine,
-		})
-	end
-	for i, job in preview.queue do
-		local running = job.readyAt ~= nil and job.readyAt > now
-		local status = if running then Timer.format(Timer.remaining(job.readyAt, now)) .. " left" else "waiting"
-		local line = Ui.new("Frame", {
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1, -4, 0, 30),
-			LayoutOrder = order,
-			Parent = body,
-		})
-		Ui.label(
-			string.format("%d. %s  %s", i, itemName(job.recipe), status),
-			{ Size = UDim2.new(1, -170, 1, 0), TextColor3 = Ui.colors.muted, Parent = line }
-		)
-		if i == 1 and running then
-			gemButton("job:" .. factoryId, "Finish", Speedup.production(job.readyAt - now), function()
-				Remotes.fire("Factory_SpeedUp", factoryId)
-			end, {
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, 0, 0, 0),
-				Size = UDim2.fromOffset(160, 28),
-				Parent = line,
-			})
-		end
-		order += 1
-	end
-
-	-- Output tray (hands-on: walk past the table, or tap Collect when in reach)
-	local tray = row(46, order)
-	Ui.label(
-		string.format("Ready on the table: %d / %d", preview.outputCount, def.trayCapacity),
-		{ Size = UDim2.new(1, -100, 1, 0), Parent = tray }
-	)
-	local collect = Ui.button("Collect", function()
-		Remotes.fire("Factory_Collect", factoryId)
-	end, {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		Size = UDim2.fromOffset(84, 30),
-		Parent = tray,
-	})
-	local near = Panels.canCollect(factoryId)
-	Ui.setEnabled(collect, preview.outputCount > 0 and near)
-	if preview.outputCount > 0 and not near then
-		Ui.label(
-			"Walk to the output table to collect.",
-			{ LayoutOrder = order + 1, TextColor3 = Ui.colors.muted, TextSize = 14, Parent = body }
-		)
 	end
 end
 
