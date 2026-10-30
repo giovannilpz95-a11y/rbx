@@ -31,6 +31,7 @@ local ArtCommunity = require(Shared.Art.Community)
 local ArtCrops = require(Shared.Art.Crops)
 local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
+local ArtMerge = require(Shared.Art.Merge)
 local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtFolk = require(Shared.Art.Folk)
 local ArtLighting = require(Shared.Art.Lighting)
@@ -730,6 +731,10 @@ local function townModel(
 		label(body, labelText, 8, UDim2.fromOffset(140, 28), 40)
 	end
 	holder.Parent = folder
+	if not building then
+		-- A finished building never moves: union it into one part (Art/Merge, the part budget)
+		task.spawn(ArtMerge.merge, holder, body)
+	end
 end
 
 local function refreshTown(player: Player, model: Model, data: { [string]: any }, now: number)
@@ -1087,7 +1092,9 @@ local function refreshDecor(player: Player, model: Model, data: { [string]: any 
 	local slot = slotByPlayer[player]
 	for i, p in data.decor do
 		local origin = slot.cframe * CFrame.new(p.x, 0.25, p.z) * CFrame.Angles(0, p.r * math.pi / 2, 0)
-		DecorModels.build(p.id, origin, i).Parent = folder
+		local decor = DecorModels.build(p.id, origin, i)
+		decor.Parent = folder
+		DecorModels.merge(decor)
 	end
 end
 

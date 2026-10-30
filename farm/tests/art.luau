@@ -21,6 +21,7 @@ local ArtCommunity = require("../src/shared/Art/Community")
 local ArtCrops = require("../src/shared/Art/Crops")
 local ArtDecor = require("../src/shared/Art/Decor")
 local ArtMarket = require("../src/shared/Art/Market")
+local ArtMerge = require("../src/shared/Art/Merge")
 local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
@@ -373,6 +374,84 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(ArtMotion.cropSway(1.3).Position:FuzzyEq(Vector3.zero, 1e-6), "sway only rotates")
 	end)
 
+	test("art: finished buildings and decorations merge into one part at runtime", function()
+		-- A stand-in for GeometryService: one plain part where the union would be
+		local calls = 0
+		local stub = {
+			UnionAsync = function(_self, primary: BasePart, parts: { BasePart }, _options)
+				calls += 1
+				local u = Instance.new("Part")
+				u.CFrame = primary.CFrame * CFrame.new(0, 2, 0)
+				u.Size = Vector3.new(4, 4, 4)
+				return { u }
+			end,
+		}
+		local failing = {
+			UnionAsync = function()
+				error("CSG failed")
+			end,
+		}
+		local function house(): (Model, BasePart)
+			local folder = Instance.new("Folder")
+			local m = Instance.new("Model")
+			local body = ArtHouses.build("Cottage", m, CFrame.new(), { size = 8 })
+			body:SetAttribute("Interact", "Town")
+			local gui = Instance.new("BillboardGui")
+			gui.Name = "Label"
+			gui.Parent = body
+			m.Parent = folder
+			return m, body
+		end
+
+		-- Every House and Community Building has something to merge and few parts left over
+		for id in Town.houses do
+			local m = Instance.new("Model")
+			local body = ArtHouses.build(id, m, CFrame.new(), { size = 8 })
+			local merge = ArtMerge.split(m, body)
+			ok(#merge > 0, id .. " has parts to merge")
+			ok(ArtMerge.count(m, body) <= 3, id .. " merges down to 3 parts or fewer")
+		end
+		for id in Town.community do
+			local m = Instance.new("Model")
+			local body = ArtCommunity.build(id, m, CFrame.new(), 12)
+			ok(ArtMerge.count(m, body) <= 8, id .. " merges down to 8 parts or fewer")
+		end
+
+		local m, body = house()
+		local _, keep = ArtMerge.split(m, body)
+		local union = ArtMerge.merge(m, body, nil, stub)
+		ok(union ~= body, "merged")
+		eq(calls, 1, "one union per building")
+		eq(union.Name, "Body", "the union takes the body's name")
+		eq(union:GetAttribute("Interact"), "Town", "and its tap target")
+		eq(union.Parent, m, "in the building's model")
+		eq(Kit.countParts(m), 1 + #keep, "the merged parts are gone")
+		local label = union:FindFirstChild("Label") :: BillboardGui
+		ok(label ~= nil and label.Adornee ~= nil and label.Adornee.Name == "BodyAnchor", "label kept at the old body")
+		ok(body.Parent == nil, "the old body is gone")
+
+		local m2, body2 = house()
+		local before = Kit.countParts(m2)
+		eq(ArtMerge.merge(m2, body2, nil, failing), body2, "a failed union leaves the building as it was")
+		eq(Kit.countParts(m2), before, "every part stays")
+
+		local m3, body3 = house()
+		m3.Parent = nil -- rebuilt while the union was being made
+		eq(ArtMerge.merge(m3, body3, nil, stub), body3, "a building taken away keeps its parts")
+		eq(ArtMerge.merge(m3, body3, nil, nil), body3, "no GeometryService outside Roblox: nothing happens")
+
+		-- Decorations: the look under the invisible tap root becomes one "Look", and the
+		-- lamp's Neon lantern stays its own part
+		local folder = Instance.new("Folder")
+		local root = Instance.new("Part")
+		root.Parent = folder
+		ArtDecor.build("LampPost", root, CFrame.new())
+		local look = ArtMerge.mergeUnder(root, stub)
+		ok(look ~= nil and look.Name == "Look" and look.Parent == root, "decoration look merged under its root")
+		ok(look ~= nil and look.CanCollide, "the lamp post still blocks the avatar")
+		ok(root:FindFirstChild("Lantern") ~= nil, "the glowing lantern stays separate")
+	end)
+
 	test("art: train set and Market stall build within budget", function()
 		local function hinged(root: Instance, name: string)
 			local found = 0
@@ -662,13 +741,41 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			add(m, 1)
 			total += biggestProp * Factories[id].trayCapacity
 		end
-		-- Barn, board, dock, truck, gate, decoration: use their budgets
-		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25 + 40
+		-- Barn, board, dock, truck, gate: use their budgets
+		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
 		-- Town Hall at full height, the Puzzle Porch and the four guides
 		total += ArtTown.TOWNHALL_PARTS_MAX + ArtTown.PORCH_PARTS_MAX + 4 * ArtFolk.PARTS_MAX
+		-- Decorations: the server merges each one's look (Art/Merge), so a full set of placed
+		-- decorations costs the costliest merged big and small ones, times their caps
+		local big, small = 0, 0
+		for id, def in Decor.items do
+			local root = Instance.new("Part")
+			ArtDecor.build(id, root, CFrame.new())
+			local n = 0
+			local any = false
+			for _, d in root:GetDescendants() do
+				if d:IsA("BasePart") then
+					if ArtMerge.keepsSeparate(d) then
+						n += 1
+					else
+						any = true
+					end
+				end
+			end
+			n += if any then 1 else 0
+			if def.size[1] * def.size[2] >= Decor.bigTiles then
+				big = math.max(big, n)
+			else
+				small = math.max(small, n)
+			end
+		end
+		local decor = big * Decor.maxBig + small * (Decor.maxPlaced - Decor.maxBig)
+		total += decor
 		-- Every House copy a player at the highest built level can own, and every Community
-		-- Building, so the budget stays honest as the content bank grows
+		-- Building, so the budget stays honest as the content bank grows. Finished ones are
+		-- merged on the server (Art/Merge): one union plus the parts that stay separate.
+		local unmerged, merged = 0, 0
 		for id, def in Town.houses do
 			local copies = 0
 			for _, level in def.copyLevels do
@@ -677,14 +784,25 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				end
 			end
 			local m = Instance.new("Model")
-			ArtHouses.build(id, m, CFrame.new(), { size = 8 })
-			add(m, copies)
+			local body = ArtHouses.build(id, m, CFrame.new(), { size = 8 })
+			merged += ArtMerge.count(m, body) * copies
+			unmerged += Kit.countParts(m) * copies
 		end
 		for id in Town.community do
 			local m = Instance.new("Model")
-			ArtCommunity.build(id, m, CFrame.new(), 12)
-			add(m, 1)
+			local body = ArtCommunity.build(id, m, CFrame.new(), 12)
+			merged += ArtMerge.count(m, body)
+			unmerged += Kit.countParts(m)
 		end
+		total += merged
+		print(
+			string.format(
+				"      town buildings: %d parts once merged (%d as built); decorations: %d",
+				merged,
+				unmerged,
+				decor
+			)
+		)
 		print(string.format("      full level-%d plot estimate: %d parts", Levels.built, total))
 		ok(total <= PLOT_PARTS_MAX, string.format("full plot estimate %d parts, budget %d", total, PLOT_PARTS_MAX))
 	end)
