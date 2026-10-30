@@ -37,6 +37,8 @@ local SocialUi = {}
 
 local player = Players.LocalPlayer
 local MAX_FRIENDS_SHOWN = 6
+local MAX_FRIENDS_SHOWN_SHORT = 2 -- phones in landscape (under SHORT_SCREEN px tall)
+local SHORT_SCREEN = 560 -- same cut-off the panels use to fill the space under the pills
 local SQUARE_RADIUS = 60 -- "in the Town Square" when this close to the hub centre
 
 local friendCache: { [number]: boolean } = {}
@@ -621,6 +623,11 @@ local function refreshStatus()
 	visitorsLabel.Text = if #visitors == 1 then "1 visiting" else string.format("%d visiting", #visitors)
 end
 
+local function isShortScreen(): boolean
+	local camera = Workspace.CurrentCamera
+	return camera ~= nil and camera.ViewportSize.Y < SHORT_SCREEN
+end
+
 -- Someone joined, left or moved: rebuild the Friends Nearby column and the Neighbors panel.
 local function refreshHud()
 	if column == nil then
@@ -633,7 +640,7 @@ local function refreshHud()
 	end
 	local shown = 0
 	for _, other in otherPlayers() do
-		if shown >= MAX_FRIENDS_SHOWN or not isFriend(other) then
+		if shown >= (if isShortScreen() then MAX_FRIENDS_SHOWN_SHORT else MAX_FRIENDS_SHOWN) or not isFriend(other) then
 			break
 		end
 		shown += 1
@@ -716,7 +723,30 @@ function SocialUi.init()
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
+		Ui.new("UIScale", {}),
 	})
+	-- Short screens (phones in landscape) get a smaller, tighter column with fewer friends, and
+	-- the column steps aside while a panel is open so it never covers the panel's left edge.
+	local layout = column:FindFirstChildOfClass("UIListLayout") :: UIListLayout
+	local scale = column:FindFirstChildOfClass("UIScale") :: UIScale
+	local wasShort: boolean? = nil
+	local function fit()
+		local short = isShortScreen()
+		if short == wasShort then
+			return
+		end
+		wasShort = short
+		scale.Scale = if short then 0.8 else 1
+		layout.Padding = UDim.new(0, if short then 8 else 22)
+		refreshHud()
+	end
+	RunService.Heartbeat:Connect(function()
+		local hidden = Panels.isOpen()
+		if column.Visible == hidden then
+			column.Visible = not hidden
+		end
+		fit()
+	end)
 	local neighbors = Ui.button('👋\n<font size="13">Neighbors</font>', function()
 		Panels.open("Neighbors")
 	end, {
