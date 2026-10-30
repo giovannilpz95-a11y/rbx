@@ -152,6 +152,9 @@ test("Township baseline rows for animals, factories and recipes", function()
 	eq(Animals.pens.CowBarn2.buildCost, 1000, "second Cow Barn cost")
 	eq(Animals.pens.CowBarn3.unlockLevel, 22, "third Cow Barn at 22")
 	eq(Animals.pens.CowBarn3.extraAnimalCosts[1], 750, "third Cow Barn's 4th Cow")
+	eq(Animals.pens.ChickenCoop2.unlockLevel, 24, "second Chicken Coop at 24")
+	eq(Animals.pens.ChickenCoop2.buildCost, 3000, "second Chicken Coop cost")
+	eq(Animals.pens.ChickenCoop2.extraAnimalCosts[3], 660, "second Chicken Coop's 6th Chicken")
 	for id, def in Animals.pens do
 		if def.copyOf then
 			local original = Animals.pens[def.copyOf]
@@ -245,7 +248,17 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 23, "levels 17 to 23 are banked")
+	eq(Levels.built, 24, "levels 17 to 24 are banked")
+	eq(Levels.list[24].xpToNext, 11802, "L24 row")
+	eq(Recipes.Muffin.factory, "PastryShop", "Muffin at the Pastry Shop")
+	eq(Recipes.Muffin.inputs.Eggs, 4, "Muffin (Township's inputs)")
+	eq(Recipes.Caramel.inputs.Sugarcane, 3, "Caramel")
+	eq(Factories.PastryShop.population, 1100, "Pastry Shop Population")
+	eq(
+		Lots.community[TownRules.communityLot("Amphitheatre") :: number].land,
+		Lots.farCornersLand,
+		"Amphitheatre in the Far Corners"
+	)
 	eq(Levels.list[23].xpToNext, 10338, "L23 row")
 	eq(Recipes.PaperTowel.inputs.PineTrees, 2, "Paper Towels")
 	eq(Recipes.FrozenYogurt.inputs.Yogurt, 1, "Frozen Yogurt")
@@ -305,7 +318,7 @@ test("the content bank stays locked at the live cap", function()
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor" } do
+	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor", "PastryShop" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")

@@ -123,6 +123,7 @@ local LAYOUT = {
 		FeedMill2 = Vector3.new(66, 0, -12),
 		IceCreamParlor = Vector3.new(66, 0, -26),
 		PaperMill = Vector3.new(66, 0, -40),
+		PastryShop = Vector3.new(66, 0, 30),
 	} :: { [string]: Vector3 },
 	factoryOutputOffset = Vector3.new(-10, 0, 0),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine
@@ -130,9 +131,11 @@ local LAYOUT = {
 		CowBarn = Vector3.new(-12, 0, 6),
 		ChickenCoop = Vector3.new(-26, 0, 6),
 		SheepFold = Vector3.new(-40, 0, 6),
-		-- Content bank: more Cow Barns carry the row on into the West Meadow (land expansion 1)
+		-- Content bank: more Cow Barns and a second Chicken Coop carry the row on into the West
+		-- Meadow (land expansion 1)
 		CowBarn2 = Vector3.new(-56, 0, 6),
 		CowBarn3 = Vector3.new(-70, 0, 6),
+		ChickenCoop2 = Vector3.new(-84, 0, 6),
 	} :: { [string]: Vector3 },
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),

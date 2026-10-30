@@ -265,6 +265,16 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Swirl", 0.7, at(0, 1.75, 0), Palette.flowerWhite, QUIET)
 		b.ball("Berry", 0.35, at(0.15, 2.1, 0), Palette.roofRed, QUIET)
 	end,
+	Muffin = function(b)
+		b.post("Cup", 0.9, 1.1, at(0, 0.45, 0), Palette.flowerPink, QUIET)
+		b.ball("Top", 1.4, at(0, 1.05, 0), Palette.bread, QUIET)
+		b.ball("Berry", 0.35, at(0.2, 1.7, -0.1), Palette.plum, QUIET)
+	end,
+	Caramel = function(b)
+		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(-0.35, 0.3, 0.2), Palette.bread, QUIET)
+		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(0.45, 0.3, -0.25), Palette.bread, QUIET)
+		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(0.05, 0.9, 0), Palette.wheat, QUIET)
+	end,
 	Yogurt = function(b)
 		b.post("Pot", 1.2, 1.2, at(0, 0.6, 0), Palette.cream, QUIET)
 		b.post("Lid", 0.2, 1.3, at(0, 1.3, 0), Palette.roofTeal, QUIET)
