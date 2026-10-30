@@ -117,6 +117,11 @@ function Merge.merge(container: Instance, primary: BasePart, options: Options?, 
 	if union:IsA("PartOperation") then
 		(union :: PartOperation).UsePartColor = false
 	end
+	-- The CollisionFidelity option doesn't always take (Studio showed Hull), so ask again; where
+	-- the property can't be written from a game script the union simply keeps Hull
+	pcall(function()
+		(union :: any).CollisionFidelity = Enum.CollisionFidelity.Box
+	end)
 	for name, value in primary:GetAttributes() do
 		union:SetAttribute(name, value)
 	end
