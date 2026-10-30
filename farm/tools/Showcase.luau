@@ -1,0 +1,232 @@
+-- Lays the art models out on a patch of grass for previews and budget checks.
+
+local Kit = require("../src/shared/Art/Kit")
+local Palette = require("../src/shared/Art/Palette")
+local ArtCrops = require("../src/shared/Art/Crops")
+local ArtAnimals = require("../src/shared/Art/Animals")
+local ArtBuildings = require("../src/shared/Art/Buildings")
+local ArtFactories = require("../src/shared/Art/Factories")
+local ArtHouses = require("../src/shared/Art/Houses")
+local ArtCommunity = require("../src/shared/Art/Community")
+
+local Showcase = {}
+
+local CROPS = { "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton", "Tomatoes" }
+
+local function ground(root: Instance, size: number)
+	local b = Kit.builder(root, CFrame.new(), false)
+	b.block("Ground", Vector3.new(size, 1, size), Vector3.new(0, -0.5, 0), Palette.grass)
+end
+
+local function field(root: Instance, at: CFrame): Part
+	local b = Kit.builder(root, at, true)
+	local bed = b.block("Field", Vector3.new(8, 1, 8), Vector3.new(0, 0.5, 0), Palette.soil)
+	ArtCrops.dressBed(bed)
+	return bed
+end
+
+local SCENES: { [string]: (Instance) -> () } = {}
+
+-- Crops: one column per crop, one row per stage (front row = seeded)
+SCENES.crops = function(root)
+	ground(root, 90)
+	for i, crop in CROPS do
+		for stage = 1, 4 do
+			local at = CFrame.new((i - 3.5) * 11, 0, (stage - 2.5) * 11)
+			local bed = field(root, at)
+			local m = ArtCrops.build(crop, stage, bed.CFrame * CFrame.new(0, 0.5, 0), { 220, 60, 50 })
+			m.Parent = bed
+		end
+	end
+end
+
+local ANIMAL_SPOTS = {
+	Vector3.new(-3.5, 0, -2.5),
+	Vector3.new(0, 0, -2.5),
+	Vector3.new(3.5, 0, -2.5),
+	Vector3.new(-3.5, 0, 2.5),
+	Vector3.new(0, 0, 2.5),
+	Vector3.new(3.5, 0, 2.5),
+}
+
+SCENES.animals = function(root)
+	ground(root, 70)
+	for i, penId in { "CowBarn", "ChickenCoop", "SheepFold" } do
+		local at = CFrame.new((i - 2) * 15, 0, 0)
+		local b = Kit.builder(root, at, true)
+		b.block("Floor", Vector3.new(12, 0.4, 12), Vector3.new(0, 0.2, 0), ArtAnimals.FLOOR_COLOR[penId])
+		ArtAnimals.pen(penId, at * CFrame.new(0, 0.4, 0), root)
+		for j, spot in ANIMAL_SPOTS do
+			local a = ArtAnimals.animal(
+				penId,
+				at * CFrame.new(spot + Vector3.new(0, 0.4, 0)) * Kit.yaw(j * 50),
+				"Animal_" .. j
+			)
+			a.Parent = root
+			if j % 2 == 0 then
+				local p = ArtAnimals.product(
+					penId,
+					at * CFrame.new(spot + Vector3.new(0, 0.4 + ArtAnimals.HEIGHT[penId], 0)),
+					"Product_" .. j
+				)
+				p.Parent = root
+			end
+		end
+	end
+end
+
+SCENES.buildings = function(root)
+	ground(root, 90)
+	ArtBuildings.barn(root, CFrame.new(-22, 0, 0), 14, 16)
+	local boardRoot = Kit.builder(root, CFrame.new(0, 0, 0), true)
+	local board =
+		boardRoot.block("OrderBoard", Vector3.new(0.5, 7, 10), CFrame.new(0, 6, 0) * Kit.yaw(180), Palette.cork)
+	ArtBuildings.orderBoard(board, 6)
+	ArtBuildings.dock(root, CFrame.new(12, 0, 0))
+	local truck = boardRoot.block("Truck", Vector3.new(6, 3, 10), Vector3.new(12, 2.5, 0), Palette.roofMustard)
+	ArtBuildings.truck(truck)
+	ArtBuildings.gate(root, CFrame.new(0, 0, 20))
+end
+
+SCENES.factories = function(root)
+	ground(root, 90)
+	for i, id in { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" } do
+		local m = Kit.model(id, root)
+		ArtFactories.build(id, m, CFrame.new((i - 3) * 14, 0, 0))
+	end
+end
+
+SCENES.houses = function(root)
+	ground(root, 100)
+	for i, id in ArtHouses.TYPES do
+		local m = Kit.model(id, root)
+		ArtHouses.build(id, m, CFrame.new((i - 4) * 13, 0, 0))
+	end
+end
+
+SCENES.community = function(root)
+	ground(root, 140)
+	for i, id in ArtCommunity.TYPES do
+		local m = Kit.model(id, root)
+		local row = (i - 1) // 5
+		ArtCommunity.build(id, m, CFrame.new(((i - 1) % 5 - 2) * 15, 0, row * 16))
+	end
+end
+
+-- A whole start area laid out like PlotService does it (positions copied from its LAYOUT),
+-- with a mix of crop stages, full pens and part of Main Street built.
+SCENES.plot = function(root)
+	local b = Kit.builder(root, CFrame.new(), false)
+	b.block("Wild", Vector3.new(200, 1, 200), Vector3.new(0, -0.5, 20), Palette.grassWild)
+	b.block("StartArea", Vector3.new(96, 0.2, 96), Vector3.new(0, 0.1, 0), Palette.grass)
+	b.block("SpinePath", Vector3.new(8, 0.2, 58), Vector3.new(0, 0.3, 19), Palette.path)
+	b.block("FarmLane", Vector3.new(44, 0.2, 8), Vector3.new(-18, 0.3, -22), Palette.path)
+	b.block("CrossPath", Vector3.new(8, 0.2, 20), Vector3.new(0, 0.3, -16), Palette.path)
+	b.block("GateRoad", Vector3.new(8, 0.2, 48), Vector3.new(0, 0.3, 72), Palette.path)
+	b.block("MainStreet", Vector3.new(184, 0.2, 8), Vector3.new(0, 0.3, 75), Palette.path)
+	local fields = {
+		{ -34, -31, "Wheat", 4 },
+		{ -22, -31, "Wheat", 3 },
+		{ -10, -31, "Corn", 4 },
+		{ -34, -13, "Carrots", 4 },
+		{ -22, -13, "Sugarcane", 4 },
+		{ -10, -13, "Cotton", 4 },
+		{ -34, -43, "Wheat", 1 },
+		{ -22, -43, "Corn", 2 },
+		{ -10, -43, "Carrots", 3 },
+		{ 2, -43, "Wheat", 4 },
+	}
+	for _, f in fields do
+		local bedPart = field(root, CFrame.new(f[1], 0, f[2]))
+		ArtCrops.build(f[3], f[4], bedPart.CFrame * CFrame.new(0, 0.5, 0), { 220, 60, 50 }).Parent = bedPart
+	end
+	local pens =
+		{ CowBarn = Vector3.new(-12, 0, 6), ChickenCoop = Vector3.new(-26, 0, 6), SheepFold = Vector3.new(-40, 0, 6) }
+	for id, pos in pens do
+		b.block("Floor", Vector3.new(12, 0.4, 12), pos + Vector3.new(0, 0.4, 0), ArtAnimals.FLOOR_COLOR[id])
+		local facing = CFrame.new(pos + Vector3.new(0, 0.6, 0)) * Kit.yaw(180)
+		ArtAnimals.pen(id, facing, root)
+		for j, spot in ANIMAL_SPOTS do
+			ArtAnimals.animal(id, facing * CFrame.new(spot) * Kit.yaw(({ 160, 200, 175, 20, -15, 200 })[j])).Parent =
+				root
+			if j == 2 or j == 6 then
+				ArtAnimals.product(id, facing * CFrame.new(spot + Vector3.new(0, ArtAnimals.HEIGHT[id] + 0.3, 0))).Parent =
+					root
+			end
+		end
+	end
+	local factories = { Bakery = 16, FeedMill = 2, Dairy = -12, SugarMill = -26, TextileMill = -40 }
+	for id, z in factories do
+		ArtFactories.build(id, Kit.model(id, root), CFrame.new(30, 0, z) * Kit.yaw(90))
+	end
+	ArtBuildings.barn(root, CFrame.new(-28, 0, 30) * Kit.yaw(-90), 14, 16)
+	local board = b.block("OrderBoard", Vector3.new(0.5, 7, 10), Vector3.new(12, 6, 34), Palette.cork)
+	ArtBuildings.orderBoard(board, 6)
+	ArtBuildings.dock(root, CFrame.new(26, 0, 36))
+	ArtBuildings.truck(b.block("Truck", Vector3.new(6, 3, 10), Vector3.new(26, 2.5, 36), Palette.cork))
+	ArtBuildings.gate(root, CFrame.new(0, 0, 47) * Kit.yaw(180))
+	local d = Kit.builder(root, CFrame.new(0, 0.25, 0), false)
+	for i, spot in
+		{
+			Vector3.new(42, 0, 44),
+			Vector3.new(-44, 0, 44),
+			Vector3.new(-45, 0, 21),
+			Vector3.new(45, 0, 30),
+			Vector3.new(44, 0, -46),
+			Vector3.new(-44, 0, -47),
+		}
+	do
+		Kit.tree(d, "Tree", spot, if i % 2 == 0 then 1.1 else 0.9, Palette.treeTop, Palette.treeTopDark, Palette.trunk)
+	end
+	for i, spot in
+		{
+			Vector3.new(-6, 0, 36),
+			Vector3.new(-6, 0, 26),
+			Vector3.new(6, 0, 26),
+			Vector3.new(-16, 0, 44),
+			Vector3.new(16, 0, 44),
+		}
+	do
+		Kit.bush(d, "Bush", spot, 1, Palette.treeTop, if i % 2 == 0 then Palette.flowerPink else Palette.flowerYellow)
+	end
+	local houses = {
+		{ -10, 54, "Cottage" },
+		{ -10, 64, "Bungalow" },
+		{ -20, 54, "LeanTo" },
+		{ -20, 64, "RowHouse" },
+		{ 10, 54, "Farmhouse" },
+		{ 10, 64, "Duplex" },
+		{ -30, 54, "Townhouse" },
+	}
+	for i, h in houses do
+		local turn = if h[2] < 60 then 0 else 180
+		ArtHouses.build(
+			h[3],
+			Kit.model(h[3], root),
+			CFrame.new(h[1], 0, h[2]) * Kit.yaw(turn),
+			{ size = 8, roof = ArtHouses.ROOF_TINTS[(i % 3) + 1] }
+		)
+	end
+	for i, id in { "VillageWell", "PicnicPavilion", "Schoolhouse" } do
+		ArtCommunity.build(id, Kit.model(id, root), CFrame.new(-13 - (i - 1) * 15, 0, 86), 12)
+	end
+end
+
+function Showcase.build(name: string, root: Instance)
+	if name == "all" then
+		for key, scene in SCENES do
+			local m = Instance.new("Model")
+			m.Name = key
+			scene(m)
+			m.Parent = root
+		end
+		return
+	end
+	local scene = SCENES[name]
+	assert(scene, "unknown scene " .. name)
+	scene(root)
+end
+
+Showcase.SCENES = SCENES
+
+return Showcase
