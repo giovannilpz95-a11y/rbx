@@ -11,6 +11,9 @@ local ArtCommunity = require("../src/shared/Art/Community")
 local ArtDecor = require("../src/shared/Art/Decor")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
+local ArtFolk = require("../src/shared/Art/Folk")
+local ArtPickups = require("../src/shared/Art/Pickups")
+local ArtTown = require("../src/shared/Art/Town")
 local Items = require("../src/shared/Items")
 
 local Showcase = {}
@@ -126,6 +129,29 @@ SCENES.barn2 = function(root)
 		local tool = ArtItemProps.held(id, CFrame.new(-6 + i * 3, 2, -16)) :: Model
 		tool.Parent = root
 	end
+end
+
+-- The Town Hall at 1-3 storeys, the guides and the Builder, the Puzzle Porch, pickups, and a
+-- patch of locked land with its signpost
+SCENES.town = function(root)
+	ground(root, 120)
+	for i = 1, 3 do
+		ArtTown.townHall(root, CFrame.new((i - 2) * 18, 0, 0), i)
+	end
+	for i, role in ArtFolk.ROLES do
+		ArtFolk.build(role, CFrame.new(-8 + i * 3, 0, -14)).Parent = root
+	end
+	ArtTown.porch(root, CFrame.new(16, 0, -14))
+	for i, kind in ArtPickups.KINDS do
+		ArtPickups.build(kind, CFrame.new(-22 + i * 2, 2, -14)).Parent = root
+	end
+	local b = Kit.builder(root, CFrame.new(), false)
+	local min, max = Vector3.new(-30, 0, 12), Vector3.new(30, 0, 44)
+	b.block("Locked", Vector3.new(60, 0.2, 32), Vector3.new(0, 0.1, 28), Palette.grassWild:Lerp(Palette.cocoa, 0.25))
+	for _, spot in ArtTown.scatter(min, max, 12) do
+		ArtTown.obstacle(spot.id, root, CFrame.new(spot.at + Vector3.new(0, 0.2, 0)) * Kit.yaw(spot.yaw))
+	end
+	ArtTown.signpost(root, CFrame.new(0, 0.2, 28) * Kit.yaw(180))
 end
 
 SCENES.buildings = function(root)
