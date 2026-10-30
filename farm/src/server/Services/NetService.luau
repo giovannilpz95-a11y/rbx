@@ -19,6 +19,10 @@ local Clock = require(script.Parent.Parent.Util.Clock)
 
 local NetService = {}
 
+-- Handlers return (ok, errorMessage?). A successful handler marks the profile dirty and
+-- queues a state push; a failed one shows its message as a toast.
+export type Handler = (player: Player, ...any) -> (boolean, string?)
+
 local folder = Instance.new("Folder")
 folder.Name = "FarmRemotes"
 folder.Parent = ReplicatedStorage
@@ -36,6 +40,7 @@ local pushQueued: { [Player]: boolean } = {}
 local readyPlayers: { [Player]: boolean } = {}
 local onReady: { [Player]: { () -> () } } = {}
 local lastActive: { [Player]: number } = {} -- os.clock() of the player's last handled intent
+local handlers: { [string]: Handler } = {} -- for the Studio fuzzer (DebugService.fuzz)
 
 -- Argument checks used by handlers
 NetService.check = {}
@@ -132,13 +137,10 @@ function NetService.popup(player: Player, payload: { [string]: any })
 	remotes[Net.Reward_Popup]:FireClient(player, payload)
 end
 
--- Handlers return (ok, errorMessage?). A successful handler marks the profile dirty and
--- queues a state push; a failed one shows its message as a toast.
-export type Handler = (player: Player, ...any) -> (boolean, string?)
-
 function NetService.on(name: string, rate: number, burst: number, handler: Handler)
 	local remote = remotes[name]
 	assert(remote, "Unknown remote " .. name)
+	handlers[name] = handler
 	remote.OnServerEvent:Connect(function(player, ...)
 		local perPlayer = limiters[player]
 		if perPlayer == nil then
@@ -169,6 +171,11 @@ function NetService.on(name: string, rate: number, burst: number, handler: Handl
 			NetService.toast(player, message)
 		end
 	end)
+end
+
+-- Every registered client -> server handler by remote name (Studio fuzzer only)
+function NetService.handlers(): { [string]: Handler }
+	return handlers
 end
 
 -- Server-side reach check: the avatar must be near a hands-on target.

@@ -1486,6 +1486,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Pretend I was away (summary + daily gift)", "Debug_Away", 320, 6)
 	devButton("Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
 	devButton("+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
+	devButton("Fuzz every remote with junk (farm restored after)", "Debug_Fuzz", 380, 9)
 end
 
 ---------------------------------------------------------------------------------------------
