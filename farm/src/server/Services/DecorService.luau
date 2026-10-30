@@ -47,8 +47,9 @@ function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (b
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
 	end
-	if #data.decor >= Decor.maxPlaced then
-		return false, "Your plot has all the decorations it can hold"
+	local room, why = DecorRules.hasRoom(data, id)
+	if not room then
+		return false, why
 	end
 	local cx, cz = DecorRules.snap(id, r, x, z)
 	local p = { id = id, x = cx, z = cz, r = r }

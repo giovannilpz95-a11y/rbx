@@ -38,6 +38,10 @@ end
 return table.freeze({
 	items = table.freeze(Decor),
 	sellRefund = 0.25, -- 07: selling a decoration refunds 25% of its Coin cost
-	maxPlaced = 100, -- first-pass, keeps the plot model and the save small
+	-- Caps keep a full plot inside the 2,500-part budget (a level-12 plot is ~1,800 before
+	-- decorations): paths are ~3 parts, the big pieces (2 x 2 tiles and up) up to ~12 (first-pass)
+	maxPlaced = 60,
+	maxBig = 12,
+	bigTiles = 4,
 	tile = 4,
 })

@@ -12,6 +12,7 @@ local Balance = require("../src/shared/Config/Balance")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
+local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
@@ -474,6 +475,17 @@ test("decorations snap to the grid, stay on owned land and don't overlap", funct
 	ok((DecorRules.canPlace(data, { id = "GravelPath", x = -50, z = 0, r = 0 }, 10)), "cleared land is yours")
 	ok((DecorRules.canPlace(data, { id = "OakTree", x = -48, z = 0, r = 0 }, 10)), "across the edge")
 	eq(DecorRules.refund("StoneFountain"), 500, "25% back")
+	ok(DecorRules.isBig("OakTree") and not DecorRules.isBig("Bench"), "2 x 2 and up is big")
+	data.decor = {}
+	for i = 1, Decor.maxBig do
+		data.decor[i] = { id = "OakTree", x = 0, z = 0, r = 0 }
+	end
+	eq((DecorRules.hasRoom(data, "Pond")), false, "big cap")
+	ok((DecorRules.hasRoom(data, "GravelPath")), "small ones still fit")
+	for i = Decor.maxBig + 1, Decor.maxPlaced do
+		data.decor[i] = { id = "GravelPath", x = 0, z = 0, r = 0 }
+	end
+	eq((DecorRules.hasRoom(data, "GravelPath")), false, "overall cap")
 end)
 
 test("the daily calendar pauses instead of resetting", function()
