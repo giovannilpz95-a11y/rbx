@@ -100,7 +100,8 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 			name = string.format("%s %s", Prize.tiers[prize].displayName, crop.displayName),
 		})
 		NoticeService.post(
-			string.format("%s %s on %s's farm", Prize.tiers[prize].displayName, crop.displayName, player.DisplayName)
+			string.format("%s %s on %s's farm", Prize.tiers[prize].displayName, crop.displayName, player.DisplayName),
+			player.UserId
 		)
 		-- The Town Crier: an Heirloom find is news for the whole server
 		if prize == "Heirloom" then

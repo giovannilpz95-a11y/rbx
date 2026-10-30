@@ -30,6 +30,7 @@ local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
 local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtLighting = require(Shared.Art.Lighting)
+local ArtTownSquare = require(Shared.Art.TownSquare)
 local Kit = require(Shared.Art.Kit)
 local Palette = require(Shared.Art.Palette)
 local TownRules = require(Shared.TownRules)
@@ -273,6 +274,9 @@ local function buildWorld()
 	spawn.Duration = 0
 	spawn.Color = COLORS.path
 	spawn.Parent = map
+
+	-- The Town Square around the hub spawn (14 Multiplayer Features A1)
+	PlotService.square = ArtTownSquare.build(map, CFrame.new())
 
 	plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"
@@ -1005,23 +1009,44 @@ end
 -- Public API
 ---------------------------------------------------------------------------------------------
 
-function PlotService.assign(player: Player): Model?
+-- The free slot to give a player: the one nearest any of `friends`' plots (so friends farm
+-- side by side, 14 Multiplayer Features A2), else the first free one.
+local function pickSlot(friends: { Player }?): Slot?
+	local best: Slot?, bestDistance = nil, math.huge
 	for _, slot in slots do
-		if slot.owner == nil then
-			slot.owner = player
-			slotByPlayer[player] = slot
-			fieldVisualState[player] = {}
-			factoryVisualState[player] = {}
-			penVisualState[player] = {}
-			townVisualState[player] = {}
-			landVisualState[player] = {}
-			local model = buildPlot(player, slot)
-			plotsByPlayer[player] = model
-			PlotService.refresh(player)
-			return model
+		if slot.owner ~= nil then
+			continue
+		end
+		local distance = 1e9 -- with no friend on the server, the first free slot wins
+		for _, friend in friends or {} do
+			local theirs = slotByPlayer[friend]
+			if theirs then
+				distance = math.min(distance, (theirs.cframe.Position - slot.cframe.Position).Magnitude)
+			end
+		end
+		if distance < bestDistance then
+			best, bestDistance = slot, distance
 		end
 	end
-	return nil
+	return best
+end
+
+function PlotService.assign(player: Player, friends: { Player }?): Model?
+	local slot = pickSlot(friends)
+	if slot == nil then
+		return nil
+	end
+	slot.owner = player
+	slotByPlayer[player] = slot
+	fieldVisualState[player] = {}
+	factoryVisualState[player] = {}
+	penVisualState[player] = {}
+	townVisualState[player] = {}
+	landVisualState[player] = {}
+	local model = buildPlot(player, slot)
+	plotsByPlayer[player] = model
+	PlotService.refresh(player)
+	return model
 end
 
 function PlotService.release(player: Player)
@@ -1079,6 +1104,34 @@ function PlotService.spawnCFrame(player: Player): CFrame?
 	end
 	-- Stand on the spawn pad facing north, up the spine path
 	return slot.cframe * CFrame.new(LAYOUT.spawn.X, 4, LAYOUT.spawn.Z)
+end
+
+-- Where a visitor arrives on someone's plot: just inside the gate, facing up the spine path.
+function PlotService.gateCFrame(owner: Player): CFrame?
+	local slot = slotByPlayer[owner]
+	if slot == nil then
+		return nil
+	end
+	return slot.cframe * CFrame.new(LAYOUT.spawn.X, 4, 40)
+end
+
+-- Where the Town Square sends people: on the plaza, south of the boards, facing them.
+function PlotService.squareCFrame(): CFrame
+	local at = Vector3.new(math.random(-8, 8), 4, 8 + math.random(0, 4))
+	return CFrame.lookAt(at, Vector3.new(at.X, 4, -20))
+end
+
+-- Whose plot (if anyone's) a world position is on, anywhere inside its 192 x 192 square.
+function PlotService.ownerAt(position: Vector3): Player?
+	for _, slot in slots do
+		if slot.owner then
+			local offset = slot.cframe:PointToObjectSpace(position)
+			if math.abs(offset.X) <= PLOT_SIZE / 2 and math.abs(offset.Z) <= PLOT_SIZE / 2 then
+				return slot.owner
+			end
+		end
+	end
+	return nil
 end
 
 -- World position of a hands-on target, for the server reach check.
