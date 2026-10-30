@@ -456,3 +456,16 @@ test("the first win on a chest level pays the chest, a replay doesn't", function
 	eq(again.chest, nil)
 	eq(again.rewards.chestCoins, nil)
 end)
+
+test("the Studio booster grant only works with dev actions on, and stops at the stock limit", function()
+	local live = makeStore(true)
+	falsy(live:devAddBoosters(32, 5))
+	local studio = makeStore(true, { devActions = true })
+	local progress = assert(studio:devAddBoosters(32, 5))
+	eq(progress.boosters.Rake, Boosters.STARTING_STOCK + 5)
+	eq(progress.boosters.BombStart, Boosters.STARTING_STOCK + 5)
+	for _ = 1, 30 do
+		progress = assert(studio:devAddBoosters(32, 5))
+	end
+	eq(progress.boosters.Rake, Boosters.MAX_STOCK)
+end)

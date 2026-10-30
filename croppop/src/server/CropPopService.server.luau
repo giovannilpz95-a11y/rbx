@@ -152,6 +152,9 @@ if RunService:IsStudio() then
 	remote("DevEmptyHearts", function(player)
 		return reply(store:devSetHearts(player.UserId, 0))
 	end)
+	remote("DevAddBoosters", function(player, count)
+		return reply(store:devAddBoosters(player.UserId, if type(count) == "number" then math.clamp(count, 1, 10) else 5))
+	end)
 end
 
 local function onPlayerAdded(player: Player)

@@ -29,6 +29,8 @@ local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Recipes = require("../src/shared/Config/Recipes")
 local Rng = require("../src/shared/Rng")
+local Social = require("../src/shared/Config/Social")
+local SocialRules = require("../src/shared/Social")
 local Speedup = require("../src/shared/Speedup")
 local Timer = require("../src/shared/Timer")
 local Town = require("../src/shared/Config/Town")
@@ -667,6 +669,73 @@ test("land expansions go in order and need Population", function()
 	can, why = TownRules.canExpand(data, 100)
 	eq(can, false, "second needs 75")
 	ok(why and why:find("75"), "says the need")
+end)
+
+test("visiting and helping follow the owner's settings, and blocks always win", function()
+	eq(SocialRules.canVisit("Open", false, false), true, "open farm")
+	eq(SocialRules.canVisit("Friends", false, false), false, "friends-only, stranger")
+	eq(SocialRules.canVisit("Friends", true, false), true, "friends-only, friend")
+	eq(SocialRules.canVisit("Closed", true, false), false, "closed")
+	eq(SocialRules.canVisit("Open", true, true), false, "blocked")
+	eq(SocialRules.canHelp("Friends", false, false), false, "helpers: friends, stranger")
+	eq(SocialRules.canHelp("Friends", true, false), true, "helpers: friends, friend")
+	eq(SocialRules.canHelp("Anyone", false, false), true, "helpers: anyone")
+	eq(SocialRules.canHelp("Nobody", true, false), false, "helpers: nobody")
+	eq(SocialRules.canHelp("Anyone", true, true), false, "blocked helper")
+	local social = Profile.template().social
+	eq(social.privacy, "Open", "default privacy")
+	eq(social.helpers, "Friends", "default helpers")
+end)
+
+test("one daily help budget: 40 actions, 15 on one farm, fresh each UTC day", function()
+	local social = Profile.template().social
+	local day = 20000
+	for _ = 1, Social.helpPerOwnerPerDay do
+		ok(SocialRules.spendHelp(social, 111, day), "help on farm 111")
+	end
+	ok(not SocialRules.spendHelp(social, 111, day), "farm 111 is capped")
+	local spent = Social.helpPerOwnerPerDay
+	local owner = 200
+	while spent < Social.helpPerDay do
+		if SocialRules.spendHelp(social, owner, day) then
+			spent += 1
+		else
+			owner += 1
+		end
+	end
+	ok(not SocialRules.spendHelp(social, 999, day), "daily budget spent")
+	local total, onOwner = SocialRules.helpLeft(social, 111, day + 1)
+	eq(total, Social.helpPerDay, "new day")
+	eq(onOwner, Social.helpPerOwnerPerDay, "new day, same farm")
+end)
+
+test("watering, helper Coins and Good Neighbors", function()
+	eq(SocialRules.wateredReadyAt(1000, 0), 900, "10% off the time left")
+	eq(SocialRules.wateredReadyAt(1000, 1000), 1000, "a ready field stays ready")
+	eq(SocialRules.helperCoins(1, 2), 1, "at least 1 Coin")
+	eq(SocialRules.helperCoins(20, 2), 4, "10% of the field's sell value")
+	eq(SocialRules.neighborBonus(0), 0, "alone")
+	eq(SocialRules.neighborBonus(1), 0.05, "one friend")
+	eq(SocialRules.neighborBonus(5), 0.10, "capped")
+	eq(SocialRules.bonusCoins(100, 0.05), 5, "+5%")
+	eq(SocialRules.bonusCoins(10, 0.05), 1, "at least 1")
+	eq(SocialRules.bonusCoins(100, 0), 0, "no bonus")
+end)
+
+test("the Welcome Boost: 15 minutes, once per friend a day, crops 10% faster", function()
+	local social = Profile.template().social
+	local now = 20000 * 86400 + 100
+	eq(SocialRules.boostActive(social, now), false, "off at first")
+	ok(SocialRules.grantBoost(social, 42, now), "first join today")
+	eq(SocialRules.boostActive(social, now + Social.welcomeSeconds - 1), true, "on")
+	eq(SocialRules.boostActive(social, now + Social.welcomeSeconds), false, "over")
+	ok(not SocialRules.grantBoost(social, 42, now + 60), "same friend, same day")
+	ok(SocialRules.grantBoost(social, 43, now + 60), "another friend")
+	eq(social.boostUntil, now + 2 * Social.welcomeSeconds, "a second friend extends it")
+	ok(SocialRules.grantBoost(social, 42, now + 86400), "next day")
+	eq(SocialRules.growSeconds(120, false), 120, "no boost")
+	eq(SocialRules.growSeconds(120, true), 108, "boosted")
+	eq(SocialRules.growSeconds(1, true), 1, "never below 1 s")
 end)
 
 test("an old save gains the starter town", function()
