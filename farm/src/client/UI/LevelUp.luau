@@ -279,7 +279,12 @@ local function render(payload: { [string]: any })
 	end
 
 	-- New! What this level opens up
-	local unlocks = Unlocks.at(payload.level)
+	local unlocks = {}
+	for level = payload.fromLevel or payload.level, payload.level do
+		for _, unlock in Unlocks.at(level) do
+			table.insert(unlocks, unlock)
+		end
+	end
 	if #unlocks > 0 then
 		Ui.label("New!", { Font = Enum.Font.GothamBold, LayoutOrder = 3, Parent = content })
 		local strip = Ui.new("ScrollingFrame", {
@@ -318,6 +323,8 @@ local function render(payload: { [string]: any })
 	end
 end
 
+local current: { [string]: any }? = nil -- the level-up on screen
+
 local function showNext()
 	local payload = table.remove(queue, 1)
 	if payload == nil then
@@ -327,6 +334,7 @@ local function showNext()
 	end
 	showing = true
 	shownAt = time()
+	current = payload
 	render(payload)
 	gui.Enabled = true
 	Motion.popIn(window.root)
@@ -353,7 +361,24 @@ function LevelUp.continue()
 end
 
 -- payload: { level, coins, gems, gifts = { [itemId] = qty }? } (the server's LevelUp pop-up)
+-- Level-ups while the window is up (a big XP gain, Debug "+1 level") join it: the highest
+-- level, every reward added up, and what each level opened.
 function LevelUp.show(payload: { [string]: any })
+	local waiting = if showing then current else nil
+	if waiting then
+		waiting.fromLevel = waiting.fromLevel or waiting.level
+		waiting.level = math.max(waiting.level, payload.level)
+		waiting.coins = (waiting.coins or 0) + (payload.coins or 0)
+		waiting.gems = (waiting.gems or 0) + (payload.gems or 0)
+		if payload.gifts then
+			waiting.gifts = waiting.gifts or {}
+			for item, qty in payload.gifts do
+				waiting.gifts[item] = (waiting.gifts[item] or 0) + qty
+			end
+		end
+		render(waiting)
+		return
+	end
 	table.insert(queue, payload)
 	if not showing then
 		showNext()

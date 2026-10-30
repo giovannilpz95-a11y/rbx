@@ -654,7 +654,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 			p:SetAttribute("Interact", "PuzzlePorch")
 		end
 	end
-	label(porch, "Crop Pop", 4.5, UDim2.fromOffset(120, 28), 50)
+	-- Its name, next level and Hearts are drawn by the client over it (client/UI/PorchStatus)
 	-- The guides from the tutorial, standing by what they teach
 	for role, spot in LAYOUT.guides do
 		ArtFolk.build(role, at(spot.at, 0.25) * Kit.yaw(spot.yaw)).Parent = model

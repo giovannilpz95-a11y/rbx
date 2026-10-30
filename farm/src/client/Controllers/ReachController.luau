@@ -47,6 +47,19 @@ ReachController.otherTarget = function(_part: BasePart): ((() -> ())?, boolean)
 	return nil, false
 end
 
+-- Crop Pop, at the next level's pre-level window (UI Reference & Gaps G14): the Puzzle Porch
+-- on our plot and in the Town Square. Crop Pop's client listens on this BindableEvent.
+function ReachController.openCropPop()
+	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
+	if event == nil then
+		local created = Instance.new("BindableEvent")
+		created.Name = "CropPopOpen"
+		created.Parent = ReplicatedStorage
+		event = created
+	end
+	(event :: BindableEvent):Fire("next")
+end
+
 local function rootPart(): BasePart?
 	local character = player.Character
 	return character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -191,6 +204,8 @@ local function act(part: BasePart)
 		Panels.open("Decor", tostring(part:GetAttribute("DecorIndex")))
 	elseif kind == "OrderBoard" then
 		Panels.open("Orders")
+	elseif kind == "PuzzlePorch" then
+		ReachController.openCropPop()
 	end
 end
 
@@ -397,6 +412,24 @@ local function sweep(firstPress: boolean): boolean
 		if best then
 			act(best)
 			return true
+		end
+		-- Off our plot (the Town Square, a neighbour's farm): the nearest thing in reach that
+		-- the social controls handle, the same as tapping it
+		local params = OverlapParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances = { plot :: Model, player.Character :: Instance }
+		for _, part in Workspace:GetPartBoundsInRadius(root.Position, reach() + 4, params) do
+			local d = distanceToPart(part, root.Position)
+			if part:GetAttribute("Interact") ~= nil and d <= reach() and d < bestDistance then
+				best, bestDistance = part, d
+			end
+		end
+		if best then
+			local other = ReachController.otherTarget(best)
+			if other then
+				other()
+				return true
+			end
 		end
 	end
 	return false
