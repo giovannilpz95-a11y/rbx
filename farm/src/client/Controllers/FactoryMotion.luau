@@ -20,7 +20,12 @@ type Entry = { rig: ArtMotion.Rig, model: Model, started: number, moving: boolea
 local entries: { [Model]: Entry } = {}
 
 local function track(model: Instance)
-	if not model:IsA("Model") or entries[model] or ArtMotion.SPECS[model.Name] == nil then
+	if
+		not model:IsA("Model")
+		or entries[model]
+		or ArtMotion.SPECS[model.Name] == nil
+		or not model:IsDescendantOf(Workspace)
+	then
 		return
 	end
 	local rig = ArtMotion.bind(model.Name, model)
@@ -39,7 +44,10 @@ local function watchPlot(plot: Instance)
 	for _, child in plot:GetChildren() do
 		track(child)
 	end
-	plot.ChildAdded:Connect(track)
+	-- With streaming a factory can arrive later; wait a frame so it's whole when bound
+	plot.ChildAdded:Connect(function(child)
+		task.defer(track, child)
+	end)
 end
 
 local function step()
