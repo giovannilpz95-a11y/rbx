@@ -9,7 +9,8 @@
 	  4 in a line           -> Seed Sprayer (a row of 4 makes a row sprayer, a column of 4 a column sprayer)
 	  2x2 square            -> Bumblebee
 
-	Holes, hay bales and Sunflowers never match.
+	Holes, hay bales, weeds and Sunflowers never match. Frosted tiles match
+	(that's how the frost breaks) but can't be swapped.
 ]]
 
 local Tiles = require(script.Parent.Tiles)
@@ -36,7 +37,7 @@ end
 Matcher.colorAt = colorAt
 
 local function isMovable(cell): boolean
-	return cell ~= nil and cell.piece ~= nil and cell.bale == 0
+	return cell ~= nil and cell.piece ~= nil and cell.bale == 0 and cell.frost == 0
 end
 
 local function scanRuns(board, runs, dir: string)
@@ -241,6 +242,15 @@ function Matcher.findGroups(board, preferred: { any }): { Group }
 						end
 					end
 					group.at = best
+				end
+			end
+			-- A frosted tile keeps its piece, so the power-up goes on a free one.
+			if group.at.frost > 0 then
+				for _, cell in group.cells do
+					if cell.frost == 0 then
+						group.at = cell
+						break
+					end
 				end
 			end
 		end

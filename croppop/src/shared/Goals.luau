@@ -1,11 +1,14 @@
 --[[
-	Crop Pop level goals. Three kinds for now:
+	Crop Pop level goals:
 
 	  { kind = "Collect", tile = "Tomato", count = 15 }  -- pop N tiles of one kind
 	  { kind = "Mud" }                                   -- clear every mud layer on the board
 	  { kind = "HayBale" }                               -- break every hay bale on the board
+	  { kind = "Frost" }                                 -- break every frost layer on the board
+	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
 
-	Mud and HayBale targets are counted from the board unless `count` is given.
+	Board-based targets are counted from the board unless `count` is given.
+	A weed that spreads adds one to the Weeds target.
 ]]
 
 local Tiles = require(script.Parent.Tiles)
@@ -21,10 +24,13 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local mudLayers, bales = 0, 0
+	local mudLayers, bales, frost, weeds = 0, 0, 0, 0
 	board:eachCell(function(cell)
 		mudLayers += cell.mud
-		if cell.bale > 0 then
+		frost += cell.frost
+		if cell.weed then
+			weeds += 1
+		elseif cell.bale > 0 then
 			bales += 1
 		end
 	end)
@@ -42,6 +48,10 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Mud", target = def.count or mudLayers, progress = 0 })
 		elseif def.kind == "HayBale" then
 			table.insert(list, { kind = "HayBale", target = def.count or bales, progress = 0 })
+		elseif def.kind == "Frost" then
+			table.insert(list, { kind = "Frost", target = def.count or frost, progress = 0 })
+		elseif def.kind == "Weeds" then
+			table.insert(list, { kind = "Weeds", target = def.count or weeds, progress = 0 })
 		else
 			error("unknown goal kind " .. tostring(def.kind))
 		end
@@ -69,6 +79,23 @@ end
 
 function Goals.onBale(self)
 	bump(self, "HayBale", nil)
+end
+
+function Goals.onFrost(self)
+	bump(self, "Frost", nil)
+end
+
+function Goals.onWeed(self)
+	bump(self, "Weeds", nil)
+end
+
+-- A weed spread onto a new cell: one more to pull.
+function Goals.onWeedGrown(self)
+	for _, goal in self.list do
+		if goal.kind == "Weeds" then
+			goal.target += 1
+		end
+	end
 end
 
 function Goals.isComplete(self): boolean

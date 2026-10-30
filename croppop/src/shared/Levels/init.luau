@@ -5,6 +5,8 @@
 	Layout characters:
 	  .  plain cell          #  hole (not part of the board)
 	  m  mud, 1 layer        M  mud, 2 layers
+	  f  frost, 1 layer      F  frost, 2 layers (the tile is frozen in place)
+	  w  weed (spreads when a swap pulls none)
 	  1 2 3  hay bale with that many layers
 
 	Difficulty: every 5th level is Tough, and every 10th from level 20 is
@@ -42,7 +44,18 @@ function Levels.get(id: number)
 	return Levels.ById[id]
 end
 
-local VALID_CHARS = { ["."] = true, ["#"] = true, m = true, M = true, ["1"] = true, ["2"] = true, ["3"] = true }
+local VALID_CHARS = {
+	["."] = true,
+	["#"] = true,
+	m = true,
+	M = true,
+	f = true,
+	F = true,
+	w = true,
+	["1"] = true,
+	["2"] = true,
+	["3"] = true,
+}
 local DIFFICULTIES = { Normal = true, Tough = true, ["Super Tough"] = true }
 Levels.MAX_SIZE = 10
 
@@ -73,7 +86,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales = 0, 0
+	local mud, bales, frost, weeds = 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -87,6 +100,10 @@ function Levels.validate(level): string?
 				mud += 1
 			elseif ch == "1" or ch == "2" or ch == "3" then
 				bales += 1
+			elseif ch == "f" or ch == "F" then
+				frost += 1
+			elseif ch == "w" then
+				weeds += 1
 			end
 		end
 	end
@@ -108,6 +125,14 @@ function Levels.validate(level): string?
 		elseif goal.kind == "HayBale" then
 			if bales == 0 then
 				return "hay bale goal but no bales in the layout"
+			end
+		elseif goal.kind == "Frost" then
+			if frost == 0 then
+				return "frost goal but no frost in the layout"
+			end
+		elseif goal.kind == "Weeds" then
+			if weeds == 0 then
+				return "weeds goal but no weeds in the layout"
 			end
 		else
 			return "unknown goal kind " .. tostring(goal.kind)

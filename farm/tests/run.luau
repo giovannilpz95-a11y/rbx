@@ -14,6 +14,11 @@ local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
 local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
+local Drops = require("../src/shared/Drops")
+local Products = require("../src/shared/Config/Products")
+local Shop = require("../src/shared/Shop")
+local Prize = require("../src/shared/Config/Prize")
+local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
@@ -399,8 +404,73 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	eq(Items.Bricks.sellPrice, 0, "not sellable")
 	local data = Profile.migrate(nil) :: any
 	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
-	ok(math.abs(TownRules.harvestDropChance(0) - 0.04) < 1e-9, "building + Barn materials")
-	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.12) < 1e-9, "x3 cap")
+end)
+
+test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#data.prizes, 0, "empty basket")
+	data.tutorial.step = 2
+	eq(PrizeRules.roll(data, 0), nil, "none while the guide runs")
+	data.tutorial.step = 0
+	eq(PrizeRules.roll(data, 0.001), "Heirloom", "0.2% Heirloom")
+	eq(PrizeRules.roll(data, 0.01), "Sunkissed", "then 2% Sunkissed")
+	eq(PrizeRules.roll(data, 0.023), nil, "the rest are ordinary")
+	eq(PrizeRules.value("Corn", "Sunkissed"), 9, "x3 the sell price")
+	eq(PrizeRules.value("Corn", "Heirloom"), 45, "x15")
+	for i = 1, Prize.basketSlots do
+		ok(PrizeRules.hasRoom(data), "room for " .. i)
+		table.insert(data.prizes, { crop = "Wheat", tier = "Sunkissed" })
+	end
+	eq(PrizeRules.hasRoom(data), false, "basket full at 10")
+end)
+
+test("the Shop: buy rules, receipt de-duplication and the Big Barn bonus", function()
+	local data = Profile.migrate(nil) :: any
+	eq((Shop.canBuy(data, "Pouch")), false, "no product id yet")
+	eq(select(2, Shop.canBuy(data, "Pouch")), "Coming soon", "says so")
+	eq((Shop.canBuy(data, "Nope")), false, "unknown key")
+	for _, product in Products.products do
+		eq(product.productId, 0, product.key .. " ships as a placeholder")
+		ok(product.gems > 0, product.key .. " gives Gems")
+	end
+	ok(not Shop.processed(data, "r1"), "new receipt")
+	Shop.record(data, "r1", 1)
+	ok(Shop.processed(data, "r1"), "remembered")
+	for i = 2, Products.keepReceipts + 5 do
+		Shop.record(data, "r" .. i, i)
+	end
+	local kept = 0
+	for _ in data.purchases.receipts do
+		kept += 1
+	end
+	eq(kept, Products.keepReceipts, "trimmed to the newest")
+	ok(not Shop.processed(data, "r1"), "oldest dropped")
+	ok(Shop.processed(data, "r" .. (Products.keepReceipts + 5)), "newest kept")
+	eq(Shop.barnCapacity(data), data.inventory.barnCapacity, "no pass")
+	data.purchases.passes.BigBarn = true
+	eq(Shop.barnCapacity(data), data.inventory.barnCapacity + 50, "+50 with Big Barn")
+end)
+
+test("harvests drop tools and materials on one roll, with a pity tool", function()
+	local data = Profile.migrate(nil) :: any
+	ok(math.abs(Drops.chance(0) - 0.105) < 1e-9, "3% + 2% + 1.5% tools, 2% + 2% materials")
+	ok(math.abs(Drops.chance(8 * 3600) - 0.315) < 1e-9, "x3 cap")
+	eq(Drops.harvest(data, 0, 0), nil, "nothing before level 5")
+	eq(data.toolShed.dry, 0, "and no pity count")
+	data.level = 5
+	eq(Drops.harvest(data, 0, 0.01), "Shovel", "low rolls are Shovels")
+	eq(Drops.harvest(data, 0, 0.06), "Saw", "then Axes, then Saws")
+	eq(Drops.harvest(data, 0, 0.07), "Bricks", "then materials")
+	eq(data.toolShed.dry, 1, "a material isn't a tool")
+	eq(Drops.harvest(data, 0, 0.2), nil, "high rolls drop nothing")
+	eq(Drops.harvest(data, 8 * 3600, 0.2), "Bricks", "long crops roll better")
+	data.toolShed.items = { Shovel = 2, Axe = 1 }
+	data.toolShed.dry = 39
+	eq(Drops.harvest(data, 0, 0.99), nil, "harvest 40 can still miss")
+	eq(Drops.harvest(data, 0, 0.99), "Saw", "harvest 41 gives the scarcest tool")
+	eq(data.toolShed.dry, 0, "and resets the count")
+	data.toolShed.items.Saw = 1
+	eq(Drops.scarcestTool(data), "Axe", "ties go to the commoner tool")
 end)
 
 test("the first-session guide walks the opening loop", function()

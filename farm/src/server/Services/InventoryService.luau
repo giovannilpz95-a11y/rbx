@@ -6,6 +6,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local BarnRules = require(Shared.BarnRules)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
+local Shop = require(Shared.Shop)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -26,7 +27,7 @@ function InventoryService.space(player: Player): number
 	if data == nil then
 		return 0
 	end
-	return math.max(0, data.inventory.barnCapacity - InventoryService.used(data))
+	return math.max(0, Shop.barnCapacity(data) - InventoryService.used(data))
 end
 
 function InventoryService.count(player: Player, item: string): number
@@ -105,7 +106,7 @@ function InventoryService.upgrade(player: Player): (boolean, string?)
 	data.inventory.upgrades = n
 	data.inventory.barnCapacity = BarnRules.capacity(n)
 	DataService.markDirty(player, true)
-	NetService.popup(player, { kind = "BarnUpgrade", capacity = data.inventory.barnCapacity })
+	NetService.popup(player, { kind = "BarnUpgrade", capacity = Shop.barnCapacity(data) })
 	return true
 end
 

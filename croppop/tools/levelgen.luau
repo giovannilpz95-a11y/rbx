@@ -16,6 +16,8 @@
 
 local load = loadmodule(readfile("tools/loadshared.luau"), "tools/loadshared.luau", setmetatable({}, { __index = _G }))()
 local Bot = load("Bot")
+local Engine = load("Engine")
+local Matcher = load("Matcher")
 local LevelText = load("LevelText")
 local Levels = load("Levels")
 local Rng = load("Rng")
@@ -51,6 +53,8 @@ local NAMES = {
 -- Township-like move counts: long enough to plan, short enough to stay tense.
 local MIN_MOVES, MAX_MOVES = 15, 35
 local MAX_COLLECT = 45
+local FROST_INTRO = 21 -- first level with frost
+local WEEDS_INTRO = 41 -- first level with weeds
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -362,17 +366,44 @@ local function mechanics(id)
 		bales2 = id >= 9,
 		bales3 = id >= 26,
 		sixColors = id >= 30,
+		frost = id >= FROST_INTRO, -- "f"
+		thickFrost = id >= 33, -- "F"
+		weeds = id >= WEEDS_INTRO, -- "w"
 	}
 end
 
 -- Rotates focus so neighbouring levels feel different.
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
+local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
+local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
 
-local function focusOf(id)
+-- Names that promise an obstacle get it (when it's in the game by then).
+local NAME_HINTS = {
+	{ words = { "Mud", "Puddle", "Ditch" }, focus = "Mud" },
+	{ words = { "Bale", "Hay" }, focus = "HayBale" },
+	{ words = { "Frost", "Foggy" }, focus = "Frost", needs = "frost" },
+	{ words = { "Thistle", "Bramble", "Wild Oats" }, focus = "Weeds", needs = "weeds" },
+}
+
+local function focusOf(id, name)
+	local mech = mechanics(id)
+	if id == FROST_INTRO then
+		return "Frost"
+	elseif id == WEEDS_INTRO then
+		return "Weeds"
+	end
+	for _, hint in NAME_HINTS do
+		for _, word in hint.words do
+			if string.find(name, word, 1, true) and (hint.needs == nil or mech[hint.needs]) then
+				return hint.focus
+			end
+		end
+	end
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	return FOCUS[(id % #FOCUS) + 1]
+	local list = if mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	return list[(id % #list) + 1]
 end
 
 local function placeMud(g, rng, id, mech)
@@ -394,7 +425,41 @@ local function placeBales(g, rng, id, mech)
 			setSym(g, p[1], p[2], tostring(layers))
 		end
 	end
-	-- Keep a gap in every row so nothing is sealed off.
+end
+
+-- No checker pattern: it freezes every other tile and leaves no swaps.
+local FROST_PATTERNS = { "rows", "centre", "diagonal", "scatter", "columns" }
+
+-- Frost goes on plain cells only (not mud or bales).
+local function placeFrost(g, rng, id, mech)
+	-- The first frost level keeps it small and in the middle.
+	local name = if id == FROST_INTRO then "centre" else rng:pick(FROST_PATTERNS)
+	local thick = mech.thickFrost and rng:int(1, 100) <= math.min(50, (id - 30) * 2)
+	for _, p in PATTERNS[name](g, rng) do
+		if isCell(g, p[1], p[2]) and g[p[2]][p[1]] == "." then
+			setSym(g, p[1], p[2], if thick and (p[1] + p[2]) % 2 == 1 then "F" else "f")
+		end
+	end
+end
+
+-- A few weeds to start with, low on the board; they spread from there.
+local function placeWeeds(g, rng)
+	local placed = 0
+	for _ = 1, 20 do
+		if placed >= rng:int(1, 2) then
+			break
+		end
+		local x, y = rng:int(1, math.ceil(g.w / 2) - 1), rng:int(math.ceil(g.h / 2), g.h)
+		if isCell(g, x, y) and g[y][x] == "." then
+			setSym(g, x, y, "w")
+			placed += 1
+		end
+	end
+end
+
+-- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
+-- tiles all stop falling tiles.
+local function keepRowsOpen(g)
 	for y = 1, g.h do
 		local open = false
 		for x = 1, g.w do
@@ -425,7 +490,8 @@ local function draft(id, variant)
 	local rng = Rng.new(id * 7919 + variant * 104729)
 	local mech = mechanics(id)
 	local difficulty = difficultyOf(id)
-	local focus = focusOf(id)
+	local name = NAMES[id - 5] or ("Level " .. id)
+	local focus = focusOf(id, name)
 	local w = rng:int(7, if id < 15 then 8 else 9)
 	local h = rng:int(7, if id < 15 then 8 else 9)
 	local g
@@ -444,6 +510,13 @@ local function draft(id, variant)
 	if wantBales then
 		placeBales(g, rng, id, mech)
 	end
+	if focus == "Frost" or (focus == "Mix" and mech.frost and rng:int(1, 3) == 1) then
+		placeFrost(g, rng, id, mech)
+	end
+	if focus == "Weeds" or (focus == "Mix" and mech.weeds and rng:int(1, 3) == 1) then
+		placeWeeds(g, rng)
+	end
+	keepRowsOpen(g)
 	if not connected(g) then
 		return nil
 	end
@@ -463,9 +536,28 @@ local function draft(id, variant)
 	if has(g, "123") > 0 then
 		table.insert(goals, { kind = "HayBale" })
 	end
+	if has(g, "fF") > 0 then
+		table.insert(goals, { kind = "Frost" })
+	end
+	if has(g, "w") > 0 then
+		table.insert(goals, { kind = "Weeds" })
+	end
+	if #goals > 3 then
+		return nil -- the goal bar shows 3 at most
+	end
+	-- Frost and bales can leave too few swappable tiles: the board must deal playable.
+	local probe = { layout = layoutText(g), colors = colors, goals = { { kind = "Collect", tile = colors[1], count = 1 } }, moves = 1 }
+	for seed = 1, 10 do
+		if not Matcher.hasPossibleMove(Engine.new(probe, seed).board) then
+			return nil
+		end
+	end
 	local collects = if #goals == 0 then rng:int(1, 2) elseif id >= 20 and #goals < 2 and rng:int(1, 2) == 1 then 1 else 0
 	if focus == "Collect" and collects == 0 then
 		collects = 1
+	end
+	if id == FROST_INTRO or id == WEEDS_INTRO then
+		collects = 0 -- an intro level is about the new obstacle alone
 	end
 	local picks = table.clone(colors)
 	rng:shuffle(picks)
@@ -480,7 +572,7 @@ local function draft(id, variant)
 
 	return {
 		id = id,
-		name = NAMES[id - 5] or ("Level " .. id),
+		name = name,
 		difficulty = difficulty,
 		moves = 25,
 		colors = colors,
@@ -534,13 +626,17 @@ local function build(id)
 		local level = draft(id, variant)
 		if level and Levels.validate(level) == nil then
 			local moves, note = tune(level, target)
+			if note == "too easy" and (id == FROST_INTRO or id == WEEDS_INTRO) then
+				-- An intro level may be easy; it only teaches the new obstacle.
+				moves, note = MIN_MOVES + 3, nil
+			end
 			if note == "too easy" then
 				-- Ask for more: bigger collect goals, or an extra one.
 				local hasCollect = false
 				for _, goal in level.goals do
 					hasCollect = hasCollect or goal.kind == "Collect"
 				end
-				if not hasCollect then
+				if not hasCollect and #level.goals < 3 then
 					table.insert(level.goals, { kind = "Collect", tile = level.colors[(id % #level.colors) + 1], count = 12 + id // 5 })
 				else
 					scaleCollects(level, 1.5)

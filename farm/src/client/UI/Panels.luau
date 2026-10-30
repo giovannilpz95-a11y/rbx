@@ -5,6 +5,7 @@
 -- Anything that spends Gems takes two taps: the first asks, the second spends.
 -- Panels re-render on every state change and once a second for countdowns.
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -21,6 +22,10 @@ local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Land = require(Shared.Config.Land)
 local Speedup = require(Shared.Speedup)
+local Prize = require(Shared.Config.Prize)
+local Products = require(Shared.Config.Products)
+local PrizeRules = require(Shared.Prize)
+local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 local Tutorial = require(Shared.Tutorial)
@@ -80,6 +85,50 @@ local function gems(n: number): string
 	return string.format("%d Gem%s", n, if n == 1 then "" else "s")
 end
 
+-- A button that acts on a confirming second tap (the first arms it and shows `armedText`).
+-- `once`: act on the first tap (nothing to confirm). Acts on the press itself, so a panel
+-- refresh between press and release can't swallow the tap.
+local function confirmButton(
+	key: string,
+	text: string,
+	armedText: string,
+	fire: () -> (),
+	props: { [string]: any },
+	enabled: boolean,
+	color: Color3,
+	once: boolean?
+): TextButton
+	local armedNow = isArmed(key)
+	local button: TextButton
+	local function tap()
+		-- Press and Activated can both arrive for one tap; take the first
+		if time() - lastGemTap < 0.35 or not button.Active then
+			return
+		end
+		lastGemTap = time()
+		if once or isArmed(key) then
+			armed[key] = nil
+			fire()
+		else
+			table.clear(armed) -- one armed button at a time
+			armed[key] = time()
+			Panels.refresh()
+			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
+		end
+	end
+	button = Ui.button(if armedNow then armedText else text, tap, props)
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			tap()
+		end
+	end)
+	Ui.setEnabled(button, enabled, if armedNow then Ui.colors.accent else color)
+	return button
+end
+
 -- A button that spends Gems after a confirming second tap.
 -- `free`: a price of 0 is a gift (one tap, always on) rather than "nothing to speed up"
 local function gemButton(
@@ -91,44 +140,16 @@ local function gemButton(
 	free: boolean?
 )
 	local state = ClientStore.state
-	local armedNow = isArmed(key)
-	local button: TextButton
-	local function tap()
-		-- Press and Activated can both arrive for one tap; take the first
-		if time() - lastGemTap < 0.35 or not button.Active then
-			return
-		end
-		lastGemTap = time()
-		if free or isArmed(key) then
-			armed[key] = nil
-			fire()
-		else
-			table.clear(armed) -- one armed button at a time
-			armed[key] = time()
-			Panels.refresh()
-			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
-		end
-	end
-	button = Ui.button(
-		if armedNow then string.format("Spend %s?", gems(price)) else string.format("%s  %s", text, gems(price)),
-		tap,
-		props
-	)
-	-- Act on the press itself, so a panel refresh between press and release can't swallow it
-	button.InputBegan:Connect(function(input)
-		if
-			input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch
-		then
-			tap()
-		end
-	end)
-	Ui.setEnabled(
-		button,
+	return confirmButton(
+		key,
+		string.format("%s  %s", text, gems(price)),
+		string.format("Spend %s?", gems(price)),
+		fire,
+		props,
 		free == true or (price > 0 and state ~= nil and state.currencies.Gems >= price),
-		if armedNow then Ui.colors.accent else Ui.colors.gems
+		Ui.colors.gems,
+		free
 	)
-	return button
 end
 
 -- Every key of a config table, in its `order`.
@@ -360,6 +381,70 @@ local function renderBarn(state: { [string]: any })
 			Parent = line,
 		})
 	end
+
+	-- Prize Basket: Prize Crops sell at the Prize Stand for a multiple of the crop's price
+	order += #ids + 1
+	local prizes = state.prizes or {}
+	Ui.label(
+		string.format("Prize Basket  %d / %d", #prizes, Prize.basketSlots),
+		{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
+	)
+	order += 1
+	if #prizes == 0 then
+		Ui.label("Now and then a harvest turns up a Sunkissed or Heirloom crop. They land here.", {
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			TextWrapped = true,
+			LayoutOrder = order,
+			Parent = body,
+		})
+		order += 1
+	end
+	for i, entry in prizes do
+		local line = row(42, order)
+		order += 1
+		local value = PrizeRules.value(entry.crop, entry.tier)
+		Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
+			Size = UDim2.new(1, -150, 1, 0),
+			TextColor3 = Ui.colors.accent,
+			Parent = line,
+		})
+		Ui.button(string.format("Sell for %d Coins", value), function()
+			Remotes.fire("Prize_Sell", i)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(140, 30),
+			Parent = line,
+		})
+	end
+
+	-- Tool Shed: tools never take Barn space
+	local tools = state.tools or {}
+	Ui.label("Tool Shed", { Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body })
+	for i, id in sortedKeys(Tools.tools) do
+		local def = Tools.tools[id]
+		Ui.label(string.format("%s  x%d", def.plural, tools[id] or 0), {
+			TextColor3 = if (tools[id] or 0) > 0 then Ui.colors.text else Ui.colors.muted,
+			LayoutOrder = order + i,
+			Parent = body,
+		})
+	end
+	Ui.label(
+		if state.level >= Tools.fromLevel
+			then "Tools drop from harvests and orders and don't use Barn space. Bigger land clearings will need them."
+			else string.format(
+				"Shovels, Axes and Saws start dropping at level %d. Bigger land clearings will need them.",
+				Tools.fromLevel
+			),
+		{
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			TextWrapped = true,
+			LayoutOrder = order + 4,
+			Parent = body,
+		}
+	)
 end
 
 local function renderFactory(state: { [string]: any }, factoryId: string)
@@ -1014,29 +1099,23 @@ local function renderDecor(state: { [string]: any }, index: number)
 		Remotes.fire("Decor_Rotate", index)
 	end, { Size = UDim2.fromOffset(100, 30), Parent = line })
 	-- Two taps: the first arms it ("Sure?"), the second sells
-	local key = "sell:" .. index
 	local refund = DecorRules.refund(placed.id)
-	Ui.button(
-		if isArmed(key) then string.format("Sure? Sell for %d", refund) else string.format("Sell for %d Coins", refund),
+	confirmButton(
+		"sell:" .. index,
+		string.format("Sell for %d Coins", refund),
+		string.format("Sure? Sell for %d", refund),
 		function()
-			if isArmed(key) then
-				armed[key] = nil
-				Remotes.fire("Decor_Sell", index)
-				Panels.close()
-			else
-				table.clear(armed)
-				armed[key] = time()
-				Panels.refresh()
-				task.delay(ARM_SECONDS + 0.1, Panels.refresh)
-			end
+			Remotes.fire("Decor_Sell", index)
+			Panels.close()
 		end,
 		{
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.new(1, 0, 0, 0),
 			Size = UDim2.fromOffset(180, 30),
-			BackgroundColor3 = Ui.colors.danger,
 			Parent = line,
-		}
+		},
+		true,
+		Ui.colors.danger
 	)
 end
 
@@ -1126,6 +1205,98 @@ local function choiceRow(
 	end
 end
 
+-- Robux prices come from Roblox at runtime (regional pricing), cached per id; never hard-coded
+local robuxPrices: { [string]: number | false } = {}
+local function robuxPrice(id: number, infoType: Enum.InfoType): string
+	local cacheKey = infoType.Name .. id
+	local price = robuxPrices[cacheKey]
+	if price == nil then
+		robuxPrices[cacheKey] = false
+		task.spawn(function()
+			local ok, info = pcall(MarketplaceService.GetProductInfo, MarketplaceService, id, infoType)
+			if ok and info and info.PriceInRobux then
+				robuxPrices[cacheKey] = info.PriceInRobux
+				Panels.refresh()
+			end
+		end)
+	end
+	return if price then string.format("R$ %d", price) else "R$ ..."
+end
+
+-- The Shop: Gem packs, the one-time Starter Pack and the Big Barn pass (10 Monetization).
+-- The server checks every buy and shows the Roblox prompt.
+local function renderShop(state: { [string]: any })
+	titleLabel.Text = "Shop"
+	local order = 1
+	local function item(text: string, sub: string, button: string, enabled: boolean, onClick: () -> ())
+		local card = row(48, order)
+		order += 1
+		Ui.label(text, { Size = UDim2.new(1, -130, 0, 22), Font = Enum.Font.GothamBold, Parent = card })
+		Ui.label(sub, {
+			Position = UDim2.fromOffset(0, 22),
+			Size = UDim2.new(1, -130, 0, 18),
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			Parent = card,
+		})
+		local b = Ui.button(button, onClick, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 6),
+			Size = UDim2.fromOffset(120, 32),
+			Parent = card,
+		})
+		Ui.setEnabled(b, enabled, Ui.colors.gems)
+	end
+	local purchases = state.purchases or { bought = {}, passes = {} }
+	for _, key in sortedKeys(Products.products) do
+		local product = Products.products[key]
+		local soon = product.productId == 0
+		local sub = string.format("%d Gems", product.gems)
+		if product.tools then
+			sub ..= " + a Shovel, an Axe and a Saw. Once per farm"
+		end
+		local hidden = product.fromLevel ~= nil and state.level < product.fromLevel
+		if hidden then
+			continue
+		end
+		local owned = product.once and purchases.bought[key]
+		item(
+			product.displayName,
+			sub,
+			if soon
+				then "Coming soon"
+				elseif owned then "Bought"
+				else robuxPrice(product.productId, Enum.InfoType.Product),
+			not soon and not owned,
+			function()
+				Remotes.fire("Shop_Prompt", key)
+			end
+		)
+	end
+	for _, key in sortedKeys(Products.passes) do
+		local pass = Products.passes[key]
+		local soon = pass.passId == 0
+		local owned = purchases.passes[key]
+		item(
+			pass.displayName,
+			string.format("+%d Barn space, for good", pass.barnBonus),
+			if soon then "Coming soon" elseif owned then "Owned" else robuxPrice(pass.passId, Enum.InfoType.GamePass),
+			not soon and not owned,
+			function()
+				Remotes.fire("Shop_PromptPass", key)
+			end
+		)
+	end
+	Ui.label("Gems speed things up. Everything in the game can also be earned by playing.", {
+		Size = UDim2.new(1, 0, 0, 36), -- two lines on a phone
+		TextColor3 = Ui.colors.muted,
+		TextSize = 13,
+		TextWrapped = true,
+		LayoutOrder = order,
+		Parent = body,
+	})
+end
+
 local function renderAway()
 	titleLabel.Text = "While you were away"
 	for i, text in ClientStore.away do
@@ -1202,6 +1373,8 @@ local function render()
 		renderSeeds(state)
 	elseif current == "Decor" and currentArg then
 		renderDecor(state, tonumber(currentArg) :: number)
+	elseif current == "Shop" then
+		renderShop(state)
 	elseif current == "Away" then
 		renderAway()
 	elseif current == "Debug" then
