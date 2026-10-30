@@ -416,6 +416,18 @@ function RunStore.devSetHearts(self, userId: number, count: number)
 	return self:getProgress(userId)
 end
 
+-- Studio testing: add `count` of every booster (the "Dev +5🎒" button).
+function RunStore.devAddBoosters(self, userId: number, count: number)
+	if not self.devActions then
+		return nil, "not in Studio"
+	end
+	local stock = self:_player(userId).state.boosters
+	for kind in Boosters.Info do
+		stock[kind] = math.clamp((stock[kind] or 0) + math.floor(count), 0, Boosters.MAX_STOCK)
+	end
+	return self:getProgress(userId)
+end
+
 function RunStore.forget(self, userId: number)
 	self.players[userId] = nil
 end

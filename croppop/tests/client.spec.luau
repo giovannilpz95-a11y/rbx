@@ -550,6 +550,24 @@ test("the Studio Dev: 0 hearts button empties hearts and shows the refill", func
 	eq(select.List.GetHearts.Pack1.Text, "Spend 36 💎?")
 end)
 
+test("the Studio Dev +5 boosters button adds 5 of every booster", function()
+	PuzzleScreen.open()
+	local before = serverProgress().boosters.Trowel
+	playerGui.CropPop.Backdrop.LevelSelect.DevBoosters.Activated:Fire()
+	eq(serverProgress().boosters.Trowel, math.min(99, before + 5))
+	eq(serverProgress().boosters.SunflowerStart >= 5, true)
+	PuzzleScreen.close()
+end)
+
+test("after a level ends the booster bar shows the server's counts", function()
+	local run = playLevel(1)
+	playToEnd(200, false)
+	giveUp()
+	for kind, count in serverProgress().boosters do
+		eq(run.stock[kind], count, kind)
+	end
+end)
+
 test("the hearts countdown doesn't ask the server every second when hearts are full", function()
 	refillHearts()
 	PuzzleScreen.open()
