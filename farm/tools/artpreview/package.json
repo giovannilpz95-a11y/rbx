@@ -1,0 +1,8 @@
+{
+  "name": "farm-art-preview",
+  "private": true,
+  "description": "Renders tools/artdump.luau scenes with three.js in headless Chromium",
+  "dependencies": {
+    "three": "0.160.0"
+  }
+}

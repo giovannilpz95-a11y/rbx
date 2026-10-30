@@ -1,0 +1,4 @@
+farm/tools/artpreview/node_modules/
+farm/tools/artpreview/*.json
+!farm/tools/artpreview/package.json
+farm/tools/artpreview/*.png

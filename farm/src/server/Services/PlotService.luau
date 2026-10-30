@@ -1,11 +1,13 @@
 --!strict
--- Builds the greybox world from plain blocks and keeps each plot's visuals in step with its
--- owner's data. Design/15 3D World & Avatar Play §2 (scale, layout, hub) and
+-- Builds the world and each player's plot, and keeps the plot's visuals in step with its
+-- owner's data. The models come from FarmShared.Art (Design/16 Model Catalog); this file
+-- places them, sets the tap targets and drives their states. Design/15 3D World & Avatar Play §2 (scale, layout, hub) and
 -- Design/09 Roblox Architecture §7 (slots, ownership attributes).
 --
 -- Plot-local axes: +Z is "south" (the gate, facing the hub), -Z is "north" (the fields).
 -- Only the 96 x 96 stud start area is built; the rest of the 192 x 192 plot is wild grass.
 
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
@@ -20,6 +22,15 @@ local Profile = require(Shared.Profile)
 local Timer = require(Shared.Timer)
 local Land = require(Shared.Config.Land)
 local Town = require(Shared.Config.Town)
+local ArtAnimals = require(Shared.Art.Animals)
+local ArtBuildings = require(Shared.Art.Buildings)
+local ArtCommunity = require(Shared.Art.Community)
+local ArtCrops = require(Shared.Art.Crops)
+local ArtFactories = require(Shared.Art.Factories)
+local ArtHouses = require(Shared.Art.Houses)
+local ArtLighting = require(Shared.Art.Lighting)
+local Kit = require(Shared.Art.Kit)
+local Palette = require(Shared.Art.Palette)
 local TownRules = require(Shared.TownRules)
 
 local DataService = require(script.Parent.DataService)
@@ -33,22 +44,14 @@ local START_SIZE = 96
 local HUB_HALF = CELL
 
 local COLORS = {
-	ground = Color3.fromRGB(96, 140, 72),
-	wild = Color3.fromRGB(78, 120, 60),
-	start = Color3.fromRGB(120, 168, 88),
-	road = Color3.fromRGB(110, 110, 115),
-	path = Color3.fromRGB(196, 176, 140),
-	hub = Color3.fromRGB(150, 150, 140),
-	soil = Color3.fromRGB(110, 76, 50),
-	sprout = Color3.fromRGB(110, 190, 80),
-	barn = Color3.fromRGB(170, 60, 50),
-	penFloor = Color3.fromRGB(196, 168, 100),
-	fence = Color3.fromRGB(140, 100, 60),
-	roof = Color3.fromRGB(90, 70, 60),
-	glass = Color3.fromRGB(170, 210, 230),
-	board = Color3.fromRGB(150, 110, 70),
-	truck = Color3.fromRGB(60, 110, 190),
-	crate = Color3.fromRGB(190, 150, 90),
+	ground = Palette.grassWild,
+	wild = Palette.grassWild,
+	start = Palette.grass,
+	road = Palette.road,
+	path = Palette.path,
+	hub = Palette.hub,
+	soil = Palette.soil,
+	crate = Palette.crate,
 }
 
 -- Main Street: the strip between the gate and the Ring Road (local z 48..96), with two
@@ -139,6 +142,23 @@ local LAYOUT = {
 }
 PlotService.LAYOUT = LAYOUT
 
+-- Decoration spots (plot-local, on the ground), clear of every building, path and lot.
+local DECOR_TREES = {
+	Vector3.new(42, 0, 44),
+	Vector3.new(-44, 0, 44),
+	Vector3.new(-45, 0, 21),
+	Vector3.new(45, 0, 30),
+	Vector3.new(44, 0, -46),
+	Vector3.new(-44, 0, -47),
+}
+local DECOR_BUSHES = {
+	Vector3.new(-6, 0, 36),
+	Vector3.new(-6, 0, 26),
+	Vector3.new(6, 0, 26),
+	Vector3.new(-16, 0, 44),
+	Vector3.new(16, 0, 44),
+}
+
 type Slot = { index: number, cframe: CFrame, owner: Player? }
 
 local slots: { Slot } = {}
@@ -190,6 +210,7 @@ end
 ---------------------------------------------------------------------------------------------
 
 local function buildWorld()
+	ArtLighting.apply(Lighting)
 	-- Clear what a Studio template leaves behind: its spawn would put players on the hub
 	-- floor at random, and its Baseplate z-fights with our ground.
 	for _, child in Workspace:GetChildren() do
@@ -286,69 +307,39 @@ end
 -- One player's plot
 ---------------------------------------------------------------------------------------------
 
-local function rgb(values: { number }): Color3
-	return Color3.fromRGB(values[1], values[2], values[3])
-end
-
--- A factory: body with a production window, chimney, and an output table facing the spine.
+-- A factory (FarmShared.Art.Factories): the walls are the tap target, the output table in
+-- front faces the spine path, and the chimney carries the working smoke.
 local function buildFactory(plot: Model, id: string, at: (Vector3, number) -> CFrame)
 	local def = Factories[id]
 	local pos = LAYOUT.factories[id]
 	local factory = Instance.new("Model")
 	factory.Name = id
-	factory.Parent = plot
-	local body = part({
-		Name = "Body",
-		Size = Vector3.new(12, 10, 10),
-		CFrame = at(pos, 5),
-		Color = rgb(def.color),
-		Parent = factory,
-	})
-	body:SetAttribute("Interact", "Factory")
-	body:SetAttribute("FactoryId", id)
-	part({
-		Name = "Roof",
-		Size = Vector3.new(13, 1.5, 11),
-		CFrame = at(pos, 10.75),
-		Color = COLORS.roof,
-		Parent = factory,
-	})
-	part({
-		Name = "Window",
-		Size = Vector3.new(0.3, 4, 6),
-		CFrame = at(pos + Vector3.new(-6.1, 0, 0), 5),
-		Color = COLORS.glass,
-		Transparency = 0.4,
-		Material = Enum.Material.Glass,
-		Parent = factory,
-	})
-	local chimney = part({
-		Name = "Chimney",
-		Size = Vector3.new(2, 4, 2),
-		CFrame = at(pos + Vector3.new(3, 0, -2), 13),
-		Color = COLORS.roof,
-		Parent = factory,
-	})
+	-- The models face local -Z; turn them to face west, toward the spine path, so the output
+	-- table lands at LAYOUT.factoryOutputOffset.
+	local base = at(pos, 0) * Kit.yaw(90)
+	factory:SetAttribute("BaseCFrame", base)
+	local parts = ArtFactories.build(id, factory, base)
+	parts.body:SetAttribute("Interact", "Factory")
+	parts.body:SetAttribute("FactoryId", id)
+	parts.outputTable:SetAttribute("Interact", "FactoryOutput")
+	parts.outputTable:SetAttribute("FactoryId", id)
+	parts.chimney.Name = "Chimney"
+	parts.chimney.Parent = factory
 	local smoke = Instance.new("Smoke")
 	smoke.Enabled = false
 	smoke.RiseVelocity = 4
 	smoke.Size = 2
-	smoke.Parent = chimney
-	local outputTable = part({
-		Name = "OutputTable",
-		Size = Vector3.new(3, 3, 8),
-		CFrame = at(pos + LAYOUT.factoryOutputOffset, 1.5),
-		Color = COLORS.board,
-		Parent = factory,
-	})
-	outputTable:SetAttribute("Interact", "FactoryOutput")
-	outputTable:SetAttribute("FactoryId", id)
+	smoke.Color = Palette.cream
+	smoke.Opacity = 0.25
+	smoke.Parent = parts.chimney
 	-- Names only show up close: the row's buildings stand 14 studs apart (status bubbles
 	-- come from the client)
-	label(body, def.displayName, 7, UDim2.fromOffset(140, 28), 40)
+	label(parts.body, def.displayName, 7, UDim2.fromOffset(140, 28), 40)
+	factory.Parent = plot
 end
 
--- Where each animal stands in a 12 x 12 pen (3 x 2 grid), and its greybox size.
+-- Where each animal stands in a 12 x 12 pen (3 x 2 grid), with a little turn each so the
+-- herd doesn't look lined up.
 local ANIMAL_SPOTS = {
 	Vector3.new(-3.5, 0, -2.5),
 	Vector3.new(0, 0, -2.5),
@@ -357,73 +348,42 @@ local ANIMAL_SPOTS = {
 	Vector3.new(0, 0, 2.5),
 	Vector3.new(3.5, 0, 2.5),
 }
-local ANIMAL_SIZES: { [string]: Vector3 } = {
-	CowBarn = Vector3.new(2.2, 2.4, 3.6),
-	ChickenCoop = Vector3.new(1.2, 1.2, 1.2),
-	SheepFold = Vector3.new(2, 2, 2.8),
-}
+local ANIMAL_TURNS = { 160, 200, 175, 20, -15, 200 }
 
--- A pen: a floor you tap (feed / collect), a low fence and up to six animals.
+-- A pen: a floor you tap (feed / collect), its fences and shelter (FarmShared.Art.Animals) and
+-- up to six animals, each with the product it shows when ready.
 local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
 	local def = Animals.pens[id]
 	local pos = LAYOUT.pens[id]
 	local pen = Instance.new("Model")
 	pen.Name = id
-	pen.Parent = plot
 	local floor = part({
 		Name = "Floor",
 		Size = Vector3.new(12, 0.4, 12),
 		CFrame = at(pos, 0.4),
-		Color = COLORS.penFloor,
-		Material = Enum.Material.Sand,
+		Color = ArtAnimals.FLOOR_COLOR[id] or Palette.grassLight,
 		Parent = pen,
 	})
 	floor:SetAttribute("Interact", "Pen")
 	floor:SetAttribute("PenId", id)
-	-- Fences and animals let taps through to the floor
-	for _, spec in
-		{
-			{ Vector3.new(0, 0, -6), Vector3.new(12, 1.6, 0.3) },
-			{ Vector3.new(0, 0, 6), Vector3.new(12, 1.6, 0.3) },
-			{ Vector3.new(-6, 0, 0), Vector3.new(0.3, 1.6, 12) },
-			{ Vector3.new(6, 0, 0), Vector3.new(0.3, 1.6, 12) },
-		}
-	do
-		local fence = part({
-			Name = "Fence",
-			Size = spec[2],
-			CFrame = at(pos + spec[1], 1.4),
-			Color = COLORS.fence,
-			CanCollide = false,
-			Parent = pen,
-		})
-		fence.CanQuery = false
-	end
-	local size = ANIMAL_SIZES[id] or Vector3.new(2, 2, 2)
+	-- The gate faces south (+Z), toward the Barn and the spawn. Fences and animals let taps
+	-- through to the floor.
+	local facing = at(pos, 0.6) * Kit.yaw(180)
+	pen:SetAttribute("BaseCFrame", facing)
+	ArtAnimals.pen(id, facing, pen)
+	local height = ArtAnimals.HEIGHT[id] or 2.5
 	for i, spot in ANIMAL_SPOTS do
-		local animal = part({
-			Name = "Animal_" .. i,
-			Size = size,
-			CFrame = at(pos + spot, 0.6 + size.Y / 2),
-			Color = rgb(def.color),
-			CanCollide = false,
-			Transparency = 1,
-			Parent = pen,
-		})
-		animal.CanQuery = false
-		local product = part({
-			Name = "Product_" .. i,
-			Size = Vector3.new(1, 1, 1),
-			CFrame = animal.CFrame * CFrame.new(0, size.Y / 2 + 1, 0),
-			Color = rgb(def.productColor),
-			Material = Enum.Material.Neon,
-			CanCollide = false,
-			Transparency = 1,
-			Parent = pen,
-		})
-		product.CanQuery = false
+		local stand = facing * CFrame.new(spot) * Kit.yaw(ANIMAL_TURNS[i])
+		local animal = ArtAnimals.animal(id, stand, "Animal_" .. i)
+		Kit.fade(animal, 1)
+		animal.Parent = pen
+		local product =
+			ArtAnimals.product(id, facing * CFrame.new(spot + Vector3.new(0, height + 0.3, 0)), "Product_" .. i)
+		Kit.fade(product, 1)
+		product.Parent = pen
 	end
 	label(floor, def.displayName, 5, UDim2.fromOffset(140, 28), 40)
+	pen.Parent = plot
 end
 
 local function buildPlot(player: Player, slot: Slot): Model
@@ -468,32 +428,10 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Parent = model,
 	})
 
-	-- Gate with the owner's name, facing the Ring Road
-	for _, x in { -6, 6 } do
-		part({
-			Name = "GatePost",
-			Size = Vector3.new(1.5, 10, 1.5),
-			CFrame = at(Vector3.new(x, 0, 47), 5),
-			Color = COLORS.board,
-			Parent = model,
-		})
-	end
-	local arch = part({
-		Name = "GateArch",
-		Size = Vector3.new(14, 1.5, 1.5),
-		CFrame = at(Vector3.new(0, 0, 47), 10.5),
-		Color = COLORS.board,
-		Parent = model,
-	})
-	-- A painted name sign on the arch (readable from both sides) instead of a floating
-	-- label, so it never overlaps the Order Board from the default camera.
-	local sign = part({
-		Name = "GateSign",
-		Size = Vector3.new(14, 3, 0.4),
-		CFrame = at(Vector3.new(0, 0, 47), 12.75),
-		Color = COLORS.board,
-		Parent = model,
-	})
+	-- Gate with the owner's name, facing the Ring Road. A painted name sign on the gate
+	-- (readable from both sides) instead of a floating label, so it never overlaps the Order
+	-- Board from the default camera.
+	local sign = ArtBuildings.gate(model, at(Vector3.new(0, 0, 47), 0) * Kit.yaw(180))
 	for _, face in { Enum.NormalId.Front, Enum.NormalId.Back } do
 		local surface = Instance.new("SurfaceGui")
 		surface.Face = face
@@ -504,10 +442,22 @@ local function buildPlot(player: Player, slot: Slot): Model
 		text.BackgroundTransparency = 1
 		text.TextScaled = true
 		text.Font = Enum.Font.GothamBold
-		text.TextColor3 = Color3.new(1, 1, 1)
+		text.TextColor3 = Palette.cocoa
 		text.Text = player.DisplayName .. "'s Farm"
 		text.Parent = surface
 		surface.Parent = sign
+	end
+
+	-- A few trees and flowering bushes in the free corners and along the spine path
+	local decor = Instance.new("Folder")
+	decor.Name = "Decor"
+	decor.Parent = model
+	local d = Kit.builder(decor, at(Vector3.zero, 0.25), false)
+	for i, spot in DECOR_TREES do
+		Kit.tree(d, "Tree", spot, if i % 2 == 0 then 1.1 else 0.9, Palette.treeTop, Palette.treeTopDark, Palette.trunk)
+	end
+	for i, spot in DECOR_BUSHES do
+		Kit.bush(d, "Bush", spot, 1, Palette.treeTop, if i % 2 == 0 then Palette.flowerPink else Palette.flowerYellow)
 	end
 
 	local spawnPad = part({
@@ -573,30 +523,10 @@ local function buildPlot(player: Player, slot: Slot): Model
 		end
 	end
 
-	-- Barn
-	local barn = part({
-		Name = "Barn",
-		Size = Vector3.new(16, 14, 14),
-		CFrame = at(LAYOUT.barn, 7),
-		Color = COLORS.barn,
-		Parent = model,
-	})
+	-- Barn, door facing east toward the spine path
+	local barn = ArtBuildings.barn(model, at(LAYOUT.barn, 0) * Kit.yaw(-90), 14, 16)
 	barn:SetAttribute("Interact", "Barn")
-	part({
-		Name = "BarnRoof",
-		Size = Vector3.new(17, 2, 15),
-		CFrame = at(LAYOUT.barn, 15),
-		Color = COLORS.roof,
-		Parent = model,
-	})
-	part({
-		Name = "BarnDoor",
-		Size = Vector3.new(0.4, 8, 6),
-		CFrame = at(LAYOUT.barn + Vector3.new(8.1, 0, 0), 4),
-		Color = COLORS.roof,
-		Parent = model,
-	})
-	label(barn, "Barn", 9)
+	label(barn, "Barn", 12)
 
 	for _, id in Balance.enabledFactories do
 		buildFactory(model, id, at)
@@ -605,46 +535,27 @@ local function buildPlot(player: Player, slot: Slot): Model
 		buildPen(model, id, at)
 	end
 
-	-- Order Board with the truck waiting at its dock
+	-- Order Board with the truck waiting at its dock. The cards show on the board's west face.
 	local board = part({
 		Name = "OrderBoard",
 		Size = Vector3.new(0.5, 7, 10),
 		CFrame = at(LAYOUT.orderBoard, 6),
-		Color = COLORS.board,
+		Color = Palette.cork,
 		Parent = model,
 	})
 	board:SetAttribute("Interact", "OrderBoard")
-	for _, dz in { -4, 4 } do
-		part({
-			Name = "BoardPost",
-			Size = Vector3.new(0.8, 3, 0.8),
-			CFrame = at(LAYOUT.orderBoard + Vector3.new(0, 0, dz), 1.5),
-			Color = COLORS.roof,
-			Parent = model,
-		})
-	end
+	ArtBuildings.orderBoard(board, 6)
+	ArtBuildings.dock(model, at(LAYOUT.truck, 0))
 
+	-- The truck's root is an invisible box the drive tween moves; the model is welded to it.
 	local truck = part({
 		Name = "Truck",
 		Size = Vector3.new(6, 3, 10),
 		CFrame = at(LAYOUT.truck, 2.5),
-		Color = COLORS.truck,
 		CanCollide = false,
 		Parent = model,
 	})
-	local cab = part({
-		Name = "Cab",
-		Size = Vector3.new(6, 5, 4),
-		CFrame = truck.CFrame * CFrame.new(0, 1, 7),
-		Color = COLORS.truck,
-		CanCollide = false,
-		Parent = truck,
-	})
-	cab.Anchored = false
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = truck
-	weld.Part1 = cab
-	weld.Parent = truck
+	ArtBuildings.truck(truck)
 	model:SetAttribute("TruckHome", truck.CFrame)
 
 	model.PrimaryPart = model:FindFirstChild("StartArea") :: BasePart
@@ -656,14 +567,30 @@ end
 -- Visuals that follow the data
 ---------------------------------------------------------------------------------------------
 
--- One town building: a block with a roof, tapped to open the Town panel. Rebuilt when its
--- state changes (greybox; the art pass swaps in models).
-local function townBlock(
+-- Show or remove a construction scaffold around a building. `holder` must carry the
+-- "BaseCFrame" attribute (its bottom-centre, front at local -Z).
+local function setScaffold(holder: Instance, show: boolean, w: number, d: number, h: number)
+	local existing = holder:FindFirstChild("Scaffold")
+	if show and existing == nil then
+		local base = holder:GetAttribute("BaseCFrame") :: CFrame?
+		if base then
+			Kit.scaffold(holder, base, w, d, h)
+		end
+	elseif not show and existing then
+		existing:Destroy()
+	end
+end
+
+-- One town building (FarmShared.Art.Houses / Community), tapped to open the Town panel.
+-- Rebuilt when its state changes; while it's being built it stands faded in a scaffold.
+local function townModel(
 	folder: Instance,
 	name: string,
 	at: CFrame,
-	size: Vector3,
-	color: Color3,
+	kind: string,
+	typeId: string,
+	lotSize: number,
+	tint: number,
 	building: boolean,
 	labelText: string?
 )
@@ -673,26 +600,18 @@ local function townBlock(
 	end
 	local holder = Instance.new("Model")
 	holder.Name = name
-	local body = part({
-		Name = "Body",
-		Size = size,
-		CFrame = at * CFrame.new(0, size.Y / 2 + 0.3, 0),
-		Color = if building then COLORS.crate else color,
-		Transparency = if building then 0.45 else 0,
-		Parent = holder,
-	})
+	holder:SetAttribute("BaseCFrame", at)
+	local body = if kind == "House"
+		then ArtHouses.build(typeId, holder, at, { size = lotSize, roof = ArtHouses.ROOF_TINTS[(tint % 3) + 1] })
+		else ArtCommunity.build(typeId, holder, at, lotSize)
+	body.Name = "Body"
 	body:SetAttribute("Interact", "Town")
-	local roof = part({
-		Name = "Roof",
-		Size = Vector3.new(size.X + 1, 1.2, size.Z + 1),
-		CFrame = at * CFrame.new(0, size.Y + 0.9, 0),
-		Color = COLORS.roof,
-		Transparency = if building then 0.45 else 0,
-		Parent = holder,
-	})
-	roof.CanQuery = false
+	if building then
+		Kit.fade(holder, 0.5)
+		Kit.scaffold(holder, at, lotSize - 1, lotSize - 1, if kind == "House" then 8 else 9)
+	end
 	if labelText then
-		label(body, labelText, size.Y / 2 + 3, UDim2.fromOffset(140, 28), 40)
+		label(body, labelText, 8, UDim2.fromOffset(140, 28), 40)
 	end
 	holder.Parent = folder
 end
@@ -714,14 +633,16 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		local state = house.type .. ":" .. tostring(TownRules.isDone(house, now))
 		if cache[name] ~= state then
 			cache[name] = state
-			-- Bigger Houses stand taller (greybox)
-			local height = 4 + def.population / 5
-			townBlock(
+			-- The row nearest the gate faces it; the row behind faces Main Street
+			local turn = if pos.Z < 60 then 0 else 180
+			townModel(
 				folder,
 				name,
-				slot.cframe * CFrame.new(pos),
-				Vector3.new(7, height, 7),
-				Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
+				slot.cframe * CFrame.new(pos) * Kit.yaw(turn),
+				"House",
+				house.type,
+				8,
+				house.lot,
 				not TownRules.isDone(house, now),
 				nil
 			)
@@ -737,12 +658,14 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		local state = tostring(TownRules.isDone(entry, now))
 		if cache[name] ~= state then
 			cache[name] = state
-			townBlock(
+			townModel(
 				folder,
 				name,
 				slot.cframe * CFrame.new(pos),
-				Vector3.new(11, 7, 11),
-				Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
+				"Community",
+				id,
+				12,
+				def.order,
 				not TownRules.isDone(entry, now),
 				def.displayName
 			)
@@ -760,20 +683,12 @@ local function buildField(fieldsFolder: Instance, slot: Slot, id: string)
 		Size = Vector3.new(8, 1, 8),
 		CFrame = slot.cframe * CFrame.new(pos.X, 0.5, pos.Z),
 		Color = COLORS.soil,
-		Material = Enum.Material.Ground,
 	})
 	bed:SetAttribute("Interact", "Field")
 	bed:SetAttribute("FieldId", id)
-	local crop = part({
-		Name = "Crop",
-		Size = Vector3.new(6, 0.2, 6),
-		CFrame = bed.CFrame * CFrame.new(0, 0.6, 0),
-		Color = COLORS.sprout,
-		CanCollide = false,
-		Transparency = 1,
-		Parent = bed,
-	})
-	crop.CanTouch = false
+	ArtCrops.dressBed(bed)
+	-- The crop model for the current growth stage; refreshFields swaps it
+	Kit.model("Crop", bed)
 	bed.Parent = fieldsFolder
 end
 
@@ -820,34 +735,37 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 		end
 	end
 	for id, field in data.fields do
-		local state = if field.crop == nil
-			then "empty"
-			elseif Timer.isReady(field.readyAt, now) then "ready:" .. field.crop
-			else "growing:" .. field.crop
+		-- Growth stage 1-4 (seeded, sprout, growing, ready). A Gem speed-up sets readyAt to
+		-- now and leaves plantedAt alone, so progress comes from the two together.
+		local stage = 0
+		if field.crop ~= nil then
+			local ready = Timer.isReady(field.readyAt, now)
+			local span = (field.readyAt or now) - (field.plantedAt or now)
+			local progress = if span > 0 then math.clamp((now - (field.plantedAt or now)) / span, 0, 1) else 1
+			stage = ArtCrops.stageFor(progress, ready)
+		end
+		local state = if field.crop == nil then "empty" else string.format("%s:%d", field.crop, stage)
 		if cache[id] == state then
 			continue
 		end
-		cache[id] = state
 		local bed = fieldsFolder:FindFirstChild("Field_" .. id) :: BasePart?
 		if bed == nil then
 			continue
 		end
+		cache[id] = state
 		bed:SetAttribute("Crop", field.crop)
 		bed:SetAttribute("ReadyAt", field.readyAt)
-		local crop = bed:FindFirstChild("Crop") :: BasePart
+		local old = bed:FindFirstChild("Crop")
+		if old then
+			old:Destroy()
+		end
 		if field.crop == nil then
-			crop.Transparency = 1
-		elseif state:sub(1, 5) == "ready" then
-			local rgb = Crops[field.crop].color
-			crop.Transparency = 0
-			crop.Color = Color3.fromRGB(rgb[1], rgb[2], rgb[3])
-			crop.Size = Vector3.new(6, 3, 6)
-			crop.CFrame = bed.CFrame * CFrame.new(0, 2, 0)
+			Kit.model("Crop", bed)
 		else
-			crop.Transparency = 0
-			crop.Color = COLORS.sprout
-			crop.Size = Vector3.new(6, 0.8, 6)
-			crop.CFrame = bed.CFrame * CFrame.new(0, 0.9, 0)
+			local def = Crops[field.crop]
+			local crop =
+				ArtCrops.build(field.crop, stage, bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0), def and def.color)
+			crop.Parent = bed
 		end
 	end
 end
@@ -874,20 +792,21 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	end
 	cache[id] = state
 
-	local transparency = if not factory.built then 0.75 elseif underConstruction then 0.4 else 0
-	for _, child in building:GetChildren() do
-		if
-			child:IsA("BasePart")
-			and child.Name ~= "Window"
-			and child.Name ~= "OutputTable"
-			and child.Name ~= "Crate"
-		then
-			child.Transparency = transparency
-		end
-	end
-	local smoke = (building:FindFirstChild("Chimney") :: BasePart):FindFirstChildOfClass("Smoke")
+	-- Not built yet: a faint ghost. Building: half-faded inside a scaffold. Built: solid.
+	local fade = if not factory.built then 0.75 elseif underConstruction then 0.4 else 0
+	setScaffold(building, underConstruction, 10, 12, 10)
+	Kit.fade(building, fade, function(p)
+		local name = p.Name
+		return name == "Crate" or name == "OutputTable" or name == "TableTop" or p.Parent.Name == "Scaffold"
+	end)
+	local chimney = building:FindFirstChild("Chimney")
+	local smoke = chimney and chimney:FindFirstChildOfClass("Smoke")
 	if smoke then
 		smoke.Enabled = busy
+	end
+	local glow = building:FindFirstChild("OvenGlow", true) :: BasePart?
+	if glow then
+		glow.Material = if busy then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	end
 
 	-- One crate per finished item on the output table
@@ -896,18 +815,23 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 			child:Destroy()
 		end
 	end
-	local outputTable = building:FindFirstChild("OutputTable") :: BasePart
+	local outputTable = building:FindFirstChild("OutputTable", true) :: BasePart?
+	if outputTable == nil then
+		return
+	end
+	local tableTop = outputTable.Size.Y / 2 + 0.25
 	for i = 1, outputCount do
 		local row = (i - 1) % 4
 		local layer = (i - 1) // 4
 		local crate = part({
 			Name = "Crate",
 			Size = Vector3.new(1.6, 1.4, 1.6),
-			CFrame = outputTable.CFrame * CFrame.new(0, 2.2 + layer * 1.45, -3 + row * 2),
+			CFrame = outputTable.CFrame * CFrame.new(0, tableTop + 0.7 + layer * 1.45, -3 + row * 2),
 			Color = COLORS.crate,
 			CanCollide = false,
 		})
 		crate.CanQuery = false
+		crate.CanTouch = false
 		crate.Parent = building
 	end
 end
@@ -931,20 +855,22 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	cache[id] = state
 
 	local shell = if not pen.built then 0.75 elseif underConstruction then 0.4 else 0
+	setScaffold(building, underConstruction, 12, 12, 6)
 	for _, child in building:GetChildren() do
-		if child.Name == "Floor" or child.Name == "Fence" then
-			(child :: BasePart).Transparency = shell
+		local name = child.Name
+		if name:sub(1, 7) ~= "Animal_" and name:sub(1, 8) ~= "Product_" and name ~= "Scaffold" then
+			Kit.fade(child, shell)
 		end
 	end
 	for i = 1, #ANIMAL_SPOTS do
-		local animal = building:FindFirstChild("Animal_" .. i) :: BasePart?
-		local product = building:FindFirstChild("Product_" .. i) :: BasePart?
+		local animal = building:FindFirstChild("Animal_" .. i)
+		local product = building:FindFirstChild("Product_" .. i)
 		local mark = marks[i]
 		if animal then
-			animal.Transparency = if mark == nil then 1 elseif underConstruction then 0.5 else 0
+			Kit.fade(animal, if mark == nil then 1 elseif underConstruction then 0.5 else 0)
 		end
 		if product then
-			product.Transparency = if mark == "r" then 0 else 1
+			Kit.fade(product, if mark == "r" then 0 else 1)
 		end
 	end
 end
@@ -1068,19 +994,12 @@ function PlotService.driveTruck(player: Player, returnSeconds: number)
 		)
 		out:Play()
 		out.Completed:Wait()
-		truck.Transparency = 1
-		local cab = truck:FindFirstChild("Cab") :: BasePart?
-		if cab then
-			cab.Transparency = 1
-		end
+		Kit.fade(truck, 1)
 		task.wait(math.max(0, returnSeconds - leg * 2))
 		if truck.Parent == nil then
 			return
 		end
-		truck.Transparency = 0
-		if cab then
-			cab.Transparency = 0
-		end
+		Kit.fade(truck, 0)
 		local back = TweenService:Create(
 			truck,
 			TweenInfo.new(leg, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),

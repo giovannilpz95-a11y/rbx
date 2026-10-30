@@ -27,6 +27,23 @@ A walkable greybox of the farm, built from plain blocks, for testing the walk-fi
 - **Saving:** one profile per player in a DataStore, with a session lock, autosave every 90 s, save on leave and on shutdown, schema version and migrations.
 - **Server decides everything:** the client only sends intents (plant this field, deliver card 2). Every remote is rate-limited and checked, hands-on actions check that your avatar is near, and all Coins, Gems and XP go through one service.
 
+## Art
+
+The plot is dressed with our own cartoon models in the spirit of Township's look: chunky shapes, big colorful roofs, cream trim, bright crops and cute animals, all built from Studio Parts in code so no assets need uploading. They live in `src/shared/Art/` (mapped to `ReplicatedStorage.FarmShared.Art`):
+
+| Module | Models |
+|---|---|
+| `Palette` | World colors (shared tokens match the UI palette in `uitheme/`) |
+| `Kit` | Part builder, roofs, windows, doors, fences, trees, bushes, the Sprout Tag, scaffolds, `fade` and `weld` helpers |
+| `Crops` | Field beds and every crop at 4 growth stages (seeded, sprout, growing, ready) |
+| `Animals` | Cows, Chickens and Sheep, their products, and the Cow Barn, Chicken Coop and Sheep Fold |
+| `Factories` | Bakery, Feed Mill, Dairy, Sugar Mill, Textile Mill, each with an output table and a moving part |
+| `Buildings` | Barn, Order Board, loading dock, delivery truck, plot gate |
+| `Houses` / `Community` | The 7 House types and 9 Community Buildings |
+| `Lighting` | Sunny afternoon lighting, color grade, bloom and haze |
+
+Part budgets (Design/15 §5) are checked by `tests/art.luau`: crop stage ≤ 12, bed ≤ 4, animal ≤ 12, pen ≤ 40, factory ≤ 80, House and Community Building ≤ 40, and a full level-12 plot under 2,500. To look at the models without Studio, see `tools/artpreview/README.md`.
+
 ## Numbers
 
 Config lives in `src/shared/Config/`. Crops, animals and pens, factories, recipes, the XP curve, level rewards, the starting wallet (500 Coins, 30 Gems), the Barn size and the 30-minute order refresh are the **Township baseline**. Order slots per level, the order reward formula and all the walking numbers are **first-pass** and meant to be tuned in this greybox.
