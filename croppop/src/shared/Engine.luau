@@ -79,7 +79,8 @@ function Engine.new(level, seed: number, options: Options?)
 		movesLeft = level.moves,
 		movesMade = 0,
 		status = "Playing", -- "Playing" | "Won" | "Lost"
-		stats = { powerUpsMade = 0, combos = 0, cascades = 0 },
+		-- made: power-ups made by kind; cleared: tiles cleared by colour (for the score tracks).
+		stats = { powerUpsMade = 0, combos = 0, cascades = 0, made = {}, cleared = {} },
 		boostersUsed = {}, -- in-level booster kind -> times used
 		continues = 0, -- paid +5-move continues taken
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
@@ -164,6 +165,9 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	cell.piece = nil
 	table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = cause })
 	self.goals:onCollect(piece.color)
+	if piece.color > 0 then
+		self.stats.cleared[piece.color] = (self.stats.cleared[piece.color] or 0) + 1
+	end
 	if cell.mud > 0 then
 		cell.mud -= 1
 		table.insert(wave.mud, { x = cell.x, y = cell.y, layers = cell.mud })
@@ -252,6 +256,7 @@ function Engine._popGroups(self, wave, groups)
 				cell = group.at,
 			})
 			self.stats.powerUpsMade += 1
+			self.stats.made[group.power] = (self.stats.made[group.power] or 0) + 1
 		end
 	end
 end
@@ -869,6 +874,13 @@ function Engine.continue(self): (boolean, { any })
 	return true, phases
 end
 
+function Engine.copyStats(stats)
+	local copy = table.clone(stats)
+	copy.made = table.clone(stats.made)
+	copy.cleared = table.clone(stats.cleared)
+	return copy
+end
+
 function Engine.getState(self)
 	return {
 		status = self.status,
@@ -876,7 +888,7 @@ function Engine.getState(self)
 		movesMade = self.movesMade,
 		goals = self.goals:snapshot(),
 		bonus = self.bonus and table.clone(self.bonus),
-		stats = table.clone(self.stats),
+		stats = Engine.copyStats(self.stats),
 	}
 end
 

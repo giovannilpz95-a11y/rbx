@@ -15,6 +15,12 @@
 	Heart gifts: sendHeart() puts a heart in a neighbor's gift box (see
 	GiftInbox), and claimGifts() moves gifts from a player's own box into
 	their empty hearts. Daily counts live in the puzzle save block.
+
+	Score tracks (see ScoreTracks): a verified win adds its points to the
+	running track and pays every step it reaches. Coins and Gems from steps go
+	out in the win's rewards (`trackCoins`, `gems`) for the farm to pay; the
+	rest (boosters, unlimited hearts, x2 points, free start boosters) lands in
+	the save here.
 ]]
 
 local CropPop = require(game:GetService("ReplicatedStorage"):WaitForChild("CropPop"))
@@ -22,6 +28,7 @@ local CropPop = require(game:GetService("ReplicatedStorage"):WaitForChild("CropP
 local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
 local Gifts = Hearts.Gifts
+local ScoreTracks = CropPop.ScoreTracks
 local GiftInbox = require(script.Parent.GiftInbox)
 
 local RunStore = {}
@@ -48,6 +55,7 @@ export type Config = {
 	autoLoad: boolean?,
 	-- Where heart gifts wait (see GiftInbox); defaults to an in-memory store.
 	giftInbox: any?,
+	scoreTracks: boolean?, -- false turns the score tracks off (on by default)
 }
 
 function RunStore.new(config: Config)
@@ -62,6 +70,7 @@ function RunStore.new(config: Config)
 		devActions = config.devActions == true,
 		autoLoad = config.autoLoad ~= false,
 		giftInbox = config.giftInbox or GiftInbox.memory(),
+		scoreTracks = config.scoreTracks ~= false,
 		players = {},
 	}, RunStore)
 end
@@ -74,6 +83,10 @@ function RunStore._fresh(self)
 		boosters = Boosters.newStock(),
 		-- Today's heart gifts: who this player sent to, and how many they claimed.
 		gifts = { day = 0, sentTo = {}, claimed = 0 },
+		-- The running score track: which one (id + key), its points and the steps paid.
+		track = { id = "", key = -1, points = 0, paid = 0 },
+		doubleUntil = 0, -- x2 track points until then (wall clock)
+		freeStarts = {}, -- pre-level booster kind -> free on every level until then
 	}
 end
 
@@ -111,7 +124,17 @@ function RunStore.exportSave(self, userId: number)
 		hearts = table.clone(state.hearts),
 		boosters = table.clone(state.boosters),
 		gifts = { day = state.gifts.day, sentTo = table.clone(state.gifts.sentTo), claimed = state.gifts.claimed },
+		track = table.clone(state.track),
+		doubleUntil = state.doubleUntil,
+		freeStarts = table.clone(state.freeStarts),
 	}
+end
+
+local function count(value: any, max: number): number?
+	if type(value) ~= "number" or value ~= value then
+		return nil
+	end
+	return math.clamp(math.floor(value), 0, max)
 end
 
 -- Loads a saved block (nil for a new player). A late load replaces whatever
@@ -140,6 +163,22 @@ function RunStore.importSave(self, userId: number, block: any)
 			end
 			local claimed = if type(gifts.claimed) == "number" and gifts.claimed == gifts.claimed then gifts.claimed else 0
 			state.gifts = { day = gifts.day, sentTo = sentTo, claimed = math.clamp(math.floor(claimed), 0, Gifts.CLAIM_PER_DAY) }
+		end
+		local track = block.track
+		if type(track) == "table" and ScoreTracks.Tracks[track.id] and count(track.key, 2 ^ 31) then
+			local steps = #ScoreTracks.Tracks[track.id].steps
+			state.track = {
+				id = track.id,
+				key = count(track.key, 2 ^ 31) :: number,
+				points = count(track.points, 10 ^ 7) or 0,
+				paid = count(track.paid, steps) or 0,
+			}
+		end
+		state.doubleUntil = count(block.doubleUntil, 2 ^ 40) or 0
+		if type(block.freeStarts) == "table" then
+			for _, kind in Boosters.PreLevel do
+				state.freeStarts[kind] = count(block.freeStarts[kind], 2 ^ 40)
+			end
 		end
 	end
 	record.state = state
@@ -175,7 +214,88 @@ function RunStore.getProgress(self, userId: number)
 		canBuy = self.spendGems ~= nil,
 		gems = self.getGems and self.getGems(userId) or nil,
 		gifts = self:_giftProgress(record),
+		track = self:_trackProgress(state, now),
+		freeStarts = self:_freeStartsLeft(state, now),
 	}
+end
+
+-- Score tracks ---------------------------------------------------------------
+
+-- The running track's state, starting it over when a new track has begun.
+function RunStore._track(self, state, now: number)
+	local running = ScoreTracks.at(now)
+	if state.track.id ~= running.id or state.track.key ~= running.key then
+		state.track = { id = running.id, key = running.key, points = 0, paid = 0 }
+	end
+	return running, state.track
+end
+
+function RunStore._trackProgress(self, state, now: number)
+	if not self.scoreTracks then
+		return nil
+	end
+	local running, track = self:_track(state, now)
+	return {
+		id = track.id,
+		points = track.points,
+		paid = track.paid,
+		secondsLeft = running.endsAt - now,
+		doubleSeconds = math.max(0, state.doubleUntil - now),
+	}
+end
+
+-- Seconds left on each free start booster that's running.
+function RunStore._freeStartsLeft(self, state, now: number)
+	local out = {}
+	for kind, untilTime in state.freeStarts do
+		if untilTime > now then
+			out[kind] = untilTime - now
+		end
+	end
+	return out
+end
+
+-- Pays one step's reward. Coins and Gems go into `rewards` for the farm.
+function RunStore._payStep(self, state, reward, rewards, now: number)
+	if reward.coins then
+		rewards.trackCoins = (rewards.trackCoins or 0) + reward.coins
+		rewards.coins = (rewards.coins or 0) + reward.coins
+	end
+	if reward.gems then
+		rewards.gems = (rewards.gems or 0) + reward.gems
+	end
+	for kind, n in reward.boosters or {} do
+		state.boosters[kind] = math.min(Boosters.MAX_STOCK, (state.boosters[kind] or 0) + n)
+	end
+	if reward.unlimitedMinutes then
+		state.hearts.unlimitedUntil = math.max(now, state.hearts.unlimitedUntil or 0) + reward.unlimitedMinutes * 60
+	end
+	if reward.doubleMinutes then
+		state.doubleUntil = math.max(now, state.doubleUntil) + reward.doubleMinutes * 60
+	end
+	local free = reward.freeStart
+	if free then
+		state.freeStarts[free.kind] = math.max(now, state.freeStarts[free.kind] or 0) + free.minutes * 60
+	end
+end
+
+--[[
+	Adds points to the running track and pays the steps they reach. Returns
+	{ id, gained, doubled, points, steps = { step numbers paid } }.
+]]
+function RunStore._addTrackPoints(self, state, points: number, doubled: boolean, rewards)
+	local now = self.now()
+	local _, track = self:_track(state, now)
+	track.points += points
+	local reached = ScoreTracks.stepsReached(track.id, track.points)
+	local steps = {}
+	local list = ScoreTracks.Tracks[track.id].steps
+	for i = track.paid + 1, reached do
+		self:_payStep(state, list[i].reward, rewards, now)
+		table.insert(steps, i)
+	end
+	track.paid = math.max(track.paid, reached)
+	return { id = track.id, gained = points, doubled = doubled, points = track.points, steps = steps }
 end
 
 function RunStore.isUnlocked(self, userId: number, levelId: number): boolean
@@ -224,8 +344,10 @@ function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 		return nil, err
 	end
 	local state = record.state
+	local now = self.now()
+	local free = self:_freeStartsLeft(state, now)
 	for _, kind in preBoosters do
-		if (state.boosters[kind] or 0) < 1 then
+		if not free[kind] and (state.boosters[kind] or 0) < 1 then
 			return nil, "no " .. Boosters.Info[kind].name
 		end
 	end
@@ -234,7 +356,7 @@ function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 		return nil, "too fast"
 	end
 
-	local ok, heartTaken = Hearts.take(state.hearts, self.now())
+	local ok, heartTaken = Hearts.take(state.hearts, now)
 	if not ok then
 		return nil, "no hearts"
 	end
@@ -246,8 +368,19 @@ function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 	end
 	local startPowerUps = {}
 	for _, kind in preBoosters do
-		state.boosters[kind] -= 1
-		table.insert(startPowerUps, Boosters.Info[kind].power)
+		if not free[kind] then
+			state.boosters[kind] -= 1
+		end
+	end
+	-- Free start boosters from the score track go on every level while they last.
+	local freeStarts = {}
+	for _, kind in Boosters.PreLevel do
+		if free[kind] or table.find(preBoosters, kind) then
+			table.insert(startPowerUps, Boosters.Info[kind].power)
+		end
+		if free[kind] then
+			table.insert(freeStarts, kind)
+		end
 	end
 	local hotStreak = Boosters.hotStreakPowers(state.streak)
 	for _, power in hotStreak do
@@ -272,6 +405,7 @@ function RunStore.start(self, userId: number, levelId: any, rawBoosters: any)
 		seed = record.run.seed,
 		startPowerUps = startPowerUps,
 		hotStreak = hotStreak, -- the free ones among startPowerUps
+		freeStarts = freeStarts, -- pre-level boosters given free by the score track
 		progress = self:getProgress(userId),
 	}
 end
@@ -341,11 +475,18 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 		rewards.chestCoins = chest.coins
 		rewards.coins += chest.coins
 	end
+	local track
+	if self.scoreTracks then
+		local _, running = self:_track(state, self.now())
+		local doubled = state.doubleUntil > self.now()
+		track = self:_addTrackPoints(state, ScoreTracks.pointsFor(running.id, result.stats, doubled), doubled, rewards)
+	end
 	return {
 		won = true,
 		levelId = run.levelId,
 		rewards = rewards,
 		chest = chest,
+		track = track,
 		firstWin = firstWin,
 		stats = result.stats,
 		progress = self:getProgress(userId),
@@ -616,6 +757,16 @@ function RunStore.devAddBoosters(self, userId: number, count: number)
 		stock[kind] = math.clamp((stock[kind] or 0) + math.floor(count), 0, Boosters.MAX_STOCK)
 	end
 	return self:getProgress(userId)
+end
+
+-- Studio testing: track points without playing (the "Dev 🐝" button).
+function RunStore.devTrackPoints(self, userId: number, points: number)
+	if not self.devActions or not self.scoreTracks then
+		return nil, "not in Studio"
+	end
+	local rewards = { coins = 0 }
+	local track = self:_addTrackPoints(self:_player(userId).state, math.floor(points), false, rewards)
+	return { track = track, rewards = rewards, progress = self:getProgress(userId) }
 end
 
 -- Studio testing: a heart gift from a pretend neighbor (the "Dev 🎁" button).

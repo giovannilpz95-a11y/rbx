@@ -17,6 +17,7 @@ local function makeStore(unlockAll, config)
 			return seeds:int(1, 2 ^ 31 - 1)
 		end,
 		unlockAll = unlockAll,
+		scoreTracks = false, -- so exact reward checks don't pick up track steps (see scoretracks.spec)
 	}
 	for k, v in config or {} do
 		settings[k] = v

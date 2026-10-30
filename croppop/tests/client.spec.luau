@@ -559,6 +559,43 @@ test("the Studio Dev +5 boosters button adds 5 of every booster", function()
 	PuzzleScreen.close()
 end)
 
+test("the score track shows on the Trail, lists its steps and pays free start boosters", function()
+	refillHearts()
+	PuzzleScreen.open()
+	local select = playerGui.CropPop.Backdrop.LevelSelect
+	local row = select.List.Track
+	local track = CropPop.ScoreTracks.Tracks[serverProgress().track.id]
+	truthy(string.find(row.Text, track.name, 1, true), row.Text)
+	truthy(string.find(row.Text, "ends in", 1, true), row.Text)
+	row.Activated:Fire()
+	truthy(select.List:FindFirstChild("TrackStep1"), "the step list opens")
+	eq(select.List:FindFirstChild("TrackStep" .. (#track.steps + 1)), nil)
+	-- Enough points for the first steps, which include a free start booster.
+	select.DevTrack.Activated:Fire()
+	truthy(string.find(select.Status.Text, "Step 1", 1, true), select.Status.Text)
+	truthy(string.find(select.List.TrackStep1.Text, "✅", 1, true), select.List.TrackStep1.Text)
+	select.List.Track.Activated:Fire()
+	eq(select.List:FindFirstChild("TrackStep1"), nil, "and closes")
+	local free = serverProgress().freeStarts
+	local kind = next(free)
+	truthy(kind, "a free start booster is running")
+	PuzzleScreen.open(1)
+	local pre = playerGui.CropPop.Backdrop.PreLevel
+	truthy(string.find(pre[kind].Text, "free for", 1, true), pre[kind].Text)
+	local before = serverProgress().boosters[kind]
+	local run = pressPlay({ kind })
+	eq(serverProgress().boosters[kind], before, "a free one isn't taken from stock")
+	local powered = 0
+	run.game.board:eachCell(function(cell)
+		if cell.piece and cell.piece.power then
+			powered += 1
+		end
+	end)
+	truthy(powered >= 1, "it's on the board")
+	PuzzleScreen.close()
+	passTime(2 * 60 * 60) -- let the free boosters and x2 points run out for the tests after this
+end)
+
 test("a heart from a neighbor shows on the Trail and fills an empty heart", function()
 	PuzzleScreen.open()
 	local select = playerGui.CropPop.Backdrop.LevelSelect
