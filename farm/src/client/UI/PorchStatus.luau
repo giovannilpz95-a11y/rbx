@@ -72,7 +72,9 @@ local function bubbleFor(model: Model, gui: Folder): TextLabel
 		Name = "PorchStatus",
 		Adornee = model,
 		Size = UDim2.fromOffset(170, 44),
-		ExtentsOffsetWorldSpace = Vector3.new(0, 1, 0), -- just over the porch's top
+		ExtentsOffsetWorldSpace = Vector3.new(0, 1, 0), -- over the porch's top...
+		StudsOffsetWorldSpace = Vector3.new(0, 2, 0), -- ...clear of its roof
+		AlwaysOnTop = true, -- never half behind the roof from a low camera
 		MaxDistance = 40, -- like the pen and factory names, so far-off labels don't pile up
 		Parent = gui,
 	})
