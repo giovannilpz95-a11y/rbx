@@ -31,6 +31,7 @@ local ArtCommunity = require(Shared.Art.Community)
 local ArtCrops = require(Shared.Art.Crops)
 local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
+local ArtMerge = require(Shared.Art.Merge)
 local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtFolk = require(Shared.Art.Folk)
 local ArtLighting = require(Shared.Art.Lighting)
@@ -120,6 +121,7 @@ local LAYOUT = {
 		SnackFactory = Vector3.new(66, 0, 16),
 		Diner = Vector3.new(66, 0, 2),
 		FeedMill2 = Vector3.new(66, 0, -12),
+		IceCreamParlor = Vector3.new(66, 0, -26),
 	} :: { [string]: Vector3 },
 	factoryOutputOffset = Vector3.new(-10, 0, 0),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine
@@ -154,7 +156,10 @@ local LOCKED_ROADS = {
 		Vector3.new(Lots.northLane.linkX - 4, 0, Lots.northLane.z - 4),
 		Vector3.new(Lots.northLane.linkX + 4, 0, -48),
 	},
-	{ Vector3.new(-46, 0, Lots.northLane.z - 4), Vector3.new(46, 0, Lots.northLane.z + 4) },
+	{
+		Vector3.new(-Lots.northLane.halfWidth, 0, Lots.northLane.z - 4),
+		Vector3.new(Lots.northLane.halfWidth, 0, Lots.northLane.z + 4),
+	},
 }
 
 -- Decoration spots (plot-local, on the ground), clear of every building, path and lot.
@@ -421,6 +426,22 @@ local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame
 	pen.Parent = plot
 end
 
+-- The Town Hall, with the owner's name on the plot sign out front. Rebuilt with more storeys
+-- as its upgrades (Config/Town `townHallStorey`) finish.
+local function buildTownHall(model: Model, player: Player, at: CFrame, storeys: number): Model
+	local old = model:FindFirstChild("TownHall")
+	if old then
+		old:Destroy()
+	end
+	local holder = Instance.new("Model")
+	holder.Name = "TownHall"
+	holder:SetAttribute("BaseCFrame", at)
+	local _, plotSign = ArtTown.townHall(holder, at, storeys)
+	paint(plotSign, player.DisplayName .. "'s Town", Enum.NormalId.Front)
+	holder.Parent = model
+	return holder
+end
+
 local function buildPlot(player: Player, slot: Slot): Model
 	local origin = slot.cframe
 	local function at(localPos: Vector3, y: number): CFrame
@@ -527,8 +548,8 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Color = COLORS.path,
 		Parent = model,
 	})
-	-- North Lane in the North Fields (expansion 3), and its link road from the start area.
-	-- Laid before the land is cleared, like the gate road.
+	-- North Lane across the North Fields and the Far Corners (expansions 3 and 4), and its link
+	-- road from the start area. Laid before the land is cleared, like the gate road.
 	part({
 		Name = "NorthLaneLink",
 		Size = Vector3.new(8, 0.2, -Lots.northLane.z - 48 - 4),
@@ -538,7 +559,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 	})
 	part({
 		Name = "NorthLane",
-		Size = Vector3.new(92, 0.2, 8),
+		Size = Vector3.new(Lots.northLane.halfWidth * 2, 0.2, 8),
 		CFrame = at(Vector3.new(0, 0, Lots.northLane.z), 0.3),
 		Color = COLORS.path,
 		Parent = model,
@@ -602,10 +623,8 @@ local function buildPlot(player: Player, slot: Slot): Model
 	local shed = ArtBuildings.toolShed(model, barnAt * CFrame.new(-14 / 2 - 2.2, 0, 1) * Kit.yaw(90))
 	shed:SetAttribute("Interact", "Barn")
 
-	-- Town Hall, with the owner's name on the plot sign out front. One storey until Town
-	-- Records (F07) gives it more.
-	local _, plotSign = ArtTown.townHall(model, at(LAYOUT.townHall, 0) * Kit.yaw(90), 1)
-	paint(plotSign, player.DisplayName .. "'s Town", Enum.NormalId.Front)
+	-- Town Hall: one storey until its upgrades (refreshTown) add more
+	buildTownHall(model, player, at(LAYOUT.townHall, 0) * Kit.yaw(90), 1)
 	-- The plot's Puzzle Porch: a tap anywhere on it opens Crop Pop (client UI/Social)
 	local porch = ArtTown.porch(model, at(LAYOUT.porch, 0.25) * Kit.yaw(-90))
 	for _, p in porch:GetDescendants() do
@@ -730,6 +749,10 @@ local function townModel(
 		label(body, labelText, 8, UDim2.fromOffset(140, 28), 40)
 	end
 	holder.Parent = folder
+	if not building then
+		-- A finished building never moves: union it into one part (Art/Merge, the part budget)
+		task.spawn(ArtMerge.merge, holder, body)
+	end
 end
 
 local function refreshTown(player: Player, model: Model, data: { [string]: any }, now: number)
@@ -739,6 +762,17 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		return
 	end
 	local cache = townVisualState[player]
+	-- The Town Hall gains a storey per finished upgrade, and stands in a scaffold during one
+	local storeys, upgrading = TownRules.townHall(data, now)
+	local hallState = storeys .. ":" .. tostring(upgrading)
+	local hall = model:FindFirstChild("TownHall")
+	local hallAt = hall and hall:GetAttribute("BaseCFrame") :: CFrame?
+	if cache.TownHall ~= hallState and hallAt then
+		cache.TownHall = hallState
+		hall = buildTownHall(model, player, hallAt, storeys)
+		local size = ArtTown.TOWNHALL_SIZE
+		setScaffold(hall :: Model, upgrading, size.X + 1, size.Z + 1, 15)
+	end
 	for _, house in data.town.houses do
 		local def = Town.houses[house.type]
 		local pos = LAYOUT.houseLots[house.lot]
@@ -763,11 +797,12 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		end
 	end
 	for id, entry in data.town.community do
-		local def = Town.community[id]
-		local pos = def and LAYOUT.communityLots[def.order]
-		if def == nil or pos == nil then
+		local lot = Town.community[id] and TownRules.communityLot(id)
+		local pos = lot and LAYOUT.communityLots[lot]
+		if lot == nil or pos == nil then
 			continue
 		end
+		local def = Town.community[id]
 		local name = "Community_" .. id
 		local state = tostring(TownRules.isDone(entry, now))
 		if cache[name] ~= state then
@@ -775,11 +810,11 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 			townModel(
 				folder,
 				name,
-				slot.cframe * CFrame.new(pos) * Kit.yaw(Lots.community[def.order].yaw),
+				slot.cframe * CFrame.new(pos) * Kit.yaw(Lots.community[lot].yaw),
 				"Community",
 				id,
 				12,
-				def.order,
+				lot,
 				not TownRules.isDone(entry, now),
 				def.displayName
 			)
@@ -1087,7 +1122,9 @@ local function refreshDecor(player: Player, model: Model, data: { [string]: any 
 	local slot = slotByPlayer[player]
 	for i, p in data.decor do
 		local origin = slot.cframe * CFrame.new(p.x, 0.25, p.z) * CFrame.Angles(0, p.r * math.pi / 2, 0)
-		DecorModels.build(p.id, origin, i).Parent = folder
+		local decor = DecorModels.build(p.id, origin, i)
+		decor.Parent = folder
+		DecorModels.merge(decor)
 	end
 end
 

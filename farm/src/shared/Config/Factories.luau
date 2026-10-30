@@ -33,6 +33,7 @@ local Factories: { [string]: FactoryDef } = {
 	SnackFactory = { id = "SnackFactory", displayName = "Snack Factory", unlockLevel = 14, population = 300, buildCost = 1300, buildSeconds = 12 * HOUR, xp = 58, queueSlots = 2, trayCapacity = 6, order = 6, color = { 240, 200, 90 }, land = 2 },
 	Diner = { id = "Diner", displayName = "Diner", unlockLevel = 16, population = 425, buildCost = 2100, buildSeconds = 16 * HOUR, xp = 91, queueSlots = 2, trayCapacity = 6, order = 7, color = { 150, 215, 200 }, land = 2 },
 	FeedMill2 = { id = "FeedMill2", displayName = "Second Feed Mill", unlockLevel = 19, population = 655, buildCost = 2800, buildSeconds = 16 * HOUR, xp = 120, queueSlots = 3, trayCapacity = 6, order = 8, color = { 200, 150, 110 }, land = 2, makes = "FeedMill" },
+	IceCreamParlor = { id = "IceCreamParlor", displayName = "Ice Cream Parlor", unlockLevel = 20, population = 735, buildCost = 3600, buildSeconds = 24 * HOUR, xp = 174, queueSlots = 2, trayCapacity = 6, order = 9, color = { 245, 190, 210 }, land = 2 },
 }
 
 return table.freeze(Factories)

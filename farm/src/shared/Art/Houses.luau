@@ -337,6 +337,71 @@ TYPES.ThatchedLonghouse = {
 	end,
 }
 
+-- Corner Flats (content bank, level 20): a two-storey block of flats in warm brick with a
+-- cream cornice, two front doors, and a lower side wing with a flat roof and a planter.
+TYPES.CornerFlats = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.75, STORY * 1.7
+		local x = -s * 0.15
+		local body = walls(b, w, d, h, Palette.brick, x)
+		local t = b.into(body, true)
+		t.block("Cornice", Vector3.new(w + 0.8, 0.8, d + 0.8), Vector3.new(x, PLINTH + h + 0.4, 0), Palette.cream)
+		-- The side wing, one storey, its flat roof in the house's tint
+		local ww, wx = s * 0.32, s * 0.31
+		t.block("Wing", Vector3.new(ww, STORY - 1, d - 1), Vector3.new(wx, PLINTH + (STORY - 1) / 2, 0.5), Palette.oat)
+		t.block("WingRoof", Vector3.new(ww + 0.6, 0.6, d - 0.4), Vector3.new(wx, PLINTH + STORY - 0.7, 0.5), roof)
+		for _, dx in { -w / 4, w / 4 } do
+			Kit.door(t, "Door", CFrame.new(x + dx, PLINTH, front(d)), 1.6, 3.6, roof, Palette.cream)
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x + dx, PLINTH + STORY + 1.6, front(d)),
+				1.6,
+				1.8,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		flowerBox(t, CFrame.new(wx, PLINTH + STORY - 0.2, front(d) + 0.5), ww)
+		Kit.sproutTag(t, Vector3.new(x, PLINTH + h + 0.8, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Lakeside Manor (content bank, level 22): a tall pale-blue manor under a steep roof, a
+-- deep front porch, and a little pond with a rowboat at its side.
+TYPES.LakesideManor = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.62, s * 0.62, STORY * 1.8
+		local x0, z0 = -s * 0.12, s * 0.08
+		local body = walls(b, w, d, h, Palette.sky:Lerp(Palette.cream, 0.55), x0, z0)
+		local t = b.into(body, true)
+		Kit.gableRoof(t, "Roof", Vector3.new(x0, PLINTH + h, z0), w + 1.2, d + 1.2, 4.2, roof)
+		local face = z0 - d / 2
+		t.block("Porch", Vector3.new(w + 0.6, 0.4, 2), Vector3.new(x0, PLINTH + STORY - 1.4, face - 1), Palette.cream)
+		Kit.door(t, "Door", CFrame.new(x0, PLINTH, face), 2, 4, roof, Palette.cream)
+		for _, x in { -1, 1 } do
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x0 + x * (w / 2 - 1.3), PLINTH + STORY + 1.6, face),
+				1.5,
+				1.8,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		-- The pond on the open side, with a little rowboat
+		local px = x0 + w / 2 + s * 0.13
+		t.post("Pond", 0.2, s * 0.24, Vector3.new(px, 0.15, face + 0.6), Palette.water, { shadow = false })
+		t.block("Rowboat", Vector3.new(0.8, 0.4, 1.6), Vector3.new(px, 0.4, face + 0.6), Palette.wood)
+		Kit.sproutTag(t, Vector3.new(x0 - w / 4, PLINTH + h + 3.6, z0), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)
