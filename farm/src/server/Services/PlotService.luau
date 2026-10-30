@@ -1125,6 +1125,16 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	if glow then
 		glow.Material = if busy then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	end
+	-- A working factory's walls, roof and trim never change again: merge them around the body
+	if fade == 0 and building:GetAttribute("ShellMerged") == nil then
+		for _, d in building:GetDescendants() do
+			if d:IsA("BasePart") and d:GetAttribute("Interact") == "Factory" then
+				building:SetAttribute("ShellMerged", true)
+				task.spawn(ArtMerge.merge, building, d, { skip = ArtFactories.MERGE_SKIP })
+				break
+			end
+		end
+	end
 
 	-- Each finished item stands on the output table as its own prop (FarmShared.Art.ItemProps):
 	-- four along the table, then a second layer on top.

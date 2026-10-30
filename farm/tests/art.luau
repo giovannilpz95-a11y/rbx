@@ -22,6 +22,9 @@ local ArtCrops = require("../src/shared/Art/Crops")
 local ArtDecor = require("../src/shared/Art/Decor")
 local ArtMarket = require("../src/shared/Art/Market")
 local ArtMerge = require("../src/shared/Art/Merge")
+-- What Merge offers as soon as it loads, before any test calls into it (a function defined
+-- inside another one would only show up after that one ran)
+local MERGE_AT_LOAD = { ArtMerge.leader, ArtMerge.mergeShell, ArtMerge.countShell, ArtMerge.parts }
 local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
@@ -445,6 +448,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ok(ArtMerge.count(m, body) <= 8, id .. " merges down to 8 parts or fewer")
 		end
 
+		for i = 1, 4 do
+			eq(type(MERGE_AT_LOAD[i]), "function", "every Merge function is there as soon as the module loads")
+		end
+
 		local m, body = house()
 		local _, keep = ArtMerge.split(m, body)
 		local union = ArtMerge.merge(m, body, nil, stub)
@@ -478,6 +485,33 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(look ~= nil and look.Name == "Look" and look.Parent == root, "decoration look merged under its root")
 		ok(look ~= nil and look.CanCollide, "the lamp post still blocks the avatar")
 		ok(root:FindFirstChild("Lantern") ~= nil, "the glowing lantern stays separate")
+
+		-- Factories: walls, roof and trim merge around the body; the gimmick, output table and
+		-- glow parts stay so they can move, take taps and light up
+		for _, id in FACTORIES do
+			local fm = Instance.new("Model")
+			fm.Parent = folder
+			local parts = ArtFactories.build(id, fm, CFrame.new())
+			local before = Kit.countParts(fm)
+			local animParts = Kit.countParts(parts.anim)
+			local glows = {}
+			for _, glow in { "OvenGlow", "NeonSign", "FurnaceGlow" } do
+				if fm:FindFirstChild(glow, true) then
+					table.insert(glows, glow)
+				end
+			end
+			local expected = ArtMerge.count(fm, parts.body, ArtFactories.MERGE_SKIP)
+			local union = ArtMerge.merge(fm, parts.body, { skip = ArtFactories.MERGE_SKIP }, stub)
+			ok(union ~= parts.body and union.Parent == fm, id .. " merged")
+			ok(Kit.countParts(fm) < before - 10, id .. " merge saves parts")
+			eq(Kit.countParts(fm), expected, id .. " part count matches the estimate")
+			eq(Kit.countParts(parts.anim), animParts, id .. " gimmick untouched")
+			ok(fm:FindFirstChild("OutputTable", true) ~= nil, id .. " keeps its output table")
+			ok(fm:FindFirstChild("TableTop", true) ~= nil, id .. " keeps the table top")
+			for _, glow in glows do
+				ok(fm:FindFirstChild(glow, true) ~= nil, id .. " keeps its " .. glow)
+			end
+		end
 
 		-- Pens: fences and shelter become one walk-through, tap-through "Shell"; the floor,
 		-- gate, feed, crate lid, animals and the coop's solid house stay as they are
@@ -900,8 +934,9 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		-- prop it makes
 		for _, id in FACTORIES do
 			local m = Instance.new("Model")
-			ArtFactories.build(id, m, CFrame.new())
-			add(m, 1)
+			local parts = ArtFactories.build(id, m, CFrame.new())
+			-- A working factory is merged around its body on the server (Art/Merge)
+			total += ArtMerge.count(m, parts.body, ArtFactories.MERGE_SKIP)
 			total += ArtFactories.QUEUE_SHOWN
 			local makes = Factories[id].makes or id
 			local biggestProp = 0
