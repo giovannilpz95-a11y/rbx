@@ -5,6 +5,7 @@
 -- Anything that spends Gems takes two taps: the first asks, the second spends.
 -- Panels re-render on every state change and once a second for countdowns.
 
+local GuiService = game:GetService("GuiService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -23,6 +24,7 @@ local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Land = require(Shared.Config.Land)
+local Settings = require(Shared.Settings)
 local Speedup = require(Shared.Speedup)
 local Prize = require(Shared.Config.Prize)
 local Products = require(Shared.Config.Products)
@@ -132,7 +134,8 @@ local function confirmButton(
 	return button
 end
 
--- A button that spends Gems after a confirming second tap.
+-- A button that spends Gems after a confirming second tap (or one tap, when the Gem confirm
+-- setting says this price doesn't need asking).
 -- `free`: a price of 0 is a gift (one tap, always on) rather than "nothing to speed up"
 local function gemButton(
 	key: string,
@@ -151,7 +154,7 @@ local function gemButton(
 		props,
 		free == true or (price > 0 and state ~= nil and state.currencies.Gems >= price),
 		Ui.colors.gems,
-		free
+		free or (state ~= nil and not Settings.confirmGems(state.settings, price))
 	)
 end
 
@@ -1496,12 +1499,47 @@ end
 -- Panels that live in their own files (UI/Social): name -> renderer into the shared window
 local extraPanels: { [string]: (state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?) -> () } =
 	{}
+-- Panels with nothing counting down skip the once-a-second refresh
+local staticPanels: { [string]: boolean } = { Seeds = true, Debug = true }
 
+-- opts.static: the panel has no countdowns, so it only re-renders when something changes
 function Panels.register(
 	name: string,
-	renderer: (state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?) -> ()
+	renderer: (state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?) -> (),
+	opts: { static: boolean? }?
 )
 	extraPanels[name] = renderer
+	staticPanels[name] = opts ~= nil and opts.static == true
+end
+
+-- Keyboard and gamepad UI navigation (\ on a keyboard) selects a button; every render
+-- rebuilds the panel, so find the same spot in the new tree and select it again.
+local function selectionPath(): { number }?
+	local selected = GuiService.SelectedObject
+	if selected == nil or not selected:IsDescendantOf(body) then
+		return nil
+	end
+	local path = {}
+	local node: Instance = selected
+	while node ~= body do
+		local parent = node.Parent :: Instance
+		table.insert(path, 1, table.find(parent:GetChildren(), node) or 1)
+		node = parent
+	end
+	return path
+end
+
+local function reselect(path: { number }?)
+	if path == nil then
+		return
+	end
+	local node: Instance? = body
+	for _, index in path do
+		node = node and node:GetChildren()[index]
+	end
+	if node and node:IsA("GuiObject") and node.Selectable then
+		GuiService.SelectedObject = node
+	end
 end
 
 local function render()
@@ -1509,6 +1547,7 @@ local function render()
 	if current == nil or state == nil then
 		return
 	end
+	local selected = selectionPath()
 	releaseIcons()
 	Ui.clear(body)
 	if current == "Orders" then
@@ -1538,6 +1577,7 @@ local function render()
 	elseif extraPanels[current] then
 		extraPanels[current](state, body, titleLabel, currentArg)
 	end
+	reselect(selected)
 end
 
 Panels.refresh = render
@@ -1635,7 +1675,7 @@ function Panels.init()
 	task.spawn(function()
 		while true do
 			task.wait(1)
-			if current ~= nil and current ~= "Seeds" and current ~= "Debug" and not anyArmed() then
+			if current ~= nil and not staticPanels[current] and not anyArmed() then
 				render()
 			end
 		end

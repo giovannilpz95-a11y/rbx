@@ -31,6 +31,7 @@ local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Recipes = require("../src/shared/Config/Recipes")
 local Rng = require("../src/shared/Rng")
+local Settings = require("../src/shared/Settings")
 local Social = require("../src/shared/Config/Social")
 local SocialRules = require("../src/shared/Social")
 local Speedup = require("../src/shared/Speedup")
@@ -38,6 +39,7 @@ local Timer = require("../src/shared/Timer")
 local Town = require("../src/shared/Config/Town")
 local TownRules = require("../src/shared/TownRules")
 local Tutorial = require("../src/shared/Tutorial")
+local Unlocks = require("../src/shared/Unlocks")
 
 local passed, failed = 0, 0
 
@@ -1033,6 +1035,52 @@ test("a profile from a newer build is refused", function()
 	local data, reason = Profile.migrate({ version = Profile.VERSION + 1 })
 	eq(data, nil, "no data")
 	eq(reason, "newer", "reason")
+end)
+
+test("settings: defaults in new profiles, checked values, the Gem confirm", function()
+	local profile = Profile.template()
+	eq(profile.settings.lastSeed, "Wheat", "lastSeed kept")
+	eq(profile.settings.music, 10, "music default")
+	eq(profile.settings.gemConfirm, "Always", "confirm default")
+	-- An old save without the new keys gets them, and keeps its lastSeed
+	local old = Profile.template()
+	old.settings = { lastSeed = "Corn" }
+	local migrated = Profile.migrate(old) :: any
+	eq(migrated.settings.lastSeed, "Corn", "old lastSeed")
+	eq(migrated.settings.textSize, "Normal", "text size filled in")
+	ok(Settings.valid("music", 0) and Settings.valid("music", 10), "volume ends")
+	ok(not Settings.valid("music", 11) and not Settings.valid("music", 2.5), "volume range and steps")
+	ok(not Settings.valid("lastSeed", "Corn"), "lastSeed isn't a player option")
+	ok(not Settings.valid("textSize", "Huge") and Settings.valid("textSize", "Large"), "choices")
+	ok(Settings.valid("reduceMotion", true) and not Settings.valid("reduceMotion", "yes"), "toggle")
+	ok(not Settings.valid({}, 1) and not Settings.valid(nil, nil), "junk keys")
+	ok(Settings.confirmGems(nil, 1), "asks by default")
+	ok(not Settings.confirmGems({ gemConfirm = "Over 10" }, 10), "10 Gems is one tap with Over 10")
+	ok(Settings.confirmGems({ gemConfirm = "Over 10" }, 11), "11 Gems asks with Over 10")
+	ok(not Settings.confirmGems({ gemConfirm = "Never" }, 500), "never asks")
+	eq(Settings.get({ music = "loud" }, "music"), 10, "a bad saved value reads as the default")
+end)
+
+test("each level's unlocks come from the configs", function()
+	local function has(level: number, kind: string, id: string): boolean
+		for _, unlock in Unlocks.at(level) do
+			if unlock.kind == kind and unlock.id == id then
+				return true
+			end
+		end
+		return false
+	end
+	ok(has(2, "Factory", "Bakery") and has(2, "Recipe", "Bread"), "level 2: Bakery and Bread")
+	ok(has(3, "Crop", "Corn") and has(3, "Factory", "FeedMill"), "level 3: Corn and the Feed Mill")
+	ok(has(5, "Pen", "ChickenCoop") and has(5, "Feature", "Daily"), "level 5: Chickens and daily gifts")
+	ok(not has(1, "Pen", "CowBarn"), "the Cow Barn comes with the farm")
+	ok(has(5, "Community", "VillageWell"), "Community Buildings")
+	ok(has(4, "House", "LeanTo"), "Houses")
+	ok(#Unlocks.at(99) == 0, "nothing past the content")
+	local list = Unlocks.at(5)
+	for i = 2, #list do
+		ok(list[i - 1].kind ~= "Feature" or list[i].kind == "Feature", "features last")
+	end
 end)
 
 ---------------------------------------------------------------------------------------------
