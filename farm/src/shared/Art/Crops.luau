@@ -254,6 +254,24 @@ READY.Tomatoes = function(b, color)
 	end
 end
 
+-- Pumpkins (level 18): low sprawling vines, then fat orange pumpkins with green stems.
+GROWING.Pumpkins = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Vine", Vector3.new(6.2, 0.8, 1.4), Vector3.new(0, 0.7, z), Palette.leafLight)
+		b.ball("Bud", 0.9, Vector3.new(1.2, 1.1, z - 0.4), Palette.flowerYellow, { shadow = false })
+	end
+end
+READY.Pumpkins = function(b, color)
+	for i, z in ArtCrops.ROWS do
+		b.block("Vine", Vector3.new(6.4, 0.8, 1.4), Vector3.new(0, 0.7, z), Palette.leaf)
+		for j, x in { -1.8, 1.8 } do
+			local big = (i + j) % 2 == 0
+			b.ball("Pumpkin", if big then 2 else 1.6, Vector3.new(x, if big then 1.6 else 1.4, z - 0.3), color)
+		end
+		b.block("Stem", Vector3.new(0.3, 0.6, 0.3), Vector3.new(-1.8, 2.7, z - 0.3), Palette.leaf, { shadow = false })
+	end
+end
+
 -- Crops past the content bank: green rows, then rows of fruit in the crop's own color.
 local function genericGrowing(b: Kit.Builder, _color: Color3)
 	for _, z in ArtCrops.ROWS do

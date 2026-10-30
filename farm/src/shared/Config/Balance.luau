@@ -4,9 +4,18 @@
 
 return table.freeze({
 	-- What the game plays with: the level-12 MVP plus the content bank (Strawberries 13,
-	-- Tomatoes 15), which stays locked by level until the cap is raised. The full crop table
+	-- Tomatoes 15, Pumpkins 18), which stays locked by level until the cap is raised. The full crop table
 	-- lives in Crops.
-	enabledCrops = table.freeze({ "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton", "Strawberries", "Tomatoes" }),
+	enabledCrops = table.freeze({
+		"Wheat",
+		"Corn",
+		"Carrots",
+		"Sugarcane",
+		"Cotton",
+		"Strawberries",
+		"Tomatoes",
+		"Pumpkins",
+	}),
 	enabledFactories = table.freeze({
 		"Bakery",
 		"FeedMill",
