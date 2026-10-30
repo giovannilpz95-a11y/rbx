@@ -150,6 +150,18 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: the VIP gold fence builds inside one tile and its budget", function()
+		local root = Instance.new("Part")
+		ok(ArtDecor.has("GoldFence"), "gold fence model")
+		ArtDecor.build("GoldFence", root, CFrame.new())
+		local n = Kit.countParts(root) - 1
+		ok(n > 0 and n <= ArtDecor.PARTS_MAX, "gold fence has " .. n .. " parts")
+		Kit.eachPart(root, function(p)
+			local c = p.CFrame.Position
+			ok(p == root or (math.abs(c.X) <= 2 and math.abs(c.Z) <= 2), "gold fence: " .. p.Name .. " inside its tile")
+		end)
+	end)
+
 	test("art: every decoration builds inside its footprint and budget", function()
 		for id, def in Decor.items do
 			ok(ArtDecor.has(id), "decoration model for " .. id)

@@ -322,6 +322,25 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Seat", Vector3.new(3.6, 0.3, 1.1), at(0, 2.35, 0), Palette.roofMustard)
 		b.block("Back", Vector3.new(3.6, 1, 0.2), at(0, 2.9, 0.5), Palette.roofMustard:Lerp(Palette.cream, 0.3), QUIET)
 	end,
+	-- VIP gold fence (Model List §7, P1 with the VIP pass): gilded pickets with ball finials and
+	-- a little Neon glint on the middle one. Not in Config/Decor until the VIP pass exists.
+	GoldFence = function(b)
+		local gold = Palette.coins
+		for _, y in { 0.9, 1.9 } do
+			b.block("Rail", Vector3.new(4, 0.3, 0.2), at(0, y, 0.15), gold:Lerp(Palette.woodDark, 0.25), QUIET)
+		end
+		for i, x in { -1.4, 0, 1.4 } do
+			b.block("Picket", Vector3.new(0.5, 2.6, 0.25), at(x, 1.3, 0), gold)
+			b.ball("Finial", 0.6, at(x, 2.75, 0), if i == 2 then gold:Lerp(Palette.cream, 0.3) else gold, QUIET)
+		end
+		b.block(
+			"Glint",
+			Vector3.new(0.15, 0.6, 0.05),
+			CFrame.new(0.1, 2.85, -0.31) * CFrame.Angles(0, 0, math.rad(25)),
+			Palette.cream,
+			{ shadow = false, material = Enum.Material.Neon }
+		)
+	end,
 }
 
 function ArtDecor.has(id: string): boolean
