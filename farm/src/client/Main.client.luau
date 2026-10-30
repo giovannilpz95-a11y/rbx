@@ -13,6 +13,7 @@ local Panels = require(script.Parent.UI.Panels)
 local WorldLabels = require(script.Parent.UI.WorldLabels)
 local ReachController = require(script.Parent.Controllers.ReachController)
 local MovementController = require(script.Parent.Controllers.MovementController)
+local FactoryMotion = require(script.Parent.Controllers.FactoryMotion)
 
 local player = Players.LocalPlayer
 
@@ -23,6 +24,7 @@ Hud.init(Panels.open, ReachController.setActionHeld)
 WorldLabels.init()
 ReachController.init()
 MovementController.init()
+task.spawn(FactoryMotion.init)
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
 local SHORTCUTS = {

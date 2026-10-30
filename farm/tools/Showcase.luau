@@ -8,6 +8,8 @@ local ArtBuildings = require("../src/shared/Art/Buildings")
 local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtCommunity = require("../src/shared/Art/Community")
+local ArtItemProps = require("../src/shared/Art/ItemProps")
+local Items = require("../src/shared/Items")
 
 local Showcase = {}
 
@@ -209,6 +211,19 @@ SCENES.plot = function(root)
 	end
 	for i, id in { "VillageWell", "PicnicPavilion", "Schoolhouse" } do
 		ArtCommunity.build(id, Kit.model(id, root), CFrame.new(-13 - (i - 1) * 15, 0, 86), 12)
+	end
+end
+
+SCENES.items = function(root)
+	ground(root, 40)
+	local ids = {}
+	for id in Items do
+		table.insert(ids, id)
+	end
+	table.sort(ids)
+	for i, id in ids do
+		local col, row = (i - 1) % 8, (i - 1) // 8
+		ArtItemProps.build(id, CFrame.new(-10.5 + col * 3, 0, -6 + row * 3.5)).Parent = root
 	end
 end
 
