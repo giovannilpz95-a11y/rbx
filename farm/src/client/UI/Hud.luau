@@ -53,7 +53,9 @@ function Hud.popup(payload: { [string]: any })
 	elseif payload.kind == "BarnUpgrade" then
 		Hud.toast(string.format("Barn upgraded: room for %d!", payload.capacity))
 	elseif payload.kind == "Drop" then
-		Hud.toast(string.format("Found 1 %s!", payload.name))
+		Hud.toast(
+			string.format("Found 1 %s!%s", payload.name, if payload.tool then "  It's in the Tool Shed (Barn)." else "")
+		)
 	elseif payload.kind == "Field" then
 		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
 	elseif payload.kind == "Order" then

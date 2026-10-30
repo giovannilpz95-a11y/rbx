@@ -2,8 +2,8 @@
 -- The daily login calendar from Design/08 Social & Events (first-pass). Seven days that
 -- repeat; a missed day pauses the calendar instead of resetting it. Opens at level 5
 -- (06 Progression & Unlocks). Coins scale with the level band.
--- Until tools (Shovels, Axes, Saws) and decorations ship, their days give a Barn material
--- instead and day 7 is Gems only.
+-- Until land clearings need tools (Shovels, Axes, Saws), their days give a Barn material
+-- instead, and day 7 is Gems only.
 
 export type Reward = { coins: number?, gems: number?, item: string? }
 
