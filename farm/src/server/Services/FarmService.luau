@@ -10,6 +10,7 @@ local Net = require(Shared.Net)
 local Prize = require(Shared.Config.Prize)
 local SocialRules = require(Shared.Social)
 local PrizeRules = require(Shared.Prize)
+local SeedCartRules = require(Shared.SeedCart)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
 local Tutorial = require(Shared.Tutorial)
@@ -67,7 +68,10 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	-- A Welcome Boost (friend joined) grows crops planted now a little faster
 	local seconds = SocialRules.growSeconds(crop.growSeconds, SocialRules.boostActive(data.social, now))
 	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, seconds))
-	field.prize = PrizeRules.roll(data, rng:NextNumber()) -- rolled now, so speed-ups can't buy it
+	-- Rolled now, so speed-ups can't buy it. An Heirloom Seed from the Seed Cart goes into
+	-- the next field planted.
+	local boost = SeedCartRules.useHeirloomSeed(data)
+	field.prize = PrizeRules.roll(data, rng:NextNumber(), if boost > 1 then { Heirloom = boost } else nil)
 	field.watered = nil -- a helper may water each crop once (Helping Hands)
 	data.settings.lastSeed = cropId
 	PlotService.refresh(player)

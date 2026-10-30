@@ -97,6 +97,7 @@ local PREFIX_SKU: { [string]: string } = {
 	drop = "HarvestDrop",
 	quest = "DailyQuest",
 	questchest = "QuestChest",
+	cart = "SeedCart",
 	debug = "DevGrant", -- Studio only; never reaches live analytics
 }
 
