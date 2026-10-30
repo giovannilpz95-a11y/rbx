@@ -97,6 +97,7 @@ function Profile.template(): { [string]: any }
 		factories = factories,
 		pens = pens,
 		decor = {}, -- placed decorations: { id, x, z, r } (shared/DecorRules)
+		prizes = {}, -- the Prize Basket: { crop, tier } (shared/Prize)
 		toolShed = {
 			items = {}, -- Shovel / Axe / Saw -> qty; no Barn space (shared/Drops)
 			dry = 0, -- harvests in a row without a tool, for the pity drop
