@@ -33,6 +33,7 @@ return table.freeze({
 	Barn_Upgrade = "Barn_Upgrade", -- (the next upgrade)
 	Shop_Prompt = "Shop_Prompt", -- product key (server looks up the id and prompts)
 	Shop_PromptPass = "Shop_PromptPass", -- game pass key
+	Shop_Opened = "Shop_Opened", -- (analytics: step 1 of the Shop funnel)
 	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
 	Prize_Shelve = "Prize_Shelve", -- basket index -> Prize Shelf
 	Prize_Unshelve = "Prize_Unshelve", -- shelf slot -> basket

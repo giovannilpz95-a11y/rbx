@@ -2,12 +2,12 @@
 -- The ONLY place Coins, Gems and XP change (Design/09 Roblox Architecture §3).
 -- XP gains also level the player up and pay the level-up reward.
 
-local AnalyticsService = game:GetService("AnalyticsService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Progression = require(Shared.Progression)
 
 local DataService = require(script.Parent.DataService)
 local NetService = require(script.Parent.NetService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local EconomyService = {}
 
@@ -16,31 +16,19 @@ local CURRENCIES = { Coins = true, Gems = true, XP = true }
 local function logEconomy(
 	player: Player,
 	currency: string,
-	flow: Enum.AnalyticsEconomyFlowType,
+	flow: "Source" | "Sink",
 	amount: number,
 	balance: number,
 	reason: string,
 	transactionType: string?
 )
-	if currency == "XP" then
-		return
-	end
-	pcall(function()
-		AnalyticsService:LogEconomyEvent(
-			player,
-			flow,
-			currency,
-			amount,
-			balance,
-			transactionType or Enum.AnalyticsEconomyTransactionType.Gameplay.Name,
-			reason
-		)
-	end)
+	TelemetryService.economy(player, currency, flow, amount, balance, reason, transactionType)
 end
 
 local function checkLevelUp(player: Player, data: { [string]: any })
 	local newLevel = Progression.levelFor(data.currencies.XP)
 	while data.level < newLevel do
+		TelemetryService.flush(player) -- send what was earned in the old level band first
 		data.level += 1
 		local coins, gems = Progression.reward(data.level)
 		if coins > 0 then
@@ -49,10 +37,7 @@ local function checkLevelUp(player: Player, data: { [string]: any })
 		if gems > 0 then
 			EconomyService.add(player, "Gems", gems, "levelup")
 		end
-		pcall(function()
-			local reached = data.level - 1
-			AnalyticsService:LogProgressionCompleteEvent(player, "Level", reached, "Level " .. reached)
-		end)
+		TelemetryService.levelUp(player, data.level - 1)
 		DataService.markDirty(player, true)
 		NetService.popup(player, { kind = "LevelUp", level = data.level, coins = coins, gems = gems })
 	end
@@ -67,15 +52,7 @@ function EconomyService.add(player: Player, currency: string, amount: number, re
 		return
 	end
 	data.currencies[currency] += amount
-	logEconomy(
-		player,
-		currency,
-		Enum.AnalyticsEconomyFlowType.Source,
-		amount,
-		data.currencies[currency],
-		reason,
-		transactionType
-	)
+	logEconomy(player, currency, "Source", amount, data.currencies[currency], reason, transactionType)
 	if currency == "XP" then
 		checkLevelUp(player, data)
 	end
@@ -94,7 +71,7 @@ function EconomyService.spend(player: Player, currency: string, amount: number, 
 		return true
 	end
 	data.currencies[currency] -= amount
-	logEconomy(player, currency, Enum.AnalyticsEconomyFlowType.Sink, amount, data.currencies[currency], reason)
+	logEconomy(player, currency, "Sink", amount, data.currencies[currency], reason)
 	DataService.markDirty(player)
 	return true
 end

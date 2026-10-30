@@ -62,9 +62,19 @@ function ClientStore.factoryPreview(factoryId: string)
 	}
 end
 
+-- Barn units plus Prize Basket units of that crop (they count for orders and factories)
 function ClientStore.itemCount(item: string): number
 	local state = ClientStore.state
-	return if state then state.inventory[item] or 0 else 0
+	if state == nil then
+		return 0
+	end
+	local n = state.inventory[item] or 0
+	for _, entry in state.prizes or {} do
+		if entry.crop == item then
+			n += 1
+		end
+	end
+	return n
 end
 
 return ClientStore

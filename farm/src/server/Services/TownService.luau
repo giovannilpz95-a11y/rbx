@@ -22,6 +22,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local TelemetryService = require(script.Parent.TelemetryService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local TownService = {}
@@ -162,6 +163,7 @@ function TownService.expand(player: Player): (boolean, string?)
 	end
 	table.insert(data.land, { readyAt = now + Clock.duration(def.buildSeconds) })
 	EconomyService.add(player, "XP", def.xp, "expand_" .. def.stage)
+	TelemetryService.custom(player, "ExpansionUnlocked", def.stage)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	return true
@@ -187,10 +189,12 @@ function TownService.placeFields(player: Player): boolean
 	return false
 end
 
--- Tools go to the Tool Shed; materials go to the Barn (silently lost when it's full)
-local function give(player: Player, data: { [string]: any }, id: string)
+-- Tools go to the Tool Shed; materials go to the Barn (silently lost when it's full).
+-- `reason` tags the Tools economy event ("drop_harvest", "order").
+local function give(player: Player, data: { [string]: any }, id: string, reason: string)
 	if Drops.isTool(id) then
 		data.toolShed.items[id] = (data.toolShed.items[id] or 0) + 1
+		TelemetryService.economy(player, "Tools", "Source", 1, data.toolShed.items[id], reason, nil, id .. "s")
 		NetService.popup(player, { kind = "Drop", item = id, name = Tools.tools[id].displayName, tool = true })
 	elseif InventoryService.add(player, { [id] = 1 }) then
 		NetService.popup(player, { kind = "Drop", item = id, name = Items[id].displayName })
@@ -208,7 +212,7 @@ function TownService.onHarvest(player: Player, growSeconds: number)
 	end
 	local id = Drops.harvest(data, growSeconds, rng:NextNumber())
 	if id then
-		give(player, data, id)
+		give(player, data, id, "drop_harvest")
 	end
 end
 
@@ -219,10 +223,10 @@ function TownService.onOrderDelivered(player: Player)
 		return
 	end
 	if rng:NextNumber() < Town.orderDropChance then
-		give(player, data, pickMaterial())
+		give(player, data, pickMaterial(), "order")
 	end
 	if data.level >= Tools.fromLevel and rng:NextNumber() < Tools.orderDropChance then
-		give(player, data, Drops.scarcestTool(data))
+		give(player, data, Drops.scarcestTool(data), "order")
 	end
 end
 

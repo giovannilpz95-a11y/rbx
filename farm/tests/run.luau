@@ -449,6 +449,16 @@ test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", functio
 	ok((PrizeRules.unshelve(data, 2)), "take one down")
 	eq(#data.prizeShelf, 2, "two left on show")
 	eq(PrizeRules.unshelve(data, 5), false, "no such slot")
+	data.prizes = {
+		{ crop = "Corn", tier = "Heirloom" },
+		{ crop = "Wheat", tier = "Sunkissed" },
+		{ crop = "Corn", tier = "Sunkissed" },
+	}
+	eq(PrizeRules.basketCount(data, "Corn"), 2, "two Corn count for orders")
+	eq(PrizeRules.take(data, "Corn", 1), 1, "use one")
+	eq(data.prizes[1].tier, "Heirloom", "the Sunkissed one went first")
+	eq(PrizeRules.take(data, "Corn", 5), 1, "only what's there")
+	eq(PrizeRules.basketCount(data, "Corn"), 0, "none left")
 end)
 
 test("the Shop: buy rules, receipt de-duplication and the Big Barn bonus", function()
@@ -939,6 +949,12 @@ end)
 ---------------------------------------------------------------------------------------------
 
 require("./art")(test, eq, ok)
+
+---------------------------------------------------------------------------------------------
+-- Analytics helpers (tests/analytics.luau)
+---------------------------------------------------------------------------------------------
+
+require("./analytics")(test, eq, ok)
 
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles

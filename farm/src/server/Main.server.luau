@@ -28,10 +28,12 @@ local TutorialService = require(Services.TutorialService)
 local CropPopBridge = require(Services.CropPopBridge)
 local DebugService = require(Services.DebugService)
 local DecorService = require(Services.DecorService)
+local TelemetryService = require(Services.TelemetryService)
 local Clock = require(script.Parent.Util.Clock)
 
 DataService.init()
 NetService.init()
+TelemetryService.init()
 InventoryService.init()
 PlotService.init()
 NoticeService.init() -- after the map exists
@@ -79,6 +81,7 @@ local function onPlayerAdded(player: Player)
 	FactoryService.advance(player) -- offline production lands on the output tray
 	CropPopBridge.playerLoaded(player)
 	OrderService.refreshBoard(player)
+	TelemetryService.playerLoaded(player) -- before anything saves over meta.lastSeenAt
 	ReturnService.playerLoaded(player)
 	ShopService.playerLoaded(player)
 

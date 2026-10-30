@@ -37,6 +37,37 @@ function PrizeRules.hasRoom(data: { [string]: any }): boolean
 	return #data.prizes < Prize.basketSlots
 end
 
+-- A Prize Crop counts as a normal unit of its crop for orders and factories (02 Farming).
+-- Basket units only: the shelf is on show.
+function PrizeRules.basketCount(data: { [string]: any }, crop: string): number
+	local n = 0
+	for _, entry in data.prizes do
+		if entry.crop == crop then
+			n += 1
+		end
+	end
+	return n
+end
+
+-- Use up `n` basket units of a crop, the least valuable tier first. Returns how many it took.
+function PrizeRules.take(data: { [string]: any }, crop: string, n: number): number
+	local taken = 0
+	while taken < n do
+		local best, bestValue = nil, math.huge
+		for i, entry in data.prizes do
+			if entry.crop == crop and Prize.tiers[entry.tier].value < bestValue then
+				best, bestValue = i, Prize.tiers[entry.tier].value
+			end
+		end
+		if best == nil then
+			break
+		end
+		table.remove(data.prizes, best)
+		taken += 1
+	end
+	return taken
+end
+
 -- Basket -> Prize Shelf (shown on the plot)
 function PrizeRules.shelve(data: { [string]: any }, index: number): (boolean, string?)
 	if data.prizes[index] == nil then
