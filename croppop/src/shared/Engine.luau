@@ -40,6 +40,7 @@ local BOMB_RADIUS = 2 -- Hay Bomb clears every cell within this many steps (diam
 local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
+local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
 
 local NEIGHBORS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
 
@@ -441,10 +442,21 @@ function Engine._finishWave(self, wave, phases)
 	})
 end
 
--- After a swap that pulled no weed, one weed spreads onto a neighbouring plain tile.
+-- After a swap that pulled no weed, one weed spreads onto a neighbouring plain
+-- tile, until weeds cover a third of the board.
 function Engine._growWeeds(self, phases)
 	local board = self.board
 	local candidates, seen = {}, {}
+	local cells, weeds = 0, 0
+	board:eachCell(function(cell)
+		cells += 1
+		if cell.weed then
+			weeds += 1
+		end
+	end)
+	if weeds * WEED_COVER_LIMIT >= cells then
+		return
+	end
 	board:eachCell(function(cell)
 		if cell.weed then
 			for _, d in NEIGHBORS do
@@ -556,6 +568,10 @@ function Engine._updateStatus(self)
 		self.status = "Won"
 	elseif self.movesLeft <= 0 then
 		self.status = "Lost"
+	elseif not Matcher.hasPossibleMove(self.board) then
+		-- Even a shuffle found no swap (frost or weeds have taken too much room).
+		self.status = "Lost"
+		self.stuck = true
 	end
 end
 
@@ -729,7 +745,7 @@ end
 -- A paid continue after running out of moves: +5 moves, and from the second
 -- one a power-up on the board (Boosters.Continue). Only when the level is lost.
 function Engine.continue(self): (boolean, { any })
-	if self.status ~= "Lost" then
+	if self.status ~= "Lost" or self.stuck then
 		return false, {}
 	end
 	self.continues += 1

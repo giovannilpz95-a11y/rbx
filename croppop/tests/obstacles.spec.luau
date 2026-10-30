@@ -200,3 +200,48 @@ test("frost and weed levels replay the same on the server", function()
 		eq(again:hash(), live:hash())
 	end
 end)
+
+test("weeds stop spreading once they cover a third of the board", function()
+	local pop = engine({ goals = { { kind = "Weeds", count = 22 } } }, rows({
+		"1 1 2 x x x x x",
+		"x x 1 x x x x x",
+		"x x x x x x x x",
+		"x x x x x x x x",
+		"x x x x x x x x",
+		"W W W W W W W W",
+		"W W W W W W W W",
+		"W W W W W x x x",
+	}))
+	truthy(pop:trySwap(3, 2, 3, 1))
+	local weeds = 0
+	pop.board:eachCell(function(cell)
+		if cell.weed then
+			weeds += 1
+		end
+	end)
+	eq(weeds, 22, "21 of 64 is under a third, so one more spread")
+	pop:trySwap(table.unpack(pop:listPossibleMoves()[1]))
+	weeds = 0
+	pop.board:eachCell(function(cell)
+		if cell.weed then
+			weeds += 1
+		end
+	end)
+	truthy(weeds <= 22, "no spreading past a third")
+end)
+
+test("a board with no swap left even after a shuffle ends the level, with no continue", function()
+	local frozen = {}
+	for y = 1, 8 do
+		local row = {}
+		for x = 1, 8 do
+			table.insert(row, if (x + y) % 2 == 0 then "1f" else "x")
+		end
+		frozen[y] = table.concat(row, " ")
+	end
+	local pop = engine(nil, frozen)
+	pop:_updateStatus()
+	eq(pop.status, "Lost")
+	truthy(pop.stuck)
+	falsy(pop:continue())
+end)

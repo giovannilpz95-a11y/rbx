@@ -51,7 +51,7 @@ function Bot.play(level, games: number?, firstSeed: number?): Report
 	local wins, movesLeft, share = 0, 0, 0
 	for _ = 1, games :: number do
 		local pop = Engine.new(level, rng:int(1, 2 ^ 31 - 1))
-		while pop.status == "Playing" do
+		while pop.status == "Playing" and #pop:listPossibleMoves() > 0 do
 			local m = chooseMove(pop, rng)
 			pop:trySwap(m[1], m[2], m[3], m[4])
 		end
