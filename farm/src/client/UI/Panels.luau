@@ -1288,6 +1288,7 @@ local function renderShop(state: { [string]: any })
 		)
 	end
 	Ui.label("Gems speed things up. Everything in the game can also be earned by playing.", {
+		Size = UDim2.new(1, 0, 0, 36), -- two lines on a phone
 		TextColor3 = Ui.colors.muted,
 		TextSize = 13,
 		TextWrapped = true,
