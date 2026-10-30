@@ -272,6 +272,23 @@ READY.Pumpkins = function(b, color)
 	end
 end
 
+-- Potatoes (level 22): bushy green rows with pale flowers, then the rows dug up with
+-- potatoes on the soil.
+GROWING.Potatoes = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Leaves", Vector3.new(6.2, 1.2, 1.4), Vector3.new(0, 0.9, z), Palette.leaf)
+		b.ball("Flower", 0.6, Vector3.new(-1, 1.6, z), Palette.flowerWhite, { shadow = false })
+	end
+end
+READY.Potatoes = function(b, color)
+	for i, z in ArtCrops.ROWS do
+		b.block("Leaves", Vector3.new(6.2, 0.9, 1.2), Vector3.new(0, 0.75, z + 0.3), Palette.leafLight)
+		for j, x in { -1.6, 1.6 } do
+			b.ball("Potato", if (i + j) % 2 == 0 then 1.2 else 1, Vector3.new(x, 0.6, z - 0.55), color)
+		end
+	end
+end
+
 -- Crops past the content bank: green rows, then rows of fruit in the crop's own color.
 local function genericGrowing(b: Kit.Builder, _color: Color3)
 	for _, z in ArtCrops.ROWS do

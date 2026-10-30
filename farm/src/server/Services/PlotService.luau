@@ -156,7 +156,10 @@ local LOCKED_ROADS = {
 		Vector3.new(Lots.northLane.linkX - 4, 0, Lots.northLane.z - 4),
 		Vector3.new(Lots.northLane.linkX + 4, 0, -48),
 	},
-	{ Vector3.new(-46, 0, Lots.northLane.z - 4), Vector3.new(46, 0, Lots.northLane.z + 4) },
+	{
+		Vector3.new(-Lots.northLane.halfWidth, 0, Lots.northLane.z - 4),
+		Vector3.new(Lots.northLane.halfWidth, 0, Lots.northLane.z + 4),
+	},
 }
 
 -- Decoration spots (plot-local, on the ground), clear of every building, path and lot.
@@ -545,8 +548,8 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Color = COLORS.path,
 		Parent = model,
 	})
-	-- North Lane in the North Fields (expansion 3), and its link road from the start area.
-	-- Laid before the land is cleared, like the gate road.
+	-- North Lane across the North Fields and the Far Corners (expansions 3 and 4), and its link
+	-- road from the start area. Laid before the land is cleared, like the gate road.
 	part({
 		Name = "NorthLaneLink",
 		Size = Vector3.new(8, 0.2, -Lots.northLane.z - 48 - 4),
@@ -556,7 +559,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 	})
 	part({
 		Name = "NorthLane",
-		Size = Vector3.new(92, 0.2, 8),
+		Size = Vector3.new(Lots.northLane.halfWidth * 2, 0.2, 8),
 		CFrame = at(Vector3.new(0, 0, Lots.northLane.z), 0.3),
 		Color = COLORS.path,
 		Parent = model,

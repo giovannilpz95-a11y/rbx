@@ -66,8 +66,12 @@ function TownService.buildHouse(player: Player, houseId: any): (boolean, string?
 	local lot = TownRules.freeLot(data, open)
 	if lot == nil then
 		if open < #Lots.houses then
-			local land = Land.expansions[Lots.northLaneLand].displayName
-			return false, string.format("Main Street is full. Clear the %s to open North Lane.", land)
+			-- The next lot waits for its land: North Lane's middle, then its two ends
+			local land = Land.expansions[Lots.houses[open + 1].land].displayName
+			if Lots.houses[open + 1].land == Lots.northLaneLand then
+				return false, string.format("Main Street is full. Clear the %s to open North Lane.", land)
+			end
+			return false, string.format("North Lane is full. Clear the %s to open its ends.", land)
 		end
 		return false, "Every House lot is taken"
 	end

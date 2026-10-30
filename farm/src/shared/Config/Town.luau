@@ -46,6 +46,7 @@ local Houses: { [string]: HouseDef } = {
 	GardenVilla = { id = "GardenVilla", displayName = "Garden Villa", population = 40, coinCost = 160, buildSeconds = 3 * HOUR, xp = 40, copyLevels = { 14, 15, 16, 18 }, order = 8, color = { 215, 210, 195 } },
 	ThatchedLonghouse = { id = "ThatchedLonghouse", displayName = "Thatched Longhouse", population = 45, coinCost = 225, buildSeconds = 4 * HOUR, xp = 45, copyLevels = { 17, 18, 19, 19, 20 }, order = 9, color = { 205, 180, 130 } },
 	CornerFlats = { id = "CornerFlats", displayName = "Corner Flats", population = 50, coinCost = 300, buildSeconds = 6 * HOUR, xp = 50, copyLevels = { 20, 21, 21, 22 }, order = 10, color = { 225, 170, 120 } },
+	LakesideManor = { id = "LakesideManor", displayName = "Lakeside Manor", population = 55, coinCost = 385, buildSeconds = 7 * HOUR, xp = 55, copyLevels = { 22, 23, 23, 24 }, order = 11, color = { 200, 220, 235 } },
 }
 
 -- stylua: ignore
@@ -69,6 +70,7 @@ local Community: { [string]: CommunityDef } = {
 	RoseGarden = { id = "RoseGarden", displayName = "Rose Garden", unlockLevel = 19, capBonus = 90, coinCost = 500, materials = { Bricks = 5, Planks = 7, Panes = 4 }, buildSeconds = 6 * HOUR + 30 * MIN, xp = 180, order = 16, color = { 230, 120, 140 } },
 	TownHallUpgrade = { id = "TownHallUpgrade", displayName = "Town Hall Upgrade", unlockLevel = 20, capBonus = 95, coinCost = 650, materials = { Bricks = 6, Planks = 6, Panes = 5 }, buildSeconds = 7 * HOUR, xp = 190, order = 17, color = { 235, 220, 190 }, townHallStorey = 2 },
 	SeedExchange = { id = "SeedExchange", displayName = "Seed Exchange", unlockLevel = 21, capBonus = 100, coinCost = 800, materials = { Bricks = 5, Planks = 7, Panes = 6 }, buildSeconds = 7 * HOUR + 30 * MIN, xp = 200, order = 18, color = { 160, 200, 110 } },
+	PuppetTheatre = { id = "PuppetTheatre", displayName = "Puppet Theatre", unlockLevel = 22, capBonus = 105, coinCost = 950, materials = { Bricks = 5, Planks = 6, Panes = 8 }, buildSeconds = 8 * HOUR, xp = 210, order = 19, color = { 180, 50, 60 } },
 }
 
 for _, def in Houses do

@@ -267,6 +267,17 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Dip", Vector3.new(0.92, 0.4, 0.52), at(0, 1.95, 0), Palette.roofRed, QUIET)
 		b.block("Stick", Vector3.new(0.25, 0.8, 0.15), at(0, 0.4, 0), Palette.woodLight, QUIET)
 	end,
+	PotatoChips = function(b)
+		b.block("Bag", Vector3.new(1.3, 1.6, 0.6), at(0, 0.8, 0), Palette.roofTeal, QUIET)
+		b.block("Band", Vector3.new(1.32, 0.4, 0.62), at(0, 1.1, 0), Palette.flowerYellow, QUIET)
+		b.block("Crimp", Vector3.new(1.3, 0.2, 0.3), at(0, 1.7, 0), Palette.roofTeal, QUIET)
+	end,
+	PumpkinPie = function(b)
+		b.post("Dish", 0.35, 1.9, at(0, 0.18, 0), Palette.cream, QUIET)
+		b.post("Filling", 0.4, 1.6, at(0, 0.45, 0), Palette.carrot, QUIET)
+		b.post("Crust", 0.2, 1.8, at(0, 0.55, 0), Palette.bread, QUIET)
+		b.ball("Cream", 0.5, at(0, 0.8, 0), Palette.cream, QUIET)
+	end,
 	TomatoKetchup = function(b)
 		b.post("Bottle", 1.3, 1.1, at(0, 0.65, 0), Palette.roofRed, QUIET)
 		b.post("Label", 0.5, 1.14, at(0, 0.6, 0), Palette.cream, QUIET)
