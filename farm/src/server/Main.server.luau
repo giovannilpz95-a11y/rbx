@@ -15,6 +15,7 @@ local NetService = require(Services.NetService)
 local InventoryService = require(Services.InventoryService)
 local PlotService = require(Services.PlotService)
 local FarmService = require(Services.FarmService)
+local ShopService = require(Services.ShopService)
 local FactoryService = require(Services.FactoryService)
 local AnimalService = require(Services.AnimalService)
 local TownService = require(Services.TownService)
@@ -39,6 +40,7 @@ OrderService.init()
 ReturnService.init()
 TutorialService.init()
 CropPopBridge.init()
+ShopService.init()
 DebugService.init()
 
 -- DEV-only: shorter timers for playtesting. Ignored outside Studio.
@@ -72,6 +74,7 @@ local function onPlayerAdded(player: Player)
 	CropPopBridge.playerLoaded(player)
 	OrderService.refreshBoard(player)
 	ReturnService.playerLoaded(player)
+	ShopService.playerLoaded(player)
 
 	local plot = PlotService.assign(player)
 	if plot == nil then
