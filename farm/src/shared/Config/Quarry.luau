@@ -37,6 +37,7 @@ return table.freeze({
 	restoreCost = 3000,
 	restoreSeconds = 30 * HOUR,
 	restoreXp = 128,
+	land = 2, -- its hill stands at the East Meadow's north-east end, which must be cleared first
 
 	width = 12, -- cells across the shaft (F01: "about 12 blocks wide")
 	-- Hits each block takes with a Pickaxe; Bedrock can't be dug (Township's dirt, stone, rock)

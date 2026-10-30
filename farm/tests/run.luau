@@ -377,7 +377,7 @@ test("the Quarry: Township's numbers, a fixed shaft and Pickaxe digging", functi
 	local ok1, why = Quarry.canDig(data, 1, 1, 0)
 	eq(ok1, false, "can't dig before it reopens")
 	ok(why ~= nil, "says why")
-	Quarry.restore(data, 100, 12345)
+	Quarry.restore(data, 100 + QuarryConfig.restoreSeconds, 12345)
 	eq(Quarry.pickaxes(data), QuarryConfig.restoreGift, "opening Pickaxes")
 	eq(Quarry.isRestored(data, 100 + QuarryConfig.restoreSeconds - 1), false, "still reopening")
 	local now = 100 + QuarryConfig.restoreSeconds

@@ -160,6 +160,8 @@ local function gemButton(
 	)
 end
 
+Panels.gemButton = gemButton -- for registered panels' Gem actions (the Quarry's speed-up)
+
 -- "Buy what's missing" (G3, shared/Missing): when `needs` is short only of items, a Gem button
 -- pays for just those and does the action in one step. Returns the button and a line naming
 -- what's missing, or nil when nothing is missing or it can't be bought.
