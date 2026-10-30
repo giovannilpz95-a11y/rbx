@@ -31,6 +31,8 @@ return table.freeze({
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
+	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)
+	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client

@@ -31,6 +31,7 @@ local xpLabel: TextLabel
 local xpBar: Bar
 local toastStack: Frame
 local shown: { [string]: number } = {} -- last values on screen, to tick up and bump on change
+local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
 Hud.sprintButton = nil :: TextButton?
 
@@ -75,6 +76,11 @@ function Hud.popup(payload: { [string]: any })
 		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
 	elseif payload.kind == "Order" then
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
+	elseif payload.kind == "Daily" then
+		Hud.toast(string.format("Daily gift, day %d of %d:  %s", payload.day, payload.days, payload.reward))
+	elseif payload.kind == "Away" then
+		ClientStore.away = payload.lines
+		showPanel("Away")
 	end
 end
 
@@ -137,6 +143,7 @@ local function hudButton(glyph: string, caption: string, key: string, order: num
 end
 
 function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) -> ())
+	showPanel = openPanel
 	local player = Players.LocalPlayer
 	gui = Ui.new("ScreenGui", {
 		Name = "FarmHud",

@@ -19,8 +19,10 @@ local FactoryService = require(Services.FactoryService)
 local AnimalService = require(Services.AnimalService)
 local TownService = require(Services.TownService)
 local OrderService = require(Services.OrderService)
+local ReturnService = require(Services.ReturnService)
 local TutorialService = require(Services.TutorialService)
 local CropPopBridge = require(Services.CropPopBridge)
+local DebugService = require(Services.DebugService)
 local Clock = require(script.Parent.Util.Clock)
 
 DataService.init()
@@ -32,8 +34,10 @@ FactoryService.init()
 AnimalService.init()
 TownService.init()
 OrderService.init()
+ReturnService.init()
 TutorialService.init()
 CropPopBridge.init()
+DebugService.init()
 
 -- DEV-only: shorter timers for playtesting. Ignored outside Studio.
 NetService.on(Net.Debug_SetTimeScale, 1, 2, function(_player, scale)
@@ -65,6 +69,7 @@ local function onPlayerAdded(player: Player)
 	FactoryService.advance(player) -- offline production lands on the output tray
 	CropPopBridge.playerLoaded(player)
 	OrderService.refreshBoard(player)
+	ReturnService.playerLoaded(player)
 
 	local plot = PlotService.assign(player)
 	if plot == nil then

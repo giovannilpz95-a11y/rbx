@@ -15,6 +15,7 @@ local ClientStore = {}
 
 ClientStore.state = nil :: { [string]: any }?
 ClientStore.changed = Instance.new("BindableEvent")
+ClientStore.away = {} :: { string } -- the last "While you were away" lines
 
 -- Tunable in the debug panel for the greybox playtest
 ClientStore.settings = {

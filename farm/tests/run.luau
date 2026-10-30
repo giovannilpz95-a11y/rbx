@@ -7,9 +7,11 @@ local luau = require("@lune/luau")
 local process = require("@lune/process")
 
 local Animals = require("../src/shared/Config/Animals")
+local Away = require("../src/shared/Away")
 local Balance = require("../src/shared/Config/Balance")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
+local DailyRules = require("../src/shared/Daily")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
@@ -447,6 +449,41 @@ test("the first-session guide walks the opening loop", function()
 	ok(not Tutorial.freeFinish(data, "Dairy"), "free only while its step is on")
 	eq(Tutorial.current(data).id, "WrapUp", "ends on a tap")
 	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
+end)
+
+test("the daily calendar pauses instead of resetting", function()
+	local data = Profile.migrate(nil) :: any
+	local day1 = 20000 * 86400 + 3600
+	eq((DailyRules.due(data, day1)), nil, "opens at level 5")
+	data.level = 5
+	local reward, day = DailyRules.due(data, day1)
+	eq(day, 1, "day 1")
+	eq(reward.coins, 100, "100 Coins")
+	DailyRules.claim(data, day1, day)
+	eq((DailyRules.due(data, day1 + 3600)), nil, "once per UTC day")
+	reward, day = DailyRules.due(data, day1 + 5 * 86400)
+	eq(day, 2, "a missed day pauses the calendar")
+	eq(reward.item, "Nails", "Barn material until tools ship")
+	data.daily.day = 7
+	data.level = 12
+	reward, day = DailyRules.due(data, day1 + 6 * 86400)
+	eq(day, 1, "repeats after day 7")
+	eq(reward.coins, 150, "x1.5 Coins from level 11")
+end)
+
+test("the away summary lists what finished", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#Away.summary(data, 0, 10000), 0, "nothing for a new farm")
+	data.fields.F1 = { crop = "Wheat", readyAt = 500 }
+	data.factories.Bakery.built = true
+	data.factories.Bakery.constructionReadyAt = 900
+	data.factories.Bakery.output = { Bread = 2 }
+	data.pens.CowBarn.animals[1].readyAt = 800
+	local lines = Away.summary(data, 600, 5000)
+	eq(#lines, 4, table.concat(lines, " | "))
+	ok(table.find(lines, "1 field is ready to harvest") ~= nil, "fields")
+	ok(table.find(lines, "Bakery finished building") ~= nil, "construction since last seen")
+	eq(#Away.summary(data, 4900, 5000), 0, "a short break gets no summary")
 end)
 
 test("Barn upgrades follow the Township steps", function()
