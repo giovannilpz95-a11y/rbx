@@ -1488,6 +1488,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
 	devButton("+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
 	devButton("Fuzz every remote with junk (farm restored after)", "Debug_Fuzz", 380, 9)
+	devButton("+1 level (opens the content bank past the cap)", "Debug_LevelUp", 380, 10)
 end
 
 ---------------------------------------------------------------------------------------------

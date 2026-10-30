@@ -12,6 +12,7 @@ local Net = require(Shared.Net)
 local Services = script.Parent.Services
 local DataService = require(Services.DataService)
 local NetService = require(Services.NetService)
+local EconomyService = require(Services.EconomyService)
 local InventoryService = require(Services.InventoryService)
 local PlotService = require(Services.PlotService)
 local FarmService = require(Services.FarmService)
@@ -85,6 +86,7 @@ local function onPlayerAdded(player: Player)
 	OrderService.refreshBoard(player)
 	TelemetryService.playerLoaded(player) -- before anything saves over meta.lastSeenAt
 	ReturnService.playerLoaded(player)
+	EconomyService.checkLevel(player) -- after a cap raise, banked XP levels up now
 	QuestService.refresh(player)
 	ShopService.playerLoaded(player)
 

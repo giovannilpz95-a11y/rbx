@@ -5,8 +5,10 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
+local Levels = require(Shared.Config.Levels)
 local Net = require(Shared.Net)
 local Profile = require(Shared.Profile)
+local Progression = require(Shared.Progression)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
@@ -72,6 +74,23 @@ function DebugService.grant(player: Player): (boolean, string?)
 		player,
 		string.format("Dev grant: +%d Gems, +%d Coins, +%d of each tool", grant.gems, grant.coins, grant.tools)
 	)
+	return true
+end
+
+-- The content bank (Config/Levels): open the levels past the live cap, up to Levels.built, on
+-- this Studio server, and give the XP for one more level each press (logged as "debug").
+function DebugService.levelUp(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	Progression.preview(Levels.built)
+	local info = Progression.info(data.currencies.XP)
+	if info.atCap then
+		return false, string.format("Already at level %d, the last built level", info.level)
+	end
+	EconomyService.add(player, "XP", info.xpToNext - info.xpIntoLevel, "debug")
+	NetService.toast(player, string.format("Dev: content bank open to level %d", Levels.built))
 	return true
 end
 
@@ -195,6 +214,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_BuildAll, 1, 2, DebugService.buildAll)
 	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
+	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 end
 
 return DebugService
