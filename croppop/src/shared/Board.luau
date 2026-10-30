@@ -34,6 +34,7 @@ export type Cell = {
 	piece: Piece?,
 	bale: number, -- hay bale layers left (0 = no bale); a bale cell holds no piece
 	weed: boolean, -- the "bale" is a weed (always 1 layer; weeds spread)
+	stone: boolean, -- the "bale" is a stone wall (only blasts break it, not matches next to it)
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
@@ -68,7 +69,7 @@ function Board.fromLayout(layout: { string })
 		for x = 1, width do
 			local ch = string.sub(row, x, x)
 			if ch ~= "#" then
-				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, weed = false, mud = 0, frost = 0, clover = false }
+				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, weed = false, stone = false, mud = 0, frost = 0, clover = false }
 				if ch == "m" then
 					cell.mud = 1
 				elseif ch == "M" then
@@ -86,6 +87,9 @@ function Board.fromLayout(layout: { string })
 					self.startPumpkins[cell] = true
 				elseif ch == "c" then
 					cell.clover = true
+				elseif ch == "s" or ch == "S" then
+					cell.bale = if ch == "S" then 2 else 1
+					cell.stone = true
 				end
 				self.cells[y][x] = cell
 			end
@@ -425,7 +429,7 @@ function Board.hash(self): string
 			elseif cell.weed then
 				table.insert(row, "W" .. clover)
 			elseif cell.bale > 0 then
-				table.insert(row, "B" .. cell.bale .. clover)
+				table.insert(row, (if cell.stone then "R" else "B") .. cell.bale .. clover)
 			else
 				local piece = cell.piece
 				local code = if piece and piece.pumpkin
@@ -456,6 +460,7 @@ function Board.snapshot(self)
 			y = cell.y,
 			bale = cell.bale,
 			weed = cell.weed,
+			stone = cell.stone,
 			mud = cell.mud,
 			frost = cell.frost,
 			clover = cell.clover,

@@ -176,6 +176,14 @@ end
 
 function Engine._damageBale(self, wave, cell)
 	cell.bale -= 1
+	if cell.stone then
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, stone = true })
+		if cell.bale == 0 then
+			cell.stone = false
+			self.goals:onStone()
+		end
+		return
+	end
 	if cell.weed then
 		cell.weed = false
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, weed = true })
@@ -227,10 +235,11 @@ function Engine._popGroups(self, wave, groups)
 			self:_removePiece(wave, cell, "match")
 		end
 		-- Matches next to a hay bale knock off one layer (once per bale per wave).
+		-- Stone walls shrug them off: only blasts break stone.
 		for _, cell in group.cells do
 			for _, d in NEIGHBORS do
 				local n = board:get(cell.x + d[1], cell.y + d[2])
-				if n and n.bale > 0 and not wave.balesTouched[n] then
+				if n and n.bale > 0 and not n.stone and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					self:_damageBale(wave, n)
 				end
@@ -272,7 +281,10 @@ function Engine._chooseBeeTarget(self)
 	local tiers = { {}, {}, {}, {} }
 	self.board:eachCell(function(cell)
 		if cell.bale > 0 then
-			local wanted = if cell.weed then goals:wants("Weeds") else goals:wants("HayBale")
+			local wanted = if cell.weed
+				then goals:wants("Weeds")
+				elseif cell.stone then goals:wants("Stones")
+				else goals:wants("HayBale")
 			table.insert(if wanted then tiers[1] else tiers[4], cell)
 		elseif cell.piece and not cell.piece.pumpkin then
 			if cell.frost > 0 and goals:wants("Frost") then

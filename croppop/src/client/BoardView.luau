@@ -212,11 +212,14 @@ end
 
 -- Board setup ------------------------------------------------------------------
 
-local function styleBale(label: TextLabel, hp: number, weed: boolean?)
+local function styleBale(label: TextLabel, hp: number, weed: boolean?, stone: boolean?)
 	label.Visible = hp > 0
 	if weed then
 		label.BackgroundColor3 = TileStyle.Board.weed
 		label.Text = TileStyle.GoalGlyphs.Weeds
+	elseif stone then
+		label.BackgroundColor3 = TileStyle.Board.stone
+		label.Text = if hp > 1 then TileStyle.GoalGlyphs.Stones .. hp else TileStyle.GoalGlyphs.Stones
 	else
 		label.BackgroundColor3 = TileStyle.Board.bale
 		label.Text = if hp > 1 then "🌾" .. hp else "🌾"
@@ -237,7 +240,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.mud.Visible = cell.mud > 0
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
 	guis.clover.Visible = cell.clover == true
-	styleBale(guis.bale, cell.bale, cell.weed)
+	styleBale(guis.bale, cell.bale, cell.weed, cell.stone)
 	styleFrost(guis, cell.frost or 0)
 end
 
@@ -522,7 +525,7 @@ function BoardView._pop(self, phase)
 	for _, b in phase.bales do
 		local guis = self.cellGuis[b.y] and self.cellGuis[b.y][b.x]
 		if guis then
-			styleBale(guis.bale, b.hp, b.weed)
+			styleBale(guis.bale, b.hp, b.weed, b.stone)
 		end
 	end
 	for _, m in phase.mud do

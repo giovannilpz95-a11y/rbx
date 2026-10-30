@@ -48,9 +48,11 @@ local BRUSH_ROWS = {
 		{ char = "w", label = "🌿 Weed" },
 		{ char = "p", label = "🎃" },
 		{ char = "c", label = "🍀" },
+		{ char = "s", label = "🧱1" },
+		{ char = "S", label = "🧱2" },
 	},
 }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -59,6 +61,7 @@ local GOAL_BUTTONS = {
 	Weeds = "+ Weeds",
 	Pumpkins = "+ 🎃",
 	Clover = "+ 🍀",
+	Stones = "+ 🧱",
 }
 
 local ui = nil
@@ -248,6 +251,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Pumpkin.color, TileStyle.Pumpkin.glyph
 	elseif char == "c" then
 		return TileStyle.Board.clover, TileStyle.GoalGlyphs.Clover
+	elseif char == "s" or char == "S" then
+		return TileStyle.Board.stone, TileStyle.GoalGlyphs.Stones .. (if char == "S" then "2" else "")
 	end
 	return Colors.cellLight, ""
 end
@@ -292,6 +297,8 @@ local function goalLabel(goal): string
 		return "🎃 pumpkins"
 	elseif goal.kind == "Clover" then
 		return "🍀 cover it"
+	elseif goal.kind == "Stones" then
+		return "🧱 all stone"
 	end
 	return "🌾 all bales"
 end

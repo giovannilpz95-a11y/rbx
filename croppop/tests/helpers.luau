@@ -44,7 +44,7 @@ end
 	  1-6   a tile of that colour          1r 2c 3b 1h  that tile as a power-up
 	  S     Sunflower                      B1 B2 B3     hay bale
 	  W     weed                           1f 2F        frosted tile (1 or 2 layers)
-	  P     pumpkin                        any token + "+"  on clover (1+, x+, B1+)
+	  P     pumpkin                        R1 R2        stone wall                        any token + "+"  on clover (1+, x+, B1+)
 	  x     filler (a 4/5 checkerboard that never matches on its own)
 	  #     hole (must also be a hole in the layout)
 	Tests use colours 1-3 for the tiles they care about.
@@ -62,6 +62,7 @@ function Helpers.setBoard(pop, rows)
 				assert(cell, "no cell at " .. x .. "," .. y)
 				cell.bale = 0
 				cell.weed = false
+				cell.stone = false
 				cell.frost = 0
 				cell.clover = string.sub(token, -1) == "+"
 				if cell.clover then
@@ -77,9 +78,10 @@ function Helpers.setBoard(pop, rows)
 					cell.piece = nil
 					cell.bale = 1
 					cell.weed = true
-				elseif string.sub(token, 1, 1) == "B" then
+				elseif string.sub(token, 1, 1) == "B" or string.sub(token, 1, 1) == "R" then
 					cell.piece = nil
 					cell.bale = tonumber(string.sub(token, 2)) :: number
+					cell.stone = string.sub(token, 1, 1) == "R"
 				else
 					local color = tonumber(string.sub(token, 1, 1))
 					assert(color, "bad token " .. token)
