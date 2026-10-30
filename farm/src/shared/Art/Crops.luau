@@ -232,6 +232,20 @@ local function genericReady(b: Kit.Builder, color: Color3)
 	end
 end
 
+-- An empty field, freshly dug: dark turned soil in the furrows and a couple of clods, so a
+-- free field stands out from a planted one at a distance. A Model named "Crop" like build's. 5 parts.
+function ArtCrops.tilled(top: CFrame): Model
+	local model = Kit.model("Crop")
+	local b = Kit.builder(model, top, false)
+	local quiet = { shadow = false }
+	for _, z in ArtCrops.ROWS do
+		b.block("Turned", Vector3.new(6.6, 0.08, 1.4), Vector3.new(0, 0.33, z), Palette.soilDark, quiet)
+	end
+	b.ball("Clod", 0.5, Vector3.new(-2.4, 0.4, 1.25), Palette.soilDark, quiet)
+	b.ball("Clod", 0.4, Vector3.new(2.1, 0.38, -1.25), Palette.soil, quiet)
+	return model
+end
+
 -- Build one crop stage as a Model named "Crop". `top` is the CFrame of the bed's top centre.
 -- `color` is the crop's config color (used for seed packets and generic crops).
 function ArtCrops.build(cropId: string, stage: number, top: CFrame, color: { number }?): Model

@@ -41,6 +41,9 @@ SCENES.crops = function(root)
 			m.Parent = bed
 		end
 	end
+	-- An empty, freshly dug field in front of the first row
+	local bed = field(root, CFrame.new(-2.5 * 11, 0, -27.5))
+	ArtCrops.tilled(bed.CFrame * CFrame.new(0, 0.5, 0)).Parent = bed
 end
 
 local ANIMAL_SPOTS = {
@@ -58,7 +61,10 @@ SCENES.animals = function(root)
 		local at = CFrame.new((i - 2) * 15, 0, 0)
 		local b = Kit.builder(root, at, true)
 		b.block("Floor", Vector3.new(12, 0.4, 12), Vector3.new(0, 0.2, 0), ArtAnimals.FLOOR_COLOR[penId])
-		ArtAnimals.pen(penId, at * CFrame.new(0, 0.4, 0), root)
+		local pen = Kit.model(penId, root)
+		ArtAnimals.pen(penId, at * CFrame.new(0, 0.4, 0), pen)
+		-- The Cow Barn is hungry; the others are fed with products waiting in the crate
+		ArtAnimals.setPenState(pen, i ~= 1, i ~= 1)
 		for j, spot in ANIMAL_SPOTS do
 			local a = ArtAnimals.animal(
 				penId,
@@ -244,6 +250,9 @@ SCENES.items = function(root)
 		table.insert(ids, id)
 	end
 	table.sort(ids)
+	for _, id in { "Shovel", "Axe", "Saw" } do
+		table.insert(ids, id)
+	end
 	for i, id in ids do
 		local col, row = (i - 1) % 8, (i - 1) // 8
 		ArtItemProps.build(id, CFrame.new(-10.5 + col * 3, 0, -6 + row * 3.5)).Parent = root

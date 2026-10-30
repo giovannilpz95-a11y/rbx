@@ -29,6 +29,7 @@ local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Crops = require("../src/shared/Config/Crops")
 local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
+local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
 local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
@@ -211,6 +212,59 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			end)
 		end
 		within(ArtItemProps.build("NoSuchItem"), ArtItemProps.PARTS_MAX, "fallback crate")
+	end)
+
+	test("art: empty fields look freshly dug, and tools have props", function()
+		local m = ArtCrops.tilled(CFrame.new(0, 1, 0))
+		eq(m.Name, "Crop", "tilled model name")
+		within(m, ArtCrops.STAGE_PARTS_MAX, "tilled field")
+		paletteRules(m, "tilled field")
+		for id in Tools.tools do
+			ok(ArtItemProps.has(id), "prop for tool " .. id)
+			local prop = ArtItemProps.build(id)
+			within(prop, ArtItemProps.PARTS_MAX, id .. " prop")
+			paletteRules(prop, id)
+			Kit.eachPart(prop, function(p)
+				local c = p.CFrame.Position
+				ok(math.abs(c.X) <= 1.5 and c.Y >= -0.1 and c.Y <= 2.5, id .. ": " .. p.Name .. " inside the icon box")
+			end)
+		end
+	end)
+
+	test("art: pens show feed, the crate lid, and animals carry what their motion needs", function()
+		for _, id in PENS do
+			local pen = Instance.new("Model")
+			ArtAnimals.pen(id, CFrame.new(), pen)
+			local feed = pen:FindFirstChild("Feed", true) :: BasePart
+			local lid = pen:FindFirstChild("Lid", true) :: BasePart
+			ok(feed ~= nil and lid ~= nil, id .. " has a trough and a crate")
+			local closed = lid.CFrame
+			ArtAnimals.setPenState(pen, false, true)
+			eq(feed.Transparency, 1, id .. " hungry: empty trough")
+			ok(lid.CFrame.Position.Y > closed.Position.Y, id .. " lid swings up while products wait")
+			Kit.fade(pen, 0)
+			ArtAnimals.setPenState(pen, true, false)
+			eq(feed.Transparency, 0, id .. " fed: feed shows")
+			ok(lid.CFrame.Position:FuzzyEq(closed.Position, 1e-3), id .. " lid closed")
+
+			local animal = ArtAnimals.animal(id, CFrame.new(3, 0.6, 2))
+			local rig = ArtMotion.bindAnimal(animal, 0)
+			ok(rig ~= nil, id .. " animal has a motion rig")
+			local r = rig :: ArtMotion.AnimalRig
+			local first = r.parts[1]
+			local rest = first.CFrame
+			for _, mood in { "hungry", "eating", "ready" } do
+				for _, t in { 0.3, 1.1, 2.7 } do
+					ArtMotion.poseAnimal(r, mood, t)
+					ok(
+						(first.CFrame.Position - rest.Position).Magnitude < 1,
+						id .. " " .. mood .. " stays near its spot"
+					)
+				end
+			end
+			ArtMotion.resetAnimal(r)
+			ok(first.CFrame.Position:FuzzyEq(rest.Position, 1e-4), id .. " animal back at rest")
+		end
 	end)
 
 	test("art: Barn, Order Board, truck and gate stay within budget", function()

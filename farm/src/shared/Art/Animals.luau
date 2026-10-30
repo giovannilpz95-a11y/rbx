@@ -91,6 +91,9 @@ function ArtAnimals.animal(penId: string, cf: CFrame, name: string?): Model
 	local model = Kit.model(name or "Animal")
 	local build = ANIMALS[penId] or cow
 	build(Kit.builder(model, cf, false))
+	-- For the client's idle motion (Art/Motion): where the feet stand and which body it is
+	model:SetAttribute("BaseCFrame", cf)
+	model:SetAttribute("PenId", penId)
 	return model
 end
 
@@ -129,10 +132,42 @@ local function fenceRing(b: Kit.Builder, color: Color3)
 	Kit.fence(b, "Fence", Vector3.new(1.5, 0, -HALF), Vector3.new(HALF, 0, -HALF), h, 2, color)
 end
 
--- A hollowed log trough on the ground, with feed showing inside. 2 parts.
+-- A hollowed log trough on the ground: a dark hollow, and the feed heaped in it while the
+-- animals are fed (setPenState hides it when the pen needs feed). 3 parts.
 local function trough(b: Kit.Builder, at: Vector3, feed: Color3)
 	b.block("Trough", Vector3.new(3, 0.8, 1.1), at + Vector3.new(0, 0.4, 0), Palette.woodDark)
-	b.block("Feed", Vector3.new(2.6, 0.15, 0.75), at + Vector3.new(0, 0.82, 0), feed, { shadow = false })
+	b.block("Hollow", Vector3.new(2.6, 0.06, 0.75), at + Vector3.new(0, 0.81, 0), Palette.cocoa, { shadow = false })
+	b.block("Feed", Vector3.new(2.6, 0.18, 0.75), at + Vector3.new(0, 0.86, 0), feed, { shadow = false })
+end
+
+-- The collection crate outside the gate (Design/15: walk past it to collect). The lid pops
+-- swings open while products wait. 2 parts.
+local function collectCrate(b: Kit.Builder, at: Vector3)
+	b.block("CrateBox", Vector3.new(2, 1.3, 2), at + Vector3.new(0, 0.65, 0), Palette.crate)
+	local lid = b.block("Lid", Vector3.new(2.15, 0.25, 2.15), at + Vector3.new(0, 1.42, 0), Palette.woodLight)
+	-- setPenState swings it up on its back hinge while products wait
+	local hinge = lid.CFrame * CFrame.new(0, -0.12, 1.07)
+	lid:SetAttribute("ClosedCFrame", lid.CFrame)
+	lid:SetAttribute("OpenCFrame", hinge * CFrame.Angles(math.rad(65), 0, 0) * hinge:ToObjectSpace(lid.CFrame))
+end
+
+ArtAnimals.CRATE_AT = Vector3.new(-3.6, 0, -7.6) -- outside the gate, to its left
+
+-- Shows whether the pen's animals are fed (feed in the trough) and whether products wait in
+-- the crate (lid open). Call after fading the pen, since this only hides parts.
+function ArtAnimals.setPenState(pen: Instance, fed: boolean, waiting: boolean)
+	for _, d in pen:GetDescendants() do
+		if d:IsA("BasePart") then
+			if d.Name == "Feed" and not fed then
+				d.Transparency = 1
+			elseif d.Name == "Lid" then
+				local cf = d:GetAttribute(if waiting then "OpenCFrame" else "ClosedCFrame")
+				if typeof(cf) == "CFrame" then
+					d.CFrame = cf
+				end
+			end
+		end
+	end
 end
 
 -- Cow Barn: an open shed with a teal barrel roof over the back, a hay rack and a trough.
@@ -167,13 +202,6 @@ local function chickenCoop(b: Kit.Builder)
 		Palette.woodLight
 	)
 	b.block("NestBoxes", Vector3.new(1.6, 1.2, 2), Vector3.new(hx + 2.7, 0.6, hz + 0.2), Palette.roofMustard)
-	b.block(
-		"Straw",
-		Vector3.new(1.4, 0.3, 1.8),
-		Vector3.new(hx + 2.7, 1.3, hz + 0.2),
-		Palette.straw,
-		{ shadow = false }
-	)
 	trough(b, Vector3.new(3.2, 0, -3.6), Palette.straw)
 	Kit.sproutTag(b, Vector3.new(hx, 5.4, hz), 1.2, Palette.wood, Palette.lime)
 end
@@ -222,7 +250,9 @@ ArtAnimals.FLOOR_COLOR = {
 -- gate at local -Z. Taps on these parts don't count; the pen's Floor is the tap target.
 function ArtAnimals.pen(penId: string, cf: CFrame, parent: Instance)
 	local build = PENS[penId] or cowBarn
-	build(Kit.builder(parent, cf, false))
+	local b = Kit.builder(parent, cf, false)
+	build(b)
+	collectCrate(b, ArtAnimals.CRATE_AT)
 end
 
 return ArtAnimals
