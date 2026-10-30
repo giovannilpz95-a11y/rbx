@@ -44,6 +44,7 @@ local Houses: { [string]: HouseDef } = {
 	-- content bank (level 13+)
 	GardenVilla = { id = "GardenVilla", displayName = "Garden Villa", population = 40, coinCost = 160, buildSeconds = 3 * HOUR, xp = 40, copyLevels = { 14, 15, 16, 18 }, order = 8, color = { 215, 210, 195 } },
 	ThatchedLonghouse = { id = "ThatchedLonghouse", displayName = "Thatched Longhouse", population = 45, coinCost = 225, buildSeconds = 4 * HOUR, xp = 45, copyLevels = { 17, 18, 19, 19, 20 }, order = 9, color = { 205, 180, 130 } },
+	CornerFlats = { id = "CornerFlats", displayName = "Corner Flats", population = 50, coinCost = 300, buildSeconds = 6 * HOUR, xp = 50, copyLevels = { 20, 21, 21, 22 }, order = 10, color = { 225, 170, 120 } },
 }
 
 -- stylua: ignore

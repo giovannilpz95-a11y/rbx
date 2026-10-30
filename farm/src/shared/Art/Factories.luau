@@ -458,6 +458,45 @@ local function diner(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Ice Cream Parlor (content bank, level 20): a strawberry-pink parlor with a cream roof, a
+-- striped awning over the serving hatch, and a giant cone on the roof whose cherry bobs
+-- while it works.
+local function iceCreamParlor(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.flowerPink:Lerp(Palette.cream, 0.45), Palette.stoneLight)
+	local d = b.into(body, true)
+	d.block(
+		"Roof",
+		Vector3.new(ArtFactories.WIDTH + 1, 0.8, ArtFactories.DEPTH + 1),
+		Vector3.new(0, TOP + 0.4, 0),
+		Palette.cream
+	)
+	-- The giant cone: a wafer cup, a strawberry scoop and a vanilla scoop
+	local cone = Vector3.new(0.8, TOP + 2.3, 1.5)
+	d.post("Cone", 3, 2.6, cone, Palette.bread)
+	d.ball("Scoop", 3.4, cone + Vector3.new(0, 2.2, 0), Palette.flowerPink)
+	d.ball("Scoop", 2.8, cone + Vector3.new(0, 4.1, 0), Palette.cream)
+	local anim = animFolder(model)
+	b.into(anim, false).post("Cherry", 0.8, 1, cone + Vector3.new(0, 5.8, 0), Palette.roofRed)
+	local chimney = d.block("Chimney", Vector3.new(1.4, 2.6, 1.4), Vector3.new(-3.6, TOP + 2.1, 4), Palette.stone)
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	for _, stripe in { { -3.2, Palette.flowerPink }, { -0.8, Palette.cream } } do
+		d.block(
+			"Awning",
+			Vector3.new(2.4, 0.3, 1.4),
+			CFrame.new(stripe[1], PLINTH + 5.6, FRONT - 0.6) * CFrame.Angles(math.rad(18), 0, 0),
+			stripe[2],
+			{ shadow = false }
+		)
+	end
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofTeal, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("Scoop", 1.2, at, Palette.flowerPink, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(3.6, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Bakery = bakery,
 	FeedMill = feedMill,
@@ -470,6 +509,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	FeedMill2 = function(model: Model, b: Kit.Builder): Parts
 		return feedMill(model, b, Palette.roofRed)
 	end,
+	IceCreamParlor = iceCreamParlor,
 }
 
 function ArtFactories.has(id: string): boolean
