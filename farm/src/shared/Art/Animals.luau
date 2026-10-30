@@ -275,6 +275,15 @@ function ArtAnimals.pen(penId: string, cf: CFrame, parent: Instance)
 	parent:SetAttribute("PenOrigin", cf) -- for setPenLevel's add-ons
 end
 
+-- What the server's pen shell merge (Art/Merge mergeShell) leaves out: the tap Floor, the
+-- animals and their products (they move and fade), the gate (it swings), the feed and crate
+-- lid (setPenState) and the upgrade add-ons. PlotService names the six animals Animal_1-6.
+ArtAnimals.SHELL_SKIP = { Floor = true, Gate = true, Feed = true, Lid = true, Upgrade = true } :: { [string]: boolean }
+for i = 1, 6 do
+	ArtAnimals.SHELL_SKIP["Animal_" .. i] = true
+	ArtAnimals.SHELL_SKIP["Product_" .. i] = true
+end
+
 ---------------------------------------------------------------------------------------------
 -- Pen upgrade looks (Design/03 Animals, Pen Upgrades)
 ---------------------------------------------------------------------------------------------

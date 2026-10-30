@@ -397,25 +397,23 @@ local ANIMAL_SPOTS = {
 local ANIMAL_TURNS = { 160, 200, 175, 20, -15, 200 }
 
 -- A pen: a floor you tap (feed / collect), its fences and shelter (FarmShared.Art.Animals) and
--- up to six animals, each with the product it shows when ready.
-local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
+-- up to six animals, each with the product it shows when ready. `facing` is the pen's
+-- bottom-centre with the gate at local -Z.
+local function buildPenAt(plot: Model, id: string, facing: CFrame)
 	local def = Animals.pens[id]
 	local kind = def.copyOf or id -- a copy looks like its original
-	local pos = LAYOUT.pens[id]
 	local pen = Instance.new("Model")
 	pen.Name = id
 	local floor = part({
 		Name = "Floor",
 		Size = Vector3.new(12, 0.4, 12),
-		CFrame = at(pos, 0.4),
+		CFrame = facing * Kit.yaw(180) * CFrame.new(0, -0.2, 0),
 		Color = ArtAnimals.FLOOR_COLOR[kind] or Palette.grassLight,
 		Parent = pen,
 	})
 	floor:SetAttribute("Interact", "Pen")
 	floor:SetAttribute("PenId", id)
-	-- The gate faces south (+Z), toward the Barn and the spawn. Fences and animals let taps
-	-- through to the floor.
-	local facing = at(pos, 0.6) * Kit.yaw(180)
+	-- Fences and animals let taps through to the floor
 	pen:SetAttribute("BaseCFrame", facing)
 	ArtAnimals.pen(kind, facing, pen)
 	local height = ArtAnimals.HEIGHT[kind] or 2.5
@@ -431,6 +429,11 @@ local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame
 	end
 	label(floor, def.displayName, 5, UDim2.fromOffset(140, 28), 40)
 	pen.Parent = plot
+end
+
+local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
+	-- The gate faces south (+Z), toward the Barn and the spawn
+	buildPenAt(plot, id, at(LAYOUT.pens[id], 0.6) * Kit.yaw(180))
 end
 
 -- The Town Hall, with the owner's name on the plot sign out front. Rebuilt with more storeys
@@ -1128,7 +1131,7 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	end
 end
 
-local function refreshPen(player: Player, model: Model, id: string, pen: { [string]: any }, now: number)
+local function refreshPen(player: Player, model: Model, id: string, pen: { [string]: any }, now: number): ()
 	local def = Animals.pens[id]
 	local building = model:FindFirstChild(id)
 	if def == nil or building == nil then
@@ -1149,6 +1152,18 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	cache[id] = state
 
 	local shell = if not pen.built then 0.75 elseif underConstruction then 0.4 else 0
+	local merged = building:GetAttribute("MergedLevel")
+	if merged ~= nil and (merged ~= level or shell > 0) then
+		-- A merged shell can't be repainted for a new level or faded back: build the pen again
+		local facing = building:GetAttribute("BaseCFrame")
+		if typeof(facing) == "CFrame" then
+			building:Destroy()
+			buildPenAt(model, id, facing)
+			cache[id] = nil
+			refreshPen(player, model, id, pen, now)
+		end
+		return
+	end
 	ArtAnimals.setPenLevel(building, def.copyOf or id, level)
 	setScaffold(building, underConstruction, 12, 12, 6)
 	for _, child in building:GetChildren() do
@@ -1185,6 +1200,11 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 		if product then
 			Kit.fade(product, if mark == "r" then 0 else 1)
 		end
+	end
+	-- A working pen's fences and shelter never change again (until a level-up): merge them
+	if shell == 0 and merged == nil then
+		building:SetAttribute("MergedLevel", level)
+		task.spawn(ArtMerge.mergeShell, building, ArtAnimals.SHELL_SKIP)
 	end
 end
 
