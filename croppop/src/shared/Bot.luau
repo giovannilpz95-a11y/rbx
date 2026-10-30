@@ -1,12 +1,14 @@
 --[[
 	A simple test player for tuning levels. It plays a level on many seeds
 	and reports how often it wins. Its moves are random, but it prefers
-	setting off power-ups and matching under a pumpkin, so its win rate is a
+	setting off power-ups, matching under a pumpkin and matching on clover
+	that still has bare cells to spread to, so its win rate is a
 	rough lower bound on a person's. Use it to compare levels, not as the
 	final word on difficulty.
 ]]
 
 local Engine = require(script.Parent.Engine)
+local Matcher = require(script.Parent.Matcher)
 local Rng = require(script.Parent.Rng)
 
 local Bot = {}
@@ -50,6 +52,37 @@ local function underPumpkins(board, moves)
 	return out
 end
 
+-- Moves whose match takes in a clover cell and a bare one (so clover spreads).
+local function spreadsClover(board, moves)
+	local any, bare = false, false
+	board:eachCell(function(cell)
+		any = any or cell.clover
+		bare = bare or not cell.clover
+	end)
+	if not (any and bare) then
+		return nil
+	end
+	local out = {}
+	for _, m in moves do
+		local a, b = board:get(m[1], m[2]), board:get(m[3], m[4])
+		a.piece, b.piece = b.piece, a.piece
+		local spreads = false
+		for _, group in Matcher.findGroups(board, {}) do
+			local hasClover, hasBare = false, false
+			for _, cell in group.cells do
+				hasClover = hasClover or cell.clover
+				hasBare = hasBare or not cell.clover
+			end
+			spreads = spreads or (hasClover and hasBare)
+		end
+		a.piece, b.piece = b.piece, a.piece
+		if spreads then
+			table.insert(out, m)
+		end
+	end
+	return out
+end
+
 -- Picks a move: a power-up swap if there is one, then one under a pumpkin,
 -- otherwise a random move.
 local function chooseMove(pop, rng)
@@ -69,6 +102,10 @@ local function chooseMove(pop, rng)
 	local pumpkinMoves = underPumpkins(board, moves)
 	if pumpkinMoves and #pumpkinMoves > 0 and rng:int(1, 3) > 1 then
 		return rng:pick(pumpkinMoves)
+	end
+	local cloverMoves = spreadsClover(board, moves)
+	if cloverMoves and #cloverMoves > 0 and rng:int(1, 3) > 1 then
+		return rng:pick(cloverMoves)
 	end
 	return rng:pick(moves)
 end

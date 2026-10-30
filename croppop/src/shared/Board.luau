@@ -10,6 +10,7 @@
 	Pumpkins are pieces that never match and can't be blasted: they fall and
 	swap like tiles, and the engine collects them from the bottom cell of a
 	column. Refills drop new ones while `pumpkinsToSpawn` is above 0.
+	Clover grows on cells (under whatever is there); the engine spreads it.
 
 	Everything here is deterministic: loops run in row/column order and all
 	randomness comes from the Rng passed in.
@@ -35,6 +36,7 @@ export type Cell = {
 	weed: boolean, -- the "bale" is a weed (always 1 layer; weeds spread)
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
+	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
 }
 
 export type Move = { id: number, fromX: number, fromY: number, toX: number, toY: number }
@@ -66,7 +68,7 @@ function Board.fromLayout(layout: { string })
 		for x = 1, width do
 			local ch = string.sub(row, x, x)
 			if ch ~= "#" then
-				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, weed = false, mud = 0, frost = 0 }
+				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, weed = false, mud = 0, frost = 0, clover = false }
 				if ch == "m" then
 					cell.mud = 1
 				elseif ch == "M" then
@@ -82,6 +84,8 @@ function Board.fromLayout(layout: { string })
 					cell.bale = tonumber(ch) :: number
 				elseif ch == "p" then
 					self.startPumpkins[cell] = true
+				elseif ch == "c" then
+					cell.clover = true
 				end
 				self.cells[y][x] = cell
 			end
@@ -415,12 +419,13 @@ function Board.hash(self): string
 		local row = {}
 		for x = 1, self.width do
 			local cell = self.cells[y][x]
+			local clover = if cell and cell.clover then "+" else "" -- not "c": that is the column sprayer
 			if not cell then
 				table.insert(row, "#")
 			elseif cell.weed then
-				table.insert(row, "W")
+				table.insert(row, "W" .. clover)
 			elseif cell.bale > 0 then
-				table.insert(row, "B" .. cell.bale)
+				table.insert(row, "B" .. cell.bale .. clover)
 			else
 				local piece = cell.piece
 				local code = if piece and piece.pumpkin
@@ -433,7 +438,7 @@ function Board.hash(self): string
 				if cell.frost > 0 then
 					code ..= "f" .. cell.frost
 				end
-				table.insert(row, code)
+				table.insert(row, code .. clover)
 			end
 		end
 		parts[y] = table.concat(row, ",")
@@ -453,6 +458,7 @@ function Board.snapshot(self)
 			weed = cell.weed,
 			mud = cell.mud,
 			frost = cell.frost,
+			clover = cell.clover,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})
 	end)

@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..125 from original shape and
+	Crop Pop level generator. Builds levels 6..150 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 125 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 150 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 125
+local LAST = tonumber(ARGS[2]) or 150
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -53,6 +53,11 @@ local NAMES = {
 	"Leaf Pile", "Cider Mill", "Pumpkin Pie", "Bonfire Night", "Walnut Grove",
 	"Haystack Maze", "Autumn Mist", "Turnip Lanterns", "Root Market", "Giant Gourd Show",
 	"Hazel Hedge", "First Frost", "Harvest Supper", "Quilting Bee", "Moonlit Pumpkins",
+	"Lucky Clover", "Green Pasture", "Mossy Stones", "Shamrock Hill", "Grand Harvest Ball",
+	"Hedgerow", "Barn Swallow", "Fern Hollow", "Sheepfold", "Meadowsweet",
+	"Gooseberry Lane", "Paddock Gate", "Summer Breeze", "Clover Honey", "Village Fete",
+	"Nettle Bank", "Plum Orchard", "Dandelion Clock", "Rye Field", "Kitchen Garden",
+	"Mill Wheel", "Lamb Meadow", "Buttercup Lane", "Cloverleaf Crossing", "Golden Meadows",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -61,7 +66,8 @@ local MAX_COLLECT = 45
 local FROST_INTRO = 21 -- first level with frost
 local WEEDS_INTRO = 41 -- first level with weeds
 local PUMPKIN_INTRO = 101 -- first level with pumpkins
-local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true }
+local CLOVER_INTRO = 126 -- first level with clover
+local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -377,6 +383,7 @@ local function mechanics(id)
 		thickFrost = id >= 33, -- "F"
 		weeds = id >= WEEDS_INTRO, -- "w"
 		pumpkins = id >= PUMPKIN_INTRO, -- "p"
+		clover = id >= CLOVER_INTRO, -- "c"
 	}
 end
 
@@ -384,6 +391,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_CLOVER = { "Clover", "Pumpkins", "Collect", "Weeds", "Clover", "Mud", "Frost", "HayBale", "Clover", "Mix", "Pumpkins", "Collect" }
 local FOCUS_PUMPKINS = { "Pumpkins", "Collect", "Weeds", "Mud", "Pumpkins", "Frost", "HayBale", "Mix", "Pumpkins", "Weeds", "Collect", "Mix" }
 
 -- Names that promise an obstacle get it (when it's in the game by then).
@@ -393,6 +401,7 @@ local NAME_HINTS = {
 	{ words = { "Frost", "Foggy" }, focus = "Frost", needs = "frost" },
 	{ words = { "Thistle", "Bramble", "Wild Oats" }, focus = "Weeds", needs = "weeds" },
 	{ words = { "Pumpkin", "Gourd", "Squash" }, focus = "Pumpkins", needs = "pumpkins" },
+	{ words = { "Clover", "Shamrock", "Green" }, focus = "Clover", needs = "clover" },
 }
 
 local function focusOf(id, name)
@@ -403,6 +412,8 @@ local function focusOf(id, name)
 		return "Weeds"
 	elseif id == PUMPKIN_INTRO then
 		return "Pumpkins"
+	elseif id == CLOVER_INTRO then
+		return "Clover"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -414,7 +425,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -494,6 +505,19 @@ local function placePumpkins(g, rng, id)
 	return placed + (if id == PUMPKIN_INTRO then 0 else rng:int(0, 1))
 end
 
+-- A small clover patch to grow from, low and in the middle (mirrored).
+local function placeClover(g, rng, id)
+	local size = if id == CLOVER_INTRO then 2 else rng:int(1, 3)
+	local cx = math.ceil(g.w / 2)
+	local y = rng:int(math.ceil(g.h / 2), g.h)
+	for i = 0, size - 1 do
+		local x = cx - i
+		if isCell(g, x, y) and g[y][x] == "." then
+			setSym(g, x, y, "c")
+		end
+	end
+end
+
 -- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
 -- tiles all stop falling tiles.
 local function keepRowsOpen(g)
@@ -541,6 +565,11 @@ local function draft(id, variant)
 
 	local wantMud = focus == "Mud" or (focus == "Mix" and rng:int(1, 2) == 1)
 	local wantBales = id >= 7 and (focus == "HayBale" or (focus == "Mix" and not wantMud) or (focus == "Mix" and id >= 40))
+	if focus == "Clover" then
+		-- Clover can't grow under bales from matches, so clover levels go without them.
+		wantBales = false
+		wantMud = id ~= CLOVER_INTRO and rng:int(1, 3) == 1
+	end
 	if wantMud then
 		placeMud(g, rng, id, mech)
 	end
@@ -552,6 +581,9 @@ local function draft(id, variant)
 	end
 	if focus == "Weeds" or (focus == "Mix" and mech.weeds and rng:int(1, 3) == 1) then
 		placeWeeds(g, rng)
+	end
+	if focus == "Clover" then
+		placeClover(g, rng, id)
 	end
 	local pumpkins = 0
 	if focus == "Pumpkins" or (focus == "Mix" and mech.pumpkins and rng:int(1, 3) == 1) then
@@ -585,6 +617,9 @@ local function draft(id, variant)
 	end
 	if pumpkins > 0 then
 		table.insert(goals, { kind = "Pumpkins", count = pumpkins })
+	end
+	if has(g, "c") > 0 then
+		table.insert(goals, { kind = "Clover" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most
@@ -664,9 +699,10 @@ local function scaleCollects(level, factor)
 	end
 end
 
--- The bot is much worse at steering pumpkins down than a person, so it gets
--- a lower bar on pumpkin levels (the intro level uses the usual one).
-local PUMPKIN_TARGET_SCALE = 0.7
+-- The bot is much worse than a person at steering pumpkins down and at
+-- spreading clover, so it gets a lower bar on those levels (their intro
+-- levels use the usual one).
+local GUIDED_TARGET_SCALE = 0.7
 
 local function hasGoal(level, kind)
 	for _, goal in level.goals do
@@ -682,8 +718,8 @@ local function build(id)
 	for variant = 0, 9 do
 		local level = draft(id, variant)
 		local target = baseTarget
-		if level and id ~= PUMPKIN_INTRO and hasGoal(level, "Pumpkins") then
-			target *= PUMPKIN_TARGET_SCALE
+		if level and not INTROS[id] and (hasGoal(level, "Pumpkins") or hasGoal(level, "Clover")) then
+			target *= GUIDED_TARGET_SCALE
 		end
 		if level and Levels.validate(level) == nil then
 			local moves, note = tune(level, target)

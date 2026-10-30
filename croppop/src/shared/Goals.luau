@@ -7,6 +7,7 @@
 	  { kind = "Frost" }                                 -- break every frost layer on the board
 	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
 	  { kind = "Pumpkins", count = 3 }                   -- bring N pumpkins down to the bottom row
+	  { kind = "Clover" }                                -- grow clover on every cell
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -25,8 +26,11 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local mudLayers, bales, frost, weeds = 0, 0, 0, 0
+	local mudLayers, bales, frost, weeds, bare = 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
+		if not cell.clover then
+			bare += 1
+		end
 		mudLayers += cell.mud
 		frost += cell.frost
 		if cell.weed then
@@ -55,6 +59,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Weeds", target = def.count or weeds, progress = 0 })
 		elseif def.kind == "Pumpkins" then
 			table.insert(list, { kind = "Pumpkins", target = def.count, progress = 0 })
+		elseif def.kind == "Clover" then
+			table.insert(list, { kind = "Clover", target = def.count or bare, progress = 0 })
 		else
 			error("unknown goal kind " .. tostring(def.kind))
 		end
@@ -94,6 +100,10 @@ end
 
 function Goals.onPumpkin(self)
 	bump(self, "Pumpkins", nil)
+end
+
+function Goals.onClover(self)
+	bump(self, "Clover", nil)
 end
 
 -- A weed spread onto a new cell: one more to pull.

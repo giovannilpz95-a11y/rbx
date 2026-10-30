@@ -236,6 +236,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	end
 	guis.mud.Visible = cell.mud > 0
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
+	guis.clover.Visible = cell.clover == true
 	styleBale(guis.bale, cell.bale, cell.weed)
 	styleFrost(guis, cell.frost or 0)
 end
@@ -287,6 +288,25 @@ function BoardView.load(self, game)
 		mudCorner.CornerRadius = UDim.new(0.2, 0)
 		mudCorner.Parent = mud
 
+		-- Clover covers the cell, over any mud, with a leaf in the corner.
+		local clover = Instance.new("TextLabel")
+		clover.Name = "Clover"
+		clover.Size = UDim2.fromScale(1, 1)
+		clover.BorderSizePixel = 0
+		clover.BackgroundColor3 = TileStyle.Board.clover
+		clover.BackgroundTransparency = 0.25
+		clover.Text = ""
+		clover.Parent = bg
+		local leaf = Instance.new("TextLabel")
+		leaf.Name = "Leaf"
+		leaf.AnchorPoint = Vector2.new(1, 1)
+		leaf.Position = UDim2.fromScale(1, 1)
+		leaf.Size = UDim2.fromScale(0.32, 0.32)
+		leaf.BackgroundTransparency = 1
+		leaf.Text = TileStyle.GoalGlyphs.Clover
+		leaf.TextScaled = true
+		leaf.Parent = clover
+
 		local bale = Instance.new("TextLabel")
 		bale.Name = "Bale"
 		bale.Size = self:_cellSize()
@@ -330,7 +350,7 @@ function BoardView.load(self, game)
 			exit.Parent = self.baleLayer
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -516,6 +536,12 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[f.y] and self.cellGuis[f.y][f.x]
 		if guis then
 			styleFrost(guis, f.layers)
+		end
+	end
+	for _, c in phase.clover or {} do
+		local guis = self.cellGuis[c.y] and self.cellGuis[c.y][c.x]
+		if guis then
+			guis.clover.Visible = true
 		end
 	end
 
