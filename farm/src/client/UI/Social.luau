@@ -443,6 +443,24 @@ local function friendBadge(friend: Player, order: number): TextButton
 	return button
 end
 
+-- The labels that follow our own state: Home, helps left, Good Neighbors, visitors.
+local function refreshStatus()
+	local onPlot = player:GetAttribute("OnPlot")
+	homeButton.Visible = onPlot ~= player.UserId
+	helpLabel.Visible = type(onPlot) == "number" and onPlot ~= 0 and onPlot ~= player.UserId
+	helpLabel.Text = string.format("🤝 %d helps left", helpsLeft())
+	local neighbors = player:GetAttribute("GoodNeighbors")
+	neighborsChip.Visible = type(neighbors) == "number" and neighbors > 0
+	if neighborsChip.Visible then
+		neighborsChip.Text =
+			string.format("🏡 Good Neighbors +%d%%", math.floor(SocialRules.neighborBonus(neighbors) * 100 + 0.5))
+	end
+	local visitors = visitorsOnMyFarm()
+	visitorsLabel.Visible = #visitors > 0
+	visitorsLabel.Text = if #visitors == 1 then "1 visiting" else string.format("%d visiting", #visitors)
+end
+
+-- Someone joined, left or moved: rebuild the Friends Nearby column and the Neighbors panel.
 local function refreshHud()
 	if column == nil then
 		return
@@ -460,20 +478,8 @@ local function refreshHud()
 		shown += 1
 		friendBadge(other, 10 + shown).Parent = column
 	end
-	homeButton.Visible = player:GetAttribute("OnPlot") ~= player.UserId
-	local onPlot = player:GetAttribute("OnPlot")
-	helpLabel.Visible = type(onPlot) == "number" and onPlot ~= 0 and onPlot ~= player.UserId
-	helpLabel.Text = string.format("🤝 %d helps left", helpsLeft())
-	local neighbors = player:GetAttribute("GoodNeighbors")
-	neighborsChip.Visible = type(neighbors) == "number" and neighbors > 0
-	if neighborsChip.Visible then
-		neighborsChip.Text =
-			string.format("🏡 Good Neighbors +%d%%", math.floor(SocialRules.neighborBonus(neighbors) * 100 + 0.5))
-	end
-	local visitors = visitorsOnMyFarm()
-	visitorsLabel.Visible = #visitors > 0
-	visitorsLabel.Text = if #visitors == 1 then "1 visiting" else string.format("%d visiting", #visitors)
-	if Panels.isOpen() then
+	refreshStatus()
+	if Panels.isShowing("Neighbors") then
 		Panels.refresh()
 	end
 end
@@ -491,7 +497,7 @@ local function watchPlayer(other: Player)
 	other:GetAttributeChangedSignal("OnPlot"):Connect(refreshHud)
 	other:GetAttributeChangedSignal("FarmLevel"):Connect(refreshHud)
 	if other == player then
-		other:GetAttributeChangedSignal("GoodNeighbors"):Connect(refreshHud)
+		other:GetAttributeChangedSignal("GoodNeighbors"):Connect(refreshStatus)
 	end
 end
 
@@ -650,7 +656,7 @@ function SocialUi.init()
 		friendCache[other.UserId] = nil
 		task.defer(refreshHud)
 	end)
-	ClientStore.changed.Event:Connect(refreshHud)
+	ClientStore.changed.Event:Connect(refreshStatus)
 	refreshHud()
 
 	-- Social news for this player (the HUD shows the farm's own pop-ups)
