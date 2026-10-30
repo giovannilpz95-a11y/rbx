@@ -63,7 +63,9 @@ return table.freeze({
 		{ 25 * MIN, 3 },
 		{ 30 * MIN, 4 },
 	}),
-	-- Extra factory queue slots: the 1st extra slot costs 8 Gems, the 2nd 12, ... up to 7 slots
-	queueSlotCosts = table.freeze({ 8, 12, 16, 20, 24, 28 }),
-	maxQueueSlots = 7,
+	-- Extra factory queue slots: the 1st extra slot costs 8 Gems, the 2nd 12, ... (+4 each).
+	-- Township stops at 6 slots until a factory upgrade opens the 7th (Wiki Data - Factories
+	-- & Goods §1.2), so a 3-slot factory pays 8/12/16 and a 2-slot one 8/12/16/20.
+	queueSlotCosts = table.freeze({ 8, 12, 16, 20, 24 }),
+	maxQueueSlots = 6,
 })
