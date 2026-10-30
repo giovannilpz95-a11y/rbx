@@ -2,14 +2,15 @@
 -- Community Buildings for Main Street (Design/16 Model Catalog §2.10, Design/07 Town
 -- Building): the nine a level-12 player can build, plus the content bank's (level 13+). Same rules as Houses, and each has one big
 -- readable "sign object" so its job is clear from the Overview camera. Built for a square lot
--- (12 studs by default) with the front at local -Z. Budget ≤ 40 parts.
+-- (12 studs by default) with the front at local -Z. Budget ≤ 24 parts; aim for 20, since a
+-- level-30 plot holds about 28 of them.
 
 local Kit = require("./Kit")
 local Palette = require("./Palette")
 
 local ArtCommunity = {}
 
-ArtCommunity.PARTS_MAX = 40
+ArtCommunity.PARTS_MAX = 24
 
 local PLINTH = 0.6
 local TURN = CFrame.Angles(0, math.rad(90), 0)
@@ -67,7 +68,7 @@ TYPES.PicnicPavilion = function(b, s)
 			)
 		end
 	end
-	Kit.gableRoof(t, "Roof", Vector3.new(0, 5.7, 0), w + 1.6, d + 1.6, 3, Palette.roofRed, Palette.cream)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, 5.7, 0), w + 1.6, d + 1.6, 3, Palette.roofRed)
 	t.block(
 		"RoofStripe",
 		Vector3.new(1.4, 0.2, d + 1.4),
@@ -91,16 +92,7 @@ TYPES.Schoolhouse = function(b, s)
 	local w, d, h = s * 0.8, s * 0.7, 6.5
 	local body = hall(b, w, d, h, Palette.barnRed)
 	local t = b.into(body, true)
-	Kit.gableRoof(
-		t,
-		"Roof",
-		CFrame.new(0, PLINTH + h, 0) * Kit.yaw(90),
-		d + 1.2,
-		w + 1.2,
-		3.4,
-		Palette.stoneDark,
-		Palette.cream
-	)
+	Kit.gableRoof(t, "Roof", CFrame.new(0, PLINTH + h, 0) * Kit.yaw(90), d + 1.2, w + 1.2, 3.4, Palette.stoneDark)
 	t.block("Tower", Vector3.new(2.6, 2.6, 2.6), Vector3.new(0, PLINTH + h + 3.4, -d / 2 + 1.6), Palette.cream)
 	t.ball(
 		"Bell",
@@ -176,7 +168,7 @@ TYPES.FireHall = function(b, s)
 	local w, d, h = s * 0.85, s * 0.75, 7
 	local body = hall(b, w, d, h, Palette.roofRed)
 	local t = b.into(body, true)
-	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1.2, 2.6, Palette.stoneDark, Palette.cream)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1.2, 2.6, Palette.stoneDark)
 	t.block(
 		"Tower",
 		Vector3.new(3, 6, 3),
@@ -222,7 +214,7 @@ TYPES.PostOffice = function(b, s)
 	local w, d, h = s * 0.8, s * 0.7, 6.5
 	local body = hall(b, w, d, h, Palette.oat)
 	local t = b.into(body, true)
-	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1.2, d + 1.4, 3.6, Palette.glassDeep, Palette.cream)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1.2, d + 1.4, 3.6, Palette.glassDeep)
 	-- Envelope sign standing on the roof ridge
 	local env = Vector3.new(0, PLINTH + h + 5, -0.2)
 	t.block("Envelope", Vector3.new(4.4, 2.8, 0.4), env, Palette.cream)
@@ -235,7 +227,7 @@ TYPES.PostOffice = function(b, s)
 	)
 	t.ball("Seal", 0.8, env + Vector3.new(0, 0.1, -0.35), Palette.roofRed, { shadow = false })
 	Kit.door(t, "Door", CFrame.new(-1.4, PLINTH, -d / 2), 2.4, 4.4, Palette.glassDeep, Palette.cream)
-	Kit.window(t, "Window", CFrame.new(2.2, PLINTH + 3.2, -d / 2), 2.4, 2.2, Palette.cream, Palette.glass, true)
+	Kit.window(t, "Window", CFrame.new(2.2, PLINTH + 3.2, -d / 2), 2.4, 2.2, Palette.cream, Palette.glass)
 	t.post("PostBox", 2.4, 1.2, Vector3.new(-w / 2 - 0.4, 1.2, -d / 2 - 1), Palette.roofRed)
 	t.ball("PostBoxTop", 1.2, Vector3.new(-w / 2 - 0.4, 2.4, -d / 2 - 1), Palette.roofRed, { shadow = false })
 	Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 3.6, 0), 2.5, Palette.wood, Palette.lime)
@@ -356,7 +348,7 @@ TYPES.ClockTower = function(b, s)
 	local w, d, h = s * 0.8, s * 0.6, 5
 	local body = hall(b, w, d, h, Palette.stone)
 	local t = b.into(body, true)
-	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.6, Palette.roofRed, Palette.cream)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.6, Palette.roofRed)
 	local tw, th = 3.6, 9
 	t.block("Tower", Vector3.new(tw, th, tw), Vector3.new(0, PLINTH + h + th / 2 - 1, 0), Palette.stoneLight)
 	t.block("Ledge", Vector3.new(tw + 0.6, 0.5, tw + 0.6), Vector3.new(0, PLINTH + h + th - 1, 0), Palette.cream)
@@ -405,14 +397,12 @@ TYPES.ClockTower = function(b, s)
 	)
 	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.4, 4, Palette.woodDark, Palette.cream)
 	t.block("Steps", Vector3.new(4, 0.4, 1.4), Vector3.new(0, 0.2, -d / 2 - 0.7), Palette.stoneLight)
-	Kit.bush(t, "Bush", Vector3.new(-w / 2 + 1, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerYellow)
-	Kit.bush(t, "Bush", Vector3.new(w / 2 - 1, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerPink)
 	Kit.sproutTag(t, Vector3.new(w / 2 - 1.2, PLINTH + h + 1.2, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
 	return body
 end
 
 -- Greenhouse (content bank, level 14): a long glass house on a brick base with a cream frame,
--- rows of potted plants inside and a big flower on the gable.
+-- flowering plants inside and a big flower on the gable.
 TYPES.Greenhouse = function(b, s)
 	local w, d, h = s * 0.85, s * 0.6, 1.2
 	local body = hall(b, w, d, h, Palette.brick)
@@ -424,11 +414,11 @@ TYPES.Greenhouse = function(b, s)
 		Palette.glass,
 		{ shadow = false }
 	)
-	for _, x in { -w / 2, 0, w / 2 } do
+	for _, x in { -w / 2, w / 2 } do
 		t.block("Frame", Vector3.new(0.3, 4, d), Vector3.new(x, PLINTH + h + 2, 0), Palette.cream, { shadow = false })
 	end
-	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h + 4, 0), w + 0.6, d + 0.6, 2.4, Palette.glassDeep, Palette.cream)
-	for _, x in { -w / 3, 0, w / 3 } do
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h + 4, 0), w + 0.6, d + 0.6, 2.4, Palette.glassDeep)
+	for _, x in { -w / 4, w / 4 } do
 		Kit.bush(t, "Plant", Vector3.new(x, PLINTH + h, 0), 0.8, Palette.leaf, Palette.flowerPink)
 	end
 	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.2, 4.2, Palette.roofTeal, Palette.cream)
@@ -445,8 +435,6 @@ TYPES.Greenhouse = function(b, s)
 			{ shadow = false }
 		)
 	end
-	t.post("Pot", 1, 1.2, Vector3.new(-w / 2 - 0.4, 0.5, -d / 2 - 1), Palette.brick)
-	t.post("Pot", 1, 1.2, Vector3.new(w / 2 + 0.4, 0.5, -d / 2 - 1), Palette.brick)
 	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 5.2, d / 2 - 1), 2.5, Palette.wood, Palette.lime)
 	return body
 end
@@ -457,10 +445,9 @@ TYPES.Bathhouse = function(b, s)
 	local w, d, h = s * 0.8, s * 0.6, 4.4
 	local body = hall(b, w, d, h, Palette.sky)
 	local t = b.into(body, true)
-	t.block("Trim", Vector3.new(w + 0.2, 0.5, d + 0.2), Vector3.new(0, PLINTH + 1, 0), Palette.cream)
-	Kit.archRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 0.8, d + 0.8, 2.4, 5, 0.5, Palette.roofTeal)
+	Kit.archRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 0.8, d + 0.8, 2.4, 4, 0.5, Palette.roofTeal)
 	t.post("Chimney", 3, 1.4, Vector3.new(w / 2 - 1.6, PLINTH + h + 2.4, d / 4), Palette.stone)
-	for i, y in { 1.2, 2.3, 3.5 } do
+	for i, y in { 1.2, 2.5 } do
 		t.ball(
 			"Steam",
 			0.9 + i * 0.3,
@@ -476,23 +463,21 @@ TYPES.Bathhouse = function(b, s)
 	t.ball("Bubble", 0.8, tub + Vector3.new(0.5, 1.1, 0), Palette.flowerWhite, { shadow = false })
 	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.4, 3.6, Palette.woodDark, Palette.cream)
 	for _, x in { -w / 3, w / 3 } do
-		Kit.window(t, "Window", CFrame.new(x, PLINTH + 2.6, -d / 2), 1.6, 1.4, Palette.cream, Palette.glass, true)
+		Kit.window(t, "Window", CFrame.new(x, PLINTH + 2.6, -d / 2), 1.6, 1.4, Palette.cream, Palette.glass)
 	end
-	t.block("Steps", Vector3.new(4, 0.4, 1.4), Vector3.new(0, 0.2, -d / 2 - 0.7), Palette.stoneLight)
 	Kit.bush(t, "Bush", Vector3.new(-w / 2 + 0.8, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerPink)
-	Kit.bush(t, "Bush", Vector3.new(w / 2 - 0.8, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerWhite)
 	Kit.sproutTag(t, Vector3.new(-w / 2 + 1.2, PLINTH + h + 1, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
 	return body
 end
 
 -- Art Studio (content bank, level 16): a cream studio with a plum gable roof and a big
 -- skylight, and a giant easel with a painted canvas out front. The roof's sign is a paint
--- palette with four colour dots.
+-- palette with three colour dots.
 TYPES.ArtStudio = function(b, s)
 	local w, d, h = s * 0.7, s * 0.55, 5
 	local body = hall(b, w, d, h, Palette.cream)
 	local t = b.into(body, true)
-	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.8, Palette.roofPlum, Palette.woodLight)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.8, Palette.roofPlum)
 	t.block(
 		"Skylight",
 		Vector3.new(w * 0.5, 0.3, d * 0.35),
@@ -502,11 +487,11 @@ TYPES.ArtStudio = function(b, s)
 	)
 	Kit.window(t, "Window", CFrame.new(-w / 4, PLINTH + 2.8, -d / 2), 2, 2.2, Palette.woodLight, Palette.glass)
 	Kit.door(t, "Door", CFrame.new(w / 4, PLINTH, -d / 2), 2.2, 3.8, Palette.roofPlum, Palette.woodLight)
-	-- Sign object: a paint palette on the gable with four colour dots
+	-- Sign object: a paint palette on the gable with three colour dots
 	local at = Vector3.new(0, PLINTH + h + 1.2, -d / 2 - 0.65)
 	t.cyl("Palette", 0.3, 2.8, CFrame.new(at) * TURN, Palette.woodLight, { shadow = false })
-	for i, color in { Palette.roofRed, Palette.flowerYellow, Palette.roofTeal, Palette.flowerPink } do
-		local a = math.rad(i * 70 + 20)
+	for i, color in { Palette.roofRed, Palette.flowerYellow, Palette.roofTeal } do
+		local a = math.rad(i * 80 + 30)
 		t.ball("PaintDot", 0.6, at + Vector3.new(math.cos(a) * 0.8, math.sin(a) * 0.8, -0.2), color, { shadow = false })
 	end
 	-- The easel on the lawn, angled toward the street
@@ -528,7 +513,6 @@ TYPES.ArtStudio = function(b, s)
 		{ shadow = false }
 	)
 	t.ball("PaintSun", 0.6, easel * CFrame.new(0.5, 3.4, -0.55).Position, Palette.flowerYellow, { shadow = false })
-	Kit.bush(t, "Bush", Vector3.new(w / 2 + 0.4, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerYellow)
 	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 1.2, d / 2 - 1), 2.5, Palette.wood, Palette.lime)
 	return body
 end

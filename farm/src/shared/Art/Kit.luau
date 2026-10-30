@@ -243,18 +243,12 @@ function Kit.window(
 	end
 end
 
--- A loaf-arch door: a frame, the door and its round top. 3 parts.
+-- A loaf-arch door: the door and its round top in the frame color, like a fanlight. 2 parts.
 function Kit.door(b: Builder, name: string, at: CFrame, w: number, h: number, color: Color3, frame: Color3)
 	local turn = CFrame.Angles(0, math.rad(90), 0)
 	local straight = h - w / 2
-	b.block(
-		name .. "Frame",
-		Vector3.new(w + 0.8, straight + 0.4, 0.25),
-		at * CFrame.new(0, (straight + 0.4) / 2, -0.12),
-		frame
-	)
 	b.block(name, Vector3.new(w, straight, 0.3), at * CFrame.new(0, straight / 2, -0.25), color)
-	b.cyl(name, 0.3, w, at * CFrame.new(0, straight, -0.25) * turn, color)
+	b.cyl(name .. "Top", 0.3, w, at * CFrame.new(0, straight, -0.25) * turn, frame)
 end
 
 -- A post-and-rail fence from `a` to `b2` on the ground (local positions, Y ignored).
@@ -288,34 +282,33 @@ function Kit.tree(b: Builder, name: string, at: Vector3, scale: number, top: Col
 	return nil
 end
 
--- A round bush, optionally dotted with two flowers. 1 or 3 parts.
+-- A round bush, optionally dotted with a flower. 1 or 2 parts.
 function Kit.bush(b: Builder, name: string, at: Vector3, scale: number, color: Color3, flower: Color3?)
 	b.ball(name, 2.2 * scale, at + Vector3.new(0, 0.7 * scale, 0), color)
 	if flower then
-		b.ball(name .. "Flower", 0.6 * scale, at + Vector3.new(0.5 * scale, 1.6 * scale, -0.6 * scale), flower)
-		b.ball(name .. "Flower", 0.6 * scale, at + Vector3.new(-0.6 * scale, 1.3 * scale, -0.5 * scale), flower)
+		b.ball(name .. "Flower", 0.7 * scale, at + Vector3.new(0.45 * scale, 1.6 * scale, -0.6 * scale), flower)
 	end
 end
 
--- The Sprout Tag (16 §1.7): a honey-wood stem with two lime leaves, decoration only.
--- `height` follows the S/M/L/XL sizes (0.6 / 1.2 / 2.5 / 4). 3 parts in a "SproutTag" model.
-function Kit.sproutTag(b: Builder, at: Vector3, height: number, stem: Color3, leafColor: Color3): Model
+-- The Sprout Tag (16 §1.7): two lime leaves sprouting from the roof, decoration only.
+-- `height` follows the S/M/L/XL sizes (0.6 / 1.2 / 2.5 / 4). 2 parts in a "SproutTag" model.
+-- (It lost its stem to the part budget; `_stem` stays so callers don't change.)
+function Kit.sproutTag(b: Builder, at: Vector3, height: number, _stem: Color3, leafColor: Color3): Model
 	local tag = Kit.model("SproutTag", b.parent)
 	local t = b.into(tag, false)
-	local stemH = height * 0.55
-	t.post("Stem", stemH, height * 0.14, at + Vector3.new(0, stemH / 2, 0), stem, { shadow = false })
 	local leaf = Vector3.new(height * 0.5, height * 0.16, height * 0.3)
+	local base = height * 0.12
 	t.block(
 		"Leaf",
 		leaf,
-		CFrame.new(at + Vector3.new(-height * 0.22, stemH + height * 0.08, 0)) * CFrame.Angles(0, 0, math.rad(-28)),
+		CFrame.new(at + Vector3.new(-height * 0.2, base + height * 0.1, 0)) * CFrame.Angles(0, 0, math.rad(-28)),
 		leafColor,
 		{ shadow = false }
 	)
 	t.block(
 		"Leaf",
 		leaf,
-		CFrame.new(at + Vector3.new(height * 0.22, stemH + height * 0.16, 0)) * CFrame.Angles(0, 0, math.rad(32)),
+		CFrame.new(at + Vector3.new(height * 0.2, base + height * 0.18, 0)) * CFrame.Angles(0, 0, math.rad(32)),
 		leafColor,
 		{ shadow = false }
 	)

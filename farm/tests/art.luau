@@ -29,6 +29,7 @@ local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Crops = require("../src/shared/Config/Crops")
 local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
+local Levels = require("../src/shared/Config/Levels")
 local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
@@ -446,7 +447,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		eq(root.Transparency, 1, "root stays hidden")
 	end)
 
-	test("art: a fully built MVP plot stays inside the plot part budget", function()
+	test("art: a fully built plot (every level with content) stays inside the plot part budget", function()
 		local total = 0
 		local function add(root: Instance, copies: number)
 			total += Kit.countParts(root) * copies
@@ -478,11 +479,12 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		-- Barn, board, dock, truck, gate, decoration: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25 + 40
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
-		-- Every House a level-12 player can own, and every Community Building
+		-- Every House copy a player at the highest built level can own, and every Community
+		-- Building, so the budget stays honest as the content bank grows
 		for id, def in Town.houses do
 			local copies = 0
 			for _, level in def.copyLevels do
-				if level <= 12 then
+				if level <= Levels.built then
 					copies += 1
 				end
 			end
@@ -495,7 +497,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ArtCommunity.build(id, m, CFrame.new(), 12)
 			add(m, 1)
 		end
-		print(string.format("      full level-12 plot estimate: %d parts", total))
+		print(string.format("      full level-%d plot estimate: %d parts", Levels.built, total))
 		ok(total <= PLOT_PARTS_MAX, string.format("full plot estimate %d parts, budget %d", total, PLOT_PARTS_MAX))
 	end)
 end
