@@ -17,6 +17,7 @@ local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
+local NoticeService = require(script.Parent.NoticeService)
 local PlotService = require(script.Parent.PlotService)
 local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -98,6 +99,9 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 			tier = prize,
 			name = string.format("%s %s", Prize.tiers[prize].displayName, crop.displayName),
 		})
+		NoticeService.post(
+			string.format("%s %s on %s's farm", Prize.tiers[prize].displayName, crop.displayName, player.DisplayName)
+		)
 		-- The Town Crier: an Heirloom find is news for the whole server
 		if prize == "Heirloom" then
 			for _, other in Players:GetPlayers() do
@@ -137,6 +141,31 @@ function FarmService.sellPrize(player: Player, index: any): (boolean, string?)
 	return true
 end
 
+-- Put a Prize Crop from the basket on the plot's Prize Shelf, or take one back down
+function FarmService.shelvePrize(player: Player, index: any): (boolean, string?)
+	local data = DataService.get(player) :: { [string]: any }
+	if not NetService.check.int(index, 1, Prize.basketSlots) then
+		return false
+	end
+	local ok, reason = PrizeRules.shelve(data, index)
+	if ok then
+		PlotService.refresh(player)
+	end
+	return ok, reason
+end
+
+function FarmService.unshelvePrize(player: Player, slot: any): (boolean, string?)
+	local data = DataService.get(player) :: { [string]: any }
+	if not NetService.check.int(slot, 1, Prize.shelfSlots) then
+		return false
+	end
+	local ok, reason = PrizeRules.unshelve(data, slot)
+	if ok then
+		PlotService.refresh(player)
+	end
+	return ok, reason
+end
+
 -- Gems finish a growing field now (paperwork: works from anywhere on your plot).
 function FarmService.speedUp(player: Player, fieldId: any): (boolean, string?)
 	if not NetService.check.id(fieldId) then
@@ -163,6 +192,8 @@ function FarmService.init()
 	NetService.on(Net.Farm_Harvest, 20, 30, FarmService.harvest)
 	NetService.on(Net.Farm_SpeedUp, 2, 3, FarmService.speedUp)
 	NetService.on(Net.Prize_Sell, 3, 5, FarmService.sellPrize)
+	NetService.on(Net.Prize_Shelve, 3, 5, FarmService.shelvePrize)
+	NetService.on(Net.Prize_Unshelve, 3, 5, FarmService.unshelvePrize)
 end
 
 return FarmService

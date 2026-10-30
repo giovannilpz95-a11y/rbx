@@ -15,6 +15,7 @@ local WorldLabels = require(script.Parent.UI.WorldLabels)
 local ReachController = require(script.Parent.Controllers.ReachController)
 local MovementController = require(script.Parent.Controllers.MovementController)
 local DecorPlacer = require(script.Parent.Controllers.DecorPlacer)
+local FactoryMotion = require(script.Parent.Controllers.FactoryMotion)
 
 local player = Players.LocalPlayer
 
@@ -27,6 +28,7 @@ Guide.init()
 ReachController.init()
 MovementController.init()
 DecorPlacer.init()
+task.spawn(FactoryMotion.init)
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
 local SHORTCUTS = {

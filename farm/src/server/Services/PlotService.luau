@@ -28,6 +28,7 @@ local ArtCommunity = require(Shared.Art.Community)
 local ArtCrops = require(Shared.Art.Crops)
 local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
+local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtLighting = require(Shared.Art.Lighting)
 local Kit = require(Shared.Art.Kit)
 local Palette = require(Shared.Art.Palette)
@@ -52,7 +53,6 @@ local COLORS = {
 	path = Palette.path,
 	hub = Palette.hub,
 	soil = Palette.soil,
-	crate = Palette.crate,
 }
 
 -- Main Street: the strip between the gate and the Ring Road (local z 48..96), with two
@@ -138,6 +138,7 @@ local LAYOUT = {
 	} :: { [string]: Vector3 },
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
+	prizeShelf = Vector3.new(-28, 0, 43), -- south of the Barn, clear of its door
 	truck = Vector3.new(26, 0, 36),
 	spawn = Vector3.new(0, 0, 16), -- far enough inside that the camera behind you clears the gate
 }
@@ -552,6 +553,27 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Parent = model,
 	})
 	board:SetAttribute("Interact", "OrderBoard")
+
+	-- Prize Shelf: a plank on two legs by the Barn; refreshShelf puts the crops on it
+	local shelf = part({
+		Name = "PrizeShelf",
+		Size = Vector3.new(7, 0.4, 1.8),
+		CFrame = at(LAYOUT.prizeShelf, 2.6),
+		Color = Palette.trunk,
+		Parent = model,
+	})
+	shelf:SetAttribute("Interact", "PrizeShelf")
+	for _, x in { -3, 3 } do
+		part({
+			Name = "Leg",
+			Size = Vector3.new(0.4, 2.4, 0.4),
+			CFrame = at(LAYOUT.prizeShelf + Vector3.new(x, 0, 0), 1.2),
+			Color = Palette.trunk,
+			CanCollide = false,
+			Parent = shelf,
+		})
+	end
+	label(shelf, "Prize Shelf", 3.5, UDim2.fromOffset(140, 28), 60)
 	ArtBuildings.orderBoard(board, 6)
 	ArtBuildings.dock(model, at(LAYOUT.truck, 0))
 
@@ -805,8 +827,10 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	setScaffold(building, underConstruction, 10, 12, 10)
 	Kit.fade(building, fade, function(p)
 		local name = p.Name
-		return name == "Crate" or name == "OutputTable" or name == "TableTop" or p.Parent.Name == "Scaffold"
+		return name == "OutputTable" or name == "TableTop" or p.Parent.Name == "Scaffold"
 	end)
+	-- The client's FactoryMotion turns the factory's moving parts while this is set
+	building:SetAttribute("Busy", busy)
 	local chimney = building:FindFirstChild("Chimney")
 	local smoke = chimney and chimney:FindFirstChildOfClass("Smoke")
 	if smoke then
@@ -817,9 +841,10 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 		glow.Material = if busy then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	end
 
-	-- One crate per finished item on the output table
+	-- Each finished item stands on the output table as its own prop (FarmShared.Art.ItemProps):
+	-- four along the table, then a second layer on top.
 	for _, child in building:GetChildren() do
-		if child.Name == "Crate" then
+		if child.Name == "Goods" then
 			child:Destroy()
 		end
 	end
@@ -827,20 +852,21 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	if outputTable == nil then
 		return
 	end
-	local tableTop = outputTable.Size.Y / 2 + 0.25
-	for i = 1, outputCount do
-		local row = (i - 1) % 4
-		local layer = (i - 1) // 4
-		local crate = part({
-			Name = "Crate",
-			Size = Vector3.new(1.6, 1.4, 1.6),
-			CFrame = outputTable.CFrame * CFrame.new(0, tableTop + 0.7 + layer * 1.45, -3 + row * 2),
-			Color = COLORS.crate,
-			CanCollide = false,
-		})
-		crate.CanQuery = false
-		crate.CanTouch = false
-		crate.Parent = building
+	local ids = {}
+	for itemId in output do
+		table.insert(ids, itemId)
+	end
+	table.sort(ids)
+	local tableTop = outputTable.Size.Y / 2 + 0.3
+	local i = 0
+	for _, itemId in ids do
+		for _ = 1, output[itemId] do
+			local row = i % 4
+			local layer = i // 4
+			local at = outputTable.CFrame * CFrame.new(0, tableTop + layer * 2.2, -3 + row * 2)
+			ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods").Parent = building
+			i += 1
+		end
 	end
 end
 
@@ -910,6 +936,44 @@ local function refreshDecor(player: Player, model: Model, data: { [string]: any 
 	end
 end
 
+-- Prize Shelf: one crop ball per slot, gold sparkles for Heirloom
+local shelfVisualState: { [Player]: string } = {}
+
+local function refreshShelf(player: Player, model: Model, data: { [string]: any })
+	local parts = {}
+	for _, entry in data.prizeShelf do
+		table.insert(parts, entry.crop .. ":" .. entry.tier)
+	end
+	local key = table.concat(parts, ";")
+	local shelf = model:FindFirstChild("PrizeShelf")
+	if shelf == nil or shelfVisualState[player] == key then
+		return
+	end
+	shelfVisualState[player] = key
+	for _, child in shelf:GetChildren() do
+		if child.Name == "Prize" then
+			child:Destroy()
+		end
+	end
+	local base = (shelf :: BasePart).CFrame
+	for i, entry in data.prizeShelf do
+		local rgb = Crops[entry.crop].color
+		local ball = part({
+			Name = "Prize",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(1.4, 1.4, 1.4),
+			CFrame = base * CFrame.new((i - 2) * 2.2, 0.9, 0),
+			Color = Color3.fromRGB(rgb[1], rgb[2], rgb[3]),
+			Material = Enum.Material.SmoothPlastic,
+			CanCollide = false,
+			Parent = shelf,
+		})
+		local sparkle = Instance.new("Sparkles")
+		sparkle.SparkleColor = if entry.tier == "Heirloom" then Palette.coins else Palette.cream
+		sparkle.Parent = ball
+	end
+end
+
 function PlotService.refresh(player: Player)
 	local model = plotsByPlayer[player]
 	local data = DataService.get(player)
@@ -927,6 +991,7 @@ function PlotService.refresh(player: Player)
 	refreshTown(player, model, data, now)
 	refreshLand(player, model, data, now)
 	refreshDecor(player, model, data)
+	refreshShelf(player, model, data)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -969,6 +1034,7 @@ function PlotService.release(player: Player)
 	townVisualState[player] = nil
 	landVisualState[player] = nil
 	decorVisualState[player] = nil
+	shelfVisualState[player] = nil
 	truckBusy[player] = nil
 end
 

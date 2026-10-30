@@ -9,6 +9,8 @@ local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtCommunity = require("../src/shared/Art/Community")
 local ArtDecor = require("../src/shared/Art/Decor")
+local ArtItemProps = require("../src/shared/Art/ItemProps")
+local Items = require("../src/shared/Items")
 
 local Showcase = {}
 
@@ -232,6 +234,19 @@ SCENES.decor = function(root)
 	for _, d in row do
 		local m = Kit.model(d[1], root)
 		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
+SCENES.items = function(root)
+	ground(root, 40)
+	local ids = {}
+	for id in Items do
+		table.insert(ids, id)
+	end
+	table.sort(ids)
+	for i, id in ids do
+		local col, row = (i - 1) % 8, (i - 1) // 8
+		ArtItemProps.build(id, CFrame.new(-10.5 + col * 3, 0, -6 + row * 3.5)).Parent = root
 	end
 end
 

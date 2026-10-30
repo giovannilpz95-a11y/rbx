@@ -5,7 +5,8 @@
 	Remotes (created in ReplicatedStorage.CropPopRemotes):
 	  GetProgress()                       -> progress (see RunStore.getProgress)
 	  StartLevel(levelId, preBoosters?)   -> { token, levelId, seed, startPowerUps, progress } | { error }
-	  FinishLevel(token, actions)         -> { won, levelId, rewards?, firstWin?, progress } | { error }
+	  FinishLevel(token, actions)         -> { won, levelId, rewards?, chest?, firstWin?, progress } | { error }
+	                                         (rewards.coins includes leftover-move and Trail Chest coins)
 	  BuyHearts(packIndex)                -> progress | { error }
 	  BuyBooster(kind)                    -> progress | { error }
 	  BuyContinue(token, actions)         -> { continues, progress } | { error }   (+5 moves once out of moves)
