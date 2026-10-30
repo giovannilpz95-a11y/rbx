@@ -9,6 +9,7 @@
 
 local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
+local ServerStorage = game:GetService("ServerStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
@@ -312,6 +313,33 @@ local function testNeighborFarm(player: Player): (boolean, string?)
 	return false, "Test Neighbor's farm: 3 ripe Wheat fields to harvest and 3 Corn fields to water"
 end
 
+-- Send a friend a Crop Pop heart. Crop Pop owns hearts, the daily limit and the pending gift
+-- (ServerStorage.CropPopGiftHeart: (fromPlayer, toUserId) -> (ok, message?)); this checks
+-- the pair are friends and neither has blocked the other.
+local function giftHeart(player: Player, toUserId: any): (boolean, string?)
+	local friend = playerByUserId(toUserId)
+	if friend == nil or friend == player or typeof(friend) ~= "Instance" then
+		return false, "That farmer has left the server"
+	elseif not SocialService.isFriend(player, friend) or SocialService.isBlocked(player, friend) then
+		return false, "You can send hearts to your friends"
+	end
+	local hook = ServerStorage:FindFirstChild("CropPopGiftHeart")
+	if hook == nil or not hook:IsA("BindableFunction") then
+		return false, "Heart gifts open soon"
+	end
+	local ok, sent, message = pcall(function()
+		return (hook :: BindableFunction):Invoke(player, friend.UserId)
+	end)
+	if not ok then
+		warn("[SocialService] CropPopGiftHeart failed:", sent)
+		return false, "Couldn't send the heart. Try again later."
+	elseif sent ~= true then
+		return false, if type(message) == "string" then message else "You can't send another heart today"
+	end
+	NetService.toast(friend, string.format("%s sent you a ❤ for Crop Pop!", player.DisplayName))
+	return false, string.format("Sent %s a ❤!", friend.DisplayName)
+end
+
 local function setOption(key: string, options: { string })
 	return function(player: Player, value: any): (boolean, string?)
 		if type(value) ~= "string" or table.find(options, value) == nil then
@@ -480,6 +508,23 @@ function SocialService.init()
 		"Farm stalls open here soon.\n\nSell your goods to your neighbors for Coins."
 	)
 
+	-- The Puzzle Porch opens Crop Pop (the client does the opening)
+	PlotService.square.porch:SetAttribute("Interact", "PuzzlePorch")
+	local sign = Instance.new("SurfaceGui")
+	sign.Face = Enum.NormalId.Front
+	sign.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	sign.PixelsPerStud = 40
+	sign.Parent = PlotService.square.porchSign
+	local signText = Instance.new("TextLabel")
+	signText.Size = UDim2.fromScale(1, 1)
+	signText.BackgroundTransparency = 1
+	signText.TextScaled = true
+	signText.Font = Enum.Font.FredokaOne
+	signText.TextColor3 = Palette.barnRed
+	signText.Text = "Crop Pop"
+	signText.Parent = sign
+
+	NetService.on(Net.Social_GiftHeart, 1, 2, giftHeart)
 	NetService.on(Net.Debug_TestNeighbor, 1, 2, testNeighborFarm)
 	NetService.on(Net.Visit_Go, 1, 2, visit)
 	NetService.on(Net.Visit_Home, 1, 2, goHome)

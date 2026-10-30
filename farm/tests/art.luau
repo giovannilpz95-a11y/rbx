@@ -225,7 +225,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
-	test("art: the Town Square stays within its budget, with its three boards", function()
+	test("art: the Town Square stays within its budget, with its three boards and the Puzzle Porch", function()
 		local m = Instance.new("Model")
 		local square = ArtTownSquare.build(m, CFrame.new())
 		within(square.model, ArtTownSquare.PARTS_MAX, "Town Square")
@@ -233,6 +233,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		for _, name in { "Notice", "Neighbors", "Market" } do
 			ok(square.boards[name] ~= nil and square.boards[name].CanQuery, name .. " board is a tap target")
 		end
+		ok(square.porch.CanQuery and square.porch.Name == "PuzzlePorch", "the Puzzle Porch is a tap target")
 	end)
 
 	test("art: Kit.fade keeps glass see-through and hidden roots hidden", function()

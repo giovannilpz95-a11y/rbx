@@ -1,9 +1,10 @@
 --!strict
 -- The Town Square (Design/14 Multiplayer Features A1, Design/15 3D World & Avatar Play hub):
 -- a round plaza at the centre of the hub with a fountain, a row of three boards (Notice Board,
--- Neighbors board, Market board), benches, lamp posts, trees and flower beds. The hub spawn
--- pad stays at the plaza's centre. World space: the plaza is built around `origin`, with the
--- boards along its north side facing south (+Z), toward the spawn and the fountain.
+-- Neighbors board, Market board), the Puzzle Porch (Crop Pop), benches, lamp posts, trees and
+-- flower beds. The hub spawn pad stays at the plaza's centre. World space: the plaza is built
+-- around `origin`, with the boards along its north side facing south (+Z), toward the spawn and
+-- the fountain, and the Puzzle Porch on its west side facing east.
 --
 -- Pure: no services, so the Lune tests can build it and count its parts.
 
@@ -12,7 +13,7 @@ local Palette = require("./Palette")
 
 local ArtTownSquare = {}
 
-ArtTownSquare.PARTS_MAX = 160
+ArtTownSquare.PARTS_MAX = 180
 ArtTownSquare.RADIUS = 36
 
 -- Where the three boards stand (plaza-local, on the ground); each faces +Z
@@ -22,11 +23,14 @@ ArtTownSquare.BOARDS = table.freeze({
 	Market = Vector3.new(18, 0, -18),
 })
 ArtTownSquare.FOUNTAIN = Vector3.new(0, 0, 22)
+ArtTownSquare.PORCH = Vector3.new(-25, 0, 4) -- the Puzzle Porch cabinet, facing the plaza (+X)
 
 export type Square = {
 	model: Model,
 	-- Each board's face: a SurfaceGui on its Front shows the board's text; also the tap target
 	boards: { [string]: Part },
+	porch: Part, -- the Puzzle Porch cabinet's body (tap target: opens Crop Pop)
+	porchSign: Part, -- its marquee; a SurfaceGui on its Front shows the name
 }
 
 -- A notice board on two posts under a little roof. The face is `w` x `h` studs. ~9 parts.
@@ -59,6 +63,30 @@ local function fountain(b: Kit.Builder, at: Vector3)
 	b.post("FountainBowl", 0.6, 6, at + Vector3.new(0, 5, 0), Palette.stone)
 	b.post("FountainBowlWater", 0.2, 5.2, at + Vector3.new(0, 5.3, 0), Palette.water, { shadow = false })
 	b.ball("FountainSpout", 1.4, at + Vector3.new(0, 6.1, 0), Palette.water, { shadow = false })
+end
+
+-- The Puzzle Porch: a little wooden game cabinet under a porch roof, where Crop Pop is played
+-- (Design/Features F12). Front at local -Z. ~16 parts. Returns the body and the marquee.
+local function puzzlePorch(b: Kit.Builder, at: CFrame): (Part, Part)
+	local t = Kit.builder(b.parent, b.origin * at, true)
+	t.block("PorchDeck", Vector3.new(9, 0.4, 7), Vector3.new(0, 0.2, 0.5), Palette.woodLight)
+	local body =
+		t.block("PuzzlePorch", Vector3.new(4, 6, 3), Vector3.new(0, 3.4, 1), Palette.barnRed, { collide = true })
+	t.block("CabinetTrim", Vector3.new(4.3, 0.4, 3.3), Vector3.new(0, 0.6, 1), Palette.woodDark)
+	t.block("Screen", Vector3.new(3, 2.2, 0.2), Vector3.new(0, 4.6, -0.55), Palette.glassDeep, { shadow = false })
+	t.wedge("Controls", Vector3.new(3.6, 0.8, 1.2), CFrame.new(0, 3.2, -1.05), Palette.cream)
+	t.ball("ButtonRed", 0.5, Vector3.new(-0.8, 3.65, -1.0), Palette.comb, { shadow = false })
+	t.ball("ButtonGold", 0.5, Vector3.new(0.8, 3.65, -1.0), Palette.coins, { shadow = false })
+	local sign =
+		t.block("PorchSign", Vector3.new(4.6, 1.4, 0.5), Vector3.new(0, 7.2, 0.2), Palette.cream, { shadow = false })
+	t.ball("Tomato", 1.4, Vector3.new(0, 8.4, 0.2), Palette.roofRed)
+	t.block("TomatoLeaf", Vector3.new(0.8, 0.2, 0.8), Vector3.new(0, 9.1, 0.2), Palette.leafLight, { shadow = false })
+	for _, x in { -4, 4 } do
+		t.block("PorchPost", Vector3.new(0.5, 7.6, 0.5), Vector3.new(x, 4, -2.6), Palette.woodDark)
+		t.block("PorchPost", Vector3.new(0.5, 7.6, 0.5), Vector3.new(x, 4, 3.6), Palette.woodDark)
+	end
+	Kit.gableRoof(t, "PorchRoof", Vector3.new(0, 7.8, 0.5), 9.6, 7.6, 1.8, Palette.roofMustard)
+	return body, sign
 end
 
 local function bench(b: Kit.Builder, at: CFrame)
@@ -125,7 +153,9 @@ function ArtTownSquare.build(parent: Instance, origin: CFrame): Square
 		)
 	end
 
-	return { model = model, boards = boards }
+	local porch, porchSign = puzzlePorch(b, CFrame.new(ArtTownSquare.PORCH) * Kit.yaw(-90))
+
+	return { model = model, boards = boards, porch = porch, porchSign = porchSign }
 end
 
 return ArtTownSquare

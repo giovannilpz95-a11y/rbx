@@ -10,6 +10,7 @@
 -- The server checks every visit; this only sends intents.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SocialService = game:GetService("SocialService")
 local StarterGui = game:GetService("StarterGui")
@@ -132,6 +133,19 @@ local function invite()
 		options.LaunchData = tostring(player.UserId)
 		SocialService:PromptGameInvite(player, options)
 	end)
+end
+
+-- Crop Pop's client listens on this client-only event to open its screen (whichever script
+-- loads first makes it).
+local function openCropPop()
+	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
+	if event == nil then
+		local created = Instance.new("BindableEvent")
+		created.Name = "CropPopOpen"
+		created.Parent = ReplicatedStorage
+		event = created
+	end
+	(event :: BindableEvent):Fire()
 end
 
 local function noticeEntries(): { { text: string, visit: number? } }
@@ -301,14 +315,14 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		Ui.label(string.format("%s%s", other.DisplayName, if type(level) == "number" then "   Lv " .. level else ""), {
 			Font = Enum.Font.GothamBold,
 			Position = UDim2.fromOffset(10, 4),
-			Size = UDim2.new(1, -200, 0, 22),
+			Size = UDim2.new(1, -270, 0, 22),
 			Parent = line,
 		})
 		Ui.label((if isFriend(other) then "Friend, " else "") .. whereabouts(other), {
 			TextColor3 = Ui.colors.muted,
 			TextSize = Type.size.small,
 			Position = UDim2.fromOffset(10, 26),
-			Size = UDim2.new(1, -200, 0, 20),
+			Size = UDim2.new(1, -270, 0, 20),
 			Parent = line,
 		})
 		local visitButton = smallButton("Visit", function()
@@ -316,11 +330,20 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 			Remotes.fire("Visit_Go", other.UserId)
 		end)
 		visitButton.Parent = line
+		local right = -104 -- left edge of the next button, right of the Visit button
+		if isFriend(other) then
+			local heart = smallButton("❤", function()
+				Remotes.fire("Social_GiftHeart", other.UserId)
+			end, Palette.button.danger.face, 44)
+			heart.Position = UDim2.new(1, right, 0.5, 0)
+			heart.Parent = line
+			right -= 50
+		end
 		if other:GetAttribute("OnPlot") == player.UserId then
 			local send = smallButton("Send home", function()
 				Remotes.fire("Visit_SendHome", other.UserId)
 			end, Ui.colors.danger, 110)
-			send.Position = UDim2.new(1, -104, 0.5, 0)
+			send.Position = UDim2.new(1, right, 0.5, 0)
 			send.Parent = line
 		end
 	end
@@ -538,6 +561,8 @@ function SocialUi.init()
 					helpAt(part, owner)
 				end, true
 			end
+		elseif kind == "PuzzlePorch" then
+			return openCropPop, true
 		elseif kind == "Market" then
 			return function()
 				Hud.toast("Market stalls open in a later update. Check back soon!")
