@@ -31,11 +31,30 @@ local xpLabel: TextLabel
 local xpBar: Bar
 local toastStack: Frame
 local shown: { [string]: number } = {} -- last values on screen, to tick up and bump on change
+local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
 Hud.sprintButton = nil :: TextButton?
 
+-- At most this many toasts at once; a burst (Build everything, several new fields) drops
+-- the oldest instead of covering the top of the screen
+local MAX_TOASTS = 3
+local toastCount = 0
+
 function Hud.toast(message: string, variant: string?)
-	Kit.toast(toastStack, message, variant)
+	toastCount += 1
+	Kit.toast(toastStack, message, variant).LayoutOrder = toastCount
+	local shown = {}
+	for _, child in toastStack:GetChildren() do
+		if child:IsA("TextLabel") then
+			table.insert(shown, child)
+		end
+	end
+	table.sort(shown, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i = 1, #shown - MAX_TOASTS do
+		shown[i]:Destroy()
+	end
 end
 
 function Hud.popup(payload: { [string]: any })
@@ -52,11 +71,31 @@ function Hud.popup(payload: { [string]: any })
 	elseif payload.kind == "BarnUpgrade" then
 		Hud.toast(string.format("Barn upgraded: room for %d!", payload.capacity))
 	elseif payload.kind == "Drop" then
-		Hud.toast(string.format("Found 1 %s!", payload.name))
+		Hud.toast(
+			string.format("Found 1 %s!%s", payload.name, if payload.tool then "  It's in the Tool Shed (Barn)." else "")
+		)
+	elseif payload.kind == "Prize" then
+		Hud.toast(string.format("A Prize Crop: %s! It's in your Prize Basket (Barn).", payload.name))
+	elseif payload.kind == "PrizeLost" then
+		Hud.toast("A Prize Crop grew, but your Prize Basket is full, so it went to the Barn.")
+	elseif payload.kind == "Purchase" then
+		Hud.toast(
+			if payload.gems
+				then string.format("Thank you! %s: +%d Gems", payload.name, payload.gems)
+				else string.format("Thank you! %s is yours.", payload.name),
+			"celebrate"
+		)
+	elseif payload.kind == "Crier" then
+		Hud.toast(payload.text)
 	elseif payload.kind == "Field" then
 		Hud.toast(string.format("Your town grew: a new field!  +%d XP", payload.xp))
 	elseif payload.kind == "Order" then
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
+	elseif payload.kind == "Daily" then
+		Hud.toast(string.format("Daily gift, day %d of %d:  %s", payload.day, payload.days, payload.reward))
+	elseif payload.kind == "Away" then
+		ClientStore.away = payload.lines
+		showPanel("Away")
 	end
 end
 
@@ -119,6 +158,7 @@ local function hudButton(glyph: string, caption: string, key: string, order: num
 end
 
 function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) -> ())
+	showPanel = openPanel
 	local player = Players.LocalPlayer
 	gui = Ui.new("ScreenGui", {
 		Name = "FarmHud",
@@ -189,7 +229,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -214, 1, -14),
-		Size = UDim2.fromOffset(440, 64),
+		Size = UDim2.fromOffset(540, 64),
 		Parent = gui,
 	}, {
 		Ui.new("UIListLayout", {
@@ -205,6 +245,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		{ "🧺", "Barn", "B", "Barn" },
 		{ "🏠", "Build", "F", "Buildings" },
 		{ "🏘️", "Town", "T", "Town" },
+		{ "💎", "Shop", "G", "Shop" },
 	}
 	if RunService:IsStudio() then
 		table.insert(buttons, { "🔧", "Debug", "`", "Debug" })

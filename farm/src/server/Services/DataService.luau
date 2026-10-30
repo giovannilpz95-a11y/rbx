@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
 local Profile = require(Shared.Profile)
+local Tutorial = require(Shared.Tutorial)
 
 local Clock = require(script.Parent.Parent.Util.Clock)
 
@@ -146,7 +147,9 @@ function DataService.load(player: Player): boolean
 	end
 
 	local now = Clock.now()
-	Profile.welcome(data, now)
+	if Profile.welcome(data, now) then
+		Tutorial.start(data, now)
+	end
 	data.meta.sessionCount += 1
 
 	sessions[player] = {

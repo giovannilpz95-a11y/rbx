@@ -19,7 +19,8 @@ local function logEconomy(
 	flow: Enum.AnalyticsEconomyFlowType,
 	amount: number,
 	balance: number,
-	reason: string
+	reason: string,
+	transactionType: string?
 )
 	if currency == "XP" then
 		return
@@ -31,7 +32,7 @@ local function logEconomy(
 			currency,
 			amount,
 			balance,
-			Enum.AnalyticsEconomyTransactionType.Gameplay.Name,
+			transactionType or Enum.AnalyticsEconomyTransactionType.Gameplay.Name,
 			reason
 		)
 	end)
@@ -57,7 +58,8 @@ local function checkLevelUp(player: Player, data: { [string]: any })
 	end
 end
 
-function EconomyService.add(player: Player, currency: string, amount: number, reason: string)
+-- `transactionType`: an Enum.AnalyticsEconomyTransactionType name ("IAP" for Robux purchases)
+function EconomyService.add(player: Player, currency: string, amount: number, reason: string, transactionType: string?)
 	assert(CURRENCIES[currency], "Unknown currency " .. currency)
 	assert(amount >= 0 and amount % 1 == 0, "Bad amount")
 	local data = DataService.get(player)
@@ -65,7 +67,15 @@ function EconomyService.add(player: Player, currency: string, amount: number, re
 		return
 	end
 	data.currencies[currency] += amount
-	logEconomy(player, currency, Enum.AnalyticsEconomyFlowType.Source, amount, data.currencies[currency], reason)
+	logEconomy(
+		player,
+		currency,
+		Enum.AnalyticsEconomyFlowType.Source,
+		amount,
+		data.currencies[currency],
+		reason,
+		transactionType
+	)
 	if currency == "XP" then
 		checkLevelUp(player, data)
 	end

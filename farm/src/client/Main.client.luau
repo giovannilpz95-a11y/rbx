@@ -8,11 +8,13 @@ local Workspace = game:GetService("Workspace")
 
 local ClientStore = require(script.Parent.ClientStore)
 local Remotes = require(script.Parent.Remotes)
+local Guide = require(script.Parent.UI.Guide)
 local Hud = require(script.Parent.UI.Hud)
 local Panels = require(script.Parent.UI.Panels)
 local WorldLabels = require(script.Parent.UI.WorldLabels)
 local ReachController = require(script.Parent.Controllers.ReachController)
 local MovementController = require(script.Parent.Controllers.MovementController)
+local DecorPlacer = require(script.Parent.Controllers.DecorPlacer)
 local FactoryMotion = require(script.Parent.Controllers.FactoryMotion)
 
 local player = Players.LocalPlayer
@@ -22,8 +24,10 @@ Remotes.get("State_Snapshot").OnClientEvent:Connect(ClientStore.set)
 Panels.init()
 Hud.init(Panels.open, ReachController.setActionHeld)
 WorldLabels.init()
+Guide.init()
 ReachController.init()
 MovementController.init()
+DecorPlacer.init()
 task.spawn(FactoryMotion.init)
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
@@ -32,6 +36,7 @@ local SHORTCUTS = {
 	[Enum.KeyCode.B] = "Barn",
 	[Enum.KeyCode.F] = "Buildings",
 	[Enum.KeyCode.T] = "Town",
+	[Enum.KeyCode.G] = "Shop",
 	[Enum.KeyCode.Backquote] = "Debug",
 }
 UserInputService.InputBegan:Connect(function(input, processed)
@@ -56,6 +61,8 @@ end
 local function usePlot(model: Model)
 	ReachController.setPlot(model)
 	WorldLabels.setPlot(model)
+	Guide.setPlot(model)
+	DecorPlacer.setPlot(model)
 end
 for _, child in plots:GetChildren() do
 	if isMine(child) then

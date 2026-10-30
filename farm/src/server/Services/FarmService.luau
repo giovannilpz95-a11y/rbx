@@ -1,12 +1,17 @@
 --!strict
 -- Planting and harvesting fields (Design/02 Farming). Hands-on: the avatar must be in reach.
 
+local Players = game:GetService("Players")
+
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
 local Crops = require(Shared.Config.Crops)
 local Net = require(Shared.Net)
+local Prize = require(Shared.Config.Prize)
+local PrizeRules = require(Shared.Prize)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tutorial = require(Shared.Tutorial)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -17,6 +22,8 @@ local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local FarmService = {}
+
+local rng = Random.new()
 
 local enabledCrops: { [string]: boolean } = {}
 for _, id in Balance.enabledCrops do
@@ -53,7 +60,8 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	local now = Clock.now()
 	field.crop = cropId
 	field.plantedAt = now
-	field.readyAt = now + Clock.duration(crop.growSeconds)
+	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, crop.growSeconds))
+	field.prize = PrizeRules.roll(data, rng:NextNumber()) -- rolled now, so speed-ups can't buy it
 	data.settings.lastSeed = cropId
 	PlotService.refresh(player)
 	return true
@@ -76,15 +84,56 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 		return false, "Walk closer to that field"
 	end
 	local crop = Crops[field.crop]
-	if not InventoryService.add(player, { [crop.id] = crop.yield }) then
+	-- A Prize Crop goes to the Prize Basket; with the basket full it's an ordinary unit
+	local prize = if field.prize and PrizeRules.hasRoom(data) then field.prize else nil
+	local toBarn = if prize then crop.yield - 1 else crop.yield
+	if toBarn > 0 and not InventoryService.add(player, { [crop.id] = toBarn }) then
 		return false, "Your Barn is full. Sell something from the Barn first."
+	end
+	if prize then
+		table.insert(data.prizes, { crop = crop.id, tier = prize })
+		NetService.popup(player, {
+			kind = "Prize",
+			crop = crop.id,
+			tier = prize,
+			name = string.format("%s %s", Prize.tiers[prize].displayName, crop.displayName),
+		})
+		-- The Town Crier: an Heirloom find is news for the whole server
+		if prize == "Heirloom" then
+			for _, other in Players:GetPlayers() do
+				if other ~= player then
+					NetService.popup(other, {
+						kind = "Crier",
+						text = string.format(
+							"An Heirloom %s was grown on %s's farm!",
+							crop.displayName,
+							player.DisplayName
+						),
+					})
+				end
+			end
+		end
+	elseif field.prize then
+		NetService.popup(player, { kind = "PrizeLost", crop = crop.id, tier = field.prize })
 	end
 	field.crop = nil
 	field.plantedAt = nil
 	field.readyAt = nil
+	field.prize = nil
 	EconomyService.add(player, "XP", crop.xp, "harvest_" .. crop.id)
 	TownService.onHarvest(player, crop.growSeconds)
 	PlotService.refresh(player)
+	return true
+end
+
+-- The Prize Stand: sell one Prize Crop from the basket for Coins (paperwork).
+function FarmService.sellPrize(player: Player, index: any): (boolean, string?)
+	local data = DataService.get(player) :: { [string]: any }
+	if not NetService.check.int(index, 1, Prize.basketSlots) or data.prizes[index] == nil then
+		return false
+	end
+	local entry = table.remove(data.prizes, index)
+	EconomyService.add(player, "Coins", PrizeRules.value(entry.crop, entry.tier), "prize_" .. entry.tier)
 	return true
 end
 
@@ -113,6 +162,7 @@ function FarmService.init()
 	NetService.on(Net.Farm_Plant, 20, 30, FarmService.plant)
 	NetService.on(Net.Farm_Harvest, 20, 30, FarmService.harvest)
 	NetService.on(Net.Farm_SpeedUp, 2, 3, FarmService.speedUp)
+	NetService.on(Net.Prize_Sell, 3, 5, FarmService.sellPrize)
 end
 
 return FarmService

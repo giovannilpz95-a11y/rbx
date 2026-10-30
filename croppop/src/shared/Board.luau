@@ -3,8 +3,10 @@
 
 	Coordinates are (x, y) with x = 1 on the left and y = 1 at the top.
 	A missing cell (`board.cells[y][x] == nil`) is a hole in the level shape.
-	Pieces fall straight down through holes, stop on hay bales, and slide in
-	diagonally to fill cells that nothing can reach from above.
+	Pieces fall straight down through holes, stop on hay bales and weeds, and
+	slide in diagonally to fill cells that nothing can reach from above.
+	Frosted tiles stay put: they can't be swapped and don't fall, but they
+	still match.
 
 	Everything here is deterministic: loops run in row/column order and all
 	randomness comes from the Rng passed in.
@@ -26,7 +28,9 @@ export type Cell = {
 	y: number,
 	piece: Piece?,
 	bale: number, -- hay bale layers left (0 = no bale); a bale cell holds no piece
+	weed: boolean, -- the "bale" is a weed (always 1 layer; weeds spread)
 	mud: number, -- mud layers under the tile (0 = none)
+	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 }
 
 export type Move = { id: number, fromX: number, fromY: number, toX: number, toY: number }
@@ -56,11 +60,18 @@ function Board.fromLayout(layout: { string })
 		for x = 1, width do
 			local ch = string.sub(row, x, x)
 			if ch ~= "#" then
-				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, mud = 0 }
+				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, weed = false, mud = 0, frost = 0 }
 				if ch == "m" then
 					cell.mud = 1
 				elseif ch == "M" then
 					cell.mud = 2
+				elseif ch == "f" then
+					cell.frost = 1
+				elseif ch == "F" then
+					cell.frost = 2
+				elseif ch == "w" then
+					cell.bale = 1
+					cell.weed = true
 				elseif ch == "1" or ch == "2" or ch == "3" then
 					cell.bale = tonumber(ch) :: number
 				end
@@ -95,9 +106,9 @@ function Board.eachCell(self, fn: (Cell) -> ())
 	end
 end
 
--- A piece the player can swap.
+-- A piece the player can swap (and that gravity and shuffles can move).
 function Board.isMovable(cell: Cell?): boolean
-	return cell ~= nil and cell.piece ~= nil and cell.bale == 0
+	return cell ~= nil and cell.piece ~= nil and cell.bale == 0 and cell.frost == 0
 end
 
 function Board.isEmptySlot(cell: Cell?): boolean
@@ -196,7 +207,7 @@ function Board.applyGravity(self, rng, colors: { number }): ({ Move }, { Spawn }
 				local row = self.cells[y]
 				for x = 1, self.width do
 					local cell = row[x]
-					if cell and cell.piece and cell.bale == 0 then
+					if Board.isMovable(cell) then
 						local below = self:cellBelow(x, y)
 						if below and Board.isEmptySlot(below) then
 							moveTo(cell.piece :: Piece, cell, below)
@@ -372,6 +383,8 @@ function Board.hash(self): string
 			local cell = self.cells[y][x]
 			if not cell then
 				table.insert(row, "#")
+			elseif cell.weed then
+				table.insert(row, "W")
 			elseif cell.bale > 0 then
 				table.insert(row, "B" .. cell.bale)
 			else
@@ -379,6 +392,9 @@ function Board.hash(self): string
 				local code = if piece then tostring(piece.color) .. (POWER_CODES[piece.power] or "") else "_"
 				if cell.mud > 0 then
 					code ..= "m" .. cell.mud
+				end
+				if cell.frost > 0 then
+					code ..= "f" .. cell.frost
 				end
 				table.insert(row, code)
 			end
@@ -397,7 +413,9 @@ function Board.snapshot(self)
 			x = cell.x,
 			y = cell.y,
 			bale = cell.bale,
+			weed = cell.weed,
 			mud = cell.mud,
+			frost = cell.frost,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power },
 		})
 	end)

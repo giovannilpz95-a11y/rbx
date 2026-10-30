@@ -10,6 +10,7 @@ local Net = require(Shared.Net)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tutorial = require(Shared.Tutorial)
 local TownRules = require(Shared.TownRules)
 
 local DataService = require(script.Parent.DataService)
@@ -101,7 +102,8 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	if not InventoryService.remove(player, recipe.inputs) then
 		return false, "Not enough ingredients in the Barn"
 	end
-	table.insert(factory.queue, { recipe = recipeId, seconds = Clock.duration(recipe.seconds), qty = recipe.outputQty })
+	local seconds = Tutorial.seconds(data, recipeId, recipe.seconds)
+	table.insert(factory.queue, { recipe = recipeId, seconds = Clock.duration(seconds), qty = recipe.outputQty })
 	FactoryService.advance(player)
 	PlotService.refresh(player)
 	return true
@@ -160,7 +162,7 @@ function FactoryService.speedUp(player: Player, factoryId: any): (boolean, strin
 	local now = Clock.now()
 	local gems, finish
 	if factory.constructionReadyAt ~= nil then
-		gems = Speedup.building(factory.constructionReadyAt - now)
+		gems = if Tutorial.freeFinish(data, factoryId) then 0 else Speedup.building(factory.constructionReadyAt - now)
 		finish = function()
 			factory.constructionReadyAt = now
 		end

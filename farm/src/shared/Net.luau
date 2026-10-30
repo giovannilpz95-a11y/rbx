@@ -22,12 +22,23 @@ return table.freeze({
 	Town_SpeedUp = "Town_SpeedUp", -- "House", lot | "Community", id | "Land", stage (Gems)
 	Town_BuyMaterial = "Town_BuyMaterial", -- materialId, building or Barn (Gems)
 	Town_Expand = "Town_Expand", -- (the next land expansion)
+	Decor_Place = "Decor_Place", -- decorId, x, z (plot-local studs), quarter turns
+	Decor_Rotate = "Decor_Rotate", -- index in data.decor
+	Decor_Sell = "Decor_Sell", -- index in data.decor
 	Order_Fulfill = "Order_Fulfill", -- slotIndex
 	Order_Discard = "Order_Discard", -- slotIndex
 	Order_SkipWait = "Order_SkipWait", -- slotIndex: a new card now (Gems)
 	Barn_Sell = "Barn_Sell", -- itemId, qty
 	Barn_Upgrade = "Barn_Upgrade", -- (the next upgrade)
+	Shop_Prompt = "Shop_Prompt", -- product key (server looks up the id and prompts)
+	Shop_PromptPass = "Shop_PromptPass", -- game pass key
+	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
+	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
+	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
+	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
+	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)
+	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client

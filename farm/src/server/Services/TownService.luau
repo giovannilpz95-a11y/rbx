@@ -9,9 +9,11 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Barn = require(Shared.Config.Barn)
+local Drops = require(Shared.Drops)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
+local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 
@@ -26,33 +28,24 @@ local TownService = {}
 
 local rng = Random.new()
 
--- Building and Barn materials share one roll (at most one item per harvest or delivery),
--- each item weighted by its group's chance
-local dropPool: { { id: string, weight: number } } = {}
-local dropWeight = 0
-local function addDrops(materials: { [string]: any }, chance: number)
-	local ids = {}
-	for id in materials do
-		table.insert(ids, id)
+-- Order deliveries roll building and Barn materials (one roll for both, each group split evenly)
+local function pickMaterial(): string
+	local materials = {}
+	local total = 0
+	for _, drop in Drops.pool do
+		if not drop.tool then
+			table.insert(materials, drop)
+			total += drop.weight
+		end
 	end
-	table.sort(ids)
-	for _, id in ids do
-		table.insert(dropPool, { id = id, weight = chance / #ids })
-		dropWeight += chance / #ids
-	end
-end
-addDrops(Town.materials, Town.harvestDropChance)
-addDrops(Barn.materials, Barn.harvestDropChance)
-
-local function pickDrop(): string
-	local roll = rng:NextNumber() * dropWeight
-	for _, drop in dropPool do
+	local roll = rng:NextNumber() * total
+	for _, drop in materials do
 		roll -= drop.weight
 		if roll < 0 then
 			return drop.id
 		end
 	end
-	return dropPool[#dropPool].id
+	return materials[#materials].id
 end
 
 function TownService.buildHouse(player: Player, houseId: any): (boolean, string?)
@@ -194,24 +187,41 @@ function TownService.placeFields(player: Player): boolean
 	return false
 end
 
--- A chance at one building or Barn material (both from level 5). Silent when the Barn is full.
-local function rollMaterial(player: Player, chance: number)
-	local data = DataService.get(player)
-	if data == nil or data.level < Town.materialsFromLevel or rng:NextNumber() >= chance then
-		return
-	end
-	local id = pickDrop()
-	if InventoryService.add(player, { [id] = 1 }) then
+-- Tools go to the Tool Shed; materials go to the Barn (silently lost when it's full)
+local function give(player: Player, data: { [string]: any }, id: string)
+	if Drops.isTool(id) then
+		data.toolShed.items[id] = (data.toolShed.items[id] or 0) + 1
+		NetService.popup(player, { kind = "Drop", item = id, name = Tools.tools[id].displayName, tool = true })
+	elseif InventoryService.add(player, { [id] = 1 }) then
 		NetService.popup(player, { kind = "Drop", item = id, name = Items[id].displayName })
 	end
 end
 
+-- One roll per field harvested for a tool or a material (from level 5), with the pity count.
+-- Both hooks run inside a remote handler, which saves and pushes state afterwards.
 function TownService.onHarvest(player: Player, growSeconds: number)
-	rollMaterial(player, TownRules.harvestDropChance(growSeconds))
+	local data = DataService.get(player)
+	if data == nil then
+		return
+	end
+	local id = Drops.harvest(data, growSeconds, rng:NextNumber())
+	if id then
+		give(player, data, id)
+	end
 end
 
+-- Deliveries: a chance at a material, and a smaller one at the scarcest tool
 function TownService.onOrderDelivered(player: Player)
-	rollMaterial(player, Town.orderDropChance)
+	local data = DataService.get(player)
+	if data == nil or data.level < Town.materialsFromLevel then
+		return
+	end
+	if rng:NextNumber() < Town.orderDropChance then
+		give(player, data, pickMaterial())
+	end
+	if data.level >= Tools.fromLevel and rng:NextNumber() < Tools.orderDropChance then
+		give(player, data, Drops.scarcestTool(data))
+	end
 end
 
 function TownService.init()

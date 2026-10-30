@@ -611,6 +611,45 @@ end)
 
 local LevelEditor = mockRequire(clientFolder.LevelEditor)
 
+test("the Studio Dev: Lock button shows the Trail as a real player sees it", function()
+	PuzzleScreen.open()
+	local select = playerGui.CropPop.Backdrop.LevelSelect
+	truthy(select.List:FindFirstChild("Level100"), "Studio unlocks every level")
+	select.DevLock.Activated:Fire()
+	local highest = serverProgress().highestBeaten
+	truthy(select.List:FindFirstChild("Level" .. (highest + 5)), "the next 4 locked levels show")
+	eq(select.List:FindFirstChild("Level" .. (highest + 6)), nil)
+	truthy(string.find(select.List.MoreAhead.Text, "more levels ahead", 1, true))
+	eq(select.DevLock.Text, "Dev 🔓")
+	select.DevLock.Activated:Fire()
+	truthy(select.List:FindFirstChild("Level100"))
+	PuzzleScreen.close()
+end)
+
+test("a frost and weeds level plays through the screen in step with the engine", function()
+	local level = table.clone(CropPop.Levels.get(1))
+	level.id = 999
+	level.layout = {
+		"w......w",
+		"........",
+		"..f..f..",
+		"........",
+		"...FF...",
+		"........",
+		"........",
+		"w......w",
+	}
+	level.goals = { { kind = "Frost" }, { kind = "Weeds" } }
+	level.moves = 40
+	PuzzleScreen.playTest(level, function() end)
+	local run = playToEnd(60, false)
+	truthy(run.game.status ~= "Playing")
+	eq(mismatches, 0, "tiles out of step before sync")
+	local bar = playerGui.CropPop.Backdrop.Play.TopBar
+	truthy(bar, "the goal bar is up")
+	PuzzleScreen.close()
+end)
+
 test("the Trail's Dev: Editor button opens the level editor", function()
 	PuzzleScreen.open()
 	playerGui.CropPop.Backdrop.LevelSelect.DevEditor.Activated:Fire()

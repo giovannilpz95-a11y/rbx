@@ -59,7 +59,7 @@ function BoardView.new(parent: GuiObject, onSwap: (number, number, number, numbe
 	self.pool = {}
 	self.tiles = {} -- piece id -> tile Frame
 	self.grid = {} -- [y][x] -> piece id
-	self.cellGuis = {} -- [y][x] -> { cell, mud, bale }
+	self.cellGuis = {} -- [y][x] -> { cell, mud, bale, frost, frostStroke }
 	self.connections = {}
 	self.width, self.height = 1, 1
 	self.enabled = true
@@ -207,15 +207,32 @@ end
 
 -- Board setup ------------------------------------------------------------------
 
-function BoardView._updateCell(self, x: number, y: number, bale: number, mud: number)
+local function styleBale(label: TextLabel, hp: number, weed: boolean?)
+	label.Visible = hp > 0
+	if weed then
+		label.BackgroundColor3 = TileStyle.Board.weed
+		label.Text = TileStyle.GoalGlyphs.Weeds
+	else
+		label.BackgroundColor3 = TileStyle.Board.bale
+		label.Text = if hp > 1 then "🌾" .. hp else "🌾"
+	end
+end
+
+local function styleFrost(guis, layers: number)
+	guis.frost.Visible = layers > 0
+	guis.frost.BackgroundTransparency = if layers >= 2 then 0.25 else 0.5
+	guis.frostStroke.Thickness = if layers >= 2 then 4 else 2
+end
+
+function BoardView._updateCell(self, x: number, y: number, cell)
 	local guis = self.cellGuis[y] and self.cellGuis[y][x]
 	if not guis then
 		return
 	end
-	guis.mud.Visible = mud > 0
-	guis.mud.BackgroundTransparency = if mud >= 2 then 0.15 else 0.45
-	guis.bale.Visible = bale > 0
-	guis.bale.Text = if bale > 1 then "🌾" .. bale else "🌾"
+	guis.mud.Visible = cell.mud > 0
+	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
+	styleBale(guis.bale, cell.bale, cell.weed)
+	styleFrost(guis, cell.frost or 0)
 end
 
 function BoardView.load(self, game)
@@ -279,8 +296,23 @@ function BoardView.load(self, game)
 		baleCorner.CornerRadius = UDim.new(0.15, 0)
 		baleCorner.Parent = bale
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, bale = bale }
-		self:_updateCell(x, y, cell.bale, cell.mud)
+		-- Frost sits over the tile, in the same layer as bales.
+		local frost = Instance.new("Frame")
+		frost.Name = "Frost"
+		frost.Size = self:_cellSize()
+		frost.Position = self:_cellPosition(x, y)
+		frost.BackgroundColor3 = TileStyle.Board.frost
+		frost.BorderSizePixel = 0
+		frost.Parent = self.baleLayer
+		local frostCorner = Instance.new("UICorner")
+		frostCorner.CornerRadius = UDim.new(0.15, 0)
+		frostCorner.Parent = frost
+		local frostStroke = Instance.new("UIStroke")
+		frostStroke.Color = Color3.fromRGB(255, 255, 255)
+		frostStroke.Parent = frost
+
+		self.cellGuis[y][x] = { cell = bg, mud = mud, bale = bale, frost = frost, frostStroke = frostStroke }
+		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
 		if cell.piece then
@@ -298,7 +330,7 @@ function BoardView.sync(self, game)
 		self.grid[y] = {}
 	end
 	game.board:eachCell(function(cell)
-		self:_updateCell(cell.x, cell.y, cell.bale, cell.mud)
+		self:_updateCell(cell.x, cell.y, cell)
 		local piece = cell.piece
 		if piece then
 			seen[piece.id] = true
@@ -392,6 +424,9 @@ function BoardView._effect(self, effect): number
 		local r = effect.radius * 2 + 1
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(r / w, r / h), Color3.fromRGB(255, 170, 60), true)
 		return FX_TIME
+	elseif effect.type == "Grow" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.weed, true)
+		return FX_TIME
 	elseif effect.type == "Trowel" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), Color3.fromRGB(255, 255, 255), true)
 		return FX_TIME
@@ -445,8 +480,7 @@ function BoardView._pop(self, phase)
 	for _, b in phase.bales do
 		local guis = self.cellGuis[b.y] and self.cellGuis[b.y][b.x]
 		if guis then
-			guis.bale.Visible = b.hp > 0
-			guis.bale.Text = if b.hp > 1 then "🌾" .. b.hp else "🌾"
+			styleBale(guis.bale, b.hp, b.weed)
 		end
 	end
 	for _, m in phase.mud do
@@ -454,6 +488,12 @@ function BoardView._pop(self, phase)
 		if guis then
 			guis.mud.Visible = m.layers > 0
 			guis.mud.BackgroundTransparency = if m.layers >= 2 then 0.15 else 0.45
+		end
+	end
+	for _, f in phase.frost or {} do
+		local guis = self.cellGuis[f.y] and self.cellGuis[f.y][f.x]
+		if guis then
+			styleFrost(guis, f.layers)
 		end
 	end
 

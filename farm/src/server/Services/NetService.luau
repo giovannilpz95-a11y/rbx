@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Net = require(Shared.Net)
 local Progression = require(Shared.Progression)
+local Shop = require(Shared.Shop)
 local Timer = require(Shared.Timer)
 
 local DataService = require(script.Parent.DataService)
@@ -33,6 +34,7 @@ end
 local limiters: { [Player]: { [string]: RateLimiter.RateLimiter } } = {}
 local pushQueued: { [Player]: boolean } = {}
 local readyPlayers: { [Player]: boolean } = {}
+local onReady: { [Player]: { () -> () } } = {}
 
 -- Argument checks used by handlers
 NetService.check = {}
@@ -75,15 +77,20 @@ local function snapshot(data: { [string]: any })
 		atCap = info.atCap,
 		inventory = data.inventory.items,
 		barnUsed = itemsTotal,
-		barnCapacity = data.inventory.barnCapacity,
+		barnCapacity = Shop.barnCapacity(data), -- with the Big Barn pass
+		purchases = { bought = data.purchases.bought, passes = data.purchases.passes },
 		barnUpgrades = data.inventory.upgrades,
 		fields = data.fields,
 		factories = factories,
 		pens = data.pens,
 		town = data.town,
 		land = data.land,
+		decor = data.decor,
+		tools = data.toolShed.items,
+		prizes = data.prizes,
 		board = data.orders.board,
 		settings = data.settings,
+		tutorial = data.tutorial,
 		serverNow = Clock.now(),
 		timeScale = Clock.getTimeScale(),
 	}
@@ -160,11 +167,22 @@ function NetService.isNear(player: Player, position: Vector3, studs: number): bo
 	return Vector3.new(offset.X, 0, offset.Z).Magnitude <= studs
 end
 
+-- Run fn once the player's UI is listening (now, if it already is).
+function NetService.whenReady(player: Player, fn: () -> ())
+	if readyPlayers[player] then
+		fn()
+	else
+		onReady[player] = onReady[player] or {}
+		table.insert(onReady[player], fn)
+	end
+end
+
 function NetService.init()
 	Players.PlayerRemoving:Connect(function(player)
 		limiters[player] = nil
 		pushQueued[player] = nil
 		readyPlayers[player] = nil
+		onReady[player] = nil
 	end)
 	-- The client asks for its first snapshot once its UI is listening. If the farm is still
 	-- loading, the push after the load delivers it instead.
@@ -172,6 +190,11 @@ function NetService.init()
 		if not readyPlayers[player] then
 			readyPlayers[player] = true
 			NetService.pushState(player)
+			local waiting = onReady[player]
+			onReady[player] = nil
+			for _, fn in waiting or {} do
+				task.spawn(fn)
+			end
 		end
 	end)
 end

@@ -173,6 +173,8 @@ local function act(part: BasePart)
 		Panels.open("Barn")
 	elseif kind == "Town" then
 		Panels.open("Town")
+	elseif kind == "Decor" then
+		Panels.open("Decor", tostring(part:GetAttribute("DecorIndex")))
 	elseif kind == "OrderBoard" then
 		Panels.open("Orders")
 	end

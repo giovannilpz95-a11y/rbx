@@ -57,3 +57,23 @@ test("goal targets come from the layout", function()
 	eq(kinds.Mud, 16)
 	eq(kinds.Collect, 15)
 end)
+
+test("frost first shows up on level 21 and weeds on level 41, each alone with its goal", function()
+	local function first(chars)
+		for _, level in Levels.List do
+			for _, row in level.layout do
+				if string.find(row, "[" .. chars .. "]") then
+					return level
+				end
+			end
+		end
+		return nil
+	end
+	local frost, weeds = first("fF"), first("w")
+	eq(frost and frost.id, 21)
+	eq(weeds and weeds.id, 41)
+	eq(#frost.goals, 1)
+	eq(frost.goals[1].kind, "Frost")
+	eq(#weeds.goals, 1)
+	eq(weeds.goals[1].kind, "Weeds")
+end)

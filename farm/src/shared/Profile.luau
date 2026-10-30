@@ -96,6 +96,17 @@ function Profile.template(): { [string]: any }
 		fields = fields,
 		factories = factories,
 		pens = pens,
+		decor = {}, -- placed decorations: { id, x, z, r } (shared/DecorRules)
+		prizes = {}, -- the Prize Basket: { crop, tier } (shared/Prize)
+		purchases = {
+			receipts = {}, -- PurchaseId -> time granted, newest 200 (shared/Shop)
+			bought = {}, -- one-time products bought (StarterPack)
+			passes = {}, -- game passes owned, refreshed from Roblox on join
+		},
+		toolShed = {
+			items = {}, -- Shovel / Axe / Saw -> qty; no Barn space (shared/Drops)
+			dry = 0, -- harvests in a row without a tool, for the pity drop
+		},
 		land = {}, -- land expansions started, in order: { readyAt? } (shared/TownRules)
 		town = {
 			houses = houses, -- { type, lot, readyAt? } (shared/TownRules)
@@ -108,6 +119,13 @@ function Profile.template(): { [string]: any }
 		},
 		settings = {
 			lastSeed = "Wheat",
+		},
+		daily = {
+			day = 0, -- days claimed in this round of the login calendar (shared/Daily)
+			lastDay = -1, -- UTC day number of the last claim
+		},
+		tutorial = {
+			step = 0, -- the first-session guide (shared/Tutorial); 0 = off
 		},
 		-- puzzle = Crop Pop's own save block (Hearts, boosters, progress), absent until it
 		-- first saves; the farm stores it without reading it (server/Services/CropPopBridge).

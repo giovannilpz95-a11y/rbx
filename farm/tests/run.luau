@@ -7,9 +7,18 @@ local luau = require("@lune/luau")
 local process = require("@lune/process")
 
 local Animals = require("../src/shared/Config/Animals")
+local Away = require("../src/shared/Away")
 local Balance = require("../src/shared/Config/Balance")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
+local DailyRules = require("../src/shared/Daily")
+local Decor = require("../src/shared/Config/Decor")
+local DecorRules = require("../src/shared/DecorRules")
+local Drops = require("../src/shared/Drops")
+local Products = require("../src/shared/Config/Products")
+local Shop = require("../src/shared/Shop")
+local Prize = require("../src/shared/Config/Prize")
+local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Levels = require("../src/shared/Config/Levels")
@@ -24,6 +33,7 @@ local Speedup = require("../src/shared/Speedup")
 local Timer = require("../src/shared/Timer")
 local Town = require("../src/shared/Config/Town")
 local TownRules = require("../src/shared/TownRules")
+local Tutorial = require("../src/shared/Tutorial")
 
 local passed, failed = 0, 0
 
@@ -394,8 +404,193 @@ test("materials can't be sold or ordered; longer crops drop more", function()
 	eq(Items.Bricks.sellPrice, 0, "not sellable")
 	local data = Profile.migrate(nil) :: any
 	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
-	ok(math.abs(TownRules.harvestDropChance(0) - 0.04) < 1e-9, "building + Barn materials")
-	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.12) < 1e-9, "x3 cap")
+end)
+
+test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#data.prizes, 0, "empty basket")
+	data.tutorial.step = 2
+	eq(PrizeRules.roll(data, 0), nil, "none while the guide runs")
+	data.tutorial.step = 0
+	eq(PrizeRules.roll(data, 0.001), "Heirloom", "0.2% Heirloom")
+	eq(PrizeRules.roll(data, 0.01), "Sunkissed", "then 2% Sunkissed")
+	eq(PrizeRules.roll(data, 0.023), nil, "the rest are ordinary")
+	eq(PrizeRules.value("Corn", "Sunkissed"), 9, "x3 the sell price")
+	eq(PrizeRules.value("Corn", "Heirloom"), 45, "x15")
+	for i = 1, Prize.basketSlots do
+		ok(PrizeRules.hasRoom(data), "room for " .. i)
+		table.insert(data.prizes, { crop = "Wheat", tier = "Sunkissed" })
+	end
+	eq(PrizeRules.hasRoom(data), false, "basket full at 10")
+end)
+
+test("the Shop: buy rules, receipt de-duplication and the Big Barn bonus", function()
+	local data = Profile.migrate(nil) :: any
+	eq((Shop.canBuy(data, "Pouch")), false, "no product id yet")
+	eq(select(2, Shop.canBuy(data, "Pouch")), "Coming soon", "says so")
+	eq((Shop.canBuy(data, "Nope")), false, "unknown key")
+	for _, product in Products.products do
+		eq(product.productId, 0, product.key .. " ships as a placeholder")
+		ok(product.gems > 0, product.key .. " gives Gems")
+	end
+	ok(not Shop.processed(data, "r1"), "new receipt")
+	Shop.record(data, "r1", 1)
+	ok(Shop.processed(data, "r1"), "remembered")
+	for i = 2, Products.keepReceipts + 5 do
+		Shop.record(data, "r" .. i, i)
+	end
+	local kept = 0
+	for _ in data.purchases.receipts do
+		kept += 1
+	end
+	eq(kept, Products.keepReceipts, "trimmed to the newest")
+	ok(not Shop.processed(data, "r1"), "oldest dropped")
+	ok(Shop.processed(data, "r" .. (Products.keepReceipts + 5)), "newest kept")
+	eq(Shop.barnCapacity(data), data.inventory.barnCapacity, "no pass")
+	data.purchases.passes.BigBarn = true
+	eq(Shop.barnCapacity(data), data.inventory.barnCapacity + 50, "+50 with Big Barn")
+end)
+
+test("harvests drop tools and materials on one roll, with a pity tool", function()
+	local data = Profile.migrate(nil) :: any
+	ok(math.abs(Drops.chance(0) - 0.105) < 1e-9, "3% + 2% + 1.5% tools, 2% + 2% materials")
+	ok(math.abs(Drops.chance(8 * 3600) - 0.315) < 1e-9, "x3 cap")
+	eq(Drops.harvest(data, 0, 0), nil, "nothing before level 5")
+	eq(data.toolShed.dry, 0, "and no pity count")
+	data.level = 5
+	eq(Drops.harvest(data, 0, 0.01), "Shovel", "low rolls are Shovels")
+	eq(Drops.harvest(data, 0, 0.06), "Saw", "then Axes, then Saws")
+	eq(Drops.harvest(data, 0, 0.07), "Bricks", "then materials")
+	eq(data.toolShed.dry, 1, "a material isn't a tool")
+	eq(Drops.harvest(data, 0, 0.2), nil, "high rolls drop nothing")
+	eq(Drops.harvest(data, 8 * 3600, 0.2), "Bricks", "long crops roll better")
+	data.toolShed.items = { Shovel = 2, Axe = 1 }
+	data.toolShed.dry = 39
+	eq(Drops.harvest(data, 0, 0.99), nil, "harvest 40 can still miss")
+	eq(Drops.harvest(data, 0, 0.99), "Saw", "harvest 41 gives the scarcest tool")
+	eq(data.toolShed.dry, 0, "and resets the count")
+	data.toolShed.items.Saw = 1
+	eq(Drops.scarcestTool(data), "Axe", "ties go to the commoner tool")
+end)
+
+test("the first-session guide walks the opening loop", function()
+	local data = Profile.migrate(nil) :: any
+	eq(data.tutorial.step, 0, "off until welcomed (old farms never see it)")
+	Profile.welcome(data, 100)
+	Tutorial.start(data, 100)
+	eq(Tutorial.current(data).id, "Harvest", "first step")
+	eq(data.fields.F1.crop, "Wheat", "ripe Wheat waiting")
+	eq(data.orders.board[1].order.wants.Wheat, 4, "an easy first order")
+	eq(#Tutorial.advance(data, 100), 0, "nothing harvested yet")
+	eq(Tutorial.seconds(data, "Wheat", 120), 30, "first Wheat is quick")
+	for _, id in Tutorial.ripeFields do
+		data.fields[id] = {}
+	end
+	data.fields.F4 = { crop = "Wheat", readyAt = 130 }
+	eq(table.concat(Tutorial.advance(data, 101), ","), "Harvest,Plant", "harvested and replanted")
+	eq(Tutorial.current(data).target, "OrderBoard", "points at the board")
+	data.orders.delivered = 1
+	data.level = 2
+	data.factories.Bakery.built = true
+	data.factories.Bakery.constructionReadyAt = 200
+	eq(table.concat(Tutorial.advance(data, 150), ","), "Ship,Level2", "waits for the Bakery to finish")
+	eq(table.concat(Tutorial.advance(data, 200), ","), "Bakery", "built")
+	eq(Tutorial.seconds(data, "Bread", 300), 30, "first Bread is quick")
+	eq(Tutorial.seconds(data, "Wheat", 120), 120, "Wheat back to normal")
+	data.inventory.items.Bread = 1
+	data.pens.CowBarn.animals[1].readyAt = 400
+	eq(table.concat(Tutorial.advance(data, 200), ","), "Bread,Feed", "fed")
+	data.inventory.items.Milk = 1
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Milk", "collected")
+	data.level = 3
+	data.factories.FeedMill.built = true
+	data.factories.FeedMill.queue = { { recipe = "CowFeed", seconds = 300, qty = 3 } }
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Level3,FeedMill,CowFeed", "Feed Mill running")
+	data.level = 4
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Level4", "the first House is next")
+	table.insert(data.town.houses, { type = "LeanTo", lot = 5, readyAt = 460 })
+	data.factories.Dairy.built = true
+	data.factories.Dairy.constructionReadyAt = 4000
+	eq(table.concat(Tutorial.advance(data, 400), ","), "House", "Dairy building")
+	ok(Tutorial.freeFinish(data, "Dairy"), "the first Finish is free")
+	ok(not Tutorial.freeFinish(data, "Bakery"), "only on the Dairy")
+	data.factories.Dairy.constructionReadyAt = 400
+	data.land[1] = { readyAt = 9000 }
+	data.level = 5
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Dairy,Land,Level5", "level 5")
+	ok(not Tutorial.freeFinish(data, "Dairy"), "free only while its step is on")
+	eq(Tutorial.current(data).id, "WrapUp", "ends on a tap")
+	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
+end)
+
+test("decorations snap to the grid, stay on owned land and don't overlap", function()
+	local data = Profile.migrate(nil) :: any
+	local x, z = DecorRules.snap("OakTree", 0, 9, 1)
+	eq(x, 8, "2x2 centres on a grid line")
+	eq(z, 0, "z too")
+	x, z = DecorRules.snap("GravelPath", 0, 9, 1)
+	eq(x, 10, "1x1 centres mid-tile")
+	local w, d = DecorRules.footprint("Bench", 1)
+	eq(w * 10 + d, 12, "a turned bench is 1 x 2")
+	local tree = { id = "OakTree", x = 8, z = 0, r = 0 }
+	ok((DecorRules.canPlace(data, tree, 0)), "fits")
+	table.insert(data.decor, tree)
+	local bench = { id = "Bench", x = 12, z = 2, r = 0 }
+	local fits, why = DecorRules.canPlace(data, bench, 0)
+	eq(fits, false, "overlaps the tree")
+	eq(why, "Something is already there", "says why")
+	ok((DecorRules.canPlace(data, { id = "Bench", x = 16, z = 2, r = 0 }, 0)), "touching edges are fine")
+	eq((DecorRules.canPlace(data, { id = "GravelPath", x = -50, z = 0, r = 0 }, 0)), false, "West Meadow not cleared")
+	data.land[1] = { readyAt = 10 }
+	ok((DecorRules.canPlace(data, { id = "GravelPath", x = -50, z = 0, r = 0 }, 10)), "cleared land is yours")
+	ok((DecorRules.canPlace(data, { id = "OakTree", x = -48, z = 0, r = 0 }, 10)), "across the edge")
+	eq(DecorRules.refund("StoneFountain"), 500, "25% back")
+	ok(DecorRules.isBig("OakTree") and not DecorRules.isBig("Bench"), "2 x 2 and up is big")
+	data.decor = {}
+	for i = 1, Decor.maxBig do
+		data.decor[i] = { id = "OakTree", x = 0, z = 0, r = 0 }
+	end
+	eq((DecorRules.hasRoom(data, "Pond")), false, "big cap")
+	ok((DecorRules.hasRoom(data, "GravelPath")), "small ones still fit")
+	for i = Decor.maxBig + 1, Decor.maxPlaced do
+		data.decor[i] = { id = "GravelPath", x = 0, z = 0, r = 0 }
+	end
+	eq((DecorRules.hasRoom(data, "GravelPath")), false, "overall cap")
+end)
+
+test("the daily calendar pauses instead of resetting", function()
+	local data = Profile.migrate(nil) :: any
+	local day1 = 20000 * 86400 + 3600
+	eq((DailyRules.due(data, day1)), nil, "opens at level 5")
+	data.level = 5
+	local reward, day = DailyRules.due(data, day1)
+	eq(day, 1, "day 1")
+	eq(reward.coins, 100, "100 Coins")
+	DailyRules.claim(data, day1, day)
+	eq((DailyRules.due(data, day1 + 3600)), nil, "once per UTC day")
+	reward, day = DailyRules.due(data, day1 + 5 * 86400)
+	eq(day, 2, "a missed day pauses the calendar")
+	eq(reward.item, "Nails", "Barn material until tools ship")
+	data.daily.day = 7
+	data.level = 12
+	reward, day = DailyRules.due(data, day1 + 6 * 86400)
+	eq(day, 1, "repeats after day 7")
+	eq(reward.coins, 150, "x1.5 Coins from level 11")
+end)
+
+test("the away summary lists what finished", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#Away.summary(data, 0, 10000), 0, "nothing for a new farm")
+	data.fields.F1 = { crop = "Wheat", readyAt = 500 }
+	data.factories.Bakery.built = true
+	data.factories.Bakery.constructionReadyAt = 900
+	data.factories.Bakery.output = { Bread = 2 }
+	data.pens.CowBarn.animals[1].readyAt = 800
+	local lines = Away.summary(data, 600, 5000)
+	eq(#lines, 4, table.concat(lines, " | "))
+	ok(table.find(lines, "1 field is ready to harvest") ~= nil, "fields")
+	ok(table.find(lines, "Bakery finished building") ~= nil, "construction since last seen")
+	eq(#Away.summary(data, 4900, 5000), 0, "a short break gets no summary")
 end)
 
 test("Barn upgrades follow the Township steps", function()

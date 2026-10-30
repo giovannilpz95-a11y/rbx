@@ -11,6 +11,7 @@ local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Pen = require(Shared.Pen)
 local Speedup = require(Shared.Speedup)
+local Tutorial = require(Shared.Tutorial)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -39,7 +40,8 @@ local function nearPen(player: Player, penId: string): boolean
 end
 
 local function feedPen(player: Player, def: Animals.PenDef, pen: { [string]: any }): number
-	return Pen.feed(pen, Clock.now(), Clock.duration(def.produceSeconds), function()
+	local seconds = Tutorial.seconds(DataService.get(player) :: any, def.product, def.produceSeconds)
+	return Pen.feed(pen, Clock.now(), Clock.duration(seconds), function()
 		return InventoryService.remove(player, { [def.feed] = 1 })
 	end)
 end
