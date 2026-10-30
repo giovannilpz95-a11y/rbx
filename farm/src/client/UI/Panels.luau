@@ -1080,16 +1080,31 @@ local function renderDecor(state: { [string]: any }, index: number)
 	Ui.button("Turn", function()
 		Remotes.fire("Decor_Rotate", index)
 	end, { Size = UDim2.fromOffset(100, 30), Parent = line })
-	Ui.button(string.format("Sell for %d Coins", DecorRules.refund(placed.id)), function()
-		Remotes.fire("Decor_Sell", index)
-		Panels.close()
-	end, {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		Size = UDim2.fromOffset(180, 30),
-		BackgroundColor3 = Ui.colors.danger,
-		Parent = line,
-	})
+	-- Two taps: the first arms it ("Sure?"), the second sells
+	local key = "sell:" .. index
+	local refund = DecorRules.refund(placed.id)
+	Ui.button(
+		if isArmed(key) then string.format("Sure? Sell for %d", refund) else string.format("Sell for %d Coins", refund),
+		function()
+			if isArmed(key) then
+				armed[key] = nil
+				Remotes.fire("Decor_Sell", index)
+				Panels.close()
+			else
+				table.clear(armed)
+				armed[key] = time()
+				Panels.refresh()
+				task.delay(ARM_SECONDS + 0.1, Panels.refresh)
+			end
+		end,
+		{
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(180, 30),
+			BackgroundColor3 = Ui.colors.danger,
+			Parent = line,
+		}
+	)
 end
 
 local function renderField(state: { [string]: any }, fieldId: string)
