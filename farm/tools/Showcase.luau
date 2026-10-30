@@ -333,6 +333,25 @@ SCENES.rail = function(root)
 	ArtMarket.stall(root, CFrame.new(4, 0, -22) * Kit.yaw(180), "Plum")
 end
 
+-- The Town Express station with the giant train on a curve, and the Event Tent
+SCENES.express = function(root)
+	ground(root, 100)
+	local station = ArtRail.expressStation(root, CFrame.new(0, 0, 0))
+	ArtRail.setExpressProgress(station, 0.55)
+	for i = 1, 3 do
+		ArtRail.track("Straight", root, CFrame.new(-24 + (i - 1) * 16, 0, -9) * Kit.yaw(180))
+	end
+	ArtRail.track("Curve", root, CFrame.new(24, 0, -9))
+	ArtRail.engine(root, CFrame.new(10, 0, -9), ArtRail.EXPRESS_SCALE)
+	for i = 1, 2 do
+		local car = ArtRail.cargoCar(root, CFrame.new(-7 - (i - 1) * 16.6, 0, -9), ArtRail.EXPRESS_SCALE)
+		ArtRail.setCarCrates(car, i + 1)
+	end
+	local tent = ArtTown.eventTent(root, CFrame.new(-30, 0, -32) * Kit.yaw(180))
+	ArtTown.setEventTent(tent, true, Palette.plum)
+	ArtTown.eventTent(root, CFrame.new(-10, 0, -32) * Kit.yaw(180))
+end
+
 -- The level 13+ decorations, two rows
 SCENES.decor2 = function(root)
 	ground(root, 60)

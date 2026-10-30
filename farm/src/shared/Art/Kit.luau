@@ -72,15 +72,22 @@ local function finish(p: BasePart, b: Builder, name: string, color: Color3, opts
 	p.Parent = b.parent
 end
 
-function Kit.builder(parent: Instance, origin: CFrame, query: boolean?): Builder
+-- `scale` (default 1) grows every size and local position, so one builder function can make
+-- a model at more than one size (the giant Town Express train).
+function Kit.builder(parent: Instance, origin: CFrame, query: boolean?, scale: number?): Builder
 	local b = {} :: Builder
 	b.parent = parent
 	b.origin = origin
 	b.query = query == true
+	local s = scale or 1
+	local function toCFrame(at: CFrame | Vector3): CFrame
+		local cf = if typeof(at) == "Vector3" then CFrame.new(at :: Vector3) else at :: CFrame
+		return if s == 1 then cf else CFrame.new(cf.Position * s) * cf.Rotation
+	end
 
 	function b.block(name, size, at, color, opts)
 		local p = Instance.new("Part")
-		p.Size = size
+		p.Size = size * s
 		p.CFrame = origin * toCFrame(at)
 		finish(p, b, name, color, opts)
 		return p
@@ -89,7 +96,7 @@ function Kit.builder(parent: Instance, origin: CFrame, query: boolean?): Builder
 	function b.ball(name, diameter, at, color, opts)
 		local p = Instance.new("Part")
 		p.Shape = Enum.PartType.Ball
-		p.Size = Vector3.new(diameter, diameter, diameter)
+		p.Size = Vector3.new(diameter, diameter, diameter) * s
 		p.CFrame = origin * toCFrame(at)
 		finish(p, b, name, color, opts)
 		return p
@@ -98,7 +105,7 @@ function Kit.builder(parent: Instance, origin: CFrame, query: boolean?): Builder
 	function b.cyl(name, length, diameter, at, color, opts)
 		local p = Instance.new("Part")
 		p.Shape = Enum.PartType.Cylinder
-		p.Size = Vector3.new(length, diameter, diameter)
+		p.Size = Vector3.new(length, diameter, diameter) * s
 		p.CFrame = origin * toCFrame(at)
 		finish(p, b, name, color, opts)
 		return p
@@ -107,7 +114,7 @@ function Kit.builder(parent: Instance, origin: CFrame, query: boolean?): Builder
 	function b.post(name, height, diameter, at, color, opts)
 		local p = Instance.new("Part")
 		p.Shape = Enum.PartType.Cylinder
-		p.Size = Vector3.new(height, diameter, diameter)
+		p.Size = Vector3.new(height, diameter, diameter) * s
 		p.CFrame = origin * toCFrame(at) * CFrame.Angles(0, 0, math.rad(90))
 		finish(p, b, name, color, opts)
 		return p
@@ -115,14 +122,14 @@ function Kit.builder(parent: Instance, origin: CFrame, query: boolean?): Builder
 
 	function b.wedge(name, size, at, color, opts)
 		local p = Instance.new("WedgePart")
-		p.Size = size
+		p.Size = size * s
 		p.CFrame = origin * toCFrame(at)
 		finish(p, b, name, color, opts)
 		return p
 	end
 
 	function b.into(child: Instance, childQuery: boolean?): Builder
-		return Kit.builder(child, origin, if childQuery == nil then b.query else childQuery)
+		return Kit.builder(child, origin, if childQuery == nil then b.query else childQuery, s)
 	end
 
 	return b

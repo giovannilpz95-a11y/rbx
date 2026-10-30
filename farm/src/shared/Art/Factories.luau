@@ -16,6 +16,7 @@ ArtFactories.PARTS_MAX = 80
 ArtFactories.WIDTH = 10
 ArtFactories.DEPTH = 12
 ArtFactories.TABLE_Z = -10
+ArtFactories.QUEUE_SHOWN = 6 -- queued jobs show as crates by the table, two layers of three
 
 local TURN = CFrame.Angles(0, math.rad(90), 0) -- turns a cylinder's axis from X to Z
 local PLINTH = 0.75
@@ -519,7 +520,33 @@ end
 -- Build factory `id` into `model` at `cf` (bottom-centre, front at local -Z).
 function ArtFactories.build(id: string, model: Model, cf: CFrame): Parts
 	local build = BUILDERS[id] or bakery
+	model:SetAttribute("FactoryOrigin", cf)
 	return build(model, Kit.builder(model, cf, true))
+end
+
+-- Shows `waiting` queued jobs (not the one in progress) as small crates stacked beside the
+-- output table, up to QUEUE_SHOWN. Rebuilt each call into a "Queue" model.
+function ArtFactories.setQueue(model: Model, waiting: number)
+	local old = model:FindFirstChild("Queue")
+	if old then
+		old:Destroy()
+	end
+	local origin = model:GetAttribute("FactoryOrigin")
+	local n = math.clamp(math.floor(waiting), 0, ArtFactories.QUEUE_SHOWN)
+	if n == 0 or typeof(origin) ~= "CFrame" then
+		return
+	end
+	local queue = Kit.model("Queue", model)
+	local b = Kit.builder(queue, origin, false)
+	for i = 1, n do
+		local row, layer = (i - 1) % 3, (i - 1) // 3
+		b.block(
+			"QueueCrate",
+			Vector3.new(1.3, 1.1, 1.3),
+			CFrame.new(5.4, 0.55 + layer * 1.15, ArtFactories.TABLE_Z + 1.5 - row * 1.5) * Kit.yaw(layer * 12),
+			if layer == 0 then Palette.crate else Palette.crate:Lerp(Palette.cream, 0.2)
+		)
+	end
 end
 
 return ArtFactories
