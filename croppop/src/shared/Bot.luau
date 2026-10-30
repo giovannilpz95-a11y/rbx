@@ -73,6 +73,15 @@ local function chooseMove(pop, rng)
 	return rng:pick(moves)
 end
 
+-- The bot's pick for this board, as { x1, y1, x2, y2 } (nil with no moves).
+-- Studio's J key uses it to play a move without clicks.
+function Bot.chooseMove(pop, rng)
+	if #pop:listPossibleMoves() == 0 then
+		return nil
+	end
+	return chooseMove(pop, rng)
+end
+
 function Bot.play(level, games: number?, firstSeed: number?): Report
 	games = games or 50
 	local rng = Rng.new(firstSeed or 1)

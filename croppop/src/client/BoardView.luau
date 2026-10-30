@@ -316,19 +316,18 @@ function BoardView.load(self, game)
 		frostStroke.Color = Color3.fromRGB(255, 255, 255)
 		frostStroke.Parent = frost
 
-		-- Pumpkin levels: an arrow under each column's bottom cell, where pumpkins leave.
+		-- Pumpkin levels: a small arrow over the bottom of each column's lowest
+		-- cell, where pumpkins leave. Inside the board, so screen edges can't clip it.
 		if game.goals:find("Pumpkins") and board:isExit(cell) then
 			local exit = Instance.new("TextLabel")
 			exit.Name = "Exit"
-			exit.AnchorPoint = Vector2.new(0.5, 0.5)
-			exit.Position = UDim2.fromScale(0.5, 1) -- on the bottom edge, half under the tile
-			exit.Size = UDim2.fromScale(0.36, 0.36)
+			exit.AnchorPoint = Vector2.new(0.5, 1)
+			exit.Position = UDim2.fromScale((x - 0.5) / board.width, y / board.height)
+			exit.Size = UDim2.fromScale(0.3 / board.width, 0.3 / board.height)
 			exit.BackgroundTransparency = 1
 			exit.Text = TileStyle.Pumpkin.exit
 			exit.TextScaled = true
-			exit.TextTransparency = 0.2
-			exit.ZIndex = 2
-			exit.Parent = bg
+			exit.Parent = self.baleLayer
 		end
 
 		self.cellGuis[y][x] = { cell = bg, mud = mud, bale = bale, frost = frost, frostStroke = frostStroke }
