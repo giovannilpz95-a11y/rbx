@@ -714,6 +714,52 @@ TYPES.BotanicalArch = function(b, s)
 	return body
 end
 
+-- Amphitheatre (content bank, level 24): open-air stone seating in three stepped rows facing a
+-- wooden stage under a cream band shell, with a red curtain behind and the two theatre masks
+-- on the shell's crown.
+TYPES.Amphitheatre = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.stoneLight, { collide = true })
+	local t = b.into(body, true)
+	-- The seating: each row back from the stage is wider and a step higher
+	for i = 1, 3 do
+		local rise = 0.6 * i
+		t.block(
+			"Seats",
+			Vector3.new(w - 3.6 + i * 1.1, rise, 1.3),
+			Vector3.new(0, 0.4 + rise / 2, -1.3 * i + 0.2),
+			if i == 2 then Palette.stone else Palette.stoneLight
+		)
+	end
+	-- The stage and its band shell on two columns
+	local stageZ = w / 2 - 1.9
+	t.block("Stage", Vector3.new(w - 1.6, 0.8, 3.4), Vector3.new(0, 0.8, stageZ), Palette.woodLight)
+	local columnX = w / 2 - 1.2
+	for _, x in { -columnX, columnX } do
+		t.post("Column", 3.6, 0.7, Vector3.new(x, 3, stageZ), Palette.cream)
+	end
+	Kit.archRoof(t, "Shell", Vector3.new(0, 4.8, stageZ), columnX * 2 + 0.7, 3.6, 2.6, 4, 0.4, Palette.cream)
+	t.block(
+		"Curtain",
+		Vector3.new(w - 3, 3.4, 0.3),
+		Vector3.new(0, 2.9, w / 2 - 0.5),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	-- Sign object: the two theatre masks on the shell's crown
+	for i, x in { -0.6, 0.6 } do
+		t.ball(
+			"Mask",
+			1,
+			Vector3.new(x, 7.9, stageZ - 1.9),
+			if i == 1 then Palette.cream else Palette.flowerYellow,
+			{ shadow = false }
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
