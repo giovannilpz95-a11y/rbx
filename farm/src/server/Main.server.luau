@@ -19,6 +19,7 @@ local FactoryService = require(Services.FactoryService)
 local AnimalService = require(Services.AnimalService)
 local TownService = require(Services.TownService)
 local OrderService = require(Services.OrderService)
+local TutorialService = require(Services.TutorialService)
 local CropPopBridge = require(Services.CropPopBridge)
 local Clock = require(script.Parent.Util.Clock)
 
@@ -31,6 +32,7 @@ FactoryService.init()
 AnimalService.init()
 TownService.init()
 OrderService.init()
+TutorialService.init()
 CropPopBridge.init()
 
 -- DEV-only: shorter timers for playtesting. Ignored outside Studio.

@@ -109,6 +109,9 @@ function Profile.template(): { [string]: any }
 		settings = {
 			lastSeed = "Wheat",
 		},
+		tutorial = {
+			step = 0, -- the first-session guide (shared/Tutorial); 0 = off
+		},
 		-- puzzle = Crop Pop's own save block (Hearts, boosters, progress), absent until it
 		-- first saves; the farm stores it without reading it (server/Services/CropPopBridge).
 	}

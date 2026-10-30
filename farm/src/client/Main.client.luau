@@ -8,6 +8,7 @@ local Workspace = game:GetService("Workspace")
 
 local ClientStore = require(script.Parent.ClientStore)
 local Remotes = require(script.Parent.Remotes)
+local Guide = require(script.Parent.UI.Guide)
 local Hud = require(script.Parent.UI.Hud)
 local Panels = require(script.Parent.UI.Panels)
 local WorldLabels = require(script.Parent.UI.WorldLabels)
@@ -21,6 +22,7 @@ Remotes.get("State_Snapshot").OnClientEvent:Connect(ClientStore.set)
 Panels.init()
 Hud.init(Panels.open, ReachController.setActionHeld)
 WorldLabels.init()
+Guide.init()
 ReachController.init()
 MovementController.init()
 
@@ -54,6 +56,7 @@ end
 local function usePlot(model: Model)
 	ReachController.setPlot(model)
 	WorldLabels.setPlot(model)
+	Guide.setPlot(model)
 end
 for _, child in plots:GetChildren() do
 	if isMine(child) then

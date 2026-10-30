@@ -1078,6 +1078,9 @@ local function renderDebug(state: { [string]: any })
 			Parent = body,
 		}
 	)
+	Ui.button("Replay the first-session guide", function()
+		Remotes.fire("Debug_RestartTutorial")
+	end, { Size = UDim2.fromOffset(260, 34), LayoutOrder = 5, Parent = body })
 end
 
 ---------------------------------------------------------------------------------------------
