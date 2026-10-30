@@ -149,6 +149,17 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		end
 	end
 
+	-- The Prize Shelf (same { crop, tier } entries as the basket): setting a prize on show
+	-- sounds like placing a decoration; taking one back down is a quick swish.
+	local shelfBefore, shelf = prev.prizeShelf, nextState.prizeShelf
+	if type(shelfBefore) == "table" and type(shelf) == "table" then
+		if #shelf > #shelfBefore then
+			table.insert(cues, { sound = "DecorPlace" })
+		elseif #shelf < #shelfBefore then
+			table.insert(cues, { sound = "DecorRotate" })
+		end
+	end
+
 	-- The tutorial moving to a new step (tutorial.step: 0 = off).
 	local stepBefore = amount(prev.tutorial, "step")
 	local step = amount(nextState.tutorial, "step")

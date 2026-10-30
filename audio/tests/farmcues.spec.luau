@@ -196,3 +196,11 @@ test("selling a prize crop at the Prize Stand", function()
 	-- A new prize in the basket on its own is quiet (its popup plays the sound).
 	expect.eq(names(FarmCues.diff(state({ prizes = {} }), before)), "")
 end)
+
+test("putting a prize crop on the Prize Shelf and taking it back", function()
+	local prize = { crop = "Wheat", tier = "Sunkissed" }
+	local inBasket = state({ prizes = { prize }, prizeShelf = {} })
+	local onShelf = state({ prizes = {}, prizeShelf = { prize } })
+	expect.eq(names(FarmCues.diff(inBasket, onShelf)), "DecorPlace")
+	expect.eq(names(FarmCues.diff(onShelf, inBasket)), "DecorRotate")
+end)
