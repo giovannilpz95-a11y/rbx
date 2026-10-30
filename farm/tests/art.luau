@@ -10,6 +10,10 @@ Vector3 = roblox.Vector3
 CFrame = roblox.CFrame
 Color3 = roblox.Color3
 Enum = roblox.Enum
+ColorSequence = roblox.ColorSequence
+NumberSequence = roblox.NumberSequence
+NumberRange = roblox.NumberRange
+Vector2 = roblox.Vector2
 
 local ArtAnimals = require("../src/shared/Art/Animals")
 local ArtBuildings = require("../src/shared/Art/Buildings")
@@ -65,6 +69,17 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				eq(m.Name, "Crop", "crop model name")
 			end
 		end
+	end)
+
+	test("art: a ready Prize Crop shimmers in its tier's colour", function()
+		for tier in ArtCrops.PRIZE_COLORS do
+			local crop = ArtCrops.build("Wheat", 4, CFrame.new(0, 1, 0), nil)
+			local ring = ArtCrops.prizeShimmer(crop, tier, CFrame.new(0, 1, 0), 8)
+			ok(ring ~= nil and ring:IsDescendantOf(crop), tier .. " ring in the crop model")
+			ok((ring :: BasePart):FindFirstChildOfClass("ParticleEmitter") ~= nil, tier .. " sparkles")
+			eq((ring :: BasePart).CanQuery, false, tier .. " ring lets taps through")
+		end
+		eq(ArtCrops.prizeShimmer(Instance.new("Model"), "Plain", CFrame.new(), 8), nil, "unknown tier")
 	end)
 
 	test("art: crop stages follow growth", function()
