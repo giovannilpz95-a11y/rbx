@@ -245,6 +245,12 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Seed", 0.4, at(-0.35, 1.25, 0.1), Palette.cream, QUIET)
 		b.ball("Seed", 0.4, at(0.3, 1.2, -0.15), Palette.cream, QUIET)
 	end,
+	TomatoKetchup = function(b)
+		b.post("Bottle", 1.3, 1.1, at(0, 0.65, 0), Palette.roofRed, QUIET)
+		b.post("Label", 0.5, 1.14, at(0, 0.6, 0), Palette.cream, QUIET)
+		b.ball("Cap", 0.8, at(0, 1.6, 0), Palette.roofRed, QUIET)
+		b.block("Leaf", Vector3.new(0.5, 0.15, 0.5), at(0, 2, 0), Palette.lime, QUIET)
+	end,
 	CornChips = function(b)
 		b.block("Bag", Vector3.new(1.3, 1.6, 0.6), at(0, 0.8, 0), Palette.corn, QUIET)
 		b.block("Band", Vector3.new(1.32, 0.4, 0.62), at(0, 1.1, 0), Palette.roofRed, QUIET)

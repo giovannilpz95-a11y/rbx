@@ -138,7 +138,7 @@ end
 
 -- Feed Mill: a squat round timber granary with a stepped mustard cone roof, a big paddle wheel
 -- dipping into a stone water channel and a plank chute down to the table.
-local function feedMill(model: Model, b: Kit.Builder): Parts
+local function feedMill(model: Model, b: Kit.Builder, roof: Color3?): Parts
 	b.post("Plinth", PLINTH, 11, Vector3.new(0, PLINTH / 2, 0), Palette.stone)
 	local body = b.post("Body", WALL, 9.6, Vector3.new(0, PLINTH + WALL / 2, 0), Palette.woodLight, { collide = true })
 	local d = b.into(body, true)
@@ -148,7 +148,7 @@ local function feedMill(model: Model, b: Kit.Builder): Parts
 	local cone = { { 11.6, 1.5 }, { 8.6, 1.5 }, { 5.6, 1.5 } }
 	local y = TOP
 	for _, tier in cone do
-		d.post("Roof", tier[2], tier[1], Vector3.new(0, y + tier[2] / 2, 0), Palette.roofMustard)
+		d.post("Roof", tier[2], tier[1], Vector3.new(0, y + tier[2] / 2, 0), roof or Palette.roofMustard)
 		y += tier[2]
 	end
 	local chimney = d.block("Chimney", Vector3.new(2, 1.6, 2), Vector3.new(0, y + 0.8, 0), Palette.wood)
@@ -466,6 +466,10 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	TextileMill = textileMill,
 	SnackFactory = snackFactory,
 	Diner = diner,
+	-- The second Feed Mill (level 19): the same mill under a red roof, so the two tell apart
+	FeedMill2 = function(model: Model, b: Kit.Builder): Parts
+		return feedMill(model, b, Palette.roofRed)
+	end,
 }
 
 function ArtFactories.has(id: string): boolean

@@ -229,7 +229,21 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 18, "levels 17 and 18 are banked")
+	eq(Levels.built, 19, "levels 17 to 19 are banked")
+	eq(Levels.list[19].xpToNext, 5771, "L19 row")
+	eq(Recipes.TomatoKetchup.inputs.Tomatoes, 2, "Tomato Ketchup")
+	-- The second Feed Mill: its own building and queue, making the Feed Mill's recipes
+	local second = Factories.FeedMill2
+	eq(second.makes, "FeedMill", "second Feed Mill makes feed")
+	eq(second.unlockLevel, 19, "second Feed Mill at 19")
+	eq(second.population, 655, "second Feed Mill Population")
+	ok(Factories[second.makes].makes == nil, "copies point at an original")
+	for id, recipe in Recipes do
+		ok(
+			Factories[recipe.factory] ~= nil and Factories[recipe.factory].makes == nil,
+			id .. " names an original factory"
+		)
+	end
 	eq(Levels.list[18].xpToNext, 4912, "L18 row")
 	ok(table.find(Balance.enabledCrops, "Pumpkins") ~= nil and Crops.Pumpkins.unlockLevel == 18, "Pumpkins at 18")
 	eq(Recipes.RoastedPumpkinSeeds.inputs.Pumpkins, 2, "Roasted Pumpkin Seeds")
@@ -239,12 +253,12 @@ test("the content bank stays locked at the live cap", function()
 		ok(table.find(Balance.enabledFactories, Recipes[id].factory) ~= nil, id .. "'s factory is enabled")
 	end
 	eq(Town.houses.ThatchedLonghouse.copyLevels[1], 17, "Thatched Longhouse")
-	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower" } do
+	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower", "RoseGarden" } do
 		local def = Town.community[id]
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[def.order].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner" } do
+	for _, id in { "SnackFactory", "Diner", "FeedMill2" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
