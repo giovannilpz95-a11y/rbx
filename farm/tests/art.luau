@@ -606,7 +606,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				paletteRules(m, id)
 			end
 		end
-		for id in Town.community do
+		for id, def in Town.community do
+			if def.townHallStorey then
+				continue -- builds onto the Town Hall
+			end
 			ok(ArtCommunity.has(id), "community model for " .. id)
 			local m = Instance.new("Model")
 			ArtCommunity.build(id, m, CFrame.new(), 12)
@@ -696,7 +699,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ArtHouses.build(id, m, CFrame.new(), { size = 8 })
 			add(m, copies)
 		end
-		for id in Town.community do
+		for id, def in Town.community do
+			if def.townHallStorey then
+				continue -- the Town Hall above is counted at full height
+			end
 			local m = Instance.new("Model")
 			ArtCommunity.build(id, m, CFrame.new(), 12)
 			add(m, 1)
