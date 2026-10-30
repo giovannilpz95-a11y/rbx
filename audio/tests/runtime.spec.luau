@@ -94,10 +94,10 @@ test("volume groups are nested SoundGroups with the default levels", function()
 	expect.eq(GameAudio.getVolume("Music"), 1, "clamped")
 end)
 
-test("a sound with a licensed placeholder plays, pitched by semitones", function()
+test("an uploaded sound plays from a pool, pitched by semitones", function()
 	local GameAudio, find = fresh()
 	expect.truthy(GameAudio.play("PopMatch", { pitch = 12 }))
-	local voices = find(function(i) return i.ClassName == "Sound" and i.SoundId == "rbxassetid://9112872239" end)
+	local voices = find(function(i) return i.ClassName == "Sound" and i.SoundId == "rbxassetid://78976345803082" end)
 	expect.eq(#voices, 3, "a pool of 3 voices")
 	local playing = 0
 	for _, v in voices do
@@ -109,9 +109,9 @@ test("a sound with a licensed placeholder plays, pitched by semitones", function
 	expect.eq(playing, 1)
 end)
 
-test("an original that isn't uploaded yet is counted but silent", function()
+test("plays are counted, and an unknown name is quiet", function()
 	local GameAudio = fresh()
-	expect.falsy(GameAudio.play("Coin"))
+	expect.truthy(GameAudio.play("Coin"))
 	expect.eq(GameAudio.stats.Coin, 1)
 	expect.falsy(GameAudio.play("NoSuchSound"))
 end)

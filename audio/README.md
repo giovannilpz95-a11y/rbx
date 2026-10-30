@@ -27,8 +27,7 @@ The sound system for the farm and Crop Pop: one shared module that plays named s
 
 | Kind | Now | Later |
 |---|---|---|
-| 48 sound effects | Our originals in `sfx/`, **not uploaded yet**, so silent. Studio prints each name once the first time it's asked for, so hooks can be checked. | Upload, then put each asset id in the sound's `id` |
-| Level up, Crop Pop win and lose, match pop | A free **APM Music** / **Pro Sound Effects** sound from Roblox's library (the `fallback` field), until our original has an `id` | Our original |
+| 48 sound effects | Our originals in `sfx/`, uploaded to Giovanni's account on 2026-10-30 (ids in `UPLOADED` in `Sounds.luau`) | Done. A new original stays silent, and Studio prints its name once, until its id is added |
 | Music (Farm, Puzzle, Visit) | **APM Music** tracks from Roblox's library, free in experiences | Our own theme (open question in *12 Art & Audio Direction*) |
 | Farm ambience | A **Pro Sound Effects** countryside loop | Our own bed |
 
@@ -37,7 +36,7 @@ Every library pick is a first guess from the track's name and description; they 
 ## Uploading the originals
 
 1. In Studio, open **Window > Asset Manager**, click **Bulk Import** and pick every `.ogg` in `sfx/` (or upload them on the Creator Hub under Creations > Audio). Audio uploads are free (100 a month unverified, 2,000 ID-verified).
-2. Copy each new asset id into the matching entry in `src/shared/Sounds.luau` as `id = "rbxassetid://..."`. The `fallback` can stay or go; `id` wins.
+2. Add each new asset id to the `UPLOADED` table in `src/shared/Sounds.luau`, keyed by file name. Roblox may hide words in asset names (the two weed sounds came back as `#####`); match those by the file list.
 
 To change a sound, edit its function in `tools/make_sfx.py` and run `python3 tools/make_sfx.py` from this folder (needs numpy and ffmpeg). The script is deterministic, so only the sounds you touched change.
 

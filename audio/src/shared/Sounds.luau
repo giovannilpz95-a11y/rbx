@@ -6,7 +6,8 @@
 	  group      "Ui" | "Effects" | "Music" | "Ambience" (the volume group it plays in)
 	  volume     0..1, before the group's volume
 	  file       our original sound in audio/sfx/ (made by tools/make_sfx.py)
-	  id         its Roblox asset id once uploaded ("rbxassetid://..."); nil = not uploaded yet
+	  id         its Roblox asset id once uploaded ("rbxassetid://...", from UPLOADED below);
+	             nil = not uploaded yet
 	  fallback   a free licensed Roblox library sound to use until `id` is set (placeholder)
 	  source     where the entry's own sound comes from: "Original" (made for this game), or
 	             for library-only entries "APM" (APM Music) or "PSE" (Pro Sound Effects), the
@@ -18,8 +19,7 @@
 
 	Rules (vault: Design/26 Audio Style Guide): only our own sounds or sounds from Roblox's
 	licensed library (APM Music, Pro Sound Effects). Nothing ripped, recorded or recreated
-	from Township or any other game. Every `fallback` is a placeholder until our original
-	is uploaded and has an `id`.
+	from Township or any other game. A `fallback` only plays while our original has no `id`.
 ]]
 
 export type Sound = {
@@ -36,8 +36,62 @@ export type Sound = {
 	looped: boolean?,
 }
 
+-- Our originals as uploaded to Roblox (Asset Manager Bulk Import, 2026-10-30), by file name.
+-- A new original stays silent until its id is added here.
+local UPLOADED: { [string]: string } = {
+	build_done = "rbxassetid://135822915243709",
+	build_hammer = "rbxassetid://98011388214547",
+	coin = "rbxassetid://92034233006281",
+	coin_big = "rbxassetid://132465275142332",
+	crier_bell = "rbxassetid://97009903628185",
+	decor_place = "rbxassetid://135327369323464",
+	decor_rotate = "rbxassetid://124689663009385",
+	factory_collect = "rbxassetid://98052300409599",
+	factory_start = "rbxassetid://83041237646576",
+	feed = "rbxassetid://134539954450096",
+	gem = "rbxassetid://74885315231683",
+	harvest = "rbxassetid://122476685681586",
+	level_up = "rbxassetid://70509023514051",
+	notify = "rbxassetid://82327772327854",
+	order_complete = "rbxassetid://88991050102302",
+	plant = "rbxassetid://94602308937521",
+	pop_bad = "rbxassetid://138039957903949",
+	pop_bale = "rbxassetid://110143010930119",
+	pop_bee = "rbxassetid://115052258350165",
+	pop_bomb = "rbxassetid://74289545366489",
+	pop_booster = "rbxassetid://94007754345040",
+	pop_frost = "rbxassetid://97888903898587",
+	pop_goal = "rbxassetid://86387809153747",
+	pop_lose = "rbxassetid://83594292076093",
+	pop_match = "rbxassetid://78976345803082",
+	pop_more_moves = "rbxassetid://78606861739292",
+	pop_mud = "rbxassetid://85252451777094",
+	pop_power_made = "rbxassetid://71514177489665",
+	pop_shuffle = "rbxassetid://96890358034380",
+	pop_sprayer = "rbxassetid://90586269910845",
+	pop_sun = "rbxassetid://74092670320353",
+	pop_swap = "rbxassetid://115660242019004",
+	pop_weed = "rbxassetid://110664100483647",
+	pop_weed_grow = "rbxassetid://120777560707717",
+	pop_win = "rbxassetid://127886858679552",
+	prize_find = "rbxassetid://110651573973982",
+	prize_heirloom = "rbxassetid://138042146263086",
+	prize_lost = "rbxassetid://115010677705248",
+	purchase = "rbxassetid://129766764512149",
+	ready = "rbxassetid://138980162763729",
+	sell = "rbxassetid://111589037585970",
+	tool_drop = "rbxassetid://98141118111168",
+	ui_close = "rbxassetid://84831596649210",
+	ui_error = "rbxassetid://120097545551630",
+	ui_open = "rbxassetid://115558235640896",
+	ui_tap = "rbxassetid://110910186206329",
+	unlock = "rbxassetid://84936563668471",
+	xp = "rbxassetid://99729766738768",
+}
+
 local function original(file: string, group: string, volume: number, extra: { [string]: any }?): Sound
-	local entry: { [string]: any } = { group = group, volume = volume, file = "sfx/" .. file .. ".ogg", source = "Original" }
+	local entry: { [string]: any } =
+		{ group = group, volume = volume, file = "sfx/" .. file .. ".ogg", id = UPLOADED[file], source = "Original" }
 	for k, v in extra or {} do
 		entry[k] = v
 	end
