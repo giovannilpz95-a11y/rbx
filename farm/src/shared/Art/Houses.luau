@@ -458,6 +458,37 @@ TYPES.TwinGables = {
 	end,
 }
 
+-- Canal House (content bank, level 28): a tall, narrow brick house with a stepped gable to
+-- the street, a cream hoist beam under the peak, and a door up a short stoop.
+TYPES.CanalHouse = {
+	roof = Palette.roofMustard,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.56, s * 0.7, STORY * 2
+		local body = walls(b, w, d, h, Palette.brick, 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		-- The stepped gable: three brick steps rising over the front wall, capped in the roof tint
+		for i, sw in { w, w * 0.66, w * 0.33 } do
+			t.block(
+				"Step",
+				Vector3.new(sw, 1.1, 0.8),
+				Vector3.new(0, PLINTH + h + i * 1.1 - 0.55, face + 0.4),
+				Palette.brick
+			)
+		end
+		t.block("Roof", Vector3.new(w + 0.4, 0.6, d + 0.4), Vector3.new(0, PLINTH + h + 0.3, 0.3), roof)
+		t.block("Cap", Vector3.new(w * 0.33 + 0.4, 0.4, 1), Vector3.new(0, PLINTH + h + 3.5, face + 0.4), roof)
+		t.block("Hoist", Vector3.new(0.4, 0.4, 1.4), Vector3.new(0, PLINTH + h + 1.4, face - 0.5), Palette.cream)
+		t.block("Stoop", Vector3.new(2.4, 0.8, 1.2), Vector3.new(0, PLINTH + 0.4, face - 0.6), Palette.stone)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH + 0.8, face), 1.6, 3.4, roof, Palette.cream)
+		for _, y in { STORY + 0.8, STORY * 1.6 } do
+			Kit.window(t, "Window", CFrame.new(0, PLINTH + y, face), 1.4, 1.8, Palette.cream, Palette.glass)
+		end
+		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)

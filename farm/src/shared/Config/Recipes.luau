@@ -55,6 +55,7 @@ local Recipes: { [string]: RecipeDef } = {
 	StrawberryMilkshake = { id = "StrawberryMilkshake", displayName = "Strawberry Milkshake", factory = "Diner", unlockLevel = 16, inputs = { Milk = 2, Strawberries = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 30, xp = 13 },
 	FarmBurger = { id = "FarmBurger", displayName = "Farm Burger", factory = "Diner", unlockLevel = 16, inputs = { Bread = 2, Cheese = 1, Tomatoes = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 57, xp = 24 },
 	BerrySandwich = { id = "BerrySandwich", displayName = "Berry Sandwich", factory = "Diner", unlockLevel = 19, inputs = { Bread = 1, Butter = 1, Strawberries = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 80, xp = 34 },
+	Fries = { id = "Fries", displayName = "Fries", factory = "Diner", unlockLevel = 28, inputs = { Potatoes = 2, Cream = 1, Tomatoes = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 88, xp = 38 },
 	-- Paper Mill (content bank)
 	Paper = { id = "Paper", displayName = "Paper", factory = "PaperMill", unlockLevel = 18, inputs = { PineTrees = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 19, xp = 8 },
 	PaperTowel = { id = "PaperTowel", displayName = "Paper Towels", factory = "PaperMill", unlockLevel = 23, inputs = { PineTrees = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 39, xp = 17 },
