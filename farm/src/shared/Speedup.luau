@@ -21,19 +21,6 @@ function Speedup.price(tableRows: Table, secondsLeft: number): number
 end
 
 function Speedup.production(secondsLeft: number): number
-	-- Speed Up All (02 Farming): every growing field of one crop, each priced on its own.
-	-- Returns the summed Gem price and how many fields it covers.
-	function Speedup.allFields(fields: { [string]: any }, crop: string, now: number): (number, number)
-		local total, count = 0, 0
-		for _, field in fields do
-			if field.crop == crop and field.readyAt ~= nil and field.readyAt > now then
-				total += Speedup.production(field.readyAt - now)
-				count += 1
-			end
-		end
-		return total, count
-	end
-
 	return Speedup.price(Speedups.production, secondsLeft)
 end
 
@@ -62,6 +49,19 @@ function Speedup.pen(pen: { [string]: any }, now: number): number
 		end
 	end
 	return total
+end
+
+-- Speed Up All (02 Farming): every growing field of one crop, each priced on its own.
+-- Returns the summed Gem price and how many fields it covers.
+function Speedup.allFields(fields: { [string]: any }, crop: string, now: number): (number, number)
+	local total, count = 0, 0
+	for _, field in fields do
+		if field.crop == crop and field.readyAt ~= nil and field.readyAt > now then
+			total += Speedup.production(field.readyAt - now)
+			count += 1
+		end
+	end
+	return total, count
 end
 
 return Speedup
