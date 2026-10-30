@@ -223,6 +223,15 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Cube", Vector3.new(0.85, 0.85, 0.85), tilt(0.45, 0.43, 0.1, 0, -10, 0), cube, QUIET)
 		b.block("Cube", Vector3.new(0.85, 0.85, 0.85), tilt(0, 1.28, 0.05, 0, 30, 0), Palette.cream, QUIET)
 	end,
+	WoolScarf = function(b)
+		local stripe = Palette.cream
+		b.block("Fold", Vector3.new(1.8, 0.35, 0.8), at(0, 0.18, 0), Palette.roofRed, QUIET)
+		b.block("Fold", Vector3.new(1.6, 0.35, 0.8), tilt(0.1, 0.52, 0, 0, 8, 0), Palette.roofRed, QUIET)
+		b.block("Stripe", Vector3.new(0.25, 0.37, 0.82), tilt(-0.35, 0.52, 0, 0, 8, 0), stripe, QUIET)
+		b.block("Stripe", Vector3.new(0.25, 0.37, 0.82), tilt(0.45, 0.52, 0, 0, 8, 0), stripe, QUIET)
+		b.block("Tail", Vector3.new(0.7, 0.2, 1.2), tilt(-0.7, 0.86, -0.2, 0, -20, 0), Palette.roofRed, QUIET)
+		b.block("Fringe", Vector3.new(0.7, 0.12, 0.3), tilt(-0.9, 0.86, -0.85, 0, -20, 0), stripe, QUIET)
+	end,
 	Yarn = function(b)
 		b.ball("Yarn", 1.5, at(0, 0.75, 0), Palette.plum, QUIET)
 		b.cyl("Wrap", 0.25, 1.55, tilt(0, 0.75, 0, 0, 0, 30), Palette.plum:Lerp(Palette.cream, 0.25), QUIET)

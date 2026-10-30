@@ -1,6 +1,6 @@
 --!strict
 -- Community Buildings for Main Street (Design/16 Model Catalog §2.10, Design/07 Town
--- Building): the nine a level-12 player can build. Same rules as Houses, and each has one big
+-- Building): the nine a level-12 player can build, plus the content bank's (level 13+). Same rules as Houses, and each has one big
 -- readable "sign object" so its job is clear from the Overview camera. Built for a square lot
 -- (12 studs by default) with the front at local -Z. Budget ≤ 40 parts.
 
@@ -347,6 +347,107 @@ TYPES.Bandstand = function(b, s)
 	t.block("Steps", Vector3.new(2.4, 0.6, 1.2), Vector3.new(0, 0.3, -r - 0.5), Palette.stoneLight)
 	Kit.bush(t, "Bush", Vector3.new(-r - 0.6, 0, -r + 1), 0.9, Palette.treeTop, Palette.flowerPink)
 	Kit.bush(t, "Bush", Vector3.new(r + 0.6, 0, -r + 1), 0.9, Palette.treeTop, Palette.flowerYellow)
+	return body
+end
+
+-- Clock Tower (content bank, level 13): a stone hall with a tall square tower, a big clock
+-- face on the front and a pointed teal cap with a weather vane.
+TYPES.ClockTower = function(b, s)
+	local w, d, h = s * 0.8, s * 0.6, 5
+	local body = hall(b, w, d, h, Palette.stone)
+	local t = b.into(body, true)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.6, Palette.roofRed, Palette.cream)
+	local tw, th = 3.6, 9
+	t.block("Tower", Vector3.new(tw, th, tw), Vector3.new(0, PLINTH + h + th / 2 - 1, 0), Palette.stoneLight)
+	t.block("Ledge", Vector3.new(tw + 0.6, 0.5, tw + 0.6), Vector3.new(0, PLINTH + h + th - 1, 0), Palette.cream)
+	t.wedge(
+		"Cap",
+		Vector3.new(tw + 0.4, 3, (tw + 0.4) / 2),
+		CFrame.new(0, PLINTH + h + th + 0.75, -(tw + 0.4) / 4),
+		Palette.roofTeal
+	)
+	t.wedge(
+		"Cap",
+		Vector3.new(tw + 0.4, 3, (tw + 0.4) / 2),
+		CFrame.new(0, PLINTH + h + th + 0.75, (tw + 0.4) / 4) * CFrame.Angles(0, math.rad(180), 0),
+		Palette.roofTeal
+	)
+	t.block(
+		"Vane",
+		Vector3.new(0.2, 1.6, 0.2),
+		Vector3.new(0, PLINTH + h + th + 3, 0),
+		Palette.metal,
+		{ shadow = false }
+	)
+	t.block(
+		"VaneArrow",
+		Vector3.new(1.4, 0.2, 0.2),
+		Vector3.new(0, PLINTH + h + th + 3.4, 0),
+		Palette.metal,
+		{ shadow = false }
+	)
+	-- Clock: the sign disc with two hands
+	local face = Vector3.new(0, PLINTH + h + th - 3.2, -tw / 2 - 0.2)
+	disc(t, face, 2.8)
+	t.block(
+		"HourHand",
+		Vector3.new(0.2, 0.9, 0.1),
+		face + Vector3.new(0, 0.4, -0.25),
+		Palette.cocoa,
+		{ shadow = false }
+	)
+	t.block(
+		"MinuteHand",
+		Vector3.new(1.1, 0.16, 0.1),
+		face + Vector3.new(0.5, 0, -0.25),
+		Palette.cocoa,
+		{ shadow = false }
+	)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.4, 4, Palette.woodDark, Palette.cream)
+	t.block("Steps", Vector3.new(4, 0.4, 1.4), Vector3.new(0, 0.2, -d / 2 - 0.7), Palette.stoneLight)
+	Kit.bush(t, "Bush", Vector3.new(-w / 2 + 1, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerYellow)
+	Kit.bush(t, "Bush", Vector3.new(w / 2 - 1, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerPink)
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1.2, PLINTH + h + 1.2, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Greenhouse (content bank, level 14): a long glass house on a brick base with a cream frame,
+-- rows of potted plants inside and a big flower on the gable.
+TYPES.Greenhouse = function(b, s)
+	local w, d, h = s * 0.85, s * 0.6, 1.2
+	local body = hall(b, w, d, h, Palette.brick)
+	local t = b.into(body, true)
+	t.block(
+		"Glass",
+		Vector3.new(w - 0.2, 4, d - 0.2),
+		Vector3.new(0, PLINTH + h + 2, 0),
+		Palette.glass,
+		{ shadow = false }
+	)
+	for _, x in { -w / 2, 0, w / 2 } do
+		t.block("Frame", Vector3.new(0.3, 4, d), Vector3.new(x, PLINTH + h + 2, 0), Palette.cream, { shadow = false })
+	end
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h + 4, 0), w + 0.6, d + 0.6, 2.4, Palette.glassDeep, Palette.cream)
+	for _, x in { -w / 3, 0, w / 3 } do
+		Kit.bush(t, "Plant", Vector3.new(x, PLINTH + h, 0), 0.8, Palette.leaf, Palette.flowerPink)
+	end
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.2, 4.2, Palette.roofTeal, Palette.cream)
+	-- Gable flower: a yellow middle and four pink petals
+	local at = Vector3.new(0, PLINTH + h + 6.9, -d / 2 - 0.1)
+	t.ball("FlowerMiddle", 1, at, Palette.flowerYellow, { shadow = false })
+	for i = 0, 3 do
+		local a = math.rad(i * 90 + 45)
+		t.ball(
+			"Petal",
+			0.9,
+			at + Vector3.new(math.cos(a) * 0.75, math.sin(a) * 0.75, 0.1),
+			Palette.flowerPink,
+			{ shadow = false }
+		)
+	end
+	t.post("Pot", 1, 1.2, Vector3.new(-w / 2 - 0.4, 0.5, -d / 2 - 1), Palette.brick)
+	t.post("Pot", 1, 1.2, Vector3.new(w / 2 + 0.4, 0.5, -d / 2 - 1), Palette.brick)
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 5.2, d / 2 - 1), 2.5, Palette.wood, Palette.lime)
 	return body
 end
 

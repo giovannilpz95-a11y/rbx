@@ -3,8 +3,10 @@
 -- Design/15 3D World & Avatar Play and are meant to be tuned in the greybox playtest.
 
 return table.freeze({
-	-- What the level-12 MVP plays with (the full crop table lives in Crops)
-	enabledCrops = table.freeze({ "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton" }),
+	-- What the game plays with: the level-12 MVP plus the content bank (Strawberries 13,
+	-- Tomatoes 15), which stays locked by level until the cap is raised. The full crop table
+	-- lives in Crops.
+	enabledCrops = table.freeze({ "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton", "Strawberries", "Tomatoes" }),
 	enabledFactories = table.freeze({ "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" }),
 	enabledPens = table.freeze({ "CowBarn", "ChickenCoop", "SheepFold" }),
 
