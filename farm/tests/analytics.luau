@@ -83,6 +83,7 @@ return function(test, eq, ok)
 			{ "croppop_12", "Coins", "CropPop", "Gameplay" },
 			{ "CropPop:Continue1", "Gems", "CropPop", "ContextualPurchase" },
 			{ "drop_harvest", "Tools", "HarvestDrop", "Gameplay" },
+			{ "debug", "Gems", "DevGrant", "Gameplay" },
 			{ "robux_Pouch", "Gems", "GemPack_Pouch", "IAP" },
 			{ "robux_StarterPack", "Gems", "StarterPack", "IAP" },
 			{ "robux_revert", "Gems", "IapRevert", "IAP" },
