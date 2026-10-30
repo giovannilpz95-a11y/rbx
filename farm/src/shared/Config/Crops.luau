@@ -28,7 +28,7 @@ local Crops: { [string]: CropDef } = {
 	Cotton = { id = "Cotton", displayName = "Cotton", unlockLevel = 9, growSeconds = 30 * MIN, seedCost = 4, sellPrice = 9, xp = 4, yield = 1, order = 5, color = { 245, 245, 240 } },
 	Strawberries = { id = "Strawberries", displayName = "Strawberries", unlockLevel = 13, growSeconds = 1 * HOUR, seedCost = 5, sellPrice = 11, xp = 6, yield = 1, order = 6, color = { 220, 40, 60 } },
 	Tomatoes = { id = "Tomatoes", displayName = "Tomatoes", unlockLevel = 15, growSeconds = 2 * HOUR, seedCost = 6, sellPrice = 13, xp = 6, yield = 1, order = 7, color = { 230, 60, 40 } },
-	Pumpkins = { id = "Pumpkins", displayName = "Pumpkins", unlockLevel = 18, growSeconds = 3 * HOUR, seedCost = 7, sellPrice = 15, xp = 7, yield = 1, order = 8, color = { 240, 140, 20 } },
+	PineTrees = { id = "PineTrees", displayName = "Pine Trees", unlockLevel = 18, growSeconds = 3 * HOUR, seedCost = 7, sellPrice = 15, xp = 7, yield = 1, order = 8, color = { 60, 130, 70 } },
 	Potatoes = { id = "Potatoes", displayName = "Potatoes", unlockLevel = 22, growSeconds = 4 * HOUR, seedCost = 8, sellPrice = 17, xp = 8, yield = 1, order = 9, color = { 190, 150, 100 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }

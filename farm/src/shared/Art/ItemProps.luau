@@ -110,14 +110,11 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Leaf", Vector3.new(0.9, 0.12, 0.3), tilt(0, 1.48, 0, 0, 90, 0), Palette.leaf, QUIET)
 		b.post("Stem", 0.3, 0.15, at(0, 1.6, 0), Palette.leaf, QUIET)
 	end,
-	Pumpkins = function(b)
-		-- Three lobes side by side read as a ribbed pumpkin
-		local rib = Palette.carrot:Lerp(Palette.bread, 0.4)
-		b.ball("Lobe", 1.5, at(-0.5, 0.75, 0.1), rib, QUIET)
-		b.ball("Lobe", 1.5, at(0.5, 0.75, 0.1), rib, QUIET)
-		b.ball("Pumpkin", 1.6, at(0, 0.8, -0.1), Palette.carrot, QUIET)
-		b.post("Stem", 0.5, 0.3, at(0, 1.75, 0), Palette.woodDark, QUIET)
-		b.block("Leaf", Vector3.new(0.7, 0.12, 0.45), tilt(0.35, 1.68, 0, 0, 30, -15), Palette.leaf, QUIET)
+	PineTrees = function(b)
+		-- A young pine: a short trunk under two tiers of needles
+		b.post("Trunk", 0.7, 0.4, at(0, 0.35, 0), Palette.trunk, QUIET)
+		b.ball("Pine", 1.6, at(0, 1.1, 0), Palette.treeTopDark, QUIET)
+		b.ball("Pine", 1, at(0, 1.85, 0), Palette.leaf, QUIET)
 	end,
 	Cocoa = function(b)
 		local pod = tilt(0, 0.75, 0, 0, 25, 20)
@@ -239,11 +236,11 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Pop", 0.8, at(0.35, 1.55, 0.15), Palette.cream, QUIET)
 		b.ball("Pop", 0.7, at(0, 1.85, -0.2), Palette.cream, QUIET)
 	end,
-	RoastedPumpkinSeeds = function(b)
-		b.post("Bowl", 0.6, 1.6, at(0, 0.3, 0), Palette.wood, QUIET)
-		b.ball("Heap", 1.3, at(0, 0.75, 0), Palette.straw, QUIET)
-		b.ball("Seed", 0.4, at(-0.35, 1.25, 0.1), Palette.cream, QUIET)
-		b.ball("Seed", 0.4, at(0.3, 1.2, -0.15), Palette.cream, QUIET)
+	Paper = function(b)
+		-- A ream of cream sheets tied with a band, the top sheet curling up
+		b.block("Ream", Vector3.new(1.8, 0.8, 1.3), at(0, 0.4, 0), Palette.cream, QUIET)
+		b.block("Band", Vector3.new(0.4, 0.84, 1.34), at(0, 0.4, 0), Palette.roofTeal, QUIET)
+		b.block("Sheet", Vector3.new(1.7, 0.08, 1.2), tilt(0, 0.9, 0.1, 10, 0, 0), Palette.cream, QUIET)
 	end,
 	IceCreamCone = function(b)
 		b.post("Cone", 1, 0.8, at(0, 0.5, 0), Palette.bread, QUIET)
@@ -257,10 +254,17 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Patch", Vector3.new(0.6, 0.62, 0.6), at(0.5, 0.3, 0.35), Palette.roofTeal, QUIET)
 		b.block("Patch", Vector3.new(0.6, 0.62, 0.6), at(0.5, 0.3, -0.35), Palette.flowerYellow, QUIET)
 	end,
-	StrawberryYogurt = function(b)
+	Yogurt = function(b)
 		b.post("Pot", 1.2, 1.2, at(0, 0.6, 0), Palette.cream, QUIET)
-		b.post("Lid", 0.2, 1.3, at(0, 1.3, 0), Palette.flowerPink, QUIET)
-		b.ball("Berry", 0.5, at(0, 1.6, 0), Palette.roofRed, QUIET)
+		b.post("Lid", 0.2, 1.3, at(0, 1.3, 0), Palette.roofTeal, QUIET)
+		b.ball("Dollop", 0.6, at(0, 1.55, 0), Palette.cream, QUIET)
+	end,
+	GardenPizza = function(b)
+		b.post("Crust", 0.3, 2, at(0, 0.15, 0), Palette.bread, QUIET)
+		b.post("Sauce", 0.32, 1.7, at(0, 0.18, 0), Palette.roofRed, QUIET)
+		b.ball("Cheese", 0.5, at(-0.4, 0.38, 0.2), Palette.flowerYellow, QUIET)
+		b.ball("Cheese", 0.5, at(0.45, 0.38, -0.1), Palette.flowerYellow, QUIET)
+		b.ball("Tomato", 0.45, at(0, 0.4, -0.5), Palette.roofRed:Lerp(Palette.carrot, 0.3), QUIET)
 	end,
 	StrawberryIcePop = function(b)
 		b.block("Pop", Vector3.new(0.9, 1.4, 0.5), at(0, 1.4, 0), Palette.flowerPink, QUIET)
@@ -272,17 +276,18 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Band", Vector3.new(1.32, 0.4, 0.62), at(0, 1.1, 0), Palette.flowerYellow, QUIET)
 		b.block("Crimp", Vector3.new(1.3, 0.2, 0.3), at(0, 1.7, 0), Palette.roofTeal, QUIET)
 	end,
-	PumpkinPie = function(b)
-		b.post("Dish", 0.35, 1.9, at(0, 0.18, 0), Palette.cream, QUIET)
-		b.post("Filling", 0.4, 1.6, at(0, 0.45, 0), Palette.carrot, QUIET)
-		b.post("Crust", 0.2, 1.8, at(0, 0.55, 0), Palette.bread, QUIET)
-		b.ball("Cream", 0.5, at(0, 0.8, 0), Palette.cream, QUIET)
+	BerryGranola = function(b)
+		b.post("Jar", 1.4, 1.3, at(0, 0.7, 0), Palette.glass, QUIET)
+		b.post("Oats", 1, 1.2, at(0, 0.6, 0), Palette.straw, QUIET)
+		b.post("Lid", 0.3, 1.4, at(0, 1.5, 0), Palette.roofRed, QUIET)
+		b.ball("Berry", 0.5, at(0.2, 1.85, 0), Palette.roofRed, QUIET)
 	end,
-	TomatoKetchup = function(b)
-		b.post("Bottle", 1.3, 1.1, at(0, 0.65, 0), Palette.roofRed, QUIET)
-		b.post("Label", 0.5, 1.14, at(0, 0.6, 0), Palette.cream, QUIET)
-		b.ball("Cap", 0.8, at(0, 1.6, 0), Palette.roofRed, QUIET)
-		b.block("Leaf", Vector3.new(0.5, 0.15, 0.5), at(0, 2, 0), Palette.lime, QUIET)
+	BerrySandwich = function(b)
+		-- A triangle half: two slices with a strawberry layer and butter between
+		b.wedge("Bread", Vector3.new(0.4, 1.8, 1.6), tilt(0, 0.2, 0, 0, 0, 90), Palette.bread, QUIET)
+		b.wedge("Berries", Vector3.new(0.2, 1.7, 1.5), tilt(0, 0.5, 0, 0, 0, 90), Palette.roofRed, QUIET)
+		b.wedge("Butter", Vector3.new(0.12, 1.7, 1.5), tilt(0, 0.66, 0, 0, 0, 90), Palette.flowerYellow, QUIET)
+		b.wedge("Bread", Vector3.new(0.4, 1.8, 1.6), tilt(0, 0.92, 0, 0, 0, 90), Palette.bread, QUIET)
 	end,
 	CornChips = function(b)
 		b.block("Bag", Vector3.new(1.3, 1.6, 0.6), at(0, 0.8, 0), Palette.corn, QUIET)
