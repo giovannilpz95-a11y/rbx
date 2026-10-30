@@ -977,13 +977,15 @@ local function renderTown(state: { [string]: any })
 			continue
 		end
 		local unlocked = state.level >= def.unlockLevel
+		local room, full = DecorRules.hasRoom(state, id)
 		local card = line(
 			string.format("%s   %d Coins   +%d XP", def.displayName, def.coinCost, def.xp),
-			if unlocked
-				then string.format("%s, %d x %d tiles", def.category, def.size[1], def.size[2])
-				else string.format("Unlocks at level %d", def.unlockLevel)
+			if not unlocked
+				then string.format("Unlocks at level %d", def.unlockLevel)
+				elseif not room then full :: string
+				else string.format("%s, %d x %d tiles", def.category, def.size[1], def.size[2])
 		)
-		rightButton(card, "Place", unlocked and state.currencies.Coins >= def.coinCost, function()
+		rightButton(card, "Place", unlocked and room and state.currencies.Coins >= def.coinCost, function()
 			Panels.close()
 			DecorPlacer.start(id)
 		end)

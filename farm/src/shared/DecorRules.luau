@@ -95,6 +95,32 @@ function DecorRules.canPlace(data: { [string]: any }, p: Placed, now: number, sk
 	return true, nil
 end
 
+-- Big pieces (2 x 2 tiles and up) have their own, smaller cap
+function DecorRules.isBig(id: string): boolean
+	local size = Decor.items[id].size
+	return size[1] * size[2] >= Decor.bigTiles
+end
+
+-- Room on the plot for one more of this decoration?
+function DecorRules.hasRoom(data: { [string]: any }, id: string): (boolean, string?)
+	if #data.decor >= Decor.maxPlaced then
+		return false, string.format("Your plot holds up to %d decorations. Sell one to make room.", Decor.maxPlaced)
+	end
+	if DecorRules.isBig(id) then
+		local big = 0
+		for _, p in data.decor do
+			if DecorRules.isBig(p.id) then
+				big += 1
+			end
+		end
+		if big >= Decor.maxBig then
+			return false,
+				string.format("Your plot holds up to %d big decorations. Sell one to make room.", Decor.maxBig)
+		end
+	end
+	return true
+end
+
 function DecorRules.refund(id: string): number
 	return math.floor(Decor.items[id].coinCost * Decor.sellRefund)
 end
