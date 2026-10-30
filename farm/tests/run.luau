@@ -328,9 +328,10 @@ end)
 
 test("queue slots cost 8 Gems and up, to 7 slots", function()
 	eq(Speedup.nextSlotCost(3, 3), 8, "first extra (Bakery)")
-	eq(Speedup.nextSlotCost(3, 6), 20, "fourth extra")
-	eq(Speedup.nextSlotCost(3, 7), nil, "max")
-	eq(Speedup.nextSlotCost(2, 6), 24, "fifth extra (Sugar Mill)")
+	eq(Speedup.nextSlotCost(3, 5), 16, "third extra")
+	eq(Speedup.nextSlotCost(3, 6), nil, "max 6 until factory upgrades")
+	eq(Speedup.nextSlotCost(2, 5), 20, "fourth extra (Sugar Mill)")
+	eq(Speedup.nextSlotCost(2, 6), nil, "max")
 end)
 
 test("a pen's speed-up prices each producing animal", function()
