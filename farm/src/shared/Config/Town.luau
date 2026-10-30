@@ -25,8 +25,9 @@ export type CommunityDef = {
 	materials: { [string]: number }, -- Bricks / Planks / Panes
 	buildSeconds: number,
 	xp: number,
-	order: number, -- also its lot on Main Street
+	order: number, -- unlock order; also picks its lot (TownRules.communityLot)
 	color: { number },
+	townHallStorey: number?, -- a Town Hall upgrade: no lot, it gives the Town Hall this storey
 }
 
 local MIN = 60
@@ -66,6 +67,7 @@ local Community: { [string]: CommunityDef } = {
 	MusicHall = { id = "MusicHall", displayName = "Music Hall", unlockLevel = 17, capBonus = 80, coinCost = 400, materials = { Bricks = 5, Planks = 4, Panes = 5 }, buildSeconds = 5 * HOUR + 30 * MIN, xp = 160, order = 14, color = { 120, 70, 110 } },
 	StargazingTower = { id = "StargazingTower", displayName = "Stargazing Tower", unlockLevel = 18, capBonus = 85, coinCost = 450, materials = { Bricks = 4, Planks = 7, Panes = 7 }, buildSeconds = 6 * HOUR, xp = 170, order = 15, color = { 70, 80, 140 } },
 	RoseGarden = { id = "RoseGarden", displayName = "Rose Garden", unlockLevel = 19, capBonus = 90, coinCost = 500, materials = { Bricks = 5, Planks = 7, Panes = 4 }, buildSeconds = 6 * HOUR + 30 * MIN, xp = 180, order = 16, color = { 230, 120, 140 } },
+	TownHallUpgrade = { id = "TownHallUpgrade", displayName = "Town Hall Upgrade", unlockLevel = 20, capBonus = 95, coinCost = 650, materials = { Bricks = 6, Planks = 6, Panes = 5 }, buildSeconds = 7 * HOUR, xp = 190, order = 17, color = { 235, 220, 190 }, townHallStorey = 2 },
 }
 
 for _, def in Houses do
