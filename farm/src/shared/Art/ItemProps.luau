@@ -265,6 +265,11 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Swirl", 0.7, at(0, 1.75, 0), Palette.flowerWhite, QUIET)
 		b.ball("Berry", 0.35, at(0.15, 2.1, 0), Palette.roofRed, QUIET)
 	end,
+	IceCreamBar = function(b)
+		b.block("Stick", Vector3.new(0.3, 0.8, 0.12), at(0, 0.4, 0), Palette.woodLight, QUIET)
+		b.block("Bar", Vector3.new(1, 1.5, 0.5), at(0, 1.5, 0), Palette.cocoa, QUIET)
+		b.block("Drip", Vector3.new(1.04, 0.35, 0.54), at(0, 2.1, 0), Palette.cream, QUIET)
+	end,
 	Muffin = function(b)
 		b.post("Cup", 0.9, 1.1, at(0, 0.45, 0), Palette.flowerPink, QUIET)
 		b.ball("Top", 1.4, at(0, 1.05, 0), Palette.bread, QUIET)

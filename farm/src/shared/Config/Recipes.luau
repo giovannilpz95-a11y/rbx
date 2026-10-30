@@ -61,6 +61,7 @@ local Recipes: { [string]: RecipeDef } = {
 	IceCreamCone = { id = "IceCreamCone", displayName = "Ice Cream Cone", factory = "IceCreamParlor", unlockLevel = 20, inputs = { Milk = 1, Cream = 1, Sugar = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 39, xp = 17 },
 	StrawberryIcePop = { id = "StrawberryIcePop", displayName = "Strawberry Ice Pop", factory = "IceCreamParlor", unlockLevel = 21, inputs = { Strawberries = 2, Sugar = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 45, xp = 19 },
 	FrozenYogurt = { id = "FrozenYogurt", displayName = "Frozen Yogurt", factory = "IceCreamParlor", unlockLevel = 23, inputs = { Yogurt = 1, Cream = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 87, xp = 37 },
+	IceCreamBar = { id = "IceCreamBar", displayName = "Ice Cream Bar", factory = "IceCreamParlor", unlockLevel = 25, inputs = { CaneSyrup = 1, Cocoa = 1, PineTrees = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 148, xp = 63 },
 	-- Pastry Shop (content bank)
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
 }

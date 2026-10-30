@@ -760,6 +760,55 @@ TYPES.Amphitheatre = function(b, s)
 	return body
 end
 
+-- Sculpture Park (content bank, level 25): a lawn with a path through it, three stone plinths
+-- of sculptures (a stack of stone balls, a teal ring and a tilted mustard block), a bench and a
+-- clipped hedge.
+TYPES.SculpturePark = function(b, s)
+	local w = s * 0.8
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grassLight, { collide = true })
+	local t = b.into(body, true)
+	t.block("Path", Vector3.new(2, 0.1, w), Vector3.new(0, 0.45, 0), Palette.path, { shadow = false })
+	-- Sign object: the big ring on the front plinth by the path
+	local ringAt = Vector3.new(-2.6, 0, -w / 4)
+	t.block("Plinth", Vector3.new(2, 1.4, 2), ringAt + Vector3.new(0, 1.1, 0), Palette.stoneLight)
+	t.cyl(
+		"Ring",
+		0.6,
+		3.6,
+		CFrame.new(ringAt + Vector3.new(0, 3.6, 0)) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.roofTeal
+	)
+	t.cyl(
+		"RingHole",
+		0.65,
+		2,
+		CFrame.new(ringAt + Vector3.new(0, 3.6, 0)) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.grassLight,
+		{ shadow = false }
+	)
+	-- The stacked stones and the tilted block on the far plinths
+	local stackAt = Vector3.new(2.6, 0, -w / 4)
+	t.block("Plinth", Vector3.new(1.6, 1, 1.6), stackAt + Vector3.new(0, 0.9, 0), Palette.stone)
+	for i, d in { 1.6, 1.2, 0.8 } do
+		t.ball("Stone", d, stackAt + Vector3.new(0, 1.1 + i * 0.95, 0), Palette.stoneLight)
+	end
+	local blockAt = Vector3.new(2.6, 0, w / 4)
+	t.block("Plinth", Vector3.new(1.8, 0.8, 1.8), blockAt + Vector3.new(0, 0.8, 0), Palette.stone)
+	t.block(
+		"Cube",
+		Vector3.new(1.6, 1.6, 1.6),
+		CFrame.new(blockAt + Vector3.new(0, 2.2, 0)) * CFrame.Angles(math.rad(35), math.rad(45), 0),
+		Palette.roofMustard
+	)
+	-- A bench facing the path, and a clipped hedge behind it
+	local benchAt = Vector3.new(-2.6, 0, w / 4)
+	t.block("Bench", Vector3.new(2.4, 0.3, 0.9), benchAt + Vector3.new(0, 1, 0), Palette.wood)
+	t.block("BenchBack", Vector3.new(2.4, 0.8, 0.2), benchAt + Vector3.new(-0, 1.5, 0.45), Palette.wood)
+	t.block("Hedge", Vector3.new(w - 1, 1.2, 0.9), Vector3.new(0, 1, w / 2 - 0.6), Palette.leaf)
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
