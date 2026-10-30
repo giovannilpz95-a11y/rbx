@@ -87,7 +87,7 @@ Shared modules use Luau's string requires (`require("./Config/Crops")`) so the s
 
 **Saving in Studio:** turn on *Game Settings > Security > Enable Studio Access to API Services* to test real saves (they go to a separate `_DEV` store). Without it, the game warns and plays on an unsaved farm.
 
-**Debug panel (Studio only, `` ` `` key):** try Reach 0 / 16 / 32 / 48, walk speed 16 / 20 / 24, and shorter timers (x0.25 makes Wheat take 30 s, as in the prototype checklist).
+**Debug panel (Studio only, `` ` `` key):** try Reach 0 / 16 / 32 / 48, walk speed 16 / 20 / 24, and shorter timers (x0.25 makes Wheat take 30 s, as in the prototype checklist). Its buttons also replay the guide, fake an absence, build everything, grant +500 Gems, +5,000 Coins and 5 of each tool, and **fuzz every remote** (*09* §12 exploit checks): each client-to-server handler gets junk arguments (NaN, infinities, negative and fractional numbers, empty and 10,000-character strings, tables, an Instance), first in every slot and then one slot at a time, about 3,500 calls. Output lists every handler that threw (a bug: its checks should reject first) and every call that returned ok (check by hand). The farm is restored afterwards. Remotes with no arguments, Shop prompts and avatar moves are skipped.
 
 ## Tests
 

@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Net = require(Shared.Net)
+local Profile = require(Shared.Profile)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
@@ -74,9 +75,126 @@ function DebugService.grant(player: Player): (boolean, string?)
 	return true
 end
 
+-- Remotes the fuzzer leaves alone: they take no arguments (so junk is ignored and the real
+-- action runs), prompt a purchase, move the avatar, or are Studio tools themselves.
+local FUZZ_SKIP = {
+	Tutorial_Next = true,
+	Tutorial_Skip = true,
+	Town_Expand = true,
+	Barn_Upgrade = true,
+	Shop_Opened = true,
+	Shop_Prompt = true,
+	Shop_PromptPass = true,
+	Visit_Home = true,
+	Visit_Square = true,
+	Client_Ready = true,
+}
+
+-- Junk an exploiter could send (09 Roblox Architecture §12 exploit checks): wrong types,
+-- NaN, infinities, out-of-range and fractional numbers, empty, long and odd strings, and
+-- tables where a value is expected.
+local function junkValues(player: Player): { any }
+	local deep = {}
+	local node = deep
+	for _ = 1, 50 do
+		node.next = {}
+		node = node.next
+	end
+	return {
+		0 / 0,
+		math.huge,
+		-math.huge,
+		-1,
+		0,
+		0.5,
+		1e12,
+		"",
+		string.rep("x", 65),
+		string.rep("x", 10000),
+		"../../",
+		"F1\0",
+		true,
+		{},
+		{ 1, 2, 3 },
+		deep,
+		player, -- an Instance where a string or number is expected
+		Vector3.new(0 / 0, 0, 0),
+	}
+end
+
+-- Put `target` back to match `source`, keeping existing tables (other services may hold
+-- references to parts of the profile)
+local function restoreInto(target: { [any]: any }, source: { [any]: any })
+	for key in target do
+		if source[key] == nil then
+			target[key] = nil
+		end
+	end
+	for key, value in source do
+		if type(value) == "table" and type(target[key]) == "table" then
+			restoreInto(target[key], value)
+		else
+			target[key] = Profile.deepCopy(value)
+		end
+	end
+end
+
+-- Fire every client -> server handler with junk (the same junk in every argument slot,
+-- then junk in one slot with nils elsewhere). Counts handlers that throw (a bug: the
+-- check should reject first) and calls that return ok (check those by hand). The farm is
+-- restored afterwards, so nothing a junk call changed is kept.
+function DebugService.fuzz(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local backup = Profile.deepCopy(data)
+	local calls, errors, accepted = 0, {}, {}
+	local junk = junkValues(player)
+	local function try(name: string, handler: any, args: { any }, label: string)
+		calls += 1
+		local ok, result = pcall(handler, player, table.unpack(args, 1, 4))
+		if not ok then
+			table.insert(errors, string.format("%s(%s): %s", name, label, tostring(result)))
+		elseif result == true then
+			table.insert(accepted, string.format("%s(%s)", name, label))
+		end
+	end
+	for name, handler in NetService.handlers() do
+		if FUZZ_SKIP[name] or name:sub(1, 6) == "Debug_" then
+			continue
+		end
+		for i, value in junk do
+			try(name, handler, { value, value, value, value }, "all=" .. i)
+			for slot = 1, 4 do
+				local args = {}
+				args[slot] = value
+				try(name, handler, args, string.format("arg%d=%d", slot, i))
+			end
+		end
+	end
+	restoreInto(data, backup)
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+
+	print(string.format("[Fuzz] %d calls, %d errors, %d accepted", calls, #errors, #accepted))
+	for _, line in errors do
+		warn("[Fuzz] error " .. line)
+	end
+	for _, line in accepted do
+		print("[Fuzz] accepted " .. line)
+	end
+	NetService.toast(
+		player,
+		string.format("Fuzz: %d calls, %d errors, %d accepted (see Output)", calls, #errors, #accepted)
+	)
+	return true
+end
+
 function DebugService.init()
 	NetService.on(Net.Debug_BuildAll, 1, 2, DebugService.buildAll)
 	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
+	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 end
 
 return DebugService
