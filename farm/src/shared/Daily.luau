@@ -19,10 +19,15 @@ function DailyRules.due(data: { [string]: any }, now: number): (Daily.Reward?, n
 	-- Town & Social C10)
 	local missed = data.daily.lastDay >= 0 and DailyRules.utcDay(now) > data.daily.lastDay + 1
 	local day = if missed then 1 else data.daily.day % #Daily.days + 1
+	return DailyRules.rewardFor(day, data.level), day
+end
+
+-- Day `day`'s reward at `level` (Coins scale with the level band).
+function DailyRules.rewardFor(day: number, level: number): Daily.Reward
 	local reward = Daily.days[day]
 	local mult = 1
 	for _, band in Daily.coinBands do
-		if data.level >= band.minLevel then
+		if level >= band.minLevel then
 			mult = band.mult
 		end
 	end
@@ -30,8 +35,7 @@ function DailyRules.due(data: { [string]: any }, now: number): (Daily.Reward?, n
 		coins = if reward.coins then math.floor(reward.coins * mult) else nil,
 		gems = reward.gems,
 		item = reward.item,
-	},
-		day
+	}
 end
 
 -- Mark today's reward taken.

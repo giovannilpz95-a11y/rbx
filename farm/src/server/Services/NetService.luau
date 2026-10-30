@@ -98,6 +98,7 @@ local function snapshot(data: { [string]: any })
 		social = data.social,
 		board = data.orders.board,
 		settings = data.settings,
+		daily = data.daily, -- the login calendar strip (client/UI/DailyGift)
 		tutorial = data.tutorial,
 		seedCart = data.seedCart,
 		heirloomSeeds = data.heirloomSeeds,
