@@ -9,4 +9,6 @@ return table.freeze({
 		Heirloom = table.freeze({ displayName = "Heirloom", chance = 0.002, value = 15, order = 2 }),
 	}),
 	basketSlots = 10, -- the Prize Basket, kept apart from the Barn
+	shelfSlots = 3, -- the Prize Shelf on the plot (more from Town Records later)
+	noticeLines = 8, -- recent finds on the Town Square Notice Board
 })

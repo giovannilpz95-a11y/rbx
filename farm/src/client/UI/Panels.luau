@@ -403,16 +403,67 @@ local function renderBarn(state: { [string]: any })
 		order += 1
 		local value = PrizeRules.value(entry.crop, entry.tier)
 		Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
+			Size = UDim2.new(1, -230, 1, 0),
+			TextColor3 = Ui.colors.accent,
+			Parent = line,
+		})
+		Ui.button("Show", function()
+			Remotes.fire("Prize_Shelve", i)
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, -150, 0, 0),
+			Size = UDim2.fromOffset(72, 30),
+			Parent = line,
+		})
+		confirmButton(
+			"prize:" .. i,
+			string.format("Sell for %d Coins", value),
+			string.format("Sure? Sell for %d", value),
+			function()
+				Remotes.fire("Prize_Sell", i)
+			end,
+			{
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(140, 30),
+				Parent = line,
+			},
+			true,
+			Ui.colors.coins
+		)
+	end
+
+	-- Prize Shelf: on show on the plot by the Barn
+	local shelf = state.prizeShelf or {}
+	Ui.label(
+		string.format("Prize Shelf  %d / %d", #shelf, Prize.shelfSlots),
+		{ Font = Enum.Font.GothamBold, LayoutOrder = order, Parent = body }
+	)
+	order += 1
+	if #shelf == 0 then
+		Ui.label("Tap Show on a Prize Crop to put it on the shelf by your Barn for visitors to see.", {
+			TextColor3 = Ui.colors.muted,
+			TextSize = 13,
+			TextWrapped = true,
+			LayoutOrder = order,
+			Parent = body,
+		})
+		order += 1
+	end
+	for i, entry in shelf do
+		local line = row(42, order)
+		order += 1
+		Ui.label(string.format("%s %s", Prize.tiers[entry.tier].displayName, itemName(entry.crop)), {
 			Size = UDim2.new(1, -150, 1, 0),
 			TextColor3 = Ui.colors.accent,
 			Parent = line,
 		})
-		Ui.button(string.format("Sell for %d Coins", value), function()
-			Remotes.fire("Prize_Sell", i)
+		Ui.button("Take down", function()
+			Remotes.fire("Prize_Unshelve", i)
 		end, {
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(140, 30),
+			Size = UDim2.fromOffset(120, 30),
 			Parent = line,
 		})
 	end

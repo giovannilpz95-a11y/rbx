@@ -31,6 +31,8 @@ return table.freeze({
 	Barn_Sell = "Barn_Sell", -- itemId, qty
 	Barn_Upgrade = "Barn_Upgrade", -- (the next upgrade)
 	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
+	Prize_Shelve = "Prize_Shelve", -- basket index -> Prize Shelf
+	Prize_Unshelve = "Prize_Unshelve", -- shelf slot -> basket
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)

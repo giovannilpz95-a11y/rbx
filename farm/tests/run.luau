@@ -420,6 +420,17 @@ test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", functio
 		table.insert(data.prizes, { crop = "Wheat", tier = "Sunkissed" })
 	end
 	eq(PrizeRules.hasRoom(data), false, "basket full at 10")
+	eq(#data.prizeShelf, 0, "empty shelf")
+	for i = 1, Prize.shelfSlots do
+		ok((PrizeRules.shelve(data, 1)), "shelve " .. i)
+	end
+	local shelved, why = PrizeRules.shelve(data, 1)
+	eq(shelved, false, "the shelf holds 3")
+	ok(why ~= nil, "and says so")
+	eq(#data.prizes, Prize.basketSlots - Prize.shelfSlots, "moved out of the basket")
+	ok((PrizeRules.unshelve(data, 2)), "take one down")
+	eq(#data.prizeShelf, 2, "two left on show")
+	eq(PrizeRules.unshelve(data, 5), false, "no such slot")
 end)
 
 test("harvests drop tools and materials on one roll, with a pity tool", function()

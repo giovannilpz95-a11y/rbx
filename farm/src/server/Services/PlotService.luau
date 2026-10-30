@@ -138,6 +138,7 @@ local LAYOUT = {
 	} :: { [string]: Vector3 },
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
+	prizeShelf = Vector3.new(-14, 0, 32), -- between the Barn and the spine path
 	truck = Vector3.new(26, 0, 36),
 	spawn = Vector3.new(0, 0, 16), -- far enough inside that the camera behind you clears the gate
 }
@@ -552,6 +553,27 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Parent = model,
 	})
 	board:SetAttribute("Interact", "OrderBoard")
+
+	-- Prize Shelf: a plank on two legs by the spawn path; refreshShelf puts the crops on it
+	local shelf = part({
+		Name = "PrizeShelf",
+		Size = Vector3.new(7, 0.4, 1.8),
+		CFrame = at(LAYOUT.prizeShelf, 2.6),
+		Color = Palette.trunk,
+		Parent = model,
+	})
+	shelf:SetAttribute("Interact", "PrizeShelf")
+	for _, x in { -3, 3 } do
+		part({
+			Name = "Leg",
+			Size = Vector3.new(0.4, 2.4, 0.4),
+			CFrame = at(LAYOUT.prizeShelf + Vector3.new(x, 0, 0), 1.2),
+			Color = Palette.trunk,
+			CanCollide = false,
+			Parent = shelf,
+		})
+	end
+	label(shelf, "Prize Shelf", 3.5, UDim2.fromOffset(140, 28), 60)
 	ArtBuildings.orderBoard(board, 6)
 	ArtBuildings.dock(model, at(LAYOUT.truck, 0))
 
@@ -910,6 +932,44 @@ local function refreshDecor(player: Player, model: Model, data: { [string]: any 
 	end
 end
 
+-- Prize Shelf: one crop ball per slot, gold sparkles for Heirloom
+local shelfVisualState: { [Player]: string } = {}
+
+local function refreshShelf(player: Player, model: Model, data: { [string]: any })
+	local parts = {}
+	for _, entry in data.prizeShelf do
+		table.insert(parts, entry.crop .. ":" .. entry.tier)
+	end
+	local key = table.concat(parts, ";")
+	local shelf = model:FindFirstChild("PrizeShelf")
+	if shelf == nil or shelfVisualState[player] == key then
+		return
+	end
+	shelfVisualState[player] = key
+	for _, child in shelf:GetChildren() do
+		if child.Name == "Prize" then
+			child:Destroy()
+		end
+	end
+	local base = (shelf :: BasePart).CFrame
+	for i, entry in data.prizeShelf do
+		local rgb = Crops[entry.crop].color
+		local ball = part({
+			Name = "Prize",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(1.4, 1.4, 1.4),
+			CFrame = base * CFrame.new((i - 2) * 2.2, 0.9, 0),
+			Color = Color3.fromRGB(rgb[1], rgb[2], rgb[3]),
+			Material = Enum.Material.SmoothPlastic,
+			CanCollide = false,
+			Parent = shelf,
+		})
+		local sparkle = Instance.new("Sparkles")
+		sparkle.SparkleColor = if entry.tier == "Heirloom" then Palette.coins else Palette.cream
+		sparkle.Parent = ball
+	end
+end
+
 function PlotService.refresh(player: Player)
 	local model = plotsByPlayer[player]
 	local data = DataService.get(player)
@@ -927,6 +987,7 @@ function PlotService.refresh(player: Player)
 	refreshTown(player, model, data, now)
 	refreshLand(player, model, data, now)
 	refreshDecor(player, model, data)
+	refreshShelf(player, model, data)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -969,6 +1030,7 @@ function PlotService.release(player: Player)
 	townVisualState[player] = nil
 	landVisualState[player] = nil
 	decorVisualState[player] = nil
+	shelfVisualState[player] = nil
 	truckBusy[player] = nil
 end
 
