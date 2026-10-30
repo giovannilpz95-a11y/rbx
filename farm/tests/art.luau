@@ -19,6 +19,7 @@ local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
+local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Crops = require("../src/shared/Config/Crops")
 local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
@@ -221,6 +222,16 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ArtCommunity.build(id, m, CFrame.new(), 12)
 			within(m, ArtCommunity.PARTS_MAX, id)
 			paletteRules(m, id)
+		end
+	end)
+
+	test("art: the Town Square stays within its budget, with its three boards", function()
+		local m = Instance.new("Model")
+		local square = ArtTownSquare.build(m, CFrame.new())
+		within(square.model, ArtTownSquare.PARTS_MAX, "Town Square")
+		paletteRules(square.model, "Town Square")
+		for _, name in { "Notice", "Neighbors", "Market" } do
+			ok(square.boards[name] ~= nil and square.boards[name].CanQuery, name .. " board is a tap target")
 		end
 	end)
 
