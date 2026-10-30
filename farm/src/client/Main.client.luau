@@ -51,7 +51,7 @@ local TOUR = {
 	{ "Shop", "Shop" },
 	{ "Buildings", "Buildings" },
 	{ "Town", "Town" },
-	{ "Field (F1)", "Field", "F1" },
+	{ "Seeds (F1)", "Seeds", "F1" },
 	{ "Debug", "Debug" },
 }
 local tourStep = 0
