@@ -1468,6 +1468,9 @@ local function renderDebug(state: { [string]: any })
 	Ui.button("Pretend I was away (summary + daily gift)", function()
 		Remotes.fire("Debug_Away")
 	end, { Size = UDim2.fromOffset(320, 34), LayoutOrder = 6, Parent = body })
+	Ui.button("+500 Gems, +5,000 Coins, +5 of each tool", function()
+		Remotes.fire("Debug_Grant")
+	end, { Size = UDim2.fromOffset(340, 34), LayoutOrder = 8, Parent = body })
 end
 
 ---------------------------------------------------------------------------------------------
