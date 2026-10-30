@@ -321,6 +321,17 @@ local function newInstance(className, props)
 		rawget(inst, "_props").Fire = function(self, ...)
 			self.Event:Fire(...)
 		end
+		-- Attributes, for the Porch status Crop Pop keeps on CropPopOpen
+		local attributes = {}
+		rawget(inst, "_props").SetAttribute = function(_, name, value)
+			attributes[name] = value
+		end
+		rawget(inst, "_props").GetAttribute = function(_, name)
+			return attributes[name]
+		end
+		rawget(inst, "_props").GetAttributes = function()
+			return table.clone(attributes)
+		end
 	elseif className == "BindableFunction" then
 		rawget(inst, "_props").Invoke = function(self, ...)
 			local handler = self.OnInvoke

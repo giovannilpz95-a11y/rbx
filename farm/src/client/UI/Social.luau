@@ -148,7 +148,7 @@ local function openCropPop()
 		created.Parent = ReplicatedStorage
 		event = created
 	end
-	(event :: BindableEvent):Fire()
+	(event :: BindableEvent):Fire("next") -- straight to the next level (G14); its Trail button lists them all
 end
 
 local function noticeEntries(): { { text: string, visit: number? } }

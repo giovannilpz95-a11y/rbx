@@ -28,6 +28,7 @@ local LevelUp = require(script.Parent.UI.LevelUp)
 local SettingsUi = require(script.Parent.UI.Settings)
 local DailyGift = require(script.Parent.UI.DailyGift)
 local FarmerCard = require(script.Parent.UI.FarmerCard)
+local PorchStatus = require(script.Parent.UI.PorchStatus)
 local EdgeStack = require(script.Parent.UI.EdgeStack)
 
 local player = Players.LocalPlayer
@@ -53,6 +54,7 @@ LevelUp.init()
 SettingsUi.init()
 DailyGift.init()
 FarmerCard.init()
+PorchStatus.init()
 EdgeStack.init()
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
