@@ -232,6 +232,26 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Tail", Vector3.new(0.7, 0.2, 1.2), tilt(-0.7, 0.86, -0.2, 0, -20, 0), Palette.roofRed, QUIET)
 		b.block("Fringe", Vector3.new(0.7, 0.12, 0.3), tilt(-0.9, 0.86, -0.85, 0, -20, 0), stripe, QUIET)
 	end,
+	Popcorn = function(b)
+		b.post("Tub", 1.4, 1.3, at(0, 0.7, 0), Palette.roofRed, QUIET)
+		b.post("Band", 0.3, 1.34, at(0, 0.9, 0), Palette.cream, QUIET)
+		b.ball("Pop", 0.8, at(-0.3, 1.5, 0), Palette.cream, QUIET)
+		b.ball("Pop", 0.8, at(0.35, 1.55, 0.15), Palette.cream, QUIET)
+		b.ball("Pop", 0.7, at(0, 1.85, -0.2), Palette.cream, QUIET)
+	end,
+	StrawberryMilkshake = function(b)
+		b.post("Glass", 1.5, 0.95, at(0, 0.75, 0), Palette.flowerPink, QUIET)
+		b.ball("Cream", 0.95, at(0, 1.6, 0), Palette.cream, QUIET)
+		b.ball("Berry", 0.4, at(0.1, 2.05, 0), Palette.roofRed, QUIET)
+		b.block("Straw", Vector3.new(0.15, 1.2, 0.15), tilt(-0.3, 1.9, 0, 0, 0, 15), Palette.sky, QUIET)
+	end,
+	FarmBurger = function(b)
+		b.post("BunBottom", 0.4, 1.8, at(0, 0.2, 0), Palette.bread, QUIET)
+		b.post("Patty", 0.4, 1.9, at(0, 0.6, 0), Palette.cocoa, QUIET)
+		b.block("Cheese", Vector3.new(1.5, 0.12, 1.5), tilt(0, 0.85, 0, 0, 45, 0), Palette.roofMustard, QUIET)
+		b.post("Lettuce", 0.15, 2, at(0, 0.95, 0), Palette.leafLight, QUIET)
+		b.ball("BunTop", 1.8, at(0, 1.2, 0), Palette.bread, QUIET)
+	end,
 	Yarn = function(b)
 		b.ball("Yarn", 1.5, at(0, 0.75, 0), Palette.plum, QUIET)
 		b.cyl("Wrap", 0.25, 1.55, tilt(0, 0.75, 0, 0, 0, 30), Palette.plum:Lerp(Palette.cream, 0.25), QUIET)

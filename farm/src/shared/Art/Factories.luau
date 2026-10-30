@@ -334,12 +334,138 @@ local function textileMill(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Snack Factory (content bank, level 14): red-and-cream striped walls under a flat roof with a
+-- giant popcorn bucket on top; a kernel column pops up and down while it works.
+local function snackFactory(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cream, Palette.stone)
+	local d = b.into(body, true)
+	for _, x in { -3.5, 0, 3.5 } do
+		d.block(
+			"Stripe",
+			Vector3.new(1.6, WALL - 0.4, ArtFactories.DEPTH + 0.1),
+			Vector3.new(x, PLINTH + WALL / 2, 0),
+			Palette.roofRed,
+			{ shadow = false }
+		)
+	end
+	d.block(
+		"Roof",
+		Vector3.new(ArtFactories.WIDTH + 1, 0.8, ArtFactories.DEPTH + 1),
+		Vector3.new(0, TOP + 0.4, 0),
+		Palette.roofMustard
+	)
+	-- The bucket: a red tub with cream bands and a heap of popcorn
+	local bucketAt = Vector3.new(0, TOP + 2.8, 1)
+	d.post("Bucket", 4, 4.4, bucketAt, Palette.roofRed)
+	d.post("BucketBand", 0.6, 4.5, bucketAt + Vector3.new(0, 1, 0), Palette.cream, { shadow = false })
+	d.post("BucketBand", 0.6, 4.5, bucketAt + Vector3.new(0, -1, 0), Palette.cream, { shadow = false })
+	for i, off in
+		{ Vector3.new(-1, 2.4, 0), Vector3.new(1, 2.4, 0.4), Vector3.new(0, 2.6, -0.9), Vector3.new(0.2, 3.1, 0.3) }
+	do
+		d.ball("Popcorn", if i == 4 then 1.6 else 1.4, bucketAt + off, Palette.cream)
+	end
+	local chimney = d.block("Chimney", Vector3.new(1.4, 3, 1.4), Vector3.new(-3.8, TOP + 2.3, -4), Palette.brick)
+	local anim = animFolder(model)
+	b.into(anim, false).post("Popper", 1.6, 1, bucketAt + Vector3.new(1.1, 2.6, -0.8), Palette.cream)
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.6, Palette.cream, Palette.glass, true)
+	d.block(
+		"Awning",
+		Vector3.new(4.8, 0.3, 1.4),
+		CFrame.new(-2, PLINTH + 5.9, FRONT - 0.6) * CFrame.Angles(math.rad(18), 0, 0),
+		Palette.roofMustard,
+		{ shadow = false }
+	)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofRed, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("Kernel", 1.2, at, Palette.cream, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(3.6, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
+-- Diner (content bank, level 16): a mint roadside diner with a rounded roof, a long band of
+-- windows, a red-and-cream awning and a giant burger on the roof by a neon sign that glows
+-- while it works.
+local function diner(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.gems:Lerp(Palette.cream, 0.55), Palette.stoneDark)
+	local d = b.into(body, true)
+	d.cyl("Roof", ArtFactories.DEPTH + 0.4, ArtFactories.WIDTH + 0.6, CFrame.new(0, TOP - 1.4, 0) * TURN, Palette.metal)
+	d.block(
+		"Trim",
+		Vector3.new(ArtFactories.WIDTH + 0.2, 0.5, ArtFactories.DEPTH + 0.2),
+		Vector3.new(0, PLINTH + 1.4, 0),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	d.block(
+		"WindowBand",
+		Vector3.new(ArtFactories.WIDTH - 1.4, 2.2, 0.2),
+		Vector3.new(-0.6, PLINTH + 3.8, FRONT - 0.1),
+		Palette.glass,
+		{ shadow = false }
+	)
+	for _, x in { -3.2, -0.6, 2 } do
+		d.block(
+			"Mullion",
+			Vector3.new(0.3, 2.2, 0.25),
+			Vector3.new(x, PLINTH + 3.8, FRONT - 0.15),
+			Palette.cream,
+			{ shadow = false }
+		)
+	end
+	local window = d.block(
+		"Window",
+		Vector3.new(2, 2.2, 0.25),
+		Vector3.new(-1.9, PLINTH + 3.8, FRONT - 0.2),
+		Palette.glass,
+		{ shadow = false }
+	)
+	d.block(
+		"Awning",
+		Vector3.new(ArtFactories.WIDTH, 0.3, 1.4),
+		CFrame.new(0, PLINTH + 5.6, FRONT - 0.6) * CFrame.Angles(math.rad(18), 0, 0),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	-- Giant burger on the roof: bun, lettuce, patty, cheese, bun
+	local burger = Vector3.new(1.6, TOP + 2.6, 1.5)
+	d.post("BunBottom", 0.8, 4, burger, Palette.bread)
+	d.post("Patty", 0.8, 4.2, burger + Vector3.new(0, 0.8, 0), Palette.cocoa)
+	d.post("Lettuce", 0.3, 4.5, burger + Vector3.new(0, 1.3, 0), Palette.leafLight, { shadow = false })
+	d.block(
+		"Cheese",
+		Vector3.new(3.4, 0.25, 3.4),
+		CFrame.new(burger + Vector3.new(0, 1.5, 0)) * Kit.yaw(45),
+		Palette.roofMustard,
+		{ shadow = false }
+	)
+	d.ball("BunTop", 4.2, burger + Vector3.new(0, 2.3, 0), Palette.bread)
+	d.block("NeonSign", Vector3.new(4.6, 1.6, 0.4), Vector3.new(-2.4, TOP + 1.6, FRONT + 1), Palette.cream)
+	d.block(
+		"SignPost",
+		Vector3.new(0.4, 1.2, 0.4),
+		Vector3.new(-2.4, TOP + 0.4, FRONT + 1.2),
+		Palette.metal,
+		{ shadow = false }
+	)
+	local chimney = d.block("Chimney", Vector3.new(1.2, 2.6, 1.2), Vector3.new(-3.6, TOP + 0.8, 4.4), Palette.metal)
+	Kit.door(d, "Door", CFrame.new(3.6, PLINTH, FRONT), 2.2, 4.4, Palette.roofRed, Palette.cream)
+	sign(d, Vector3.new(3.6, PLINTH + 6.3, FRONT - 0.3), function(s, at)
+		s.post("Shake", 1.2, 0.8, at * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerPink, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(-3.4, TOP + 1.6, 1.6), 2.5, Palette.wood, Palette.lime)
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Bakery = bakery,
 	FeedMill = feedMill,
 	Dairy = dairy,
 	SugarMill = sugarMill,
 	TextileMill = textileMill,
+	SnackFactory = snackFactory,
+	Diner = diner,
 }
 
 function ArtFactories.has(id: string): boolean

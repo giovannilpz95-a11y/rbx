@@ -223,6 +223,12 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
+	for _, id in { "SnackFactory", "Diner" } do
+		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
+		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
+		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
+	end
+	eq(Recipes.FarmBurger.inputs.Tomatoes, 1, "Farm Burger uses the bank's Tomatoes")
 end)
 
 test("level rewards", function()

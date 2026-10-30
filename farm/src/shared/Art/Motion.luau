@@ -26,6 +26,8 @@ ArtMotion.SPECS = {
 	Dairy = { kind = "bob", pivot = "Plunger", speed = 5, amplitude = 0.6 },
 	SugarMill = { kind = "spin", pivot = "Hub", speed = 0.8 },
 	TextileMill = { kind = "spin", pivot = "Spool", speed = 2.5 },
+	SnackFactory = { kind = "bob", pivot = "Popper", speed = 7, amplitude = 0.5 },
+	Diner = { kind = "glow", pivot = "NeonSign", speed = 3, color = Palette.flowerPink },
 } :: { [string]: Spec }
 
 export type Rig = {

@@ -6,6 +6,7 @@
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
 local Factories = require(Shared.Config.Factories)
+local Land = require(Shared.Config.Land)
 local Net = require(Shared.Net)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
@@ -58,6 +59,14 @@ function FactoryService.build(player: Player, factoryId: any): (boolean, string?
 	end
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
+	end
+	if def.land and not TownRules.landDone(data, def.land, Clock.now()) then
+		return false,
+			string.format(
+				"The %s's spot is in the %s. Clear it first.",
+				def.displayName,
+				Land.expansions[def.land].displayName
+			)
 	end
 	local population = TownRules.population(data, Clock.now())
 	if population < def.population then
