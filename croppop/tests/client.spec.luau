@@ -27,6 +27,7 @@ end
 local mockRequire, runScript = Harness.makeRequire(mockEnv)
 
 local Matcher = CropPop.Matcher
+local Levels = CropPop.Levels
 local TileStyleColors = mockRequire(game.StarterPlayerScripts.CropPopClient.TileStyle).Board
 
 -- Server first: it creates the remotes the client waits for.
@@ -627,6 +628,22 @@ test("the Puzzle Porch opens the screen through CropPopOpen", function()
 	PuzzleScreen.close()
 	services.ReplicatedStorage.CropPopOpen:Fire()
 	truthy(PuzzleScreen.isOpen())
+	PuzzleScreen.close()
+end)
+
+test("the Porch goes straight to the next level, with the Hearts shown, and publishes them", function()
+	PuzzleScreen.close()
+	local open = services.ReplicatedStorage.CropPopOpen
+	open:Fire("next")
+	local pre = playerGui.CropPop.Backdrop.PreLevel
+	local p = serverProgress()
+	local nextId = math.min(p.highestBeaten + 1, #Levels.List)
+	truthy(pre.Visible, "pre-level window up")
+	truthy(string.find(pre.Title.Text, "^" .. nextId .. "%. "), pre.Title.Text)
+	truthy(string.find(pre.Hearts.Text, "❤️", 1, true), pre.Hearts.Text)
+	eq(open:GetAttribute("NextLevel"), nextId)
+	eq(open:GetAttribute("Hearts"), p.hearts.count)
+	eq(open:GetAttribute("HeartsMax"), p.hearts.max)
 	PuzzleScreen.close()
 end)
 

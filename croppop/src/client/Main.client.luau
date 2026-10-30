@@ -20,10 +20,29 @@ if not openEvent then
 	openEvent.Name = "CropPopOpen"
 	openEvent.Parent = ReplicatedStorage
 end
-openEvent.Event:Connect(function()
+-- Fire("next") (the farm's Puzzle Porch) goes straight to the next level's pre-level window
+openEvent.Event:Connect(function(where)
 	if not PuzzleScreen.isOpen() then
-		PuzzleScreen.open()
+		if where == "next" then
+			PuzzleScreen.openNext()
+		else
+			PuzzleScreen.open()
+		end
 	end
+end)
+
+-- The Porch shows the next level and the Hearts (attributes on openEvent, set by
+-- PuzzleScreen): fetch them once now, and again whenever a heart is due back.
+local function checkStatus()
+	local due = openEvent:GetAttribute("NextHeartAt") or openEvent:GetAttribute("UnlimitedUntil")
+	if not PuzzleScreen.isOpen() and type(due) == "number" and os.time() >= due then
+		PuzzleScreen.refreshStatus()
+	end
+	task.delay(15, checkStatus)
+end
+task.spawn(function()
+	PuzzleScreen.refreshStatus()
+	task.delay(15, checkStatus)
 end)
 
 if RunService:IsStudio() then

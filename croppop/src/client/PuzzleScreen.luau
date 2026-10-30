@@ -376,10 +376,13 @@ local function buildUi()
 	local preSize = Instance.new("UISizeConstraint")
 	preSize.MaxSize = Vector2.new(460, 440)
 	preSize.Parent = preLevel
-	local preTitle = label(preLevel, "Title", "", UDim2.fromScale(0.9, 0.13), UDim2.fromScale(0.05, 0.04))
+	local preTitle = label(preLevel, "Title", "", UDim2.fromScale(0.9, 0.1), UDim2.fromScale(0.05, 0.03))
 	local preTitleSize = Instance.new("UITextSizeConstraint")
 	preTitleSize.MaxTextSize = 40
 	preTitleSize.Parent = preTitle
+	-- Hearts on the pre-level window too (UI Reference & Gaps G16), so a start from the
+	-- Porch shows them without the Trail
+	local preHearts = label(preLevel, "Hearts", "", UDim2.fromScale(0.9, 0.05), UDim2.fromScale(0.05, 0.135))
 	local preBody = label(preLevel, "Body", "Pick boosters for a strong start", UDim2.fromScale(0.84, 0.07), UDim2.fromScale(0.08, 0.19))
 	preBody.TextWrapped = true
 	local function capText(b: GuiObject)
@@ -437,6 +440,7 @@ local function buildUi()
 		preLevel = preLevel,
 		preTitle = preTitle,
 		preBody = preBody,
+		preHearts = preHearts,
 		preButtons = preButtons,
 		prePlay = prePlay,
 		preBack = preBack,
@@ -606,6 +610,7 @@ local function hidePanel()
 end
 
 local showLevelSelect -- forward declarations
+local publishStatus
 local showPreLevel
 local startLevel
 local beginRun
@@ -620,6 +625,29 @@ end
 
 -- Server progress ----------------------------------------------------------------
 
+-- The next level to play (the first one not beaten), for the Porch shortcut
+local function nextLevelId(): number
+	local highest = progress and progress.highestBeaten or 0
+	return math.min(highest + 1, #Levels.List)
+end
+
+-- What the farm shows on the Puzzle Porch (UI Reference & Gaps G14, G16): attributes on
+-- the client-side CropPopOpen event, with times as os.time() on this device.
+publishStatus = function()
+	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
+	local hearts = progress and progress.hearts
+	if not (event and hearts) then
+		return
+	end
+	local now = os.time()
+	local unlimited = hearts.unlimitedSeconds or 0
+	event:SetAttribute("NextLevel", nextLevelId())
+	event:SetAttribute("Hearts", hearts.count)
+	event:SetAttribute("HeartsMax", hearts.max)
+	event:SetAttribute("NextHeartAt", if hearts.secondsToNext then now + hearts.secondsToNext else nil)
+	event:SetAttribute("UnlimitedUntil", if unlimited > 0 then now + unlimited else nil)
+end
+
 local function setProgress(p)
 	if type(p) ~= "table" or type(p.hearts) ~= "table" then
 		return
@@ -630,6 +658,7 @@ local function setProgress(p)
 	end
 	progress = p
 	progressAt = os.clock()
+	publishStatus()
 end
 
 local function fetchProgress()
@@ -992,7 +1021,7 @@ local function startHeartsTicker()
 	end
 	tickerRunning = true
 	local function tick()
-		if not (ui.gui.Enabled and ui.select.Visible) then
+		if not (ui.gui.Enabled and (ui.select.Visible or ui.preLevel.Visible)) then
 			tickerRunning = false
 			return
 		end
@@ -1002,9 +1031,9 @@ local function startHeartsTicker()
 		if nextIn and nextIn <= 0 then
 			fetchProgress()
 			renderTrail()
-		else
-			ui.heartsLine.Text = heartsText()
 		end
+		ui.heartsLine.Text = heartsText()
+		ui.preHearts.Text = heartsText()
 		task.delay(1, tick)
 	end
 	task.delay(1, tick)
@@ -1091,8 +1120,10 @@ showPreLevel = function(levelId: number)
 	ui.play.Visible = false
 	ui.select.Visible = false
 	renderPreLevel()
+	ui.preHearts.Text = heartsText()
 	Motion.popIn(ui.preLevel)
 	ui.preLevel.Visible = true
+	startHeartsTicker()
 end
 
 -- Playing ----------------------------------------------------------------------------
@@ -1596,6 +1627,20 @@ function PuzzleScreen.open(levelId: number?)
 	else
 		showLevelSelect()
 	end
+end
+
+-- The Porch shortcut (G14): straight to the next level's pre-level window; its Trail
+-- button goes back to the full list
+function PuzzleScreen.openNext()
+	if not progress then
+		fetchProgress()
+	end
+	PuzzleScreen.open(nextLevelId())
+end
+
+-- Fresh hearts and next level for the Porch, without opening the screen
+function PuzzleScreen.refreshStatus()
+	fetchProgress()
 end
 
 function PuzzleScreen.close()
