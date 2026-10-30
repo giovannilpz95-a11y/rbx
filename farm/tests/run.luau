@@ -230,7 +230,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 19, "levels 17 to 19 are banked")
+	eq(Levels.built, 20, "levels 17 to 20 are banked")
+	eq(Levels.list[20].xpToNext, 6736, "L20 row")
+	eq(Recipes.IceCreamCone.factory, "IceCreamParlor", "Ice Cream Cone")
+	eq(Recipes.PatchworkQuilt.inputs.Yarn, 1, "Patchwork Quilt")
+	eq(Town.houses.CornerFlats.copyLevels[1], 20, "Corner Flats")
 	eq(Levels.list[19].xpToNext, 5771, "L19 row")
 	eq(Recipes.TomatoKetchup.inputs.Tomatoes, 2, "Tomato Ketchup")
 	-- The second Feed Mill: its own building and queue, making the Feed Mill's recipes
@@ -257,9 +261,9 @@ test("the content bank stays locked at the live cap", function()
 	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower", "RoseGarden" } do
 		local def = Town.community[id]
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
-		eq(Lots.community[def.order].land, Lots.northLaneLand, id .. " stands on North Lane")
+		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "FeedMill2" } do
+	for _, id in { "SnackFactory", "Diner", "FeedMill2", "IceCreamParlor" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
@@ -488,6 +492,28 @@ test("North Lane opens more lots once the North Fields are cleared", function()
 	eq(TownRules.freeLot(data, TownRules.houseLotCount(data, 100)), 33, "first North Lane lot")
 end)
 
+test("the Town Hall upgrade builds onto the Town Hall, not a lot", function()
+	local def = Town.community.TownHallUpgrade
+	eq(def.unlockLevel, 20, "level 20")
+	eq(def.capBonus, 95, "Cap +95")
+	eq(TownRules.communityLot("TownHallUpgrade"), nil, "no lot")
+	eq(TownRules.communityLot("RoseGarden"), 16, "earlier buildings keep their lots")
+	local data = Profile.migrate(nil) :: any
+	eq((TownRules.communityLotOpen(data, "TownHallUpgrade", 0)), true, "nothing to clear")
+	local storeys, upgrading = TownRules.townHall(data, 0)
+	eq(storeys, 1, "one storey to start")
+	eq(upgrading, false, "not upgrading")
+	local cap = TownRules.cap(data, 0)
+	data.town.community.TownHallUpgrade = { readyAt = 100 }
+	storeys, upgrading = TownRules.townHall(data, 50)
+	eq(storeys, 1, "still one storey while it goes up")
+	eq(upgrading, true, "upgrading")
+	storeys, upgrading = TownRules.townHall(data, 100)
+	eq(storeys, 2, "two storeys once done")
+	eq(upgrading, false, "done")
+	eq(TownRules.cap(data, 100), cap + 95, "raises the Cap")
+end)
+
 test("every lot sits on the plot, on its land, clear of the streets and the other lots", function()
 	local boxes = {}
 	local function add(list: { any }, size: number, what: string)
@@ -525,7 +551,8 @@ test("every lot sits on the plot, on its land, clear of the streets and the othe
 		end
 	end
 	for id, def in Town.community do
-		ok(Lots.community[def.order] ~= nil, id .. " has a lot")
+		local lot = TownRules.communityLot(id)
+		ok(if def.townHallStorey then lot == nil else Lots.community[lot :: number] ~= nil, id .. " has a lot")
 	end
 end)
 

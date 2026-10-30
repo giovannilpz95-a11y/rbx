@@ -122,9 +122,46 @@ function TownRules.houseLotCount(data: { [string]: any }, now: number): number
 	return #Lots.houses
 end
 
+-- The lot a Community Building stands on: its `order`, not counting the Town Hall upgrades
+-- before it, which build onto the Town Hall instead. Nil for a Town Hall upgrade.
+function TownRules.communityLot(id: string): number?
+	local def = Town.community[id]
+	if def.townHallStorey then
+		return nil
+	end
+	local lot = def.order
+	for _, other in Town.community do
+		if other.townHallStorey and other.order < def.order then
+			lot -= 1
+		end
+	end
+	return lot
+end
+
+-- The Town Hall's storeys (1 plus its finished upgrades), and whether an upgrade is going up.
+function TownRules.townHall(data: { [string]: any }, now: number): (number, boolean)
+	local storeys, upgrading = 1, false
+	for id, entry in data.town.community do
+		local def = Town.community[id]
+		if def and def.townHallStorey then
+			if TownRules.isDone(entry, now) then
+				storeys = math.max(storeys, def.townHallStorey)
+			else
+				upgrading = true
+			end
+		end
+	end
+	return storeys, upgrading
+end
+
 -- Whether a Community Building's lot is open, and the land expansion it waits for if not.
+-- A Town Hall upgrade needs no lot.
 function TownRules.communityLotOpen(data: { [string]: any }, id: string, now: number): (boolean, number?)
-	local lot = Lots.community[Town.community[id].order]
+	local index = TownRules.communityLot(id)
+	if index == nil then
+		return true, nil
+	end
+	local lot = Lots.community[index]
 	if lot == nil then
 		return false, nil
 	end

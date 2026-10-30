@@ -37,11 +37,22 @@ local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
 local Levels = require("../src/shared/Config/Levels")
+local Recipes = require("../src/shared/Config/Recipes")
 local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
 local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
-local FACTORIES = { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill", "SnackFactory", "Diner", "FeedMill2" }
+local FACTORIES = {
+	"Bakery",
+	"FeedMill",
+	"Dairy",
+	"SugarMill",
+	"TextileMill",
+	"SnackFactory",
+	"Diner",
+	"FeedMill2",
+	"IceCreamParlor",
+}
 local PLOT_PARTS_MAX = 2500 -- whole plot at full expansion (15 §5)
 
 return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), ok: (any, string) -> ())
@@ -674,7 +685,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				paletteRules(m, id)
 			end
 		end
-		for id in Town.community do
+		for id, def in Town.community do
+			if def.townHallStorey then
+				continue -- builds onto the Town Hall
+			end
 			ok(ArtCommunity.has(id), "community model for " .. id)
 			local m = Instance.new("Model")
 			ArtCommunity.build(id, m, CFrame.new(), 12)
@@ -730,15 +744,20 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			add(ArtAnimals.animal(id, CFrame.new()), 6)
 			add(ArtAnimals.product(id, CFrame.new()), 6)
 		end
-		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest prop
-		local biggestProp = 0
-		for id in Items do
-			biggestProp = math.max(biggestProp, Kit.countParts(ArtItemProps.build(id)))
-		end
+		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest
+		-- prop it makes
 		for _, id in FACTORIES do
 			local m = Instance.new("Model")
 			ArtFactories.build(id, m, CFrame.new())
 			add(m, 1)
+			local makes = Factories[id].makes or id
+			local biggestProp = 0
+			for recipeId, recipe in Recipes do
+				if recipe.factory == makes then
+					biggestProp = math.max(biggestProp, Kit.countParts(ArtItemProps.build(recipeId)))
+				end
+			end
+			ok(biggestProp > 0, id .. " makes something with a prop")
 			total += biggestProp * Factories[id].trayCapacity
 		end
 		-- Barn, board, dock, truck, gate: use their budgets
@@ -788,7 +807,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			merged += ArtMerge.count(m, body) * copies
 			unmerged += Kit.countParts(m) * copies
 		end
-		for id in Town.community do
+		for id, def in Town.community do
+			if def.townHallStorey then
+				continue -- the Town Hall above is counted at full height
+			end
 			local m = Instance.new("Model")
 			local body = ArtCommunity.build(id, m, CFrame.new(), 12)
 			merged += ArtMerge.count(m, body)
