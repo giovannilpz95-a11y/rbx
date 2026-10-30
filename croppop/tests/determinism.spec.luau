@@ -42,8 +42,8 @@ end
 
 test("random play keeps the board settled and playable", function()
 	local picker = Rng.new(777)
-	for i = 1, 100 do
-		local level = Levels.List[(i - 1) % #Levels.List + 1]
+	for i = 1, #Levels.List do
+		local level = Levels.List[i]
 		local bales = hasBales(level)
 		randomRun(level, picker:nextU32(), picker, function(pop)
 			eq(#Matcher.findGroups(pop.board, {}), 0, "board left with a match")

@@ -9,7 +9,7 @@
 	  4 in a line           -> Seed Sprayer (a row of 4 makes a row sprayer, a column of 4 a column sprayer)
 	  2x2 square            -> Bumblebee
 
-	Holes, hay bales, weeds and Sunflowers never match. Frosted tiles match
+	Holes, hay bales, weeds, pumpkins and Sunflowers never match. Frosted tiles match
 	(that's how the frost breaks) but can't be swapped.
 ]]
 

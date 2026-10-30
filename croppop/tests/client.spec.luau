@@ -704,6 +704,38 @@ test("a frost and weeds level plays through the screen in step with the engine",
 	PuzzleScreen.close()
 end)
 
+test("a pumpkin level shows pumpkins and exit arrows and plays in step", function()
+	local level = table.clone(CropPop.Levels.get(1))
+	level.id = 998
+	level.layout = {
+		"..p..p..",
+		"........",
+		"........",
+		"........",
+		"........",
+		"........",
+		"........",
+	}
+	level.goals = { { kind = "Pumpkins", count = 3 } }
+	level.moves = 40
+	PuzzleScreen.playTest(level, function() end)
+	local run = PuzzleScreen.currentRun()
+	local pumpkin = run.game.board:get(3, 1).piece
+	truthy(pumpkin.pumpkin)
+	eq(run.view.tiles[pumpkin.id].Face.Text, "🎃")
+	local arrows = 0
+	for _, cell in run.view.cellLayer:GetChildren() do
+		if cell:FindFirstChild("Exit") then
+			arrows += 1
+		end
+	end
+	eq(arrows, 8, "one under each column")
+	run = playToEnd(80, false)
+	truthy(run.game.status ~= "Playing")
+	eq(mismatches, 0, "tiles out of step before sync")
+	PuzzleScreen.close()
+end)
+
 test("the Trail's Dev: Editor button opens the level editor", function()
 	PuzzleScreen.open()
 	playerGui.CropPop.Backdrop.LevelSelect.DevEditor.Activated:Fire()

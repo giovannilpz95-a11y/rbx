@@ -6,6 +6,7 @@
 	  { kind = "HayBale" }                               -- break every hay bale on the board
 	  { kind = "Frost" }                                 -- break every frost layer on the board
 	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
+	  { kind = "Pumpkins", count = 3 }                   -- bring N pumpkins down to the bottom row
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -52,6 +53,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Frost", target = def.count or frost, progress = 0 })
 		elseif def.kind == "Weeds" then
 			table.insert(list, { kind = "Weeds", target = def.count or weeds, progress = 0 })
+		elseif def.kind == "Pumpkins" then
+			table.insert(list, { kind = "Pumpkins", target = def.count, progress = 0 })
 		else
 			error("unknown goal kind " .. tostring(def.kind))
 		end
@@ -89,6 +92,10 @@ function Goals.onWeed(self)
 	bump(self, "Weeds", nil)
 end
 
+function Goals.onPumpkin(self)
+	bump(self, "Pumpkins", nil)
+end
+
 -- A weed spread onto a new cell: one more to pull.
 function Goals.onWeedGrown(self)
 	for _, goal in self.list do
@@ -115,6 +122,16 @@ function Goals.wants(self, kind: string, color: number?): boolean
 		end
 	end
 	return false
+end
+
+-- The first goal of this kind, if the level has one.
+function Goals.find(self, kind: string): Goal?
+	for _, goal in self.list do
+		if goal.kind == kind then
+			return goal
+		end
+	end
+	return nil
 end
 
 function Goals.snapshot(self): { Goal }

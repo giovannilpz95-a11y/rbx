@@ -171,6 +171,11 @@ local function styleTile(tile: Frame, piece)
 		face.Text = TileStyle.Sunflower.glyph
 		corner.CornerRadius = UDim.new(0.5, 0)
 		badge.Visible = false
+	elseif piece.pumpkin then
+		face.BackgroundColor3 = TileStyle.Pumpkin.color
+		face.Text = TileStyle.Pumpkin.glyph
+		corner.CornerRadius = UDim.new(0.35, 0)
+		badge.Visible = false
 	else
 		face.BackgroundColor3 = TileStyle.Colors[piece.color] or Color3.new(0.5, 0.5, 0.5)
 		face.Text = TileStyle.Glyphs[piece.color] or "?"
@@ -311,6 +316,21 @@ function BoardView.load(self, game)
 		frostStroke.Color = Color3.fromRGB(255, 255, 255)
 		frostStroke.Parent = frost
 
+		-- Pumpkin levels: an arrow under each column's bottom cell, where pumpkins leave.
+		if game.goals:find("Pumpkins") and board:isExit(cell) then
+			local exit = Instance.new("TextLabel")
+			exit.Name = "Exit"
+			exit.AnchorPoint = Vector2.new(0.5, 0.5)
+			exit.Position = UDim2.fromScale(0.5, 1) -- on the bottom edge, half under the tile
+			exit.Size = UDim2.fromScale(0.36, 0.36)
+			exit.BackgroundTransparency = 1
+			exit.Text = TileStyle.Pumpkin.exit
+			exit.TextScaled = true
+			exit.TextTransparency = 0.2
+			exit.ZIndex = 2
+			exit.Parent = bg
+		end
+
 		self.cellGuis[y][x] = { cell = bg, mud = mud, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
@@ -423,6 +443,9 @@ function BoardView._effect(self, effect): number
 	elseif effect.type == "Bomb" then
 		local r = effect.radius * 2 + 1
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(r / w, r / h), Color3.fromRGB(255, 170, 60), true)
+		return FX_TIME
+	elseif effect.type == "Pumpkin" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Pumpkin.color, true)
 		return FX_TIME
 	elseif effect.type == "Grow" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.weed, true)

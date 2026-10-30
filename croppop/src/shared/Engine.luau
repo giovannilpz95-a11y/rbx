@@ -22,6 +22,11 @@
 	next to a weed (a Pop phase with a "Grow" effect; the tile is removed with
 	cause "weed" and the cell gets a weed).
 
+	Pumpkins: a pumpkin that reaches the bottom cell of its column is collected
+	(a Pop phase with a "Pumpkin" effect, removed with cause "pumpkin"). Refills
+	drop new ones until the Pumpkins goal has enough on the way. Matches and
+	blasts never break a pumpkin.
+
 	The same level, seed, options and swaps always give the same result, which is
 	what lets the server replay a client's run (see Replay.luau).
 ]]
@@ -77,6 +82,13 @@ function Engine.new(level, seed: number, options: Options?)
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
 	}, Engine)
 
+	-- As many pumpkins on the board at once as the layout starts with (at least 1).
+	local startPumpkins = 0
+	for _ in board.startPumpkins do
+		startPumpkins += 1
+	end
+	self.pumpkinsAtOnce = math.max(1, startPumpkins)
+
 	if options and options.startPowerUps then
 		self:_placePowerUps(options.startPowerUps)
 	end
@@ -89,7 +101,7 @@ function Engine._placePowerUps(self, powers: { string })
 	local placed = {}
 	local candidates = {}
 	self.board:eachCell(function(cell)
-		if Board.isMovable(cell) and cell.piece.power == nil then
+		if Board.isPlainTile(cell) then
 			table.insert(candidates, cell)
 		end
 	end)
@@ -134,8 +146,8 @@ end
 
 function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolean?)
 	local piece = cell.piece
-	if not piece then
-		return
+	if not piece or piece.pumpkin then
+		return -- pumpkins only leave from the bottom of the board
 	end
 	if cell.frost > 0 then
 		-- The tile stays; only one frost layer breaks.
@@ -239,7 +251,7 @@ function Engine._chooseBeeTarget(self)
 		if cell.bale > 0 then
 			local wanted = if cell.weed then goals:wants("Weeds") else goals:wants("HayBale")
 			table.insert(if wanted then tiers[1] else tiers[4], cell)
-		elseif cell.piece then
+		elseif cell.piece and not cell.piece.pumpkin then
 			if cell.frost > 0 and goals:wants("Frost") then
 				table.insert(tiers[2], cell)
 			elseif cell.mud > 0 and goals:wants("Mud") then
@@ -461,7 +473,7 @@ function Engine._growWeeds(self, phases)
 		if cell.weed then
 			for _, d in NEIGHBORS do
 				local n = board:get(cell.x + d[1], cell.y + d[2])
-				if n and not seen[n] and Board.isMovable(n) and n.piece.power == nil then
+				if n and not seen[n] and Board.isPlainTile(n) then
 					seen[n] = true
 					table.insert(candidates, n)
 				end
@@ -493,11 +505,50 @@ function Engine._growWeeds(self, phases)
 	end
 end
 
+-- How many more pumpkins refills should drop: enough for the goal, a few at a time.
+function Engine._pumpkinsWanted(self): number
+	local goal = self.goals:find("Pumpkins")
+	if not goal then
+		return 0
+	end
+	local onBoard = 0
+	self.board:eachCell(function(cell)
+		if cell.piece and cell.piece.pumpkin then
+			onBoard += 1
+		end
+	end)
+	local stillNeeded = goal.target - goal.progress - onBoard
+	return math.max(0, math.min(stillNeeded, self.pumpkinsAtOnce - onBoard))
+end
+
+-- Collects pumpkins sitting on the bottom cell of their column. Returns true if any.
+function Engine._collectPumpkins(self, phases): boolean
+	local board = self.board
+	local wave = nil
+	board:eachCell(function(cell)
+		local piece = cell.piece
+		if piece and piece.pumpkin and board:isExit(cell) then
+			wave = wave or newWave()
+			cell.piece = nil
+			table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = "pumpkin" })
+			table.insert(wave.effects, { type = "Pumpkin", x = cell.x, y = cell.y })
+			self.goals:onPumpkin()
+		end
+	end)
+	if wave then
+		self:_finishWave(wave, phases)
+		return true
+	end
+	return false
+end
+
 -- Drops, refills and cascades until the board is still, then shuffles if stuck.
 function Engine._settle(self, phases)
 	local board = self.board
 	for _ = 1, MAX_CASCADES do
+		board.pumpkinsToSpawn = self:_pumpkinsWanted()
 		local moves, spawns = board:applyGravity(self.rng, self.colors)
+		board.pumpkinsToSpawn = 0
 		if #moves > 0 or #spawns > 0 then
 			table.insert(phases, { kind = "Drop", moves = moves, spawns = spawns })
 		end
@@ -517,14 +568,16 @@ function Engine._settle(self, phases)
 			return c1.x < c2.x
 		end)
 
+		local collected = self:_collectPumpkins(phases)
 		local groups = Matcher.findGroups(board, landed)
-		if #groups == 0 then
+		if #groups > 0 then
+			self.stats.cascades += 1
+			local wave = newWave()
+			self:_popGroups(wave, groups)
+			self:_finishWave(wave, phases)
+		elseif not collected then
 			break
 		end
-		self.stats.cascades += 1
-		local wave = newWave()
-		self:_popGroups(wave, groups)
-		self:_finishWave(wave, phases)
 	end
 
 	if not Matcher.hasPossibleMove(board) then
@@ -543,7 +596,7 @@ function Engine._bonusRound(self, phases)
 
 	local candidates = {}
 	self.board:eachCell(function(cell)
-		if Board.isMovable(cell) and cell.piece.power == nil then
+		if Board.isPlainTile(cell) then
 			table.insert(candidates, cell)
 		end
 	end)
@@ -649,7 +702,7 @@ end
 --[[
 	Uses an in-level booster. Doesn't cost a move. Returns false (and no
 	phases) if it can't be used there.
-	  Trowel(x, y)                 break one tile or one hay bale layer
+	  Trowel(x, y)                 break one tile or one hay bale layer (not a pumpkin)
 	  Rake(y)                      clear one row
 	  GardenGloves(x1, y1, x2, y2) swap two neighbouring tiles, matching or not
 	  ShakeUp()                    shuffle the board
@@ -664,7 +717,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 
 	if kind == "Trowel" then
 		local cell = board:get(a :: number, b :: number)
-		if not cell or (cell.piece == nil and cell.bale == 0) then
+		if not cell or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
 			return false, {}
 		end
 		local wave = newWave()

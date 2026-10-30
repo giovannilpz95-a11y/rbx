@@ -1,9 +1,9 @@
 --[[
 	A simple test player for tuning levels. It plays a level on many seeds
 	and reports how often it wins. Its moves are random, but it prefers
-	setting off power-ups and making big matches, so its win rate is a rough
-	lower bound on a person's. Use it to compare levels, not as the final
-	word on difficulty.
+	setting off power-ups and matching under a pumpkin, so its win rate is a
+	rough lower bound on a person's. Use it to compare levels, not as the
+	final word on difficulty.
 ]]
 
 local Engine = require(script.Parent.Engine)
@@ -28,7 +28,30 @@ local function goalShare(pop): number
 	return if total > 0 then done / total else 1
 end
 
--- Picks a move: a power-up swap if there is one, otherwise a random move.
+-- Moves that touch a cell under a pumpkin (a match there brings it down).
+local function underPumpkins(board, moves)
+	local lowest = {} -- column -> lowest pumpkin's y
+	board:eachCell(function(cell)
+		if cell.piece and cell.piece.pumpkin then
+			lowest[cell.x] = math.max(lowest[cell.x] or 0, cell.y)
+		end
+	end)
+	if next(lowest) == nil then
+		return nil
+	end
+	local out = {}
+	for _, m in moves do
+		local underA = lowest[m[1]] and m[2] > lowest[m[1]]
+		local underB = lowest[m[3]] and m[4] > lowest[m[3]]
+		if underA or underB then
+			table.insert(out, m)
+		end
+	end
+	return out
+end
+
+-- Picks a move: a power-up swap if there is one, then one under a pumpkin,
+-- otherwise a random move.
 local function chooseMove(pop, rng)
 	local moves = pop:listPossibleMoves()
 	local board = pop.board
@@ -41,6 +64,11 @@ local function chooseMove(pop, rng)
 	end
 	if #powered > 0 and rng:int(1, 3) > 1 then
 		return rng:pick(powered)
+	end
+	-- Only on boards with pumpkins, so other levels' tuning stays the same.
+	local pumpkinMoves = underPumpkins(board, moves)
+	if pumpkinMoves and #pumpkinMoves > 0 and rng:int(1, 3) > 1 then
+		return rng:pick(pumpkinMoves)
 	end
 	return rng:pick(moves)
 end
