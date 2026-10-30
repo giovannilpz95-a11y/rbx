@@ -84,7 +84,15 @@ local function gems(n: number): string
 end
 
 -- A button that spends Gems after a confirming second tap.
-local function gemButton(key: string, text: string, price: number, fire: () -> (), props: { [string]: any })
+-- `free`: a price of 0 is a gift (one tap, always on) rather than "nothing to speed up"
+local function gemButton(
+	key: string,
+	text: string,
+	price: number,
+	fire: () -> (),
+	props: { [string]: any },
+	free: boolean?
+)
 	local state = ClientStore.state
 	local armedNow = isArmed(key)
 	local button: TextButton
@@ -94,7 +102,7 @@ local function gemButton(key: string, text: string, price: number, fire: () -> (
 			return
 		end
 		lastGemTap = time()
-		if isArmed(key) then
+		if free or isArmed(key) then
 			armed[key] = nil
 			fire()
 		else
@@ -120,7 +128,7 @@ local function gemButton(key: string, text: string, price: number, fire: () -> (
 	end)
 	Ui.setEnabled(
 		button,
-		price > 0 and state ~= nil and state.currencies.Gems >= price,
+		free == true or (price > 0 and state ~= nil and state.currencies.Gems >= price),
 		if armedNow then Ui.colors.accent else Ui.colors.gems
 	)
 	return button
@@ -457,15 +465,15 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		local left = Timer.remaining(preview.constructionReadyAt, now)
 		local line = row(42, 1)
 		Ui.label("Building... " .. Timer.format(left) .. " left", { Size = UDim2.new(1, -170, 1, 0), Parent = line })
-		local price = if Tutorial.freeFinish(state, factoryId) then 0 else Speedup.building(left)
-		gemButton("build:" .. factoryId, "Finish", price, function()
+		local free = Tutorial.freeFinish(state, factoryId)
+		gemButton("build:" .. factoryId, "Finish", if free then 0 else Speedup.building(left), function()
 			Remotes.fire("Factory_SpeedUp", factoryId)
 		end, {
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.new(1, 0, 0, 0),
 			Size = UDim2.fromOffset(160, 30),
 			Parent = line,
-		})
+		}, free)
 		return
 	end
 
