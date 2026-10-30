@@ -31,9 +31,10 @@ for _, id in Balance.enabledCrops do
 	enabledCrops[id] = true
 end
 
-local function nearField(player: Player, fieldId: string): boolean
-	local pos = PlotService.fieldPosition(player, fieldId)
-	return pos ~= nil and NetService.isNear(player, pos, Balance.serverReachStuds)
+-- Is `by` standing near one of `owner`'s fields?
+local function nearField(owner: Player, fieldId: string, by: Player): boolean
+	local pos = PlotService.fieldPosition(owner, fieldId)
+	return pos ~= nil and NetService.isNear(by, pos, Balance.serverReachStuds)
 end
 
 function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean, string?)
@@ -52,7 +53,7 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	if data.level < crop.unlockLevel then
 		return false, string.format("%s unlocks at level %d", crop.displayName, crop.unlockLevel)
 	end
-	if not nearField(player, fieldId) then
+	if not nearField(player, fieldId, player) then
 		return false, "Walk closer to that field"
 	end
 	if not EconomyService.spend(player, "Coins", crop.seedCost, "seed_" .. cropId) then
@@ -63,15 +64,16 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	field.plantedAt = now
 	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, crop.growSeconds))
 	field.prize = PrizeRules.roll(data, rng:NextNumber()) -- rolled now, so speed-ups can't buy it
+	field.watered = nil -- a helper may water each crop once (Helping Hands)
 	data.settings.lastSeed = cropId
 	PlotService.refresh(player)
 	return true
 end
 
-function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
-	if not NetService.check.id(fieldId) then
-		return false
-	end
+-- Harvest one of `owner`'s fields into the owner's Barn. `by` is standing at the field: the
+-- owner, or a helper (Helping Hands), who must be near it.
+function FarmService.reap(owner: Player, fieldId: string, by: Player): (boolean, string?)
+	local player = owner -- the harvest is the owner's: their Barn, XP, drops and news
 	local data = DataService.get(player) :: { [string]: any }
 	local field = data.fields[fieldId]
 	if field == nil or field.crop == nil then
@@ -81,7 +83,7 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 	if not Timer.isReady(field.readyAt, Clock.now() + 1) then
 		return false
 	end
-	if not nearField(player, fieldId) then
+	if not nearField(owner, fieldId, by) then
 		return false, "Walk closer to that field"
 	end
 	local crop = Crops[field.crop]
@@ -89,7 +91,10 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 	local prize = if field.prize and PrizeRules.hasRoom(data) then field.prize else nil
 	local toBarn = if prize then crop.yield - 1 else crop.yield
 	if toBarn > 0 and not InventoryService.add(player, { [crop.id] = toBarn }) then
-		return false, "Your Barn is full. Sell something from the Barn first."
+		return false,
+			if by == owner
+				then "Your Barn is full. Sell something from the Barn first."
+				else string.format("%s's Barn is full", owner.DisplayName)
 	end
 	if prize then
 		table.insert(data.prizes, { crop = crop.id, tier = prize })
@@ -125,10 +130,18 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 	field.plantedAt = nil
 	field.readyAt = nil
 	field.prize = nil
+	field.watered = nil
 	EconomyService.add(player, "XP", crop.xp, "harvest_" .. crop.id)
 	TownService.onHarvest(player, crop.growSeconds)
 	PlotService.refresh(player)
 	return true
+end
+
+function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
+	if not NetService.check.id(fieldId) then
+		return false
+	end
+	return FarmService.reap(player, fieldId, player)
 end
 
 -- The Prize Stand: sell one Prize Crop from the basket for Coins (paperwork).

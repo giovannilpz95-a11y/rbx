@@ -197,6 +197,8 @@ local function give(player: Player, data: { [string]: any }, id: string)
 	end
 end
 
+TownService.give = give -- Helping Hands pays helpers a tool now and then
+
 -- One roll per field harvested for a tool or a material (from level 5), with the pity count.
 -- Both hooks run inside a remote handler, which saves and pushes state afterwards.
 function TownService.onHarvest(player: Player, growSeconds: number)

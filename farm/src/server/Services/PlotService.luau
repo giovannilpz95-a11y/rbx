@@ -778,7 +778,9 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 			local progress = if span > 0 then math.clamp((now - (field.plantedAt or now)) / span, 0, 1) else 1
 			stage = ArtCrops.stageFor(progress, ready)
 		end
-		local state = if field.crop == nil then "empty" else string.format("%s:%d", field.crop, stage)
+		local state = if field.crop == nil
+			then "empty"
+			else string.format("%s:%d:%s", field.crop, stage, tostring(field.watered == true))
 		if cache[id] == state then
 			continue
 		end
@@ -789,6 +791,8 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 		cache[id] = state
 		bed:SetAttribute("Crop", field.crop)
 		bed:SetAttribute("ReadyAt", field.readyAt)
+		bed:SetAttribute("Watered", field.watered == true) -- for helpers' clients (Helping Hands)
+		bed.Color = if field.watered then Palette.soilDark else COLORS.soil -- damp soil after watering
 		local old = bed:FindFirstChild("Crop")
 		if old then
 			old:Destroy()

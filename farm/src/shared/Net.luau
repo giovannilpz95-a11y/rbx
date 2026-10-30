@@ -40,6 +40,8 @@ return table.freeze({
 	Visit_Home = "Visit_Home", -- back to your own plot
 	Visit_Square = "Visit_Square", -- to the Town Square
 	Visit_SendHome = "Visit_SendHome", -- visitorUserId: send a visitor off your plot
+	Help_Water = "Help_Water", -- ownerUserId, fieldId: water a growing field on a neighbor's plot
+	Help_Harvest = "Help_Harvest", -- ownerUserId, fieldId: harvest a ready field into the owner's Barn
 	Social_SetPrivacy = "Social_SetPrivacy", -- "Open" | "Friends" | "Closed"
 	Social_SetHelpers = "Social_SetHelpers", -- "Nobody" | "Friends" | "Anyone"
 	Social_SetBlocked = "Social_SetBlocked", -- { userId } from the player's Roblox block list
