@@ -47,7 +47,7 @@ Hand changes go through the level editor below; once a level ships, change it th
 
 ## Level editor (Studio only)
 
-On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode. Studio unlocks every level; **Dev: Lock** on the Trail shows it locked to your real progress, as a player sees it.
+On the Trail, press **Dev: Editor** (or the F6 key; E is the farm's interact key) in Studio Play mode. Studio unlocks every level; **Dev 🔒** on the Trail shows it locked to your real progress, as a player sees it.
 - Paint the board with the brushes: cell, hole, mud, double mud, hay bales with 1–3 layers, frost with 1–2 layers, and weeds.
 - Set the size, moves, difficulty, tile colours (3–6) and up to 3 goals.
 - The status line says what's wrong while the level isn't valid.

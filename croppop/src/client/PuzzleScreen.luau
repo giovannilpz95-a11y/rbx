@@ -262,7 +262,7 @@ local function buildUi()
 		devEditor = button(levelSelect, "DevEditor", "Dev: Editor", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.02, 0.87))
 		devEditor.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 		-- Studio unlocks every level; this shows the Trail as a real player sees it.
-		devLock = button(levelSelect, "DevLock", "Dev: Lock", UDim2.fromScale(0.16, 0.07), UDim2.fromScale(0.82, 0.03))
+		devLock = button(levelSelect, "DevLock", "Dev 🔒", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.91, 0.03))
 		devLock.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
@@ -1307,7 +1307,7 @@ local function ensureUi()
 		end)
 		ui.devLock.Activated:Connect(function()
 			devLocked = not devLocked
-			ui.devLock.Text = if devLocked then "Dev: Unlock" else "Dev: Lock"
+			ui.devLock.Text = if devLocked then "Dev 🔓" else "Dev 🔒"
 			renderTrail()
 		end)
 		-- Same thing from the keyboard: L.

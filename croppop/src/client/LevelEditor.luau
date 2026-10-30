@@ -367,6 +367,8 @@ local function renderPanel()
 		b.BackgroundTransparency = if on then 0 else 0.5
 	end
 
+	-- The add buttons go above the goals so they stay put as goals are added.
+	local addGoalOrder = nextOrder()
 	for i, goal in state.goals do
 		local goalRow = row("Goal" .. i, nextOrder())
 		local label = button(goalRow, "Kind", goalLabel(goal), UDim2.fromOffset(120, ROW_HEIGHT - 4), function()
@@ -390,7 +392,7 @@ local function renderPanel()
 			render()
 		end)
 	end
-	local addRow = row("AddGoal", nextOrder())
+	local addRow = row("AddGoal", addGoalOrder)
 	for _, kind in GOAL_KINDS do
 		button(addRow, "Add" .. kind, GOAL_BUTTONS[kind], UDim2.new(1 / #GOAL_KINDS, -4, 1, -4), function()
 			if #state.goals >= 3 then

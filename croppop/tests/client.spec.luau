@@ -620,7 +620,7 @@ test("the Studio Dev: Lock button shows the Trail as a real player sees it", fun
 	truthy(select.List:FindFirstChild("Level" .. (highest + 5)), "the next 4 locked levels show")
 	eq(select.List:FindFirstChild("Level" .. (highest + 6)), nil)
 	truthy(string.find(select.List.MoreAhead.Text, "more levels ahead", 1, true))
-	eq(select.DevLock.Text, "Dev: Unlock")
+	eq(select.DevLock.Text, "Dev 🔓")
 	select.DevLock.Activated:Fire()
 	truthy(select.List:FindFirstChild("Level100"))
 	PuzzleScreen.close()
