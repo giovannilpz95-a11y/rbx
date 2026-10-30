@@ -20,6 +20,7 @@ local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local NoticeService = require(script.Parent.NoticeService)
 local PlotService = require(script.Parent.PlotService)
+local QuestService = require(script.Parent.QuestService)
 local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
@@ -135,6 +136,7 @@ function FarmService.reap(owner: Player, fieldId: string, by: Player): (boolean,
 	field.prize = nil
 	field.watered = nil
 	EconomyService.add(player, "XP", crop.xp, "harvest_" .. crop.id)
+	QuestService.progress(player, "harvest", crop.yield)
 	TownService.onHarvest(player, crop.growSeconds)
 	PlotService.refresh(player)
 	return true

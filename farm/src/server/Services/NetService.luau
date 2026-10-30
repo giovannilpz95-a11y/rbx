@@ -99,6 +99,7 @@ local function snapshot(data: { [string]: any })
 		board = data.orders.board,
 		settings = data.settings,
 		tutorial = data.tutorial,
+		quests = data.quests,
 		serverNow = Clock.now(),
 		timeScale = Clock.getTimeScale(),
 	}

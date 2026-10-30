@@ -18,6 +18,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local QuestService = require(script.Parent.QuestService)
 local TelemetryService = require(script.Parent.TelemetryService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
@@ -136,6 +137,7 @@ function FactoryService.collect(player: Player, factoryId: any): (boolean, strin
 		if take > 0 and InventoryService.add(player, { [item] = take }) then
 			factory.output[item] = if qty - take > 0 then qty - take else nil
 			collected += take
+			QuestService.progress(player, "factory", take)
 			local recipe = Recipes[item]
 			if recipe then
 				EconomyService.add(player, "XP", recipe.xp * take, "collect_" .. item)

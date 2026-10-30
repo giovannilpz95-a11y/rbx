@@ -49,6 +49,9 @@ return table.freeze({
 	Social_SetBlocked = "Social_SetBlocked", -- { userId } from the player's Roblox block list
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
+	Quest_Claim = "Quest_Claim", -- index: a finished Daily Quest's reward
+	Quest_Reroll = "Quest_Reroll", -- index: swap an unfinished quest (once a day, free)
+	Quest_Chest = "Quest_Chest", -- the bonus chest for all three
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)

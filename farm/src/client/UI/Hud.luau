@@ -93,6 +93,12 @@ function Hud.popup(payload: { [string]: any })
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
 	elseif payload.kind == "Daily" then
 		Hud.toast(string.format("Daily gift, day %d of %d:  %s", payload.day, payload.days, payload.reward))
+	elseif payload.kind == "Quest" then
+		Hud.toast(string.format("Quest done: %s! Claim it in Quests (Q).", payload.text), "celebrate")
+	elseif payload.kind == "QuestClaim" then
+		Hud.toast(string.format("Quest reward:  +%d Coins  +%d XP", payload.coins, payload.xp))
+	elseif payload.kind == "QuestChest" then
+		Hud.toast(string.format("Bonus chest:  +%d Gems!", payload.gems), "celebrate")
 	elseif payload.kind == "Away" then
 		ClientStore.away = payload.lines
 		showPanel("Away")
