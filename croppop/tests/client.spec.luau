@@ -191,6 +191,13 @@ test("a whole level plays to the end and the server checks it", function()
 		eq(#wins, 1)
 		eq(wins[1].levelId, 1)
 		eq(wins[1].player, Mock.localPlayer)
+		-- A Normal win scores one cup, and the reward lines make the panel grow.
+		truthy(string.find(panel.Body.Text, "+1 cup (", 1, true), panel.Body.Text)
+		local _, breaks = string.gsub(panel.Body.Text, "\n", "")
+		if breaks >= 2 then
+			truthy(panel.Size.Y.Scale > 0.42, "taller for " .. (breaks + 1) .. " lines")
+			truthy(panel.Body.Size.Y.Scale > 0.3, "more room for the body")
+		end
 	else
 		eq(panel.Title.Text, "Out of moves")
 	end
