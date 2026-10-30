@@ -428,6 +428,23 @@ test("the first-session guide walks the opening loop", function()
 	eq(table.concat(Tutorial.advance(data, 200), ","), "Bread,Feed", "fed")
 	data.inventory.items.Milk = 1
 	eq(table.concat(Tutorial.advance(data, 400), ","), "Milk", "collected")
+	data.level = 3
+	data.factories.FeedMill.built = true
+	data.factories.FeedMill.queue = { { recipe = "CowFeed", seconds = 300, qty = 3 } }
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Level3,FeedMill,CowFeed", "Feed Mill running")
+	data.level = 4
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Level4", "the first House is next")
+	table.insert(data.town.houses, { type = "LeanTo", lot = 5, readyAt = 460 })
+	data.factories.Dairy.built = true
+	data.factories.Dairy.constructionReadyAt = 4000
+	eq(table.concat(Tutorial.advance(data, 400), ","), "House", "Dairy building")
+	ok(Tutorial.freeFinish(data, "Dairy"), "the first Finish is free")
+	ok(not Tutorial.freeFinish(data, "Bakery"), "only on the Dairy")
+	data.factories.Dairy.constructionReadyAt = 400
+	data.land[1] = { readyAt = 9000 }
+	data.level = 5
+	eq(table.concat(Tutorial.advance(data, 400), ","), "Dairy,Land,Level5", "level 5")
+	ok(not Tutorial.freeFinish(data, "Dairy"), "free only while its step is on")
 	eq(Tutorial.current(data).id, "WrapUp", "ends on a tap")
 	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
 end)
