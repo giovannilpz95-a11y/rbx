@@ -208,6 +208,8 @@ local function act(part: BasePart)
 		ReachController.openCropPop()
 	elseif kind == "Quarry" then
 		Panels.open("Quarry")
+	elseif kind == "Guild" then
+		Panels.open("Guild")
 	end
 end
 

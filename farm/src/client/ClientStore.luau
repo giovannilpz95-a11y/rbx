@@ -7,7 +7,7 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
-local Factories = require(Shared.Config.Factories)
+local Guild = require(Shared.Guild)
 local Profile = require(Shared.Profile)
 local Timer = require(Shared.Timer)
 
@@ -49,7 +49,7 @@ function ClientStore.factoryPreview(factoryId: string)
 	end
 	local queue = Profile.deepCopy(factory.queue)
 	local output = Profile.deepCopy(factory.output)
-	Timer.advanceQueue(queue, output, ClientStore.now(), Factories[factoryId].trayCapacity)
+	Timer.advanceQueue(queue, output, ClientStore.now(), Guild.trayCapacity(state, factoryId))
 	local now = ClientStore.now()
 	return {
 		built = factory.built,

@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local Guild = require(Shared.Guild)
 local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
 local OrderGen = require(Shared.OrderGen)
@@ -95,15 +96,20 @@ function OrderService.fulfill(player: Player, slotIndex: any): (boolean, string?
 	slot.refreshAt = Clock.now() + Clock.duration(OrderConfig.truckReturnSeconds)
 	-- Good Neighbors: a little more with friends around (14 Multiplayer Features G1)
 	local bonus = SocialService.neighborBonusCoins(player, order.rewardCoins)
+	-- The Tinker's Guild's Coins and XP upgrades on the goods' factories
+	local guildCoins, guildXp = Guild.orderBonus(data, order.wants, order.rewardCoins, order.rewardXP)
 	EconomyService.add(player, "Coins", order.rewardCoins, "order")
 	EconomyService.add(player, "Coins", bonus, "order_goodneighbors")
-	EconomyService.add(player, "XP", order.rewardXP, "order")
+	EconomyService.add(player, "Coins", guildCoins, "order_guild")
+	EconomyService.add(player, "XP", order.rewardXP + guildXp, "order")
 	TelemetryService.custom(player, "OrderFulfilled", order.rewardCoins, "Board")
 	QuestService.progress(player, "order", 1)
-	NetService.popup(
-		player,
-		{ kind = "Order", coins = order.rewardCoins + bonus, xp = order.rewardXP, neighbors = bonus }
-	)
+	NetService.popup(player, {
+		kind = "Order",
+		coins = order.rewardCoins + bonus + guildCoins,
+		xp = order.rewardXP + guildXp,
+		neighbors = bonus,
+	})
 	PlotService.driveTruck(player, Clock.duration(OrderConfig.truckReturnSeconds))
 	TownService.onOrderDelivered(player)
 	return true

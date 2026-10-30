@@ -30,6 +30,7 @@ local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
 local Palette = require("../src/shared/Art/Palette")
 local ArtFolk = require("../src/shared/Art/Folk")
+local ArtGuild = require("../src/shared/Art/Guild")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
@@ -754,6 +755,12 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ArtQuarry.setOpen(quarry, false)
 		eq((parts.boards:GetChildren()[1] :: BasePart).Transparency, 0, "a closed Quarry shows its boards")
 
+		local guild = Instance.new("Model")
+		local guildBody = ArtGuild.build(guild, CFrame.new())
+		ok(guildBody:IsDescendantOf(guild), "Guild body")
+		within(guild, ArtGuild.PARTS_MAX, "Tinker's Guild")
+		paletteRules(guild, "Tinker's Guild")
+
 		local post = Instance.new("Model")
 		eq(ArtTown.signpost(post, CFrame.new()).Name, "Board", "signpost board")
 		within(post, ArtTown.SIGNPOST_PARTS_MAX, "signpost")
@@ -952,6 +959,9 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
 		total += ArtQuarry.PARTS_MAX
+		-- The Tinker's Guild, merged like a town building once it's built
+		local guild = Instance.new("Model")
+		total += ArtMerge.count(guild, ArtGuild.build(guild, CFrame.new()))
 		-- Town Hall at full height, the Puzzle Porch and the four guides
 		total += ArtTown.TOWNHALL_PARTS_MAX + ArtTown.PORCH_PARTS_MAX + 4 * ArtFolk.PARTS_MAX
 		-- Decorations: the server merges each one's look (Art/Merge), so a full set of placed

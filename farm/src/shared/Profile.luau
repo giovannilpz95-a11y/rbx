@@ -156,7 +156,8 @@ function Profile.template(): { [string]: any }
 			freeDay = -1,
 		},
 		oreShed = {}, -- ore id -> qty; no cap and no Barn space (shared/Quarry)
-		buildingLevels = {}, -- building id -> Tinker's Guild upgrade level (Features/F01), unused yet
+		guild = {}, -- the Tinker's Guild (shared/Guild); readyAt is set when building starts
+		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
 		social = { -- visiting, Helping Hands and boosts (shared/Social)

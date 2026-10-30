@@ -17,6 +17,7 @@ local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
 local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
+local Guild = require(Shared.Guild)
 local Pen = require(Shared.Pen)
 local Profile = require(Shared.Profile)
 local Shop = require(Shared.Shop)
@@ -34,6 +35,7 @@ local ArtHouses = require(Shared.Art.Houses)
 local ArtMerge = require(Shared.Art.Merge)
 local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtFolk = require(Shared.Art.Folk)
+local ArtGuild = require(Shared.Art.Guild)
 local ArtLighting = require(Shared.Art.Lighting)
 local ArtQuarry = require(Shared.Art.Quarry)
 local ArtTown = require(Shared.Art.Town)
@@ -135,6 +137,8 @@ local LAYOUT = {
 	-- The Quarry's hill at the north end of the East Meadow's third column, its mine door
 	-- facing west like the factories (Features/F01)
 	quarry = Vector3.new(89, 0, -40),
+	-- The Tinker's Guild, in the third column between the Smelters and the Jam Kitchen
+	guild = Vector3.new(88, 0, 2),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine
 	pens = {
 		CowBarn = Vector3.new(-12, 0, 6),
@@ -688,6 +692,11 @@ local function buildPlot(player: Player, slot: Slot): Model
 		buildPen(model, id, at)
 	end
 	buildQuarry(model, at)
+	-- The Tinker's Guild's spot: refreshGuild builds it there (faded until it's built)
+	local guildSpot = Instance.new("Model")
+	guildSpot.Name = "Guild"
+	guildSpot:SetAttribute("BaseCFrame", at(LAYOUT.guild, 0) * Kit.yaw(90))
+	guildSpot.Parent = model
 
 	-- Order Board with the truck waiting at its dock. The cards show on the board's west face.
 	local board = part({
@@ -1073,7 +1082,14 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 	end
 end
 
-local function refreshFactory(player: Player, model: Model, id: string, factory: { [string]: any }, now: number)
+local function refreshFactory(
+	player: Player,
+	model: Model,
+	data: { [string]: any },
+	id: string,
+	factory: { [string]: any },
+	now: number
+)
 	local def = Factories[id]
 	local building = model:FindFirstChild(id)
 	if def == nil or building == nil then
@@ -1082,7 +1098,7 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	-- Preview where the queue stands now without changing saved data.
 	local queue = Profile.deepCopy(factory.queue)
 	local output = Profile.deepCopy(factory.output)
-	Timer.advanceQueue(queue, output, now, def.trayCapacity)
+	Timer.advanceQueue(queue, output, now, Guild.trayCapacity(data, id))
 	local outputCount = Timer.countOutput(output)
 	local underConstruction = factory.built and factory.constructionReadyAt ~= nil and now < factory.constructionReadyAt
 	local busy = #queue > 0 and queue[1].startedAt ~= nil
@@ -1182,6 +1198,48 @@ local function refreshQuarry(player: Player, model: Model, data: { [string]: any
 	cache.Quarry = state
 	setScaffold(quarry, reopening, ArtQuarry.WIDTH, ArtQuarry.DEPTH, 10)
 	ArtQuarry.setOpen(quarry, open)
+end
+
+-- The Tinker's Guild: faded on its spot until it's built (tap it to build), faded in a
+-- scaffold while it goes up, then built for real and merged into one part.
+local function refreshGuild(player: Player, model: Model, data: { [string]: any }, now: number)
+	local spot = model:FindFirstChild("Guild")
+	local base = spot and spot:GetAttribute("BaseCFrame") :: CFrame?
+	if spot == nil or base == nil then
+		return
+	end
+	local readyAt = data.guild.readyAt
+	local state = if readyAt == nil then "plan" elseif now < readyAt then "building" else "built"
+	local cache = factoryVisualState[player]
+	if cache.Guild == state then
+		return
+	end
+	local was = cache.Guild
+	cache.Guild = state
+	local old = spot:FindFirstChild("Building")
+	if old then
+		local scaffold = old:FindFirstChild("Scaffold")
+		if scaffold and state == "built" and was == "building" then
+			finishPop(scaffold, spot)
+		end
+		old:Destroy()
+	end
+	local holder = Instance.new("Model")
+	holder.Name = "Building"
+	holder:SetAttribute("BaseCFrame", base)
+	local body = ArtGuild.build(holder, base)
+	body:SetAttribute("Interact", "Guild")
+	label(body, "Tinker's Guild", 9, UDim2.fromOffset(160, 28), 50)
+	if state == "built" then
+		holder.Parent = spot
+		task.spawn(ArtMerge.merge, holder, body)
+		return
+	end
+	Kit.fade(holder, if state == "building" then 0.5 else 0.7)
+	if state == "building" then
+		setScaffold(holder, true, ArtGuild.WIDTH, ArtGuild.DEPTH, 14)
+	end
+	holder.Parent = spot
 end
 
 local function refreshPen(player: Player, model: Model, id: string, pen: { [string]: any }, now: number): ()
@@ -1376,12 +1434,13 @@ function PlotService.refresh(player: Player)
 	local now = Clock.now()
 	refreshFields(player, model, data, now)
 	for id, factory in data.factories do
-		refreshFactory(player, model, id, factory, now)
+		refreshFactory(player, model, data, id, factory, now)
 	end
 	for id, pen in data.pens do
 		refreshPen(player, model, id, pen, now)
 	end
 	refreshQuarry(player, model, data, now)
+	refreshGuild(player, model, data, now)
 	refreshTown(player, model, data, now)
 	refreshLand(player, model, data, now)
 	refreshDecor(player, model, data)

@@ -32,6 +32,8 @@ local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Quarry = require("../src/shared/Quarry")
 local QuarryConfig = require("../src/shared/Config/Quarry")
+local Guild = require("../src/shared/Guild")
+local GuildConfig = require("../src/shared/Config/Guild")
 local Recipes = require("../src/shared/Config/Recipes")
 local Records = require("../src/shared/Records")
 local Missing = require("../src/shared/Missing")
@@ -514,6 +516,68 @@ test("the Smelters: Township's Foundry numbers, Bars from Ore Shed ore", functio
 	ok(Quarry.takeOre(data, { CopperOre = 2 }), "the rest")
 	eq(data.oreShed.CopperOre, nil, "empty ore cleared")
 	eq(table.find(OrderGen.makeablePool(data), "CopperBar"), nil, "Bars never show up on orders")
+end)
+
+test("the Tinker's Guild: Township's Academy numbers and upgrades", function()
+	eq(GuildConfig.unlockLevel, 22, "Guild level")
+	eq(GuildConfig.population, 810, "Guild Population")
+	eq(GuildConfig.buildBars.CopperBar, 6, "6 Copper Bars")
+	eq(GuildConfig.buildBars.SilverBar, 2, "2 Silver Bars")
+	eq(GuildConfig.buildSeconds, 41 * 3600, "1 d 17 h")
+	eq(GuildConfig.buildXp, 269, "Guild XP")
+	-- Every upgradable factory has a cost table; the wiki's totals for the Bakery
+	for id in Factories do
+		local upgradable = Guild.tableId(id) ~= nil
+		ok(upgradable == not id:find("^Smelter"), id .. " upgradable unless a Smelter")
+	end
+	local totals = { 0, 0, 0, 0 }
+	for _, row in GuildConfig.costs.Bakery do
+		for i = 1, 4 do
+			totals[i] += row[i]
+		end
+	end
+	eq(table.concat(totals, ","), "516,296,197,81", "Bakery's Bars to the top")
+	eq(Guild.maxLevel("Bakery"), 53, "factories top out at 53")
+	eq(Guild.maxLevel("FeedMill2"), 13, "the second Feed Mill uses the Feed Mill's table")
+	local first = Guild.nextCost("Bakery", 1) :: any
+	ok(first.SilverBar == 1 and first.GoldBar == 1 and first.CopperBar == nil, "Bakery 1 -> 2: 1 Silver + 1 Gold")
+
+	local data = Profile.migrate(nil) :: any
+	data.level = 30
+	local ok1, why = Guild.canUpgrade(data, "Bakery", "time", 100)
+	ok(ok1 == nil and why == "Build the Tinker's Guild first", "no Guild, no upgrades")
+	data.guild.readyAt = 50
+	data.factories.Bakery.built = true
+	ok(Guild.canUpgrade(data, "Bakery", "coins", 100) == nil, "level 2 is a time upgrade")
+	ok(Guild.canUpgrade(data, "Bakery", "time", 100) ~= nil, "time at level 2")
+	-- Take the Bakery to the top, always picking the first offer
+	for _ = 1, 52 do
+		local pick = Guild.choices("Bakery", Guild.levels(data, "Bakery"))[1]
+		ok(pick ~= nil and Guild.canUpgrade(data, "Bakery", pick, 100) ~= nil, "an upgrade on offer")
+		Guild.upgrade(data, "Bakery", pick)
+	end
+	local top = Guild.levels(data, "Bakery")
+	eq(Guild.level(top), 53, "Bakery at 53")
+	eq(top.time, 10, "-50% time")
+	eq(top.shelves, 2, "+2 shelves")
+	ok(top.coins == 20 and top.xp == 20, "+100% Coins and XP")
+	eq(#Guild.choices("Bakery", top), 0, "nothing left")
+	eq(Guild.timeMult(data, "Bakery"), 0.5, "half the time")
+	eq(Guild.trayCapacity(data, "Bakery"), 8, "8 shelves")
+	local coins, xp = Guild.orderBonus(data, { Bread = 2, Wheat = 2 }, 100, 40)
+	local breadShare = Items.Bread.sellPrice * 2 / (Items.Bread.sellPrice * 2 + Items.Wheat.sellPrice * 2)
+	eq(coins, math.floor(100 * breadShare + 0.5), "Coins +100% on the Bread's share")
+	ok(xp > 0 and xp < 40, "XP on the Bread's share only")
+	-- The Feed Mill: shelves at 5 and 10, time at the rest, no Coins or XP
+	data.factories.FeedMill.built = true
+	for _ = 1, 12 do
+		Guild.upgrade(data, "FeedMill", Guild.choices("FeedMill", Guild.levels(data, "FeedMill"))[1])
+	end
+	local mill = Guild.levels(data, "FeedMill")
+	ok(mill.time == 10 and mill.shelves == 2 and mill.coins == 0, "Feed Mill: -50% and 8 shelves")
+	eq(Guild.level(Guild.levels(data, "FeedMill2")), 1, "copies upgrade on their own")
+	local canBuild = Guild.canBuild(Profile.migrate(nil) :: any, 100)
+	ok(not canBuild, "a new farm can't build the Guild")
 end)
 
 test("level rewards", function()
