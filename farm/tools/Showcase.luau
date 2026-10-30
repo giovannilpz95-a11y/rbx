@@ -8,6 +8,7 @@ local ArtBuildings = require("../src/shared/Art/Buildings")
 local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtCommunity = require("../src/shared/Art/Community")
+local ArtDecor = require("../src/shared/Art/Decor")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local Items = require("../src/shared/Items")
 
@@ -211,6 +212,28 @@ SCENES.plot = function(root)
 	end
 	for i, id in { "VillageWell", "PicnicPavilion", "Schoolhouse" } do
 		ArtCommunity.build(id, Kit.model(id, root), CFrame.new(-13 - (i - 1) * 15, 0, 86), 12)
+	end
+end
+
+SCENES.decor = function(root)
+	ground(root, 70)
+	local row = {
+		{ "GravelPath", -18, -12 },
+		{ "BrickPath", -13, -12 },
+		{ "PicketFence", -8, -12 },
+		{ "HedgeRow", -3, -12 },
+		{ "FlowerBed", 2, -12 },
+		{ "LampPost", 7, -12 },
+		{ "Bench", 14, -12 },
+		{ "HayBales", -16, -2 },
+		{ "OakTree", -6, -2 },
+		{ "PicnicTable", 4, -2 },
+		{ "Pond", -10, 12 },
+		{ "StoneFountain", 6, 12 },
+	}
+	for _, d in row do
+		local m = Kit.model(d[1], root)
+		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
 	end
 end
 
