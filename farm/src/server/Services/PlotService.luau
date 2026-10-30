@@ -782,7 +782,7 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 		local prize = if stage == 4 then field.prize else nil
 		local state = if field.crop == nil
 			then "empty"
-			else string.format("%s:%d:%s", field.crop, stage, tostring(prize))
+			else string.format("%s:%d:%s:%s", field.crop, stage, tostring(prize), tostring(field.watered == true))
 		if cache[id] == state then
 			continue
 		end
@@ -793,6 +793,8 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 		cache[id] = state
 		bed:SetAttribute("Crop", field.crop)
 		bed:SetAttribute("ReadyAt", field.readyAt)
+		bed:SetAttribute("Watered", field.watered == true) -- for helpers' clients (Helping Hands)
+		bed.Color = if field.watered then Palette.soilDark else COLORS.soil -- damp soil after watering
 		local old = bed:FindFirstChild("Crop")
 		if old then
 			old:Destroy()
