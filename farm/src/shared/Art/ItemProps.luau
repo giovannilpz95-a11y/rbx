@@ -265,6 +265,42 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Swirl", 0.7, at(0, 1.75, 0), Palette.flowerWhite, QUIET)
 		b.ball("Berry", 0.35, at(0.15, 2.1, 0), Palette.roofRed, QUIET)
 	end,
+	Fries = function(b)
+		b.block("Carton", Vector3.new(1.2, 1, 0.8), at(0, 0.5, 0), Palette.roofRed, QUIET)
+		for i, x in { -0.35, 0, 0.35 } do
+			b.block("Fry", Vector3.new(0.22, 0.9, 0.22), at(x, 1.2 + (i % 2) * 0.15, 0), Palette.wheat, QUIET)
+		end
+	end,
+	Brownie = function(b)
+		b.block("Square", Vector3.new(1.3, 0.7, 1.3), at(0, 0.35, 0), Palette.cocoa, QUIET)
+		b.block("Square", Vector3.new(1, 0.6, 1), at(0.15, 1, -0.1), Palette.cocoa:Lerp(Palette.bread, 0.25), QUIET)
+		b.ball("Nut", 0.35, at(0.2, 1.4, -0.1), Palette.cream, QUIET)
+	end,
+	StrawberryJam = function(b)
+		b.post("Jar", 1.2, 1.1, at(0, 0.6, 0), Palette.roofRed, QUIET)
+		b.post("Label", 0.5, 1.14, at(0, 0.55, 0), Palette.cream, QUIET)
+		b.post("Lid", 0.3, 1.2, at(0, 1.35, 0), Palette.roofMustard, QUIET)
+	end,
+	PotatoBread = function(b)
+		b.block("Loaf", Vector3.new(1.8, 0.9, 1.1), at(0, 0.45, 0), Palette.bread, QUIET)
+		b.ball("Crust", 1.2, at(0, 0.95, 0), Palette.woodLight, QUIET)
+		b.block("Slash", Vector3.new(0.9, 0.1, 0.18), at(0, 1.5, 0), Palette.cream, QUIET)
+	end,
+	IceCreamBar = function(b)
+		b.block("Stick", Vector3.new(0.3, 0.8, 0.12), at(0, 0.4, 0), Palette.woodLight, QUIET)
+		b.block("Bar", Vector3.new(1, 1.5, 0.5), at(0, 1.5, 0), Palette.cocoa, QUIET)
+		b.block("Drip", Vector3.new(1.04, 0.35, 0.54), at(0, 2.1, 0), Palette.cream, QUIET)
+	end,
+	Muffin = function(b)
+		b.post("Cup", 0.9, 1.1, at(0, 0.45, 0), Palette.flowerPink, QUIET)
+		b.ball("Top", 1.4, at(0, 1.05, 0), Palette.bread, QUIET)
+		b.ball("Berry", 0.35, at(0.2, 1.7, -0.1), Palette.plum, QUIET)
+	end,
+	Caramel = function(b)
+		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(-0.35, 0.3, 0.2), Palette.bread, QUIET)
+		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(0.45, 0.3, -0.25), Palette.bread, QUIET)
+		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(0.05, 0.9, 0), Palette.wheat, QUIET)
+	end,
 	Yogurt = function(b)
 		b.post("Pot", 1.2, 1.2, at(0, 0.6, 0), Palette.cream, QUIET)
 		b.post("Lid", 0.2, 1.3, at(0, 1.3, 0), Palette.roofTeal, QUIET)

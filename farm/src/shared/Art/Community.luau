@@ -714,6 +714,206 @@ TYPES.BotanicalArch = function(b, s)
 	return body
 end
 
+-- Amphitheatre (content bank, level 24): open-air stone seating in three stepped rows facing a
+-- wooden stage under a cream band shell, with a red curtain behind and the two theatre masks
+-- on the shell's crown.
+TYPES.Amphitheatre = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.stoneLight, { collide = true })
+	local t = b.into(body, true)
+	-- The seating: each row back from the stage is wider and a step higher
+	for i = 1, 3 do
+		local rise = 0.6 * i
+		t.block(
+			"Seats",
+			Vector3.new(w - 3.6 + i * 1.1, rise, 1.3),
+			Vector3.new(0, 0.4 + rise / 2, -1.3 * i + 0.2),
+			if i == 2 then Palette.stone else Palette.stoneLight
+		)
+	end
+	-- The stage and its band shell on two columns
+	local stageZ = w / 2 - 1.9
+	t.block("Stage", Vector3.new(w - 1.6, 0.8, 3.4), Vector3.new(0, 0.8, stageZ), Palette.woodLight)
+	local columnX = w / 2 - 1.2
+	for _, x in { -columnX, columnX } do
+		t.post("Column", 3.6, 0.7, Vector3.new(x, 3, stageZ), Palette.cream)
+	end
+	Kit.archRoof(t, "Shell", Vector3.new(0, 4.8, stageZ), columnX * 2 + 0.7, 3.6, 2.6, 4, 0.4, Palette.cream)
+	t.block(
+		"Curtain",
+		Vector3.new(w - 3, 3.4, 0.3),
+		Vector3.new(0, 2.9, w / 2 - 0.5),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	-- Sign object: the two theatre masks on the shell's crown
+	for i, x in { -0.6, 0.6 } do
+		t.ball(
+			"Mask",
+			1,
+			Vector3.new(x, 7.9, stageZ - 1.9),
+			if i == 1 then Palette.cream else Palette.flowerYellow,
+			{ shadow = false }
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Sculpture Park (content bank, level 25): a lawn with a path through it, three stone plinths
+-- of sculptures (a stack of stone balls, a teal ring and a tilted mustard block), a bench and a
+-- clipped hedge.
+TYPES.SculpturePark = function(b, s)
+	local w = s * 0.8
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grassLight, { collide = true })
+	local t = b.into(body, true)
+	t.block("Path", Vector3.new(2, 0.1, w), Vector3.new(0, 0.45, 0), Palette.path, { shadow = false })
+	-- Sign object: the big ring on the front plinth by the path
+	local ringAt = Vector3.new(-2.6, 0, -w / 4)
+	t.block("Plinth", Vector3.new(2, 1.4, 2), ringAt + Vector3.new(0, 1.1, 0), Palette.stoneLight)
+	t.cyl(
+		"Ring",
+		0.6,
+		3.6,
+		CFrame.new(ringAt + Vector3.new(0, 3.6, 0)) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.roofTeal
+	)
+	t.cyl(
+		"RingHole",
+		0.65,
+		2,
+		CFrame.new(ringAt + Vector3.new(0, 3.6, 0)) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.grassLight,
+		{ shadow = false }
+	)
+	-- The stacked stones and the tilted block on the far plinths
+	local stackAt = Vector3.new(2.6, 0, -w / 4)
+	t.block("Plinth", Vector3.new(1.6, 1, 1.6), stackAt + Vector3.new(0, 0.9, 0), Palette.stone)
+	for i, d in { 1.6, 1.2, 0.8 } do
+		t.ball("Stone", d, stackAt + Vector3.new(0, 1.1 + i * 0.95, 0), Palette.stoneLight)
+	end
+	local blockAt = Vector3.new(2.6, 0, w / 4)
+	t.block("Plinth", Vector3.new(1.8, 0.8, 1.8), blockAt + Vector3.new(0, 0.8, 0), Palette.stone)
+	t.block(
+		"Cube",
+		Vector3.new(1.6, 1.6, 1.6),
+		CFrame.new(blockAt + Vector3.new(0, 2.2, 0)) * CFrame.Angles(math.rad(35), math.rad(45), 0),
+		Palette.roofMustard
+	)
+	-- A bench facing the path, and a clipped hedge behind it
+	local benchAt = Vector3.new(-2.6, 0, w / 4)
+	t.block("Bench", Vector3.new(2.4, 0.3, 0.9), benchAt + Vector3.new(0, 1, 0), Palette.wood)
+	t.block("BenchBack", Vector3.new(2.4, 0.8, 0.2), benchAt + Vector3.new(-0, 1.5, 0.45), Palette.wood)
+	t.block("Hedge", Vector3.new(w - 1, 1.2, 0.9), Vector3.new(0, 1, w / 2 - 0.6), Palette.leaf)
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Big Top (content bank, level 26): a round circus tent in red and cream rings on a sandy
+-- ring, a pole through the peak with a pennant, and a dark entrance flap at the front.
+TYPES.BigTop = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grassLight, { collide = true })
+	local t = b.into(body, true)
+	t.post("Ring", 0.1, w - 0.4, Vector3.new(0, 0.45, 0), Palette.straw, { shadow = false })
+	local r = w - 2
+	t.post("Wall", 3.2, r, Vector3.new(0, 2, 0), Palette.roofRed)
+	-- The roof: rings narrowing to the peak, red and cream in turn
+	for i, d in { r + 0.6, r * 0.75, r * 0.5, r * 0.26 } do
+		t.post(
+			"Canvas",
+			0.9,
+			d,
+			Vector3.new(0, 3.6 + i * 0.85, 0),
+			if i % 2 == 1 then Palette.cream else Palette.roofRed
+		)
+	end
+	t.post("Pole", 2.4, 0.3, Vector3.new(0, 8.4, 0), Palette.woodDark)
+	t.block("Pennant", Vector3.new(1.2, 0.7, 0.1), Vector3.new(0.6, 9.2, 0), Palette.roofMustard, { shadow = false })
+	-- Sign object: the entrance, a dark doorway with its flaps tied back in stripes
+	local face = -r / 2
+	t.block("Entrance", Vector3.new(2.2, 2.8, 0.4), Vector3.new(0, 1.8, face - 0.05), Palette.cocoa)
+	for _, x in { -1.3, 1.3 } do
+		t.wedge("Flap", Vector3.new(0.6, 2.8, 0.4), CFrame.new(x, 1.8, face - 0.3), Palette.cream)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Bus Depot (content bank, level 27): a long garage under a flat teal roof with two big bay
+-- doors, a yellow town bus parked out front, and a bus-stop sign by the kerb.
+TYPES.BusDepot = function(b, s)
+	local w, d, h = s * 0.82, s * 0.5, 4.6
+	local z0 = s * 0.15
+	b.block("Plinth", Vector3.new(w + 0.6, PLINTH, d + 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(w, h, d),
+		Vector3.new(0, PLINTH + h / 2, z0),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block("Roof", Vector3.new(w + 0.8, 0.6, d + 0.8), Vector3.new(0, PLINTH + h + 0.3, z0), Palette.roofTeal)
+	local face = z0 - d / 2
+	for _, x in { -w / 4, w / 4 } do
+		t.block(
+			"BayDoor",
+			Vector3.new(w / 2 - 1, h - 1, 0.3),
+			Vector3.new(x, PLINTH + (h - 1) / 2, face - 0.1),
+			Palette.cocoa
+		)
+	end
+	-- Sign object: the town bus parked in front, a sky-blue window band and four wheels
+	local bus = Vector3.new(-0.6, 0, face - 2.2)
+	t.block("Bus", Vector3.new(5.6, 2.2, 1.9), bus + Vector3.new(0, 1.6, 0), Palette.roofMustard)
+	t.block("BusWindows", Vector3.new(5.4, 0.7, 1.95), bus + Vector3.new(0, 2.1, 0), Palette.sky, { shadow = false })
+	for _, x in { -1.8, 1.8 } do
+		t.cyl("Wheel", 2, 0.9, CFrame.new(bus + Vector3.new(x, 0.45, 0)) * TURN, Palette.tire, { shadow = false })
+	end
+	-- The bus-stop sign by the kerb
+	t.post("StopPole", 3, 0.2, Vector3.new(w / 2 - 0.6, 1.5, face - 2.4), Palette.metal)
+	t.cyl("StopSign", 0.2, 1.1, CFrame.new(w / 2 - 0.6, 3.2, face - 2.4) * TURN, Palette.roofRed, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 0.6, z0 + d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Filling Station (content bank, level 28): a little red-roofed kiosk beside a canopy on four
+-- posts sheltering two old-fashioned pumps, with a round sign on a pole.
+TYPES.FillingStation = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.road, { collide = true })
+	local t = b.into(body, true)
+	-- The kiosk at the back
+	local kz = w / 2 - 2
+	t.block("Kiosk", Vector3.new(4.4, 3.6, 3), Vector3.new(-w / 4, 2.2, kz), Palette.cream)
+	t.block("KioskRoof", Vector3.new(5, 0.6, 3.6), Vector3.new(-w / 4, 4.3, kz), Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(-w / 4, 0.4, kz - 1.5), 1.4, 2.8, Palette.roofRed, Palette.cream)
+	-- The canopy over the pumps
+	local cz = -0.6
+	for _, x in { -2.6, 2.6 } do
+		for _, z in { cz - 1.6, cz + 1.6 } do
+			t.post("CanopyPost", 4, 0.4, Vector3.new(x + w / 8, 2.4, z), Palette.cream)
+		end
+	end
+	t.block("Canopy", Vector3.new(6.6, 0.6, 4.4), Vector3.new(w / 8, 4.7, cz), Palette.roofRed)
+	-- Sign object: the two pumps, red with cream faces
+	for _, x in { -1, 1 } do
+		t.block("Pump", Vector3.new(0.9, 2, 0.7), Vector3.new(w / 8 + x * 1.2, 1.4, cz), Palette.roofRed)
+		t.block(
+			"PumpFace",
+			Vector3.new(0.7, 0.6, 0.1),
+			Vector3.new(w / 8 + x * 1.2, 1.9, cz - 0.4),
+			Palette.cream,
+			{ shadow = false }
+		)
+	end
+	t.post("SignPole", 4.6, 0.3, Vector3.new(w / 2 - 0.8, 2.7, -w / 2 + 0.8), Palette.metal)
+	t.cyl("Sign", 0.3, 1.6, CFrame.new(w / 2 - 0.8, 5.4, -w / 2 + 0.8) * TURN, Palette.roofMustard, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)

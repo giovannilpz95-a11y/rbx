@@ -56,6 +56,10 @@ return table.freeze({
 	Quest_Reroll = "Quest_Reroll", -- index: swap an unfinished quest (once a day, free)
 	Quest_Chest = "Quest_Chest", -- the bonus chest for all three
 	SeedCart_Buy = "SeedCart_Buy", -- slot: buy one of the Seed Cart's four slots
+	Quarry_Restore = "Quarry_Restore", -- (start reopening the Quarry)
+	Quarry_SpeedUp = "Quarry_SpeedUp", -- (finish reopening now, Gems)
+	Quarry_Dig = "Quarry_Dig", -- row, col: one Pickaxe swing (shared/Quarry)
+	Quarry_Free = "Quarry_Free", -- (the day's free Pickaxes at the gate)
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)

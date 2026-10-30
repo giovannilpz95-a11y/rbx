@@ -30,6 +30,8 @@ local OrderGen = require("../src/shared/OrderGen")
 local Pen = require("../src/shared/Pen")
 local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
+local Quarry = require("../src/shared/Quarry")
+local QuarryConfig = require("../src/shared/Config/Quarry")
 local Recipes = require("../src/shared/Config/Recipes")
 local Records = require("../src/shared/Records")
 local Missing = require("../src/shared/Missing")
@@ -152,6 +154,9 @@ test("Township baseline rows for animals, factories and recipes", function()
 	eq(Animals.pens.CowBarn2.buildCost, 1000, "second Cow Barn cost")
 	eq(Animals.pens.CowBarn3.unlockLevel, 22, "third Cow Barn at 22")
 	eq(Animals.pens.CowBarn3.extraAnimalCosts[1], 750, "third Cow Barn's 4th Cow")
+	eq(Animals.pens.ChickenCoop2.unlockLevel, 24, "second Chicken Coop at 24")
+	eq(Animals.pens.ChickenCoop2.buildCost, 3000, "second Chicken Coop cost")
+	eq(Animals.pens.ChickenCoop2.extraAnimalCosts[3], 660, "second Chicken Coop's 6th Chicken")
 	for id, def in Animals.pens do
 		if def.copyOf then
 			local original = Animals.pens[def.copyOf]
@@ -245,7 +250,55 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 23, "levels 17 to 23 are banked")
+	eq(Levels.built, 28, "levels 17 to 28 are banked")
+	eq(Levels.list[28].xpToNext, 19210, "L28 row")
+	eq(Recipes.Fries.factory, "Diner", "Fries at the Diner")
+	eq(Recipes.Fries.inputs.Cream, 1, "Fries (Township's inputs)")
+	eq(Town.houses.CanalHouse.copyLevels[1], 28, "Canal House")
+	eq(
+		Lots.community[TownRules.communityLot("FillingStation") :: number].land,
+		Lots.westMeadowLand,
+		"Filling Station in the West Meadow"
+	)
+	eq(Levels.list[27].xpToNext, 17108, "L27 row")
+	eq(Recipes.StrawberryJam.factory, "JamKitchen", "Strawberry Jam at the Jam Kitchen")
+	eq(Recipes.StrawberryJam.inputs.Strawberries, 3, "Strawberry Jam")
+	eq(Recipes.Brownie.inputs.Cocoa, 2, "Brownie (Township's inputs)")
+	eq(Factories.JamKitchen.population, 1480, "Jam Kitchen Population")
+	eq(
+		Lots.community[TownRules.communityLot("BusDepot") :: number].land,
+		Lots.farCornersLand,
+		"Bus Depot in the Far Corners"
+	)
+	eq(Levels.list[26].xpToNext, 15178, "L26 row")
+	eq(Recipes.PotatoBread.inputs.Potatoes, 2, "Potato Bread (Township's inputs)")
+	eq(Town.houses.HearthHouse.copyLevels[1], 24, "Hearth House")
+	eq(Town.houses.TwinGables.copyLevels[1], 26, "Twin Gables")
+	eq(
+		Lots.community[TownRules.communityLot("BigTop") :: number].land,
+		Lots.farCornersLand,
+		"Big Top in the Far Corners"
+	)
+	eq(Levels.list[25].xpToNext, 13413, "L25 row")
+	ok(table.find(Balance.enabledCrops, "Cocoa") ~= nil and Crops.Cocoa.unlockLevel == 25, "Cocoa at 25")
+	eq(Levels.gifts[25].Cocoa, 3, "Cocoa to start with")
+	eq(Recipes.IceCreamBar.inputs.CaneSyrup, 1, "Ice Cream Bar (Township's inputs)")
+	eq(Recipes.IceCreamBar.inputs.PineTrees, 1, "Ice Cream Bar uses a Pine Tree")
+	eq(
+		Lots.community[TownRules.communityLot("SculpturePark") :: number].land,
+		Lots.farCornersLand,
+		"Sculpture Park in the Far Corners"
+	)
+	eq(Levels.list[24].xpToNext, 11802, "L24 row")
+	eq(Recipes.Muffin.factory, "PastryShop", "Muffin at the Pastry Shop")
+	eq(Recipes.Muffin.inputs.Eggs, 4, "Muffin (Township's inputs)")
+	eq(Recipes.Caramel.inputs.Sugarcane, 3, "Caramel")
+	eq(Factories.PastryShop.population, 1100, "Pastry Shop Population")
+	eq(
+		Lots.community[TownRules.communityLot("Amphitheatre") :: number].land,
+		Lots.farCornersLand,
+		"Amphitheatre in the Far Corners"
+	)
 	eq(Levels.list[23].xpToNext, 10338, "L23 row")
 	eq(Recipes.PaperTowel.inputs.PineTrees, 2, "Paper Towels")
 	eq(Recipes.FrozenYogurt.inputs.Yogurt, 1, "Frozen Yogurt")
@@ -305,12 +358,118 @@ test("the content bank stays locked at the live cap", function()
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor" } do
+	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor", "PastryShop", "JamKitchen" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
 	end
 	eq(Recipes.FarmBurger.inputs.Tomatoes, 1, "Farm Burger uses the bank's Tomatoes")
+end)
+
+test("the Quarry: Township's numbers, a fixed shaft and Pickaxe digging", function()
+	eq(QuarryConfig.unlockLevel, 21, "opens at 21")
+	eq(QuarryConfig.restoreCost, 3000, "3,000 Coins to reopen")
+	eq(QuarryConfig.restoreSeconds, 30 * 3600, "1 d 6 h")
+	eq(QuarryConfig.ores.CopperOre.sellPrice, 8, "Copper Ore sells for 8")
+	local data = Profile.migrate(nil) :: any
+	eq(data.quarry.readyAt, nil, "closed on a new farm")
+	eq(next(data.oreShed), nil, "empty Ore Shed")
+	local ok1, why = Quarry.canDig(data, 1, 1, 0)
+	eq(ok1, false, "can't dig before it reopens")
+	ok(why ~= nil, "says why")
+	Quarry.restore(data, 100 + QuarryConfig.restoreSeconds, 12345)
+	eq(Quarry.pickaxes(data), QuarryConfig.restoreGift, "opening Pickaxes")
+	eq(Quarry.isRestored(data, 100 + QuarryConfig.restoreSeconds - 1), false, "still reopening")
+	local now = 100 + QuarryConfig.restoreSeconds
+	eq(Quarry.isRestored(data, now), true, "open")
+	-- The same seed always gives the same shaft
+	local seed = data.quarry.seed
+	for row = 1, 40 do
+		for col = 1, QuarryConfig.width do
+			local a, b = Quarry.cell(seed, row, col), Quarry.cell(seed, row, col)
+			eq(a.block, b.block, "fixed block")
+			eq(a.find, b.find, "fixed find")
+		end
+	end
+	-- Bedrock never sits beside Bedrock, and every row has room to dig
+	for row = 1, 300 do
+		local free = 0
+		for col = 1, QuarryConfig.width do
+			if Quarry.cell(seed, row, col).block == "Bedrock" then
+				ok(Quarry.cell(seed, row, col + 1).block ~= "Bedrock", "no Bedrock pair across")
+				ok(Quarry.cell(seed, row + 1, col).block ~= "Bedrock", "no Bedrock pair down")
+				eq(Quarry.cell(seed, row, col).find, nil, "Bedrock holds nothing")
+			else
+				free += 1
+			end
+		end
+		ok(free > 0, "row " .. row .. " can be dug")
+	end
+	-- Deeper ores only below their depth
+	local seen: { [string]: number } = {}
+	for row = 1, 400 do
+		for col = 1, QuarryConfig.width do
+			local find = Quarry.cell(seed, row, col).find
+			if find and QuarryConfig.ores[find] then
+				ok(row >= QuarryConfig.ores[find].fromDepth, find .. " not above its depth")
+				seen[find] = (seen[find] or 0) + 1
+			end
+		end
+	end
+	for _, id in Quarry.ORE_IDS do
+		ok((seen[id] or 0) > 0, id .. " turns up somewhere in 400 m")
+	end
+	ok(seen.CopperOre > seen.GoldOre, "copper is commoner than gold")
+	-- Digging: only next to an open spot, Stone takes two swings, a Pickaxe a swing
+	eq((Quarry.canDig(data, 2, 1, now)), false, "row 2 is out of reach from the surface")
+	local col = 1
+	while Quarry.cell(seed, 1, col).block == "Bedrock" do
+		col += 1
+	end
+	local cell = Quarry.cell(seed, 1, col)
+	local before = Quarry.pickaxes(data)
+	local result = Quarry.dig(data, 1, col)
+	if cell.block == "Stone" then
+		eq(result.cleared, false, "Stone stands after one swing")
+		eq(Quarry.isOpen(data.quarry, 1, col), false, "not open yet")
+		result = Quarry.dig(data, 1, col)
+	end
+	eq(result.cleared, true, "dug out")
+	eq(Quarry.isOpen(data.quarry, 1, col), true, "open")
+	eq(Quarry.depth(data.quarry), 1, "1 m down")
+	local swings = if cell.block == "Stone" then 2 else 1
+	local gift = if result.pickaxes then result.pickaxes else 0
+	eq(Quarry.pickaxes(data), before - swings + gift, "a Pickaxe per swing")
+	eq((Quarry.canDig(data, 1, col, now)), false, "already open")
+	ok(Quarry.inReach(data.quarry, 2, col), "the cell below is in reach")
+	-- Ore lands in the Ore Shed, never the Barn
+	local oreRow, oreCol
+	for row = 1, 60 do
+		for c = 1, QuarryConfig.width do
+			if Quarry.cell(seed, row, c).find == "CopperOre" and not oreRow then
+				oreRow, oreCol = row, c
+			end
+		end
+	end
+	local copy = Profile.deepCopy(data)
+	copy.quarry.rows[tostring(oreRow - 1)] = 0xFFF -- open the row above it
+	local items = Profile.deepCopy(copy.inventory.items)
+	local swing = Quarry.dig(copy, oreRow, oreCol)
+	if not swing.cleared then
+		swing = Quarry.dig(copy, oreRow, oreCol)
+	end
+	eq(swing.find, "CopperOre", "found Copper Ore")
+	eq(copy.oreShed.CopperOre, 1, "in the Ore Shed")
+	eq(swing.xp, QuarryConfig.ores.CopperOre.xp, "ore XP")
+	eq(copy.inventory.items.CopperOre, items.CopperOre, "not in the Barn")
+	-- Out of Pickaxes
+	data.toolShed.items.Pickaxe = 0
+	local _, noPick = Quarry.canDig(data, 2, col, now)
+	ok(noPick ~= nil, "needs a Pickaxe")
+	-- The day's free Pickaxes, once a day
+	eq(Quarry.claimFree(data, 7, now), QuarryConfig.dailyFree, "free Pickaxes")
+	eq(Quarry.claimFree(data, 7, now), 0, "once a day")
+	eq(Quarry.claimFree(data, 8, now), QuarryConfig.dailyFree, "next day")
 end)
 
 test("level rewards", function()
@@ -514,7 +673,11 @@ test("North Lane opens more lots once the North Fields are cleared", function()
 	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
 	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
 	eq(#Lots.houses, 64, "House lots with North Lane and the Far Corners")
-	eq(#Lots.community, 23, "Community lots with North Lane and the Far Corners")
+	eq(#Lots.community, 29, "Community lots with North Lane, the Far Corners and the West Meadow")
+	for i = 24, 29 do
+		eq(Lots.community[i].land, Lots.westMeadowLand, "Community lot " .. i .. " in the West Meadow")
+		ok(Lots.community[i].z - 6 > 12, "Community lot " .. i .. " clear of the West Meadow's pen row")
+	end
 	local data = Profile.migrate(nil) :: any
 	data.level = 16
 	eq(TownRules.houseLotCount(data, 0), 32, "Main Street only")

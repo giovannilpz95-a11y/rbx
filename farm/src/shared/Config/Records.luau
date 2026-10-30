@@ -11,6 +11,7 @@ export type RecordDef = {
 	id: string,
 	name: string,
 	text: string, -- "%s" is the tier's goal
+	short: string, -- the Farmer Card's stat label
 	stat: string,
 	goals: { number }, -- Bronze, Silver, Gold
 	gems: { number },
@@ -23,6 +24,7 @@ return table.freeze({
 	list = table.freeze({
 		table.freeze({
 			id = "Orders",
+			short = "orders delivered",
 			name = "Order Runner",
 			text = "Deliver %s orders",
 			stat = "orders",
@@ -33,6 +35,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Harvest",
+			short = "crops harvested",
 			name = "Green Thumb",
 			text = "Harvest %s crops",
 			stat = "harvest",
@@ -43,6 +46,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Goods",
+			short = "goods made",
 			name = "Busy Workshop",
 			text = "Make %s factory goods",
 			stat = "goods",
@@ -53,6 +57,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Animals",
+			short = "animal goods",
 			name = "Barnyard Pal",
 			text = "Collect %s animal goods",
 			stat = "animal",
@@ -63,16 +68,18 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Coins",
+			short = "Coins earned",
 			name = "Coin Jar",
 			text = "Earn %s Coins",
 			stat = "coins",
 			goals = { 1000, 100000, 1000000 },
 			gems = { 1, 2, 5 },
 			xp = { 40, 700, 2500 },
-			glyph = "🪙",
+			glyph = "💰",
 		}),
 		table.freeze({
 			id = "Population",
+			short = "Population",
 			name = "Growing Town",
 			text = "Reach a Population of %s",
 			stat = "population",
@@ -83,6 +90,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Houses",
+			short = "houses",
 			name = "Home Builder",
 			text = "Have %s houses in town",
 			stat = "houses",
@@ -93,6 +101,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Factories",
+			short = "factories",
 			name = "Factory Row",
 			text = "Build %s factories",
 			stat = "factories",
@@ -103,6 +112,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Decor",
+			short = "Coins on decor",
 			name = "Pretty Plot",
 			text = "Spend %s Coins on decorations",
 			stat = "decor",
@@ -113,6 +123,7 @@ return table.freeze({
 		}),
 		table.freeze({
 			id = "Helping",
+			short = "neighbours helped",
 			name = "Helping Hand",
 			text = "Help neighbours %s times",
 			stat = "help",

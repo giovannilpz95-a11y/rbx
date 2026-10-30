@@ -545,6 +545,85 @@ local function iceCreamParlor(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Pastry Shop (content bank, level 24): a butter-yellow shop under a chocolate roof, a
+-- striped awning over the display window, a giant muffin by the chimney, and a rolling pin
+-- on two cradles that rolls while it works.
+local function pastryShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.wheat:Lerp(Palette.cream, 0.55), Palette.stoneLight)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 13.4, 3.2, Palette.cocoa, Palette.cream)
+	local chimney = d.block("Chimney", Vector3.new(1.4, 3.2, 1.4), Vector3.new(-3.6, TOP + 2.6, 3.6), Palette.brick)
+	-- The giant muffin: a paper cup and a domed top with a berry, on the roof's front slope
+	local muffin = Vector3.new(-3, TOP + 2.2, -1.6)
+	d.post("MuffinCup", 2, 2.6, muffin, Palette.flowerPink)
+	d.ball("MuffinTop", 3.2, muffin + Vector3.new(0, 1.3, 0), Palette.bread)
+	d.ball("Berry", 0.8, muffin + Vector3.new(0, 2.85, 0), Palette.plum, { shadow = false })
+	-- The rolling pin: two cradle arms on the ridge hold it; the pin and its handles roll
+	local pinAt = Vector3.new(2.4, TOP + 4.6, 0)
+	for _, x in { -1.9, 1.9 } do
+		d.block(
+			"Cradle",
+			Vector3.new(0.4, 1.6, 0.8),
+			Vector3.new(pinAt.X + x, TOP + 3.6, 0),
+			Palette.woodDark,
+			{ shadow = false }
+		)
+	end
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.cyl("Pin", 3.4, 1.4, CFrame.new(pinAt), Palette.woodLight)
+	a.cyl("Handle", 5.4, 0.5, CFrame.new(pinAt), Palette.wood, { shadow = false })
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	for _, stripe in { { -3.2, Palette.cocoa }, { -0.8, Palette.cream } } do
+		d.block(
+			"Awning",
+			Vector3.new(2.4, 0.3, 1.4),
+			CFrame.new(stripe[1], PLINTH + 5.6, FRONT - 0.6) * CFrame.Angles(math.rad(18), 0, 0),
+			stripe[2],
+			{ shadow = false }
+		)
+	end
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.cocoa, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("Muffin", 1.2, at, Palette.bread, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
+-- Jam Kitchen (content bank, level 27): a pink-washed cottage kitchen under a plum roof, a
+-- giant jar of strawberry jam on the roof whose lid hops while it cooks, and a striped awning.
+local function jamKitchen(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cream:Lerp(Palette.flowerPink, 0.25), Palette.stoneLight)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 13.4, 3, Palette.roofPlum, Palette.cream)
+	local chimney = d.block("Chimney", Vector3.new(1.4, 3, 1.4), Vector3.new(-3.6, TOP + 2.4, 3.6), Palette.brick)
+	-- The giant jar: red jam, a cream label band, and a lid that hops
+	local jar = Vector3.new(1.4, TOP + 3.6, 0)
+	d.post("Jar", 3.4, 3, jar, Palette.roofRed)
+	d.post("Label", 1.2, 3.1, jar + Vector3.new(0, -0.2, 0), Palette.cream, { shadow = false })
+	local anim = animFolder(model)
+	b.into(anim, false).post("Lid", 0.7, 3.3, jar + Vector3.new(0, 2.05, 0), Palette.roofMustard)
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	for _, stripe in { { -3.2, Palette.roofRed }, { -0.8, Palette.cream } } do
+		d.block(
+			"Awning",
+			Vector3.new(2.4, 0.3, 1.4),
+			CFrame.new(stripe[1], PLINTH + 5.6, FRONT - 0.6) * CFrame.Angles(math.rad(18), 0, 0),
+			stripe[2],
+			{ shadow = false }
+		)
+	end
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofPlum, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("Berry", 1.2, at, Palette.roofRed, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Bakery = bakery,
 	FeedMill = feedMill,
@@ -559,6 +638,8 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 		return feedMill(model, b, Palette.roofRed)
 	end,
 	IceCreamParlor = iceCreamParlor,
+	PastryShop = pastryShop,
+	JamKitchen = jamKitchen,
 }
 
 function ArtFactories.has(id: string): boolean

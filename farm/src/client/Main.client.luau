@@ -23,6 +23,7 @@ local RewardPops = require(script.Parent.Controllers.RewardPops)
 local TownMotion = require(script.Parent.Controllers.TownMotion)
 local QuestsUi = require(script.Parent.UI.Quests)
 local SeedCartUi = require(script.Parent.UI.SeedCart)
+local QuarryUi = require(script.Parent.UI.Quarry)
 local SocialUi = require(script.Parent.UI.Social)
 local LevelUp = require(script.Parent.UI.LevelUp)
 local SettingsUi = require(script.Parent.UI.Settings)
@@ -50,6 +51,7 @@ RewardPops.init()
 SocialUi.init()
 QuestsUi.init()
 SeedCartUi.init()
+QuarryUi.init()
 LevelUp.init()
 SettingsUi.init()
 DailyGift.init()
@@ -93,7 +95,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		return
 	end
 	local panel = SHORTCUTS[input.KeyCode]
-	if panel then
+	if panel and Panels.isShowing(panel) then
+		Panels.close() -- the same key again closes it (Escape also opens Roblox's menu)
+	elseif panel then
 		Panels.open(panel)
 	elseif input.KeyCode == Enum.KeyCode.Escape then
 		Panels.close()

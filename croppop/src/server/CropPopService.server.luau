@@ -31,6 +31,8 @@
 	are offline or on another server; Studio keeps them in memory. Harvest Cup
 	groups count entrants in the CropPopCups DataStore and keep scores in one
 	OrderedDataStore per group (CropPopCup<key>g<group>); Studio keeps them in memory.
+	Tractor Races do the same in groups of 4 (CropPopRace<key>g<group>, counted
+	in CropPopCups under "Race<key>"); Studio runs a race every day.
 ]]
 
 local Players = game:GetService("Players")
@@ -38,6 +40,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
+local CropPop = require(ReplicatedStorage:WaitForChild("CropPop"))
 local CupBoard = require(script.Parent.CupBoard)
 local GiftInbox = require(script.Parent.GiftInbox)
 local RunStore = require(script.Parent.RunStore)
@@ -84,20 +87,21 @@ local function giftInbox()
 	return GiftInbox.dataStore(store)
 end
 
-local function cupBoard()
+-- Harvest Cup groups (size nil) or Tractor Races (size 4, prefix "Race").
+local function cupBoard(size: number?, prefix: string?)
 	if RunService:IsStudio() then
-		return CupBoard.memory()
+		return CupBoard.memory(size)
 	end
 	local ok, counts = pcall(function()
 		return game:GetService("DataStoreService"):GetDataStore("CropPopCups")
 	end)
 	if not ok then
 		warn("[CropPop] no cup store:", counts)
-		return CupBoard.memory()
+		return CupBoard.memory(size)
 	end
 	return CupBoard.dataStore(counts, function(name)
 		return game:GetService("DataStoreService"):GetOrderedDataStore(name)
-	end)
+	end, size, prefix)
 end
 
 local random = Random.new()
@@ -115,6 +119,8 @@ local store = RunStore.new({
 	autoLoad = false,
 	giftInbox = giftInbox(),
 	cupBoard = cupBoard(),
+	raceBoard = cupBoard(CropPop.Race.SIZE, "Race"),
+	raceEveryDay = RunService:IsStudio(),
 })
 
 local remotes = Instance.new("Folder")
@@ -156,6 +162,7 @@ getSave.Parent = ServerStorage
 remote("GetProgress", function(player)
 	store:refreshGifts(player.UserId)
 	store:refreshCup(player.UserId)
+	store:refreshRace(player.UserId)
 	local progress = store:getProgress(player.UserId)
 	progress.unlockAll = store.unlockAll
 	return progress
@@ -248,6 +255,9 @@ if RunService:IsStudio() then
 	end)
 	remote("DevGiftHeart", function(player)
 		return reply(store:devGiftSelf(player.UserId))
+	end)
+	remote("DevRace", function(player)
+		return reply(store:devRace(player.UserId))
 	end)
 	remote("DevCups", function(player, action)
 		return reply(store:devCup(player.UserId, action))

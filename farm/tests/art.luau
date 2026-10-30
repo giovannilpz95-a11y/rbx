@@ -31,6 +31,7 @@ local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
 local ArtPickups = require("../src/shared/Art/Pickups")
+local ArtQuarry = require("../src/shared/Art/Quarry")
 local ArtTown = require("../src/shared/Art/Town")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Animals = require("../src/shared/Config/Animals")
@@ -684,7 +685,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		hinged(p, "Pennant")
 	end)
 
-	test("art: Town Hall, locked land, Puzzle Porch, townsfolk and pickups", function()
+	test("art: Town Hall, locked land, Puzzle Porch, townsfolk, pickups and the Quarry", function()
 		for storeys = 1, 3 do
 			local m = Instance.new("Model")
 			local body, sign = ArtTown.townHall(m, CFrame.new(), storeys)
@@ -707,6 +708,19 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			return top
 		end
 		ok(height(three) > height(one) + 5, "storeys make it taller")
+
+		local quarry = Instance.new("Model")
+		local parts = ArtQuarry.build(quarry, CFrame.new())
+		ok(parts.body:IsDescendantOf(quarry), "Quarry body")
+		eq(#parts.boards:GetChildren(), 3, "Quarry boards")
+		within(quarry, ArtQuarry.PARTS_MAX, "Quarry")
+		paletteRules(quarry, "Quarry")
+		ArtQuarry.setOpen(quarry, true)
+		for _, board in parts.boards:GetChildren() do
+			eq((board :: BasePart).Transparency, 1, "an open Quarry hides its boards")
+		end
+		ArtQuarry.setOpen(quarry, false)
+		eq((parts.boards:GetChildren()[1] :: BasePart).Transparency, 0, "a closed Quarry shows its boards")
 
 		local post = Instance.new("Model")
 		eq(ArtTown.signpost(post, CFrame.new()).Name, "Board", "signpost board")
@@ -904,6 +918,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		-- Barn, board, dock, truck, gate: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
+		total += ArtQuarry.PARTS_MAX
 		-- Town Hall at full height, the Puzzle Porch and the four guides
 		total += ArtTown.TOWNHALL_PARTS_MAX + ArtTown.PORCH_PARTS_MAX + 4 * ArtFolk.PARTS_MAX
 		-- Decorations: the server merges each one's look (Art/Merge), so a full set of placed

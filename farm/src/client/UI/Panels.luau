@@ -160,6 +160,8 @@ local function gemButton(
 	)
 end
 
+Panels.gemButton = gemButton -- for registered panels' Gem actions (the Quarry's speed-up)
+
 -- "Buy what's missing" (G3, shared/Missing): when `needs` is short only of items, a Gem button
 -- pays for just those and does the action in one step. Returns the button and a line naming
 -- what's missing, or nil when nothing is missing or it can't be bought.
@@ -461,6 +463,13 @@ local function releasePictures()
 end
 
 -- Text that shrinks to fit its box, down to `min`
+-- Keep a scaled button's text inside its face: a margin and a size cap (Kit.skinButton
+-- moves both onto the visible label)
+local function insetText(button: GuiObject, max: number)
+	Ui.padding(4).Parent = button
+	Ui.new("UITextSizeConstraint", { MaxTextSize = max, MinTextSize = 8 }).Parent = button
+end
+
 local function fitText(text: string, props: { [string]: any }, max: number, min: number?): TextLabel
 	local label = Ui.label(text, props)
 	label.TextScaled = true
@@ -558,7 +567,7 @@ local function sellDrawer(state: { [string]: any }, order: number)
 			Parent = line,
 		}
 	)
-	Ui.button("✕", function()
+	Ui.button("X", function() -- "✕" is missing from the button font
 		barnPick = nil
 		Panels.refresh()
 	end, {
@@ -673,7 +682,7 @@ local function renderBarn(state: { [string]: any })
 	order += 1
 
 	if tab == "All" or tab == "Materials" then
-		order = barnUpgradeRow(state, order, tab == "Materials")
+		order = barnUpgradeRow(state, order, true) -- have / need chips on both tabs
 	end
 
 	if tab == "Prizes" then
@@ -935,10 +944,11 @@ local function factoryQueueAndShelf(
 	end, {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.fromOffset(100, 40),
+		Size = UDim2.fromOffset(110, 40),
 		TextScaled = true,
 		Parent = shelf,
 	})
+	insetText(collect, 18)
 	Ui.setEnabled(collect, preview.outputCount > 0 and near)
 	if preview.outputCount > 0 and not near then
 		Ui.label("Walk to the output table to collect.", {
@@ -995,14 +1005,16 @@ local function factoryQueueAndShelf(
 	end
 	local slotCost = Speedup.nextSlotCost(def.queueSlots, preview.slots)
 	if slotCost then
-		gemButton("slot:" .. factoryId, "+", slotCost, function()
+		local buy = gemButton("slot:" .. factoryId, "+", slotCost, function()
 			Remotes.fire("Factory_BuySlot", factoryId)
 		end, {
 			Size = UDim2.fromOffset(56, 56),
 			TextScaled = true,
+			TextWrapped = true, -- "+ 8 Gems" on two lines
 			LayoutOrder = preview.slots + 1,
 			Parent = slots,
 		})
+		insetText(buy, 16)
 	end
 	-- The running job: name, time left and Finish
 	local first = preview.queue[1]

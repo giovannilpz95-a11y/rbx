@@ -18,7 +18,7 @@ local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
-local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Social = require(Shared.Config.Social)
 local SocialRules = require(Shared.Social)
 local Timer = require(Shared.Timer)
@@ -136,19 +136,6 @@ local function invite()
 		options.LaunchData = tostring(player.UserId)
 		SocialService:PromptGameInvite(player, options)
 	end)
-end
-
--- Crop Pop's client listens on this client-only event to open its screen (whichever script
--- loads first makes it).
-local function openCropPop()
-	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
-	if event == nil then
-		local created = Instance.new("BindableEvent")
-		created.Name = "CropPopOpen"
-		created.Parent = ReplicatedStorage
-		event = created
-	end
-	(event :: BindableEvent):Fire("next") -- straight to the next level (G14); its Trail button lists them all
 end
 
 local function noticeEntries(): { { text: string, visit: number? } }
@@ -700,7 +687,7 @@ function SocialUi.init()
 				end, true
 			end
 		elseif kind == "PuzzlePorch" then
-			return openCropPop, true
+			return ReachController.openCropPop, true
 		elseif kind == "Market" then
 			return function()
 				Hud.toast("Market stalls open in a later update. Check back soon!")

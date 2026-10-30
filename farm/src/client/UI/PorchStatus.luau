@@ -1,7 +1,7 @@
 --!strict
--- Over every Puzzle Porch (UI Reference & Gaps G14, G16): the next Crop Pop level and the
+-- Over every Puzzle Porch (UI Reference & Gaps G14, G16): its name, the next Crop Pop level and the
 -- player's Hearts with the refill countdown, so a walk-up shows where you are before the
--- tap, which opens straight to that level (Social's Porch tap fires CropPopOpen "next").
+-- tap or E, which opens straight to that level (ReachController.openCropPop).
 -- Crop Pop's client keeps the numbers as attributes on ReplicatedStorage.CropPopOpen.
 -- Drawn locally, one bubble per porch, because the numbers are this player's own.
 
@@ -43,20 +43,20 @@ function PorchStatus.text(attrs: { [string]: any }, now: number): string
 	return string.format("Level %d  ·  %s", level, heartText)
 end
 
--- Every porch model on the map: the Model holding parts tagged Interact = PuzzlePorch
+-- Every porch model: the Model holding parts tagged Interact = PuzzlePorch, in the Town
+-- Square (FarmMap) and on each plot (Plots)
 local function porches(): { Model }
 	local out: { Model } = {}
 	local seen: { [Model]: boolean } = {}
-	local map = Workspace:FindFirstChild("FarmMap")
-	if map == nil then
-		return out
-	end
-	for _, part in map:GetDescendants() do
-		if part:IsA("BasePart") and part:GetAttribute("Interact") == "PuzzlePorch" then
-			local model = part:FindFirstAncestorOfClass("Model")
-			if model and not seen[model] then
-				seen[model] = true
-				table.insert(out, model)
+	for _, name in { "FarmMap", "Plots" } do
+		local folder = Workspace:FindFirstChild(name)
+		for _, part in if folder then folder:GetDescendants() else {} do
+			if part:IsA("BasePart") and part:GetAttribute("Interact") == "PuzzlePorch" then
+				local model = part:FindFirstAncestorOfClass("Model")
+				if model and not seen[model] then
+					seen[model] = true
+					table.insert(out, model)
+				end
 			end
 		end
 	end
@@ -71,10 +71,9 @@ local function bubbleFor(model: Model, gui: Folder): TextLabel
 	local board = Ui.new("BillboardGui", {
 		Name = "PorchStatus",
 		Adornee = model,
-		Size = UDim2.fromOffset(190, 30),
+		Size = UDim2.fromOffset(170, 44),
 		ExtentsOffsetWorldSpace = Vector3.new(0, 1, 0), -- just over the porch's top
-		StudsOffsetWorldSpace = Vector3.new(0, 1.5, 0),
-		MaxDistance = 60,
+		MaxDistance = 40, -- like the pen and factory names, so far-off labels don't pile up
 		Parent = gui,
 	})
 	local created = Ui.new("TextLabel", {
@@ -103,12 +102,11 @@ function PorchStatus.init()
 			end
 			tick += 1
 			local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
-			local text = if event then PorchStatus.text(event:GetAttributes(), os.time()) else ""
+			local status = if event then PorchStatus.text(event:GetAttributes(), os.time()) else ""
+			local text = if status == "" then "🍅 Crop Pop" else "🍅 Crop Pop\n" .. status
 			for _, model in list do
 				if model.Parent then
-					local label = bubbleFor(model, gui)
-					label.Text = text
-					label.Visible = text ~= ""
+					bubbleFor(model, gui).Text = text
 				end
 			end
 			for model, label in bubbles do

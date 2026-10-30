@@ -171,7 +171,7 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 				TextSize = 20,
 				Parent = cell,
 			})
-			Ui.label(string.lower((string.gsub(def.text, "^%S+ %%s ", ""))), {
+			Ui.label(def.short, {
 				Position = UDim2.fromOffset(42, 30),
 				Size = UDim2.new(1, -48, 0, 18),
 				TextSize = 13,

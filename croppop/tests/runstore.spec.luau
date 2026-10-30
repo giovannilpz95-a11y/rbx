@@ -19,6 +19,7 @@ local function makeStore(unlockAll, config)
 		unlockAll = unlockAll,
 		scoreTracks = false, -- so exact reward checks don't pick up track steps (see scoretracks.spec)
 		cups = false, -- likewise the cup's personal-goal hearts (see cup.spec)
+		races = false, -- and race prizes (see race.spec)
 	}
 	for k, v in config or {} do
 		settings[k] = v
