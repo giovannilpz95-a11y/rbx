@@ -119,8 +119,9 @@ function Guide.init()
 		Parent = player:WaitForChild("PlayerGui"),
 	})
 	card = Ui.new("Frame", {
+		-- Above the HUD's bottom button row (64 high, 14 up) so it never covers Orders
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -16),
+		Position = UDim2.new(0.5, 0, 1, -92),
 		Size = UDim2.new(0.6, 0, 0, 74),
 		BackgroundColor3 = Ui.colors.panel,
 		Visible = false,
