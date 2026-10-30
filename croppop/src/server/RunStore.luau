@@ -302,10 +302,22 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 	local rewards = table.clone(level.rewards)
 	rewards.bonusCoins = result.bonusCoins or 0
 	rewards.coins = (rewards.coins or 0) + rewards.bonusCoins
+	-- A Trail Chest on every 10th level, the first time it's beaten.
+	local chest = if firstWin then CropPop.TrailChest.forLevel(run.levelId) else nil
+	if chest then
+		for kind, count in chest.boosters do
+			state.boosters[kind] = math.min(Boosters.MAX_STOCK, (state.boosters[kind] or 0) + count)
+		end
+		local now = self.now()
+		state.hearts.unlimitedUntil = math.max(now, state.hearts.unlimitedUntil or 0) + chest.unlimitedMinutes * 60
+		rewards.chestCoins = chest.coins
+		rewards.coins += chest.coins
+	end
 	return {
 		won = true,
 		levelId = run.levelId,
 		rewards = rewards,
+		chest = chest,
 		firstWin = firstWin,
 		stats = result.stats,
 		progress = self:getProgress(userId),
