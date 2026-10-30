@@ -7,7 +7,15 @@ return table.freeze({
 	-- Tomatoes 15), which stays locked by level until the cap is raised. The full crop table
 	-- lives in Crops.
 	enabledCrops = table.freeze({ "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton", "Strawberries", "Tomatoes" }),
-	enabledFactories = table.freeze({ "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" }),
+	enabledFactories = table.freeze({
+		"Bakery",
+		"FeedMill",
+		"Dairy",
+		"SugarMill",
+		"TextileMill",
+		"SnackFactory",
+		"Diner",
+	}),
 	enabledPens = table.freeze({ "CowBarn", "ChickenCoop", "SheepFold" }),
 
 	-- Cow Feed a new farm starts with, so the given Cows work before the Feed Mill opens at

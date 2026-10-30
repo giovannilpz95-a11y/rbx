@@ -32,7 +32,7 @@ local Kit = require("../src/shared/Art/Kit")
 local Town = require("../src/shared/Config/Town")
 
 local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
-local FACTORIES = { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" }
+local FACTORIES = { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill", "SnackFactory", "Diner" }
 local PLOT_PARTS_MAX = 2500 -- whole plot at full expansion (15 §5)
 
 return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), ok: (any, string) -> ())
