@@ -66,7 +66,7 @@ end
 -- Gem buttons waiting for their second tap: key -> time() of the first tap. (time() is wall
 -- time since the game started; os.clock() is CPU time on Roblox and can run fast.)
 local armed: { [string]: number } = {}
-local ARM_SECONDS = 4
+local ARM_SECONDS = 8 -- long enough for a second press by keyboard or gamepad navigation
 local lastGemTap = 0
 local lastDevTap = 0 -- Debug panel buttons (renderDebug)
 
@@ -1130,7 +1130,7 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 			Timer.format(recipe.seconds * (state.timeScale or 1))
 		)
 		if locked then
-			text ..= string.format("   Lv %d", recipe.unlockLevel)
+			text = string.format("Lv %d  ·  ", recipe.unlockLevel) .. text -- first, so "Lv 10" never wraps
 		end
 		local hasRoom = #preview.queue < preview.slots
 		local buy, what = nil, nil
