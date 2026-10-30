@@ -840,6 +840,44 @@ TYPES.BigTop = function(b, s)
 	return body
 end
 
+-- Bus Depot (content bank, level 27): a long garage under a flat teal roof with two big bay
+-- doors, a yellow town bus parked out front, and a bus-stop sign by the kerb.
+TYPES.BusDepot = function(b, s)
+	local w, d, h = s * 0.82, s * 0.5, 4.6
+	local z0 = s * 0.15
+	b.block("Plinth", Vector3.new(w + 0.6, PLINTH, d + 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(w, h, d),
+		Vector3.new(0, PLINTH + h / 2, z0),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block("Roof", Vector3.new(w + 0.8, 0.6, d + 0.8), Vector3.new(0, PLINTH + h + 0.3, z0), Palette.roofTeal)
+	local face = z0 - d / 2
+	for _, x in { -w / 4, w / 4 } do
+		t.block(
+			"BayDoor",
+			Vector3.new(w / 2 - 1, h - 1, 0.3),
+			Vector3.new(x, PLINTH + (h - 1) / 2, face - 0.1),
+			Palette.cocoa
+		)
+	end
+	-- Sign object: the town bus parked in front, a sky-blue window band and four wheels
+	local bus = Vector3.new(-0.6, 0, face - 2.2)
+	t.block("Bus", Vector3.new(5.6, 2.2, 1.9), bus + Vector3.new(0, 1.6, 0), Palette.roofMustard)
+	t.block("BusWindows", Vector3.new(5.4, 0.7, 1.95), bus + Vector3.new(0, 2.1, 0), Palette.sky, { shadow = false })
+	for _, x in { -1.8, 1.8 } do
+		t.cyl("Wheel", 2, 0.9, CFrame.new(bus + Vector3.new(x, 0.45, 0)) * TURN, Palette.tire, { shadow = false })
+	end
+	-- The bus-stop sign by the kerb
+	t.post("StopPole", 3, 0.2, Vector3.new(w / 2 - 0.6, 1.5, face - 2.4), Palette.metal)
+	t.cyl("StopSign", 0.2, 1.1, CFrame.new(w / 2 - 0.6, 3.2, face - 2.4) * TURN, Palette.roofRed, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 0.6, z0 + d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
