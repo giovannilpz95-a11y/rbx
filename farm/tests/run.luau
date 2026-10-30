@@ -759,6 +759,12 @@ test("theme text on coloured buttons stays readable", function()
 end)
 
 ---------------------------------------------------------------------------------------------
+-- Art models (tests/art.luau)
+---------------------------------------------------------------------------------------------
+
+require("./art")(test, eq, ok)
+
+---------------------------------------------------------------------------------------------
 -- Every Luau file compiles
 ---------------------------------------------------------------------------------------------
 
@@ -773,7 +779,7 @@ local function eachLuau(dir: string, fn: (string) -> ())
 	end
 end
 
-for _, root in { "src", "../uitheme/src" } do
+for _, root in { "src", "tools", "../uitheme/src" } do
 	eachLuau(root, function(path)
 		test("compiles: " .. path, function()
 			luau.compile(fs.readFile(path))

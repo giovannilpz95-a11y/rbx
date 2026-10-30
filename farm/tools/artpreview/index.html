@@ -1,0 +1,41 @@
+<!doctype html><html><body style="margin:0;background:#9fd8f5">
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const params = new URLSearchParams(location.search);
+const scene = await (await fetch('/scene.json?'+Date.now())).json();
+const W = +params.get('w')||1200, H = +params.get('h')||800;
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+renderer.setSize(W,H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+const s = new THREE.Scene(); s.background = new THREE.Color('#a8dcf5');
+s.add(new THREE.HemisphereLight(0xfff4e0, 0x7a9a60, 1.4));
+const sun = new THREE.DirectionalLight(0xfff1d6, 2.2); sun.position.set(60,100,40); sun.castShadow = true;
+sun.shadow.mapSize.set(4096,4096); const sc = sun.shadow.camera; sc.left=-160; sc.right=160; sc.top=160; sc.bottom=-160; sc.far=400; sun.shadow.bias=-0.0005;
+s.add(sun); s.add(sun.target);
+const wedgeGeo = (()=>{ const g = new THREE.BufferGeometry();
+  const v = [[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5],[-.5,.5,.5],[.5,.5,.5]];
+  const faces = [[0,2,1],[0,3,2],[3,5,2],[3,4,5],[0,1,5],[0,5,4],[0,4,3],[1,2,5]];
+  const pos=[]; for(const f of faces) for(const i of f) pos.push(...v[i]);
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); g.computeVertexNormals(); return g; })();
+for (const p of scene.parts) {
+  if (p.t >= 0.99) continue;
+  let geo;
+  const [sx,sy,sz] = p.size;
+  if (p.shape==='Ball') geo = new THREE.SphereGeometry(Math.min(sx,sy,sz)/2, 16, 12);
+  else if (p.shape==='Cylinder') { geo = new THREE.CylinderGeometry(Math.min(sy,sz)/2, Math.min(sy,sz)/2, sx, 16); geo.rotateZ(Math.PI/2); }
+  else if (p.shape==='Wedge') { geo = wedgeGeo.clone(); geo.scale(sx,sy,sz); }
+  else geo = new THREE.BoxGeometry(sx,sy,sz);
+  const mat = new THREE.MeshLambertMaterial({color: new THREE.Color(p.c[0],p.c[1],p.c[2]).convertSRGBToLinear(), transparent: p.t>0, opacity: 1-p.t, flatShading: p.shape!=='Ball', side: p.shape==='Wedge' ? THREE.DoubleSide : THREE.FrontSide});
+  if (p.neon) { mat.emissive = mat.color.clone(); }
+  const m = new THREE.Mesh(geo, mat); const c = p.cf;
+  const mx = new THREE.Matrix4().set(c[3],c[4],c[5],c[0], c[6],c[7],c[8],c[1], c[9],c[10],c[11],c[2], 0,0,0,1);
+  m.matrixAutoUpdate=false; m.matrix.copy(mx); m.castShadow = p.shadow; m.receiveShadow = true; s.add(m);
+}
+const cam = new THREE.PerspectiveCamera(+params.get('fov')||40, W/H, 0.5, 2000);
+const e = (params.get('eye')||'30,25,30').split(',').map(Number), t=(params.get('at')||'0,3,0').split(',').map(Number);
+cam.position.set(...e); cam.lookAt(...t);
+sun.target.position.set(...t); sun.position.set(t[0]+60,t[1]+100,t[2]+40);
+renderer.render(s, cam); window.done = true;
+</script></body></html>
