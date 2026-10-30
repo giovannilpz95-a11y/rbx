@@ -248,4 +248,93 @@ function ArtMotion.harvestPath(from: Vector3, to: Vector3, a: number): (Vector3,
 	return start:Lerp(to, u * u) + Vector3.new(0, arc, 0), 1.15 - 0.9 * u
 end
 
+---------------------------------------------------------------------------------------------
+-- Townsfolk, the Town Hall bell and reward pickups
+---------------------------------------------------------------------------------------------
+
+export type FolkRig = {
+	role: string,
+	feet: CFrame,
+	parts: { BasePart },
+	base: { CFrame },
+	arm: number?, -- index of the right arm in `parts` (the Builder swings it)
+	phase: number,
+}
+
+function ArtMotion.bindFolk(model: Instance, phase: number?): FolkRig?
+	local feet = model:GetAttribute("BaseCFrame")
+	local role = model:GetAttribute("Role")
+	if typeof(feet) ~= "CFrame" or type(role) ~= "string" then
+		return nil
+	end
+	local parts: { BasePart } = {}
+	local base: { CFrame } = {}
+	local arm: number? = nil
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(parts, d)
+			table.insert(base, d.CFrame)
+			if d.Name == "RightArm" then
+				arm = #parts
+			end
+		end
+	end
+	return { role = role, feet = feet, parts = parts, base = base, arm = arm, phase = phase or 0 }
+end
+
+-- A peg-folk idle: a gentle bob and sway in place; the Builder bobs with each hammer blow.
+function ArtMotion.folkOffset(role: string, t: number): CFrame
+	if role == "Builder" then
+		return CFrame.new(0, math.max(0, math.sin(t * 6)) * 0.08, 0)
+	end
+	return CFrame.new(0, math.abs(math.sin(t * 1.6)) * 0.12, 0) * CFrame.Angles(0, 0, math.rad(math.sin(t * 0.8) * 3))
+end
+
+-- The Builder's hammer arm: up and down about the shoulder, in degrees.
+function ArtMotion.hammerAngle(t: number): number
+	return -60 * math.max(0, math.sin(t * 6)) ^ 2
+end
+
+function ArtMotion.poseFolk(rig: FolkRig, t: number)
+	local tt = t + rig.phase
+	local move = rig.feet * ArtMotion.folkOffset(rig.role, tt) * rig.feet:Inverse()
+	for i, p in rig.parts do
+		local cf = rig.base[i]
+		if i == rig.arm and rig.role == "Builder" then
+			local shoulder = cf * CFrame.new(0, 0.55, 0)
+			cf = shoulder * CFrame.Angles(math.rad(ArtMotion.hammerAngle(tt)), 0, 0) * shoulder:ToObjectSpace(cf)
+		end
+		p.CFrame = move * cf
+	end
+end
+
+-- The Town Hall bell's swing about its hinge `a` seconds into a level-up ring (it settles by
+-- BELL_SECONDS).
+ArtMotion.BELL_SECONDS = 2.4
+
+function ArtMotion.bellAngle(a: number): number
+	if a <= 0 or a >= ArtMotion.BELL_SECONDS then
+		return 0
+	end
+	local fade = 1 - a / ArtMotion.BELL_SECONDS
+	return math.sin(a * 10) * 35 * fade
+end
+
+ArtMotion.PICKUP_SECONDS = 1.1
+
+-- A reward pickup popping out at `from`: up and out along `dir` (flat, unit) in an arc, a
+-- moment hanging there spinning, then up and away while it shrinks. `a` runs 0-1 over
+-- PICKUP_SECONDS; returns the position, the spin (radians) and the scale.
+function ArtMotion.pickupPath(from: Vector3, dir: Vector3, a: number): (Vector3, number, number)
+	local u = math.clamp(a, 0, 1)
+	local spin = u * math.pi * 4
+	if u < 0.45 then
+		local k = u / 0.45
+		return from + dir * (1.6 * k) + Vector3.new(0, 3 * math.sin(k * math.pi * 0.75), 0), spin, 0.4 + 0.6 * k
+	end
+	local k = (u - 0.45) / 0.55
+	local hang = from + dir * 1.6 + Vector3.new(0, 3 * math.sin(math.pi * 0.75), 0)
+	return hang + Vector3.new(0, 7 * k * k, 0), spin, 1 - 0.8 * k
+end
+
 return ArtMotion

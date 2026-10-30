@@ -108,6 +108,15 @@ local Palette = {
 	bread = hex("#D98E3D"),
 	crate = hex("#D9A066"),
 	sack = hex("#D8BE8C"),
+
+	-- Townsfolk (Art/Folk): a range of skin tones, and hair
+	skinLight = hex("#F6D2B0"),
+	skinTan = hex("#D9A57B"),
+	skinDeep = hex("#A86F4C"),
+	skinUmber = hex("#7A4E35"),
+	hairDark = hex("#5A3B2A"),
+	hairGinger = hex("#C8693A"),
+	hairGrey = hex("#C9C5D6"),
 }
 
 return table.freeze(Palette)

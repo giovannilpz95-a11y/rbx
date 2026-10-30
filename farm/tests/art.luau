@@ -22,9 +22,12 @@ local ArtCrops = require("../src/shared/Art/Crops")
 local ArtDecor = require("../src/shared/Art/Decor")
 local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
+local ArtFolk = require("../src/shared/Art/Folk")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
+local ArtPickups = require("../src/shared/Art/Pickups")
+local ArtTown = require("../src/shared/Art/Town")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Crops = require("../src/shared/Config/Crops")
 local Items = require("../src/shared/Items")
@@ -367,6 +370,94 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(ArtMotion.cropSway(1.3).Position:FuzzyEq(Vector3.zero, 1e-6), "sway only rotates")
 	end)
 
+	test("art: Town Hall, locked land, Puzzle Porch, townsfolk and pickups", function()
+		for storeys = 1, 3 do
+			local m = Instance.new("Model")
+			local body, sign = ArtTown.townHall(m, CFrame.new(), storeys)
+			eq(body.Name, "TownHall", "Town Hall body")
+			eq(sign.Name, "PlotSign", "plot sign")
+			within(m, ArtTown.TOWNHALL_PARTS_MAX, "Town Hall, " .. storeys .. " storeys")
+			paletteRules(m, "Town Hall")
+			local bell = m:FindFirstChild("Bell", true) :: BasePart
+			ok(bell ~= nil and typeof(bell:GetAttribute("HingeCFrame")) == "CFrame", "bell can swing")
+			eq(#m:GetDescendants() > 0 and Kit.countParts(m) > 0, true, "built")
+		end
+		local one, three = Instance.new("Model"), Instance.new("Model")
+		ArtTown.townHall(one, CFrame.new(), 1)
+		ArtTown.townHall(three, CFrame.new(), 3)
+		local function height(m: Instance): number
+			local top = 0
+			Kit.eachPart(m, function(p)
+				top = math.max(top, p.CFrame.Position.Y)
+			end)
+			return top
+		end
+		ok(height(three) > height(one) + 5, "storeys make it taller")
+
+		local post = Instance.new("Model")
+		eq(ArtTown.signpost(post, CFrame.new()).Name, "Board", "signpost board")
+		within(post, ArtTown.SIGNPOST_PARTS_MAX, "signpost")
+		paletteRules(post, "signpost")
+		for _, id in ArtTown.OBSTACLE_TYPES do
+			local m = Instance.new("Model")
+			ArtTown.obstacle(id, m, CFrame.new())
+			within(m, ArtTown.OBSTACLE_PARTS_MAX, id)
+			paletteRules(m, id)
+		end
+		local min, max = Vector3.new(-48, 0, -96), Vector3.new(48, 0, -48)
+		local road = { Vector3.new(8, 0, -77), Vector3.new(16, 0, -48) }
+		local spots = ArtTown.scatter(min, max, 16, { road })
+		local again = ArtTown.scatter(min, max, 16, { road })
+		ok(#spots >= 8 and #spots <= 40, "a sensible scatter: " .. #spots)
+		eq(#again, #spots, "same land, same scatter")
+		for i, spot in spots do
+			ok(spot.at:FuzzyEq(again[i].at, 1e-6), "scatter is stable")
+			ok(spot.at.X >= min.X + 3 and spot.at.X <= max.X - 3, "inside the land")
+			ok(not (spot.at.X > 5 and spot.at.X < 19 and spot.at.Z > -80), "kept off the road")
+			ok(
+				ArtTown.OBSTACLE_TYPES[1] ~= nil and table.find(ArtTown.OBSTACLE_TYPES, spot.id) ~= nil,
+				"known obstacle"
+			)
+		end
+
+		local porchRoot = Instance.new("Model")
+		local porch = ArtTown.porch(porchRoot, CFrame.new())
+		within(porch, ArtTown.PORCH_PARTS_MAX, "Puzzle Porch")
+		paletteRules(porch, "Puzzle Porch")
+
+		for _, role in ArtFolk.ROLES do
+			local f = ArtFolk.build(role, CFrame.new(5, 0, 5))
+			within(f, ArtFolk.PARTS_MAX, role)
+			paletteRules(f, role)
+			local rig = ArtMotion.bindFolk(f, 0) :: ArtMotion.FolkRig
+			ok(rig ~= nil, role .. " has a rig")
+			local head = f:FindFirstChild("Head") :: BasePart
+			local rest = head.CFrame.Position
+			for _, t in { 0.2, 0.9, 1.7 } do
+				ArtMotion.poseFolk(rig, t)
+				ok((head.CFrame.Position - rest).Magnitude < 0.6, role .. " stays in place")
+			end
+			if role == "Builder" then
+				ok(rig.arm ~= nil, "the Builder has a hammer arm")
+			end
+		end
+		eq(ArtMotion.bellAngle(0), 0, "bell at rest before")
+		eq(ArtMotion.bellAngle(ArtMotion.BELL_SECONDS), 0, "bell at rest after")
+		ok(math.abs(ArtMotion.bellAngle(0.15)) > 5, "bell swings")
+
+		for _, kind in ArtPickups.KINDS do
+			local m = ArtPickups.build(kind)
+			within(m, ArtPickups.PARTS_MAX, kind .. " pickup")
+			paletteRules(m, kind)
+		end
+		local from, dir = Vector3.new(0, 1, 0), Vector3.new(1, 0, 0)
+		local p0, _, s0 = ArtMotion.pickupPath(from, dir, 0)
+		local p1, _, s1 = ArtMotion.pickupPath(from, dir, 1)
+		ok(p0:FuzzyEq(from, 1e-4), "pickup starts at the avatar")
+		ok(p1.Y > from.Y + 6, "pickup floats away")
+		ok(s0 < 1 and s1 < 0.5, "pickup grows in and shrinks out")
+	end)
+
 	test("art: Barn, Order Board, truck and gate stay within budget", function()
 		local m = Instance.new("Model")
 		local barn = ArtBuildings.barn(m, CFrame.new(), 14, 16)
@@ -479,6 +570,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		-- Barn, board, dock, truck, gate, decoration: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25 + 40
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
+		-- Town Hall at full height, the Puzzle Porch and the four guides
+		total += ArtTown.TOWNHALL_PARTS_MAX + ArtTown.PORCH_PARTS_MAX + 4 * ArtFolk.PARTS_MAX
 		-- Every House copy a player at the highest built level can own, and every Community
 		-- Building, so the budget stays honest as the content bank grows
 		for id, def in Town.houses do
