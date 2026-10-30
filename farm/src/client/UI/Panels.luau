@@ -1459,18 +1459,17 @@ local function renderDebug(state: { [string]: any })
 			Parent = body,
 		}
 	)
-	Ui.button("Replay the first-session guide", function()
-		Remotes.fire("Debug_RestartTutorial")
-	end, { Size = UDim2.fromOffset(260, 34), LayoutOrder = 5, Parent = body })
-	Ui.button("Build everything (ignores level and Population)", function()
-		Remotes.fire("Debug_BuildAll")
-	end, { Size = UDim2.fromOffset(360, 34), LayoutOrder = 7, Parent = body })
-	Ui.button("Pretend I was away (summary + daily gift)", function()
-		Remotes.fire("Debug_Away")
-	end, { Size = UDim2.fromOffset(320, 34), LayoutOrder = 6, Parent = body })
-	Ui.button("+500 Gems, +5,000 Coins, +5 of each tool", function()
-		Remotes.fire("Debug_Grant")
-	end, { Size = UDim2.fromOffset(340, 34), LayoutOrder = 8, Parent = body })
+	-- Act on press: the panel re-renders on every state push, which can swap a button out
+	-- between press and release and lose a plain click
+	local function devButton(key: string, text: string, remote: string, width: number, order: number)
+		confirmButton("dev:" .. key, text, text, function()
+			Remotes.fire(remote)
+		end, { Size = UDim2.fromOffset(width, 34), LayoutOrder = order, Parent = body }, true, Ui.colors.button, true)
+	end
+	devButton("tutorial", "Replay the first-session guide", "Debug_RestartTutorial", 260, 5)
+	devButton("away", "Pretend I was away (summary + daily gift)", "Debug_Away", 320, 6)
+	devButton("build", "Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
+	devButton("grant", "+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
 end
 
 ---------------------------------------------------------------------------------------------
