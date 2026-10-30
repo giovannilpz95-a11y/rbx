@@ -62,6 +62,7 @@ end
 local armed: { [string]: number } = {}
 local ARM_SECONDS = 4
 local lastGemTap = 0
+local lastDevTap = 0 -- Debug panel buttons (renderDebug)
 
 local function isArmed(key: string): boolean
 	return armed[key] ~= nil and time() - armed[key] < ARM_SECONDS
@@ -1459,17 +1460,32 @@ local function renderDebug(state: { [string]: any })
 			Parent = body,
 		}
 	)
-	-- Act on press: the panel re-renders on every state push, which can swap a button out
-	-- between press and release and lose a plain click
-	local function devButton(key: string, text: string, remote: string, width: number, order: number)
-		confirmButton("dev:" .. key, text, text, function()
+	-- One tap, acting on press: the panel re-renders on every state push, which can swap a
+	-- button out between press and release and lose a plain click. Press and Activated can
+	-- both arrive for one tap, so the first one wins.
+	local function devButton(text: string, remote: string, width: number, order: number)
+		local function fire()
+			if time() - lastDevTap < 0.35 then
+				return
+			end
+			lastDevTap = time()
+			print("[Dev] " .. remote)
 			Remotes.fire(remote)
-		end, { Size = UDim2.fromOffset(width, 34), LayoutOrder = order, Parent = body }, true, Ui.colors.button, true)
+		end
+		local button = Ui.button(text, fire, { Size = UDim2.fromOffset(width, 34), LayoutOrder = order, Parent = body })
+		button.InputBegan:Connect(function(input)
+			if
+				input.UserInputType == Enum.UserInputType.MouseButton1
+				or input.UserInputType == Enum.UserInputType.Touch
+			then
+				fire()
+			end
+		end)
 	end
-	devButton("tutorial", "Replay the first-session guide", "Debug_RestartTutorial", 260, 5)
-	devButton("away", "Pretend I was away (summary + daily gift)", "Debug_Away", 320, 6)
-	devButton("build", "Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
-	devButton("grant", "+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
+	devButton("Replay the first-session guide", "Debug_RestartTutorial", 260, 5)
+	devButton("Pretend I was away (summary + daily gift)", "Debug_Away", 320, 6)
+	devButton("Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
+	devButton("+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
 end
 
 ---------------------------------------------------------------------------------------------
