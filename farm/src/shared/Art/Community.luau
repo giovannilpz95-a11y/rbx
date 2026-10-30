@@ -540,6 +540,44 @@ TYPES.MusicHall = function(b, s)
 	return body
 end
 
+-- Stargazing Tower (content bank, level 18): a slim round stone tower on a small base,
+-- a navy dome with a slot, and a big brass telescope poking out at the sky.
+TYPES.StargazingTower = function(b, s)
+	local r = s * 0.22
+	b.block("Plinth", Vector3.new(s * 0.6, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, 0), Palette.stone)
+	local body = b.post("Body", 9, r * 2, Vector3.new(0, PLINTH + 4.5, 0), Palette.stoneLight, { collide = true })
+	local t = b.into(body, true)
+	t.post("Band", 0.6, r * 2 + 0.4, Vector3.new(0, PLINTH + 9, 0), Palette.cream)
+	t.ball("Dome", r * 2 + 0.2, Vector3.new(0, PLINTH + 9.3, 0), Palette.plum)
+	t.block(
+		"Slot",
+		Vector3.new(0.8, r + 0.4, 0.3),
+		CFrame.new(0, PLINTH + 10.6, -r * 0.7) * CFrame.Angles(math.rad(-30), 0, 0),
+		Palette.cocoa,
+		{ shadow = false }
+	)
+	-- Sign object: the telescope, tilted up out of the slot
+	local scope = CFrame.new(0.6, PLINTH + 11.2, -r * 0.8) * CFrame.Angles(math.rad(-40), 0, 0)
+	t.post("Telescope", 4, 1, scope * CFrame.new(0, 0, 0), Palette.coins)
+	t.post("Lens", 0.4, 1.3, scope * CFrame.new(0, 2, 0), Palette.cream)
+	-- Gold stars on the dome
+	for i = 0, 2 do
+		local a = math.rad(i * 120 + 30)
+		t.ball(
+			"Star",
+			0.6,
+			Vector3.new(math.cos(a) * r, PLINTH + 10.4, math.sin(a) * r),
+			Palette.flowerYellow,
+			{ shadow = false }
+		)
+	end
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, -r), 1.8, 3.6, Palette.woodDark, Palette.cream)
+	Kit.window(t, "Window", CFrame.new(0, PLINTH + 6, -r), 1.2, 1.6, Palette.cream, Palette.glassDeep)
+	Kit.bush(t, "Bush", Vector3.new(-r - 1.2, 0.3, -r), 0.9, Palette.treeTop, Palette.flowerWhite)
+	Kit.sproutTag(t, Vector3.new(r + 1.2, PLINTH, r), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
