@@ -69,6 +69,7 @@ test("every crop has positive timers and matching ids", function()
 	for id, crop in Crops do
 		eq(crop.id, id, "crop id")
 		ok(crop.growSeconds > 0 and crop.yield > 0, id .. " needs time and yield")
+		eq(crop.yield, 1, id .. " gives 1 unit a field, as in Township")
 		ok(crop.unlockLevel >= 1 and crop.unlockLevel <= 30, id .. " unlock level in 1-30")
 	end
 end)
@@ -147,10 +148,10 @@ test("Township baseline rows for animals, factories and recipes", function()
 end)
 
 test("item production time includes everything upstream", function()
-	-- Cow Feed: (5 min + 2 Wheat * 60 s + 1 Corn * 150 s) / 3 bags = 190 s a bag
-	eq(Items.CowFeed.unitSeconds, 190, "Cow Feed")
+	-- Cow Feed: (5 min + 2 Wheat * 120 s + 1 Corn * 300 s) / 3 bags = 280 s a bag
+	eq(Items.CowFeed.unitSeconds, 280, "Cow Feed")
 	-- Milk: 20 min + a third of a bag
-	ok(math.abs(Items.Milk.unitSeconds - (1200 + 190 / 3)) < 1e-6, "Milk")
+	ok(math.abs(Items.Milk.unitSeconds - (1200 + 280 / 3)) < 1e-6, "Milk")
 	ok(Items.Cheese.unitSeconds > 2 * Items.Milk.unitSeconds, "Cheese includes its Milk")
 	ok(Items.CowFeed.isFeed and not Items.Milk.isFeed, "feed flag")
 end)
@@ -186,6 +187,17 @@ test("level thresholds follow the Township curve", function()
 	eq(info.xpIntoLevel, 4, "xp into level")
 	eq(info.xpToNext, 44, "xp to next")
 	ok(Progression.info(5000).atCap, "at cap")
+end)
+
+test("level-up gifts are the new crop or feed", function()
+	for level, gift in Levels.gifts do
+		for item, qty in gift do
+			ok(Items[item] ~= nil and qty > 0, string.format("L%d %s", level, item))
+			ok(Items[item].unlockLevel <= level, item .. " is open by then")
+		end
+	end
+	eq(Levels.gifts[3].Corn, 4, "Corn at 3")
+	eq(Balance.starterCowFeed, 9, "Cow Feed at 1")
 end)
 
 test("level rewards", function()
@@ -343,10 +355,10 @@ end)
 -- Town (07 Town Building)
 ---------------------------------------------------------------------------------------------
 
-test("a new farm starts at Population 60 with Cap 80", function()
+test("a new farm starts at Population 60 with Cap 75", function()
 	local data = Profile.migrate(nil) :: any
 	eq(TownRules.population(data, 0), 60, "starter Houses")
-	eq(TownRules.cap(data, 0), 80, "base Cap")
+	eq(TownRules.cap(data, 0), 75, "base Cap")
 	eq(#data.town.houses, 4, "four starter Houses")
 end)
 
@@ -367,11 +379,11 @@ test("House copies unlock by level and need room under the Cap", function()
 	eq(TownRules.population(data, 100), 75, "done at readyAt")
 	data.level = 5
 	local can, why = TownRules.canBuildHouse(data, "Cottage", 100)
-	eq(can, false, "75 + 10 > 80")
+	eq(can, false, "75 + 10 > 75")
 	ok(why and why:find("Community Building"), "asks for a Community Building")
 	data.town.community.VillageWell = { readyAt = 200 }
-	eq(TownRules.cap(data, 150), 80, "Cap waits for the Well")
-	eq(TownRules.cap(data, 200), 90, "Well done")
+	eq(TownRules.cap(data, 150), 75, "Cap waits for the Well")
+	eq(TownRules.cap(data, 200), 85, "Well done")
 	eq((TownRules.canBuildHouse(data, "Cottage", 200)), true, "room now")
 end)
 
@@ -399,7 +411,7 @@ test("Township baseline town rows", function()
 			ok(Town.materials[material] ~= nil and Items[material].kind == "Material", def.id .. " " .. material)
 		end
 	end
-	eq(Town.baseCap + total, 390, "Cap with every MVP Community Building")
+	eq(Town.baseCap + total, 385, "Cap with every MVP Community Building (Township's level-12 max Population)")
 end)
 
 test("materials can't be sold or ordered; longer crops drop more", function()
@@ -517,7 +529,7 @@ test("the first-session guide walks the opening loop", function()
 	Tutorial.start(data, 100)
 	eq(Tutorial.current(data).id, "Harvest", "first step")
 	eq(data.fields.F1.crop, "Wheat", "ripe Wheat waiting")
-	eq(data.orders.board[1].order.wants.Wheat, 4, "an easy first order")
+	eq(data.orders.board[1].order.wants.Wheat, 3, "an easy first order the ripe fields fill")
 	eq(#Tutorial.advance(data, 100), 0, "nothing harvested yet")
 	eq(Tutorial.seconds(data, "Wheat", 120), 30, "first Wheat is quick")
 	for _, id in Tutorial.ripeFields do
@@ -581,7 +593,7 @@ test("decorations snap to the grid, stay on owned land and don't overlap", funct
 	data.land[1] = { readyAt = 10 }
 	ok((DecorRules.canPlace(data, { id = "GravelPath", x = -50, z = 0, r = 0 }, 10)), "cleared land is yours")
 	ok((DecorRules.canPlace(data, { id = "OakTree", x = -48, z = 0, r = 0 }, 10)), "across the edge")
-	eq(DecorRules.refund("StoneFountain"), 500, "25% back")
+	eq(DecorRules.refund("StoneFountain"), 1000, "50% back")
 	ok(DecorRules.isBig("OakTree") and not DecorRules.isBig("Bench"), "2 x 2 and up is big")
 	data.decor = {}
 	for i = 1, Decor.maxBig do
@@ -595,7 +607,7 @@ test("decorations snap to the grid, stay on owned land and don't overlap", funct
 	eq((DecorRules.hasRoom(data, "GravelPath")), false, "overall cap")
 end)
 
-test("the daily calendar pauses instead of resetting", function()
+test("the daily calendar resets after a missed day", function()
 	local data = Profile.migrate(nil) :: any
 	local day1 = 20000 * 86400 + 3600
 	eq((DailyRules.due(data, day1)), nil, "opens at level 5")
@@ -605,10 +617,14 @@ test("the daily calendar pauses instead of resetting", function()
 	eq(reward.coins, 100, "100 Coins")
 	DailyRules.claim(data, day1, day)
 	eq((DailyRules.due(data, day1 + 3600)), nil, "once per UTC day")
-	reward, day = DailyRules.due(data, day1 + 5 * 86400)
-	eq(day, 2, "a missed day pauses the calendar")
+	reward, day = DailyRules.due(data, day1 + 86400)
+	eq(day, 2, "the next day is day 2")
 	eq(reward.item, "Nails", "Barn material until tools ship")
+	DailyRules.claim(data, day1 + 86400, day)
+	reward, day = DailyRules.due(data, day1 + 3 * 86400)
+	eq(day, 1, "a missed day starts the round again")
 	data.daily.day = 7
+	data.daily.lastDay = DailyRules.utcDay(day1 + 5 * 86400)
 	data.level = 12
 	reward, day = DailyRules.due(data, day1 + 6 * 86400)
 	eq(day, 1, "repeats after day 7")
@@ -778,10 +794,10 @@ test("order slots by level", function()
 end)
 
 test("reward formula", function()
-	-- 4 Wheat: value 4, XP 4 * 0.5 = 2; Coins = round(4 * 1.31 * 1.00) = 5, XP = round(2 * 1.5) = 3
+	-- 4 Wheat: value 4, XP 4 * 1 = 4; Coins = round(4 * 1.31 * 1.00) = 5, XP = round(4 * 1.5) = 6
 	local coins, xp = OrderGen.rewards({ Wheat = 4 }, 1)
 	eq(coins, 5, "coins")
-	eq(xp, 3, "xp")
+	eq(xp, 6, "xp")
 end)
 
 test("generated orders are valid, unlocked and reproducible", function()

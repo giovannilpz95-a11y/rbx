@@ -3,6 +3,7 @@
 -- XP gains also level the player up and pay the level-up reward.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local Levels = require(Shared.Config.Levels)
 local Progression = require(Shared.Progression)
 
 local DataService = require(script.Parent.DataService)
@@ -37,9 +38,17 @@ local function checkLevelUp(player: Player, data: { [string]: any })
 		if gems > 0 then
 			EconomyService.add(player, "Gems", gems, "levelup")
 		end
+		-- The new crop's or pen's starter units (Levels.gifts). Straight into the Barn, even
+		-- past its capacity: a level-up never fails, and a full Barn only blocks new adds.
+		local gifts = Levels.gifts[data.level]
+		if gifts then
+			for item, qty in gifts do
+				data.inventory.items[item] = (data.inventory.items[item] or 0) + qty
+			end
+		end
 		TelemetryService.levelUp(player, data.level - 1)
 		DataService.markDirty(player, true)
-		NetService.popup(player, { kind = "LevelUp", level = data.level, coins = coins, gems = gems })
+		NetService.popup(player, { kind = "LevelUp", level = data.level, coins = coins, gems = gems, gifts = gifts })
 	end
 end
 

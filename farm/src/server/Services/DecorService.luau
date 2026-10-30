@@ -1,6 +1,6 @@
 --!strict
 -- Decorations (Design/07 Town Building): buy one from the Town panel and place it in front
--- of you, turn it, or sell it back for 25%. Placing is instant and gives a little XP once.
+-- of you, turn it, or sell it back for 50%. Placing is instant and gives a little XP once.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Decor = require(Shared.Config.Decor)

@@ -7,6 +7,8 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local Items = require(game:GetService("ReplicatedStorage"):WaitForChild("FarmShared").Items)
+
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Ui = require(script.Parent.Ui)
@@ -65,6 +67,10 @@ function Hud.popup(payload: { [string]: any })
 		end
 		if (payload.gems or 0) > 0 then
 			table.insert(parts, string.format("+%d %s", payload.gems, if payload.gems == 1 then "Gem" else "Gems"))
+		end
+		for item, qty in payload.gifts or {} do
+			local def = Items[item]
+			table.insert(parts, string.format("+%d %s", qty, if def then def.displayName else item))
 		end
 		Hud.toast(table.concat(parts, "   "), "celebrate")
 		Motion.bump(levelStar, 1.35)

@@ -71,7 +71,7 @@ return table.freeze({
 	houses = table.freeze(Houses),
 	community = table.freeze(Community),
 
-	baseCap = 80, -- first-pass (07 Town Building)
+	baseCap = 75, -- Township (Wiki Data - Farming & Animals §8.11: Houses always fill the Cap exactly)
 	-- Every farm starts with these, already built: Population 60 (Township baseline)
 	starterHouses = table.freeze({ "Cottage", "Bungalow", "Bungalow", "RowHouse" }),
 
