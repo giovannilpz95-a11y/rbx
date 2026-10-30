@@ -251,6 +251,43 @@ def unlock():
     return sequence(parts)
 
 
+def tool_drop():
+    # A tool landing in the Tool Shed: a small metal clank, then a quick sparkle.
+    clank = sum(bell(f, 0.3, 18, ratio=r, index=1.6) * a for f, r, a in ((640, 2.31, 0.6), (1510, 1.73, 0.35)))
+    knock = bandpass(noise(0.03), 1200, 3) * decay(0.03, 90) * 1.5
+    sparkle = sequence([(i * 0.045, bell(note(n), 0.4, 9) * 0.35) for i, n in enumerate(["D7", "G7", "B7"])])
+    return sequence([(0, knock), (0, clank), (0.12, sparkle)])
+
+
+def prize_find():
+    # A Sunkissed crop: a warm marimba run up a major chord with a glint on top.
+    run = [("G5", 0.0), ("B5", 0.07), ("D6", 0.14), ("G6", 0.21)]
+    parts = [(at, marimba(note(n), 0.45) * 0.7) for n, at in run]
+    parts.append((0.26, bell(note("D8"), 0.5, 7) * 0.25))
+    parts.append((0.3, bell(note("G7"), 0.5, 7) * 0.3))
+    return sequence(parts)
+
+
+def prize_heirloom():
+    # An Heirloom crop, the rare one: a little brass flourish, a held chord and ringing bells.
+    parts = [(at, soft_brass(note(n), 0.25) * 0.6) for n, at in [("D5", 0.0), ("G5", 0.1), ("B5", 0.2)]]
+    for n in ["G4", "D5", "G5", "B5", "D6"]:
+        parts.append((0.32, soft_brass(note(n), 1.2, 0.05) * 0.38))
+    parts += [(0.34 + i * 0.08, bell(note(n), 0.9, 4.5) * 0.25) for i, n in enumerate(["G7", "D7", "B7", "G8"])]
+    return sequence(parts)
+
+
+def prize_lost():
+    # The Prize Basket was full: two soft falling marimba notes, a gentle "oh well".
+    return sequence([(0, marimba(note("E5"), 0.3) * 0.6), (0.14, marimba(note("C5"), 0.45) * 0.5)])
+
+
+def crier_bell():
+    # The Town Crier's hand bell: two rings, the second a touch softer.
+    ring = lambda: place(bell(note("A5"), 0.9, 4, ratio=2.0, index=2.2) * 0.5, bell(note("A6") * 1.19, 0.6, 7, ratio=1.5, index=0.8) * 0.2, 0)
+    return sequence([(0, ring()), (0.28, ring() * 0.75)])
+
+
 def plant():
     s = 0.16
     puff = one_pole_lowpass(noise(s), 900) * attack_decay(s, 0.01, 30) * 3
@@ -475,6 +512,11 @@ SOUNDS = {
     "factory_start": factory_start,
     "factory_collect": factory_collect,
     "sell": sell,
+    "tool_drop": tool_drop,
+    "prize_find": prize_find,
+    "prize_heirloom": prize_heirloom,
+    "prize_lost": prize_lost,
+    "crier_bell": crier_bell,
     "decor_place": decor_place,
     "decor_rotate": decor_rotate,
     "pop_swap": pop_swap,

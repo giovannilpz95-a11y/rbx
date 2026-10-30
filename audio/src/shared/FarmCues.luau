@@ -167,7 +167,11 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 				break
 			end
 		end
-		if coinsUp and (decorSold or (itemsDown and started == 0)) then
+		-- The Prize Stand: a prize crop left the Prize Basket for Coins.
+		local prizesSold = type(prev.prizes) == "table"
+			and type(nextState.prizes) == "table"
+			and #nextState.prizes < #prev.prizes
+		if coinsUp and (decorSold or prizesSold or (itemsDown and started == 0)) then
 			table.insert(cues, { sound = "Sell" })
 		elseif coinsUp then
 			table.insert(cues, { sound = "Coin" })
@@ -248,14 +252,22 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 	return cues
 end
 
--- Reward_Popup payloads from the farm server
--- ({ kind = "LevelUp" | "Order" | "Drop" | "Field" | "BarnUpgrade", ... }).
+-- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order" | "Drop" |
+-- "Field" | "BarnUpgrade" | "Prize" | "PrizeLost" | "Crier", ... }).
 function FarmCues.popup(payload: { [string]: any }?): { Cue }
 	local kind = type(payload) == "table" and payload.kind
 	if kind == "LevelUp" then
 		return { { sound = "LevelUp" } }
 	elseif kind == "Order" then
 		return { { sound = "OrderComplete" }, { sound = "Coin", delay = 0.35 } }
+	elseif kind == "Drop" and payload.tool then
+		return { { sound = "ToolDrop" } } -- a Shovel, Axe or Saw for the Tool Shed
+	elseif kind == "Prize" then
+		return { { sound = if payload.tier == "Heirloom" then "PrizeHeirloom" else "PrizeFind" } }
+	elseif kind == "PrizeLost" then
+		return { { sound = "PrizeLost" } } -- a prize crop, but the Prize Basket was full
+	elseif kind == "Crier" then
+		return { { sound = "CrierBell" } } -- news from another player's farm
 	elseif kind == "Drop" or kind == "Field" or kind == "BarnUpgrade" then
 		return { { sound = "Unlock" } } -- a tool dropped, a new field placed, a bigger Barn
 	end

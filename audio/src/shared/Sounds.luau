@@ -66,6 +66,11 @@ local Sounds: { [string]: Sound } = {
 	}),
 	OrderComplete = original("order_complete", "Effects", 0.7, { cooldown = 0.5, voices = 1, duck = true, length = 0.97 }),
 	Unlock = original("unlock", "Effects", 0.6, { cooldown = 0.5, length = 0.85 }),
+	ToolDrop = original("tool_drop", "Effects", 0.6, { cooldown = 0.5, length = 0.6 }),
+	PrizeFind = original("prize_find", "Effects", 0.65, { cooldown = 0.5, voices = 1, length = 0.8 }),
+	PrizeHeirloom = original("prize_heirloom", "Effects", 0.75, { cooldown = 1, voices = 1, duck = true, length = 1.5 }),
+	PrizeLost = original("prize_lost", "Effects", 0.45, { cooldown = 0.5, voices = 1, length = 0.6 }),
+	CrierBell = original("crier_bell", "Ui", 0.5, { cooldown = 2, voices = 1, length = 1.2 }),
 
 	-- Farm -------------------------------------------------------------------
 	Plant = original("plant", "Effects", 0.55, { cooldown = 0.05, voices = 3, length = 0.16 }),

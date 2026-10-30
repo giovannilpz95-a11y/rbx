@@ -35,7 +35,10 @@ function FarmHooks.start(GameAudio)
 	end
 
 	remotes:WaitForChild("Reward_Popup").OnClientEvent:Connect(function(payload)
-		lastPopupAt = os.clock()
+		-- The Town Crier is news from someone else's farm; nothing changed on ours.
+		if type(payload) == "table" and payload.kind ~= "Crier" then
+			lastPopupAt = os.clock()
+		end
 		GameAudio.playCues(FarmCues.popup(payload))
 	end)
 
