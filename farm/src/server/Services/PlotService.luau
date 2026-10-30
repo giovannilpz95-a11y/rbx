@@ -308,6 +308,8 @@ local function buildWorld()
 
 	-- The Town Square around the hub spawn (14 Multiplayer Features A1)
 	PlotService.square = ArtTownSquare.build(map, CFrame.new())
+	-- The square's boards carry the server's notices: always loaded for everyone
+	PlotService.square.model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 
 	plotsFolder = Instance.new("Folder")
 	plotsFolder.Name = "Plots"
@@ -450,6 +452,16 @@ local function buildPlot(player: Player, slot: Slot): Model
 	model:SetAttribute("OwnerUserId", player.UserId)
 	model:SetAttribute("SlotIndex", slot.index)
 	model:SetAttribute("PlotOrigin", origin) -- plot-local space for the client's placement ghost
+	-- Streaming: your own farm is always fully loaded for you; other farms stream in and out
+	-- as you walk near them, so a phone only holds the farms around it
+	model.ModelStreamingMode = Enum.ModelStreamingMode.PersistentPerPlayer
+	-- ...and everything inside a farm streams in whole (an animal, a factory, a crop, a
+	-- building), so the client's motion controllers never bind half a model
+	model.DescendantAdded:Connect(function(d)
+		if d:IsA("Model") then
+			d.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
+		end
+	end)
 
 	part({
 		Name = "StartArea",
@@ -688,6 +700,11 @@ local function buildPlot(player: Player, slot: Slot): Model
 
 	model.PrimaryPart = model:FindFirstChild("StartArea") :: BasePart
 	model.Parent = plotsFolder
+	if typeof(player) == "Instance" and player:IsA("Player") then -- not the Studio test neighbor
+		pcall(function()
+			model:AddPersistentPlayer(player)
+		end)
+	end
 	return model
 end
 
