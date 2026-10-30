@@ -264,13 +264,18 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
-	test("art: the Town Square stays within its budget, with its three boards", function()
+	test("art: the Town Square stays within its budget, with its three boards and the Puzzle Porch", function()
 		local m = Instance.new("Model")
 		local square = ArtTownSquare.build(m, CFrame.new())
 		within(square.model, ArtTownSquare.PARTS_MAX, "Town Square")
 		paletteRules(square.model, "Town Square")
 		for _, name in { "Notice", "Neighbors", "Market" } do
 			ok(square.boards[name] ~= nil and square.boards[name].CanQuery, name .. " board is a tap target")
+		end
+		ok(square.porch.Parent == square.porchModel, "the cabinet is part of the Puzzle Porch")
+		for _, part in square.porchModel:GetDescendants() do
+			-- the whole porch takes taps, not just the cabinet's body (the screen covers its front)
+			ok(not part:IsA("BasePart") or (part :: BasePart).CanQuery, part.Name .. " on the porch is a tap target")
 		end
 	end)
 

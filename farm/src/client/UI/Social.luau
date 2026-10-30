@@ -10,6 +10,7 @@
 -- The server checks every visit; this only sends intents.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SocialService = game:GetService("SocialService")
 local StarterGui = game:GetService("StarterGui")
@@ -132,6 +133,19 @@ local function invite()
 		options.LaunchData = tostring(player.UserId)
 		SocialService:PromptGameInvite(player, options)
 	end)
+end
+
+-- Crop Pop's client listens on this client-only event to open its screen (whichever script
+-- loads first makes it).
+local function openCropPop()
+	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
+	if event == nil then
+		local created = Instance.new("BindableEvent")
+		created.Name = "CropPopOpen"
+		created.Parent = ReplicatedStorage
+		event = created
+	end
+	(event :: BindableEvent):Fire()
 end
 
 local function noticeEntries(): { { text: string, visit: number? } }
@@ -312,13 +326,53 @@ local function card(body: ScrollingFrame, height: number, order: number): Frame
 	return Ui.card({ Size = UDim2.new(1, -8, 0, height), LayoutOrder = order, Parent = body })
 end
 
+-- A panel button that acts on the press itself, like the Gem buttons, so a panel refresh
+-- between press and release can't swallow the tap. A greyed-out button (Active false) does
+-- nothing.
+local function pressButton(text: string, onClick: () -> (), props: { [string]: any }): TextButton
+	local button: TextButton
+	local lastTap = -math.huge
+	local function tap()
+		if not button.Active or time() - lastTap < 0.4 then
+			return
+		end
+		lastTap = time()
+		onClick()
+	end
+	button = Ui.button(text, tap, props)
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			tap()
+		end
+	end)
+	return button
+end
+
 local function smallButton(text: string, onClick: () -> (), color: Color3?, width: number?): TextButton
-	return Ui.button(text, onClick, {
+	return pressButton(text, onClick, {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -6, 0.5, 0),
 		Size = UDim2.fromOffset(width or 92, 32),
 		BackgroundColor3 = color or Ui.colors.button,
 	})
+end
+
+-- Friends we've already sent a Crop Pop heart today, and whether any are left to send.
+local function heartSent(userId: number): boolean
+	if player:GetAttribute("HeartsLeft") == 0 then
+		return true
+	end
+	local raw = player:GetAttribute("HeartsSentTo")
+	if type(raw) ~= "string" then
+		return false
+	end
+	local ok, sentTo = pcall(function()
+		return HttpService:JSONDecode(raw)
+	end)
+	return ok and type(sentTo) == "table" and table.find(sentTo, userId) ~= nil
 end
 
 -- A label and a row of options; the current one is highlighted.
@@ -340,7 +394,7 @@ local function optionRow(
 	}, { Ui.list(6, true) })
 	for i, option in options do
 		local picked = option == current
-		Ui.button(option, function()
+		pressButton(option, function()
 			Remotes.fire(remote, option)
 		end, {
 			Size = UDim2.fromOffset(84, 30),
@@ -381,14 +435,14 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		Ui.label(string.format("%s%s", other.DisplayName, if type(level) == "number" then "   Lv " .. level else ""), {
 			Font = Enum.Font.GothamBold,
 			Position = UDim2.fromOffset(10, 4),
-			Size = UDim2.new(1, -200, 0, 22),
+			Size = UDim2.new(1, -270, 0, 22),
 			Parent = line,
 		})
 		Ui.label((if isFriend(other) then "Friend, " else "") .. whereabouts(other), {
 			TextColor3 = Ui.colors.muted,
 			TextSize = Type.size.small,
 			Position = UDim2.fromOffset(10, 26),
-			Size = UDim2.new(1, -200, 0, 20),
+			Size = UDim2.new(1, -270, 0, 20),
 			Parent = line,
 		})
 		local visitButton = smallButton("Visit", function()
@@ -396,11 +450,21 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 			Remotes.fire("Visit_Go", other.UserId)
 		end)
 		visitButton.Parent = line
+		local right = -104 -- left edge of the next button, right of the Visit button
+		if isFriend(other) then
+			local heart = smallButton("❤", function()
+				Remotes.fire("Social_GiftHeart", other.UserId)
+			end, Palette.button.danger.face, 44)
+			Ui.setEnabled(heart, not heartSent(other.UserId), Palette.button.danger.face)
+			heart.Position = UDim2.new(1, right, 0.5, 0)
+			heart.Parent = line
+			right -= 50
+		end
 		if other:GetAttribute("OnPlot") == player.UserId then
 			local send = smallButton("Send home", function()
 				Remotes.fire("Visit_SendHome", other.UserId)
 			end, Ui.colors.danger, 110)
-			send.Position = UDim2.new(1, -104, 0.5, 0)
+			send.Position = UDim2.new(1, right, 0.5, 0)
 			send.Parent = line
 		end
 	end
@@ -478,11 +542,11 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		LayoutOrder = nextOrder(),
 		Parent = body,
 	}, { Ui.list(8, true) })
-	Ui.button("Town Square", function()
+	pressButton("Town Square", function()
 		Panels.close()
 		Remotes.fire("Visit_Square")
 	end, { Size = UDim2.fromOffset(140, 34), BackgroundColor3 = Ui.colors.selected, LayoutOrder = 1, Parent = travel })
-	Ui.button("Go home", function()
+	pressButton("Go home", function()
 		Panels.close()
 		Remotes.fire("Visit_Home")
 	end, { Size = UDim2.fromOffset(120, 34), LayoutOrder = 2, Parent = travel })
@@ -595,6 +659,13 @@ local function watchPlayer(other: Player)
 	other:GetAttributeChangedSignal("FarmLevel"):Connect(refreshHud)
 	if other == player then
 		other:GetAttributeChangedSignal("GoodNeighbors"):Connect(refreshStatus)
+		for _, name in { "HeartsSentTo", "HeartsLeft" } do
+			other:GetAttributeChangedSignal(name):Connect(function()
+				if Panels.isShowing("Neighbors") then
+					Panels.refresh()
+				end
+			end)
+		end
 	end
 end
 
@@ -618,6 +689,8 @@ function SocialUi.init()
 					helpAt(part, owner)
 				end, true
 			end
+		elseif kind == "PuzzlePorch" then
+			return openCropPop, true
 		elseif kind == "Market" then
 			return function()
 				Hud.toast("Market stalls open in a later update. Check back soon!")

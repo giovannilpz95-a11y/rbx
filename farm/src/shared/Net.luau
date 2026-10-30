@@ -45,6 +45,7 @@ return table.freeze({
 	Help_Harvest = "Help_Harvest", -- ownerUserId, fieldId: harvest a ready field into the owner's Barn
 	Social_SetPrivacy = "Social_SetPrivacy", -- "Open" | "Friends" | "Closed"
 	Social_SetHelpers = "Social_SetHelpers", -- "Nobody" | "Friends" | "Anyone"
+	Social_GiftHeart = "Social_GiftHeart", -- toUserId: send a friend a Crop Pop heart (Crop Pop's daily limit)
 	Social_SetBlocked = "Social_SetBlocked", -- { userId } from the player's Roblox block list
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
