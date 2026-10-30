@@ -68,6 +68,7 @@ local Community: { [string]: CommunityDef } = {
 	StargazingTower = { id = "StargazingTower", displayName = "Stargazing Tower", unlockLevel = 18, capBonus = 85, coinCost = 450, materials = { Bricks = 4, Planks = 7, Panes = 7 }, buildSeconds = 6 * HOUR, xp = 170, order = 15, color = { 70, 80, 140 } },
 	RoseGarden = { id = "RoseGarden", displayName = "Rose Garden", unlockLevel = 19, capBonus = 90, coinCost = 500, materials = { Bricks = 5, Planks = 7, Panes = 4 }, buildSeconds = 6 * HOUR + 30 * MIN, xp = 180, order = 16, color = { 230, 120, 140 } },
 	TownHallUpgrade = { id = "TownHallUpgrade", displayName = "Town Hall Upgrade", unlockLevel = 20, capBonus = 95, coinCost = 650, materials = { Bricks = 6, Planks = 6, Panes = 5 }, buildSeconds = 7 * HOUR, xp = 190, order = 17, color = { 235, 220, 190 }, townHallStorey = 2 },
+	SeedExchange = { id = "SeedExchange", displayName = "Seed Exchange", unlockLevel = 21, capBonus = 100, coinCost = 800, materials = { Bricks = 5, Planks = 7, Panes = 6 }, buildSeconds = 7 * HOUR + 30 * MIN, xp = 200, order = 18, color = { 160, 200, 110 } },
 }
 
 for _, def in Houses do

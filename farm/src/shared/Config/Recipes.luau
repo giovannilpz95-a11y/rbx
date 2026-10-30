@@ -33,6 +33,7 @@ local Recipes: { [string]: RecipeDef } = {
 	Cream = { id = "Cream", displayName = "Cream", factory = "Dairy", unlockLevel = 4, inputs = { Milk = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 12, xp = 5 },
 	Cheese = { id = "Cheese", displayName = "Cheese", factory = "Dairy", unlockLevel = 6, inputs = { Milk = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 25, xp = 11 },
 	Butter = { id = "Butter", displayName = "Butter", factory = "Dairy", unlockLevel = 11, inputs = { Milk = 3 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 39, xp = 17 },
+	StrawberryYogurt = { id = "StrawberryYogurt", displayName = "Strawberry Yogurt", factory = "Dairy", unlockLevel = 21, inputs = { Milk = 2, Strawberries = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 53, xp = 23 }, -- content bank
 	-- Sugar Mill
 	Sugar = { id = "Sugar", displayName = "Sugar", factory = "SugarMill", unlockLevel = 7, inputs = { Sugarcane = 1 }, outputQty = 1, seconds = 20 * MIN, sellPrice = 14, xp = 6 },
 	CaneSyrup = { id = "CaneSyrup", displayName = "Cane Syrup", factory = "SugarMill", unlockLevel = 17, inputs = { Sugarcane = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 29, xp = 12 }, -- content bank
@@ -52,6 +53,7 @@ local Recipes: { [string]: RecipeDef } = {
 	FarmBurger = { id = "FarmBurger", displayName = "Farm Burger", factory = "Diner", unlockLevel = 16, inputs = { Bread = 2, Cheese = 1, Tomatoes = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 57, xp = 24 },
 	-- Ice Cream Parlor (content bank)
 	IceCreamCone = { id = "IceCreamCone", displayName = "Ice Cream Cone", factory = "IceCreamParlor", unlockLevel = 20, inputs = { Milk = 1, Cream = 1, Sugar = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 39, xp = 17 },
+	StrawberryIcePop = { id = "StrawberryIcePop", displayName = "Strawberry Ice Pop", factory = "IceCreamParlor", unlockLevel = 21, inputs = { Strawberries = 2, Sugar = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 45, xp = 19 },
 }
 
 return table.freeze(Recipes)

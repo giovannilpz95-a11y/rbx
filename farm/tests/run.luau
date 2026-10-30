@@ -230,7 +230,10 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 20, "levels 17 to 20 are banked")
+	eq(Levels.built, 21, "levels 17 to 21 are banked")
+	eq(Levels.list[21].xpToNext, 7813, "L21 row")
+	eq(Recipes.StrawberryYogurt.factory, "Dairy", "Strawberry Yogurt")
+	eq(Recipes.StrawberryIcePop.factory, "IceCreamParlor", "Strawberry Ice Pop")
 	eq(Levels.list[20].xpToNext, 6736, "L20 row")
 	eq(Recipes.IceCreamCone.factory, "IceCreamParlor", "Ice Cream Cone")
 	eq(Recipes.PatchworkQuilt.inputs.Yarn, 1, "Patchwork Quilt")
@@ -258,7 +261,7 @@ test("the content bank stays locked at the live cap", function()
 		ok(table.find(Balance.enabledFactories, Recipes[id].factory) ~= nil, id .. "'s factory is enabled")
 	end
 	eq(Town.houses.ThatchedLonghouse.copyLevels[1], 17, "Thatched Longhouse")
-	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower", "RoseGarden" } do
+	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower", "RoseGarden", "SeedExchange" } do
 		local def = Town.community[id]
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")

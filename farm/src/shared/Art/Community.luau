@@ -610,6 +610,37 @@ TYPES.RoseGarden = function(b, s)
 	return body
 end
 
+-- Seed Exchange (content bank, level 21): a sage-green market hall with a mustard gable roof,
+-- a seed-sack counter out front, and a giant seed packet on the gable as its sign.
+TYPES.SeedExchange = function(b, s)
+	local w, d, h = s * 0.7, s * 0.55, 5
+	local body = hall(b, w, d, h, Palette.leafLight:Lerp(Palette.cream, 0.4))
+	local t = b.into(body, true)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.8, Palette.roofMustard)
+	Kit.door(t, "Door", CFrame.new(w / 4, PLINTH, -d / 2), 2.2, 3.8, Palette.woodDark, Palette.cream)
+	Kit.window(t, "Window", CFrame.new(-w / 4, PLINTH + 2.8, -d / 2), 2, 2, Palette.cream, Palette.glass)
+	-- Sign object: a seed packet (paper, a picture band and a sprout) on the gable
+	local packet = Vector3.new(0, PLINTH + h + 1.1, -d / 2 - 0.65)
+	t.block("Packet", Vector3.new(2, 2.6, 0.3), packet, Palette.cream, { shadow = false })
+	t.block(
+		"PacketBand",
+		Vector3.new(2.02, 0.9, 0.32),
+		packet + Vector3.new(0, -0.5, 0),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	t.ball("PacketSeed", 0.7, packet + Vector3.new(0, 0.5, -0.2), Palette.lime, { shadow = false })
+	-- The counter out front, with seed sacks on it
+	local counter = Vector3.new(-w / 4, 0, -d / 2 - 1.6)
+	t.block("Counter", Vector3.new(3.2, 1.4, 1.2), counter + Vector3.new(0, 0.7, 0), Palette.wood)
+	for i, x in { -0.8, 0.8 } do
+		t.ball("SeedSack", 1.1, counter + Vector3.new(x, 1.8, 0), if i == 1 then Palette.sack else Palette.straw)
+	end
+	Kit.bush(t, "Bush", Vector3.new(w / 2 + 0.8, 0.3, -d / 2 + 0.6), 0.9, Palette.treeTop, Palette.flowerYellow)
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1.2, PLINTH + h + 1.2, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
