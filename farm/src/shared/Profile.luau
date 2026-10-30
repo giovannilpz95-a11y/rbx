@@ -98,6 +98,11 @@ function Profile.template(): { [string]: any }
 		pens = pens,
 		decor = {}, -- placed decorations: { id, x, z, r } (shared/DecorRules)
 		prizes = {}, -- the Prize Basket: { crop, tier } (shared/Prize)
+		purchases = {
+			receipts = {}, -- PurchaseId -> time granted, newest 200 (shared/Shop)
+			bought = {}, -- one-time products bought (StarterPack)
+			passes = {}, -- game passes owned, refreshed from Roblox on join
+		},
 		toolShed = {
 			items = {}, -- Shovel / Axe / Saw -> qty; no Barn space (shared/Drops)
 			dry = 0, -- harvests in a row without a tool, for the pity drop
