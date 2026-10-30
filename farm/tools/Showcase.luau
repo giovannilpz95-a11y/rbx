@@ -9,6 +9,8 @@ local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtCommunity = require("../src/shared/Art/Community")
 local ArtDecor = require("../src/shared/Art/Decor")
+local ArtMarket = require("../src/shared/Art/Market")
+local ArtRail = require("../src/shared/Art/Rail")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
 local ArtFolk = require("../src/shared/Art/Folk")
@@ -306,6 +308,47 @@ SCENES.decor = function(root)
 		{ "PicnicTable", 4, -2 },
 		{ "Pond", -10, 12 },
 		{ "StoneFountain", 6, 12 },
+	}
+	for _, d in row do
+		local m = Kit.model(d[1], root)
+		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
+-- The train set at the station, and two Market stalls
+SCENES.rail = function(root)
+	ground(root, 80)
+	ArtRail.station(root, CFrame.new(0, 0, 0))
+	for i, kind in { "Buffer", "Straight", "Crossing", "Straight" } do
+		ArtRail.track(kind, root, CFrame.new(-24 + (i - 1) * 16, 0, -6.5) * Kit.yaw(180))
+	end
+	ArtRail.engine(root, CFrame.new(-4, 0, -6.5))
+	for i = 1, 2 do
+		local car = ArtRail.cargoCar(root, CFrame.new(-15 - (i - 1) * 10.6, 0, -6.5))
+		ArtRail.setCarCrates(car, i + 1)
+	end
+	ArtRail.helpCrate(root, CFrame.new(7, 1.2, 1))
+	local stall = ArtMarket.stall(root, CFrame.new(-10, 0, -22) * Kit.yaw(180), "Teal")
+	ArtMarket.pennant(stall, CFrame.new(-6.2, 6, -20.2) * Kit.yaw(180))
+	ArtMarket.stall(root, CFrame.new(4, 0, -22) * Kit.yaw(180), "Plum")
+end
+
+-- The level 13+ decorations, two rows
+SCENES.decor2 = function(root)
+	ground(root, 60)
+	local row = {
+		{ "SteppingStones", -15, -8 },
+		{ "FarmLane", -10, -8 },
+		{ "RailFence", -5, -8 },
+		{ "StoneWall", 0, -8 },
+		{ "PottedFlowers", 5, -8 },
+		{ "SunflowerPatch", 10, -8 },
+		{ "Scarecrow", 15, -8 },
+		{ "RoundPine", -14, 4 },
+		{ "BlossomTree", -4, 4 },
+		{ "Topiary", 4, 4 },
+		{ "Birdbath", 9, 4 },
+		{ "GardenSwing", 16, 4 },
 	}
 	for _, d in row do
 		local m = Kit.model(d[1], root)

@@ -1,5 +1,5 @@
 --!strict
--- The MVP decoration set (~12) from Design/07 Town Building (categories, cost and level
+-- The MVP decoration set (~12) plus the level 13+ set from Design/07 Town Building (categories, cost and level
 -- ranges, 1-20 XP) and 16 Model Catalog §2.11 (names, footprints). Exact prices and levels
 -- are first-pass within 07's ranges. A tile is 4 x 4 studs; size is in tiles before rotation.
 
@@ -28,6 +28,19 @@ local Decor: { [string]: DecorDef } = {
 	Bench = { id = "Bench", displayName = "Bench", category = "Lights & furniture", unlockLevel = 5, coinCost = 150, xp = 4, size = { 2, 1 }, order = 10 },
 	PicnicTable = { id = "PicnicTable", displayName = "Picnic Table", category = "Lights & furniture", unlockLevel = 7, coinCost = 400, xp = 8, size = { 2, 2 }, order = 11 },
 	StoneFountain = { id = "StoneFountain", displayName = "Stone Fountain", category = "Landmarks", unlockLevel = 10, coinCost = 2000, xp = 20, size = { 3, 3 }, order = 12 },
+	-- Level 13+ set (Model List - Town & Factories §7, P1); prices first-pass within 07's ranges
+	SteppingStones = { id = "SteppingStones", displayName = "Stepping Stones", category = "Paths & fences", unlockLevel = 13, coinCost = 10, xp = 1, size = { 1, 1 }, order = 13 },
+	PottedFlowers = { id = "PottedFlowers", displayName = "Potted Flowers", category = "Nature", unlockLevel = 13, coinCost = 90, xp = 3, size = { 1, 1 }, order = 14 },
+	RailFence = { id = "RailFence", displayName = "Post-and-Rail Fence", category = "Paths & fences", unlockLevel = 13, coinCost = 30, xp = 2, size = { 1, 1 }, order = 15 },
+	RoundPine = { id = "RoundPine", displayName = "Round Pine", category = "Nature", unlockLevel = 14, coinCost = 250, xp = 6, size = { 2, 2 }, order = 16 },
+	SunflowerPatch = { id = "SunflowerPatch", displayName = "Sunflower Patch", category = "Nature", unlockLevel = 15, coinCost = 120, xp = 4, size = { 1, 1 }, order = 17 },
+	FarmLane = { id = "FarmLane", displayName = "Farm Lane", category = "Paths & fences", unlockLevel = 15, coinCost = 12, xp = 1, size = { 1, 1 }, order = 18 },
+	StoneWall = { id = "StoneWall", displayName = "Stone Wall", category = "Paths & fences", unlockLevel = 16, coinCost = 60, xp = 3, size = { 1, 1 }, order = 19 },
+	Scarecrow = { id = "Scarecrow", displayName = "Scarecrow", category = "Nature", unlockLevel = 16, coinCost = 300, xp = 6, size = { 1, 1 }, order = 20 },
+	BlossomTree = { id = "BlossomTree", displayName = "Blossom Tree", category = "Nature", unlockLevel = 17, coinCost = 500, xp = 8, size = { 2, 2 }, order = 21 },
+	Topiary = { id = "Topiary", displayName = "Topiary", category = "Nature", unlockLevel = 18, coinCost = 350, xp = 6, size = { 1, 1 }, order = 22 },
+	Birdbath = { id = "Birdbath", displayName = "Birdbath", category = "Lights & furniture", unlockLevel = 19, coinCost = 450, xp = 7, size = { 1, 1 }, order = 23 },
+	GardenSwing = { id = "GardenSwing", displayName = "Garden Swing", category = "Lights & furniture", unlockLevel = 20, coinCost = 900, xp = 10, size = { 2, 1 }, order = 24 },
 }
 
 for _, def in Decor do
