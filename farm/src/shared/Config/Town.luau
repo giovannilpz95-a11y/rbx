@@ -47,6 +47,8 @@ local Houses: { [string]: HouseDef } = {
 	ThatchedLonghouse = { id = "ThatchedLonghouse", displayName = "Thatched Longhouse", population = 45, coinCost = 225, buildSeconds = 4 * HOUR, xp = 45, copyLevels = { 17, 18, 19, 19, 20 }, order = 9, color = { 205, 180, 130 } },
 	CornerFlats = { id = "CornerFlats", displayName = "Corner Flats", population = 50, coinCost = 300, buildSeconds = 6 * HOUR, xp = 50, copyLevels = { 20, 21, 21, 22 }, order = 10, color = { 225, 170, 120 } },
 	LakesideManor = { id = "LakesideManor", displayName = "Lakeside Manor", population = 55, coinCost = 385, buildSeconds = 7 * HOUR, xp = 55, copyLevels = { 22, 23, 23, 24 }, order = 11, color = { 200, 220, 235 } },
+	HearthHouse = { id = "HearthHouse", displayName = "Hearth House", population = 60, coinCost = 540, buildSeconds = 8 * HOUR, xp = 60, copyLevels = { 24, 25, 25, 26 }, order = 12, color = { 235, 225, 200 } },
+	TwinGables = { id = "TwinGables", displayName = "Twin Gables", population = 65, coinCost = 715, buildSeconds = 9 * HOUR, xp = 65, copyLevels = { 26, 27, 27, 28, 29 }, order = 13, color = { 240, 215, 150 } },
 }
 
 -- stylua: ignore
@@ -74,6 +76,7 @@ local Community: { [string]: CommunityDef } = {
 	BotanicalArch = { id = "BotanicalArch", displayName = "Botanical Arch", unlockLevel = 23, capBonus = 110, coinCost = 1100, materials = { Bricks = 5, Planks = 10, Panes = 6 }, buildSeconds = 9 * HOUR, xp = 220, order = 20, color = { 120, 180, 120 } },
 	Amphitheatre = { id = "Amphitheatre", displayName = "Amphitheatre", unlockLevel = 24, capBonus = 115, coinCost = 1350, materials = { Bricks = 6, Planks = 7, Panes = 10 }, buildSeconds = 10 * HOUR, xp = 230, order = 21, color = { 215, 200, 175 } },
 	SculpturePark = { id = "SculpturePark", displayName = "Sculpture Park", unlockLevel = 25, capBonus = 120, coinCost = 1600, materials = { Bricks = 7, Planks = 10, Panes = 8 }, buildSeconds = 11 * HOUR, xp = 240, order = 22, color = { 190, 210, 170 } },
+	BigTop = { id = "BigTop", displayName = "Big Top", unlockLevel = 26, capBonus = 125, coinCost = 1900, materials = { Bricks = 8, Planks = 7, Panes = 12 }, buildSeconds = 12 * HOUR, xp = 250, order = 23, color = { 220, 70, 70 } },
 }
 
 for _, def in Houses do

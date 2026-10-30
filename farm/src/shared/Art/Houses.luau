@@ -402,6 +402,62 @@ TYPES.LakesideManor = {
 	end,
 }
 
+-- Hearth House (content bank, level 24): a long cream house of one and a half storeys with
+-- dark timber posts, a door in the middle under a fat stone chimney that serves both rooms,
+-- and a window either side.
+TYPES.HearthHouse = {
+	roof = Palette.roofRed,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.84, s * 0.56, STORY * 1.25
+		local z0 = s * 0.1
+		local body = walls(b, w, d, h, Palette.cream:Lerp(Palette.oat, 0.35), 0, z0)
+		local t = b.into(body, true)
+		Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, z0), w + 1, d + 1.2, 3.4, roof)
+		chimney(t, Vector3.new(0, PLINTH + h + 1, z0 + 0.6), 4.2, Palette.stone)
+		local face = z0 + front(d)
+		for _, x in { -w / 2 + 0.3, w / 2 - 0.3 } do
+			t.block("Timber", Vector3.new(0.5, h, 0.3), Vector3.new(x, PLINTH + h / 2, face - 0.1), Palette.woodDark)
+		end
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 3.8, roof, Palette.woodDark)
+		for _, x in { -1, 1 } do
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x * w / 4 + x * 0.3, PLINTH + 2.4, face),
+				1.6,
+				1.6,
+				Palette.woodDark,
+				Palette.glass
+			)
+		end
+		flowerBox(t, CFrame.new(-w / 4 - 0.3, PLINTH + 1.3, face), 1.8)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 2, z0), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Twin Gables (content bank, level 26): a pair of tall butter-yellow homes under one roofline
+-- of two front-facing gables, with a front door and a window each.
+TYPES.TwinGables = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.82, s * 0.62, STORY * 1.55
+		local body = walls(b, w, d, h, Palette.flowerYellow:Lerp(Palette.cream, 0.6), 0, 0.3)
+		local t = b.into(body, true)
+		-- Two gables facing the street: each roof's ridge runs front to back
+		for _, x in { -w / 4, w / 4 } do
+			Kit.gableRoof(t, "Roof", CFrame.new(x, PLINTH + h, 0.3) * Kit.yaw(90), d + 1, w / 2 + 0.4, 2.8, roof)
+		end
+		local face = 0.3 + front(d)
+		for _, x in { -w / 4, w / 4 } do
+			Kit.door(t, "Door", CFrame.new(x, PLINTH, face), 1.6, 3.6, roof, Palette.cream)
+			Kit.window(t, "Window", CFrame.new(x, PLINTH + STORY + 1.4, face), 1.5, 1.8, Palette.cream, Palette.glass)
+		end
+		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 1.6, 0.3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)
