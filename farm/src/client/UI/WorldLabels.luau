@@ -3,14 +3,16 @@
 -- current job or finished goods, each pen's products or hunger, Town construction timers, and
 -- the order cards on the Order Board's face.
 -- Countdowns run locally from the server timestamps (Design/11 UI & UX ready bubbles).
+-- Ready bubbles show the product's picture and a count, Township style (UI Reference & Gaps
+-- G2); text is only for timers and states like "Hungry".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
-local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
+local ArtIcons = require(Shared.Art.Icons)
 local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Timer = require(Shared.Timer)
@@ -27,11 +29,24 @@ local factoryLabels: { [string]: TextLabel } = {}
 local penLabels: { [string]: TextLabel } = {}
 local boardText: TextLabel? = nil
 
+local TEXT_SIZE = UDim2.fromOffset(120, 34)
+local ICON_SIZE = UDim2.fromOffset(50, 50) -- picture only
+local ICON_COUNT_SIZE = UDim2.fromOffset(84, 50) -- picture and a count
+
+-- Each status billboard holds a text bubble (timers, states) and a picture bubble (ready).
+-- `icons` keeps the ViewportFrame per item so a bubble isn't rebuilt every half second.
+type PictureBubble = {
+	bubble: any, -- UiTheme Kit.iconBubble
+	item: string?,
+	icons: { [string]: ViewportFrame },
+}
+local pictures: { [TextLabel]: PictureBubble } = setmetatable({}, { __mode = "k" }) :: any -- town bubbles come and go
+
 local function billboard(adornee: BasePart, offsetY: number, maxDistance: number?): TextLabel
 	local gui = Ui.new("BillboardGui", {
 		Name = "FarmStatus",
 		Adornee = adornee,
-		Size = UDim2.fromOffset(120, 34),
+		Size = TEXT_SIZE,
 		StudsOffset = Vector3.new(0, offsetY, 0),
 		MaxDistance = maxDistance or 90,
 		AlwaysOnTop = true,
@@ -45,10 +60,12 @@ local function billboard(adornee: BasePart, offsetY: number, maxDistance: number
 	})
 	Ui.padding(4).Parent = label
 	Ui.theme.Kit.skinBubble(label)
+	local bubble = Ui.theme.Kit.iconBubble({ Visible = false, Parent = gui })
+	pictures[label] = { bubble = bubble, item = nil, icons = {} }
 	-- Ready bubbles bob gently so they catch the eye (12 Art & Audio Direction)
 	local bob: Tween? = nil
-	label:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
-		local ready = label.BackgroundColor3 == Ui.colors.ready
+	bubble.frame:GetPropertyChangedSignal("Visible"):Connect(function()
+		local ready = bubble.frame.Visible
 		if ready and bob == nil then
 			bob = Ui.theme.Motion.loop(gui, { StudsOffset = Vector3.new(0, offsetY + 0.6, 0) })
 		elseif not ready and bob ~= nil then
@@ -58,6 +75,54 @@ local function billboard(adornee: BasePart, offsetY: number, maxDistance: number
 		end
 	end)
 	return label
+end
+
+-- Show a timer or state as text on the bubble's dark (or `color`) pill.
+local function showText(label: TextLabel, text: string, color: Color3?)
+	local picture = pictures[label]
+	if picture then
+		picture.bubble.frame.Visible = false
+	end
+	label.Visible = true
+	label.Text = text
+	label.BackgroundColor3 = color or Ui.colors.bar
+	local gui = label.Parent :: BillboardGui
+	gui.Size = TEXT_SIZE
+end
+
+-- Show that `item` is ready, with its picture and a count ("" for none).
+local function showReady(label: TextLabel, item: string, count: number?)
+	local picture = pictures[label]
+	if picture == nil then
+		return
+	end
+	local Kit = Ui.theme.Kit
+	if picture.item ~= item then
+		if picture.item and picture.icons[picture.item] then
+			picture.icons[picture.item].Parent = nil
+		end
+		local icon = picture.icons[item]
+		if icon == nil then
+			local ok, built = pcall(ArtIcons.viewport, item)
+			if ok then
+				icon = built
+				picture.icons[item] = built
+			end
+		end
+		if icon then
+			icon.Size = UDim2.fromScale(1, 1)
+			icon.Parent = picture.bubble.iconSlot
+		end
+		picture.item = item
+	end
+	local countText = if count and count > 1 then "x" .. count else ""
+	Kit.setIconBubble(picture.bubble, countText)
+	label.Visible = false
+	label.Text = "" -- keeps the text-based checks (Guide, tests) from reading a stale timer
+	label.BackgroundColor3 = Ui.colors.ready
+	picture.bubble.frame.Visible = true
+	local gui = label.Parent :: BillboardGui
+	gui.Size = if countText == "" then ICON_SIZE else ICON_COUNT_SIZE
 end
 
 local function attach(model: Model)
@@ -119,12 +184,10 @@ local function render()
 			gui.Enabled = false
 		elseif Timer.isReady(field.readyAt, now) then
 			gui.Enabled = true
-			label.Text = Crops[field.crop].displayName .. " ready!"
-			label.BackgroundColor3 = Ui.colors.ready
+			showReady(label, field.crop)
 		else
 			gui.Enabled = true
-			label.Text = Timer.format(Timer.remaining(field.readyAt, now))
-			label.BackgroundColor3 = Ui.colors.bar
+			showText(label, Timer.format(Timer.remaining(field.readyAt, now)))
 		end
 	end
 
@@ -135,21 +198,27 @@ local function render()
 		if preview == nil then
 			continue
 		end
-		label.BackgroundColor3 = Ui.colors.bar
 		if not preview.built then
-			label.Text = if state.level < Factories[id].unlockLevel
-				then "Level " .. Factories[id].unlockLevel
-				else "Build me"
+			showText(
+				label,
+				if state.level < Factories[id].unlockLevel then "Level " .. Factories[id].unlockLevel else "Build me"
+			)
 		elseif preview.underConstruction then
-			label.Text = "Building " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now))
+			showText(label, "Building " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now)))
 		elseif preview.outputCount > 0 then
-			label.Text = string.format("%d ready!", preview.outputCount)
-			label.BackgroundColor3 = Ui.colors.ready
+			-- The good there's most of on the table
+			local best, bestQty = nil, 0
+			for item, qty in preview.output do
+				if qty > bestQty or (qty == bestQty and best and item < best) then
+					best, bestQty = item, qty
+				end
+			end
+			showReady(label, best or "", preview.outputCount)
 		elseif #preview.queue > 0 and preview.queue[1].readyAt then
 			local job = preview.queue[1]
-			label.Text = Items[job.recipe].displayName .. " " .. Timer.format(Timer.remaining(job.readyAt, now))
+			showText(label, Items[job.recipe].displayName .. " " .. Timer.format(Timer.remaining(job.readyAt, now)))
 		else
-			label.Text = "Idle"
+			showText(label, "Idle")
 		end
 	end
 
@@ -161,22 +230,19 @@ local function render()
 		if pen == nil then
 			continue
 		end
-		label.BackgroundColor3 = Ui.colors.bar
 		if not pen.built then
-			label.Text = if state.level < def.unlockLevel then "Level " .. def.unlockLevel else "Build me"
+			showText(label, if state.level < def.unlockLevel then "Level " .. def.unlockLevel else "Build me")
 		elseif not Pen.isOperational(pen, now) then
-			label.Text = "Building " .. Timer.format(Timer.remaining(pen.constructionReadyAt, now))
+			showText(label, "Building " .. Timer.format(Timer.remaining(pen.constructionReadyAt, now)))
 		else
 			local counts = Pen.counts(pen, now)
 			if counts.ready > 0 then
-				label.Text = string.format("%d %s ready!", counts.ready, def.productName)
-				label.BackgroundColor3 = Ui.colors.ready
+				showReady(label, def.product, counts.ready)
 			elseif counts.hungry > 0 then
 				local hasFeed = (pen.feedLeft or 0) > 0 or ClientStore.itemCount(def.feed) > 0
-				label.Text = if hasFeed then "Hungry" else "Needs " .. Items[def.feed].displayName
-				label.BackgroundColor3 = Ui.colors.warn
+				showText(label, if hasFeed then "Hungry" else "Needs " .. Items[def.feed].displayName, Ui.colors.warn)
 			elseif counts.nextReadyAt then
-				label.Text = def.productName .. " " .. Timer.format(Timer.remaining(counts.nextReadyAt, now))
+				showText(label, def.productName .. " " .. Timer.format(Timer.remaining(counts.nextReadyAt, now)))
 			end
 		end
 	end
@@ -196,7 +262,7 @@ local function render()
 				then gui:FindFirstChildOfClass("TextLabel")
 				else billboard(body, body.Size.Y / 2 + 3, 60)
 			if label then
-				label.Text = "Building " .. Timer.format(Timer.remaining(readyAt, now))
+				showText(label, "Building " .. Timer.format(Timer.remaining(readyAt, now)))
 			end
 		end
 		for _, house in state.town.houses do
