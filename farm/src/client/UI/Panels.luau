@@ -20,6 +20,7 @@ local Barn = require(Shared.Config.Barn)
 local BarnRules = require(Shared.BarnRules)
 local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
+local Guild = require(Shared.Guild)
 local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
@@ -898,7 +899,7 @@ local function factoryQueueAndShelf(
 	-- Shelf: finished goods waiting on the output table
 	local shelf = row(76, order)
 	order += 1
-	Ui.label(string.format("Ready  %d / %d", preview.outputCount, def.trayCapacity), {
+	Ui.label(string.format("Ready  %d / %d", preview.outputCount, Guild.trayCapacity(ClientStore.state, factoryId)), {
 		Size = UDim2.new(1, -110, 0, 20),
 		Font = Enum.Font.GothamBold,
 		Parent = shelf,
@@ -1127,7 +1128,7 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 				then string.format("%d %s", recipe.outputQty, recipe.displayName)
 				else recipe.displayName,
 			table.concat(inputs, ", "),
-			Timer.format(recipe.seconds * (state.timeScale or 1))
+			Timer.format(recipe.seconds * Guild.timeMult(state, factoryId) * (state.timeScale or 1))
 		)
 		if locked then
 			text ..= string.format("   Lv %d", recipe.unlockLevel)

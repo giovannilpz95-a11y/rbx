@@ -104,6 +104,8 @@ local function snapshot(data: { [string]: any })
 		seedCart = data.seedCart,
 		quarry = data.quarry, -- with its seed: the client draws the shaft from it (shared/Quarry)
 		oreShed = data.oreShed,
+		guild = data.guild,
+		buildingLevels = data.buildingLevels,
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
 		quests = data.quests,

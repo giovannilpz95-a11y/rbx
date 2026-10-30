@@ -7,6 +7,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
 local Factories = require(Shared.Config.Factories)
 local Land = require(Shared.Config.Land)
+local Guild = require(Shared.Guild)
 local Net = require(Shared.Net)
 local Quarry = require(Shared.Quarry)
 local Recipes = require(Shared.Config.Recipes)
@@ -41,9 +42,8 @@ function FactoryService.advance(player: Player)
 		if factory.built and factory.constructionReadyAt ~= nil and now >= factory.constructionReadyAt then
 			factory.constructionReadyAt = nil
 		end
-		local def = Factories[id]
-		if def then
-			Timer.advanceQueue(factory.queue, factory.output, now, def.trayCapacity)
+		if Factories[id] then
+			Timer.advanceQueue(factory.queue, factory.output, now, Guild.trayCapacity(data, id))
 		end
 	end
 end
@@ -120,7 +120,7 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	elseif not InventoryService.remove(player, recipe.inputs) then
 		return false, "Not enough ingredients in the Barn"
 	end
-	local seconds = Tutorial.seconds(data, recipeId, recipe.seconds)
+	local seconds = Tutorial.seconds(data, recipeId, recipe.seconds) * Guild.timeMult(data, factoryId)
 	table.insert(factory.queue, { recipe = recipeId, seconds = Clock.duration(seconds), qty = recipe.outputQty })
 	FactoryService.advance(player)
 	PlotService.refresh(player)
