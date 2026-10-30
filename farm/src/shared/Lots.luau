@@ -3,8 +3,9 @@
 -- Design/07 Town Building). Main Street, between the gate and the Ring Road, holds the
 -- level 1-14 town. North Lane, in the North Fields (land expansion 3), takes the content
 -- bank's buildings once Main Street is full, and runs on into the Far Corners (expansion 4)
--- for the level 22+ lots. Houses take the first free lot; a Community Building stands on the
--- lot its `order` gives it (TownRules.communityLot).
+-- for the level 22+ lots. Community Buildings from level 28 stand in the West Meadow
+-- (expansion 1), south of its pens. Houses take the first free lot; a Community Building
+-- stands on the lot its `order` gives it (TownRules.communityLot).
 -- Each lot says which way its front faces (yaw 0 = local -Z) and which land expansion it
 -- needs (0 = none). Plain numbers so the shared rules and tests can use them outside Roblox.
 
@@ -14,6 +15,7 @@ local Lots = {}
 
 Lots.northLaneLand = 3 -- the North Fields
 Lots.farCornersLand = 4 -- both north corners
+Lots.westMeadowLand = 1
 -- The lane (x -halfWidth..halfWidth), and the road up to it
 Lots.northLane = table.freeze({ z = -73, linkX = 12, halfWidth = 92 })
 
@@ -65,6 +67,13 @@ for _, x in { 56, -56, 66, -66, 76, -76, 86, -86 } do
 end
 for _, x in { 55, -55, 70, -70, 85, -85 } do
 	table.insert(community, table.freeze({ x = x, z = -86, yaw = 180, land = CORNERS }))
+end
+
+-- The West Meadow (expansion 1), south of its pen row: two back-to-back rows of Community lots
+-- for level 28 on, the row nearest the town facing it, the lots nearest the start area first
+for _, x in { -58, -72, -86 } do
+	table.insert(community, table.freeze({ x = x, z = 40, yaw = 180, land = Lots.westMeadowLand }))
+	table.insert(community, table.freeze({ x = x, z = 24, yaw = 0, land = Lots.westMeadowLand }))
 end
 
 Lots.houses = table.freeze(houses)

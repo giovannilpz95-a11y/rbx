@@ -248,7 +248,16 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 27, "levels 17 to 27 are banked")
+	eq(Levels.built, 28, "levels 17 to 28 are banked")
+	eq(Levels.list[28].xpToNext, 19210, "L28 row")
+	eq(Recipes.Fries.factory, "Diner", "Fries at the Diner")
+	eq(Recipes.Fries.inputs.Cream, 1, "Fries (Township's inputs)")
+	eq(Town.houses.CanalHouse.copyLevels[1], 28, "Canal House")
+	eq(
+		Lots.community[TownRules.communityLot("FillingStation") :: number].land,
+		Lots.westMeadowLand,
+		"Filling Station in the West Meadow"
+	)
 	eq(Levels.list[27].xpToNext, 17108, "L27 row")
 	eq(Recipes.StrawberryJam.factory, "JamKitchen", "Strawberry Jam at the Jam Kitchen")
 	eq(Recipes.StrawberryJam.inputs.Strawberries, 3, "Strawberry Jam")
@@ -556,7 +565,11 @@ test("North Lane opens more lots once the North Fields are cleared", function()
 	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
 	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
 	eq(#Lots.houses, 64, "House lots with North Lane and the Far Corners")
-	eq(#Lots.community, 23, "Community lots with North Lane and the Far Corners")
+	eq(#Lots.community, 29, "Community lots with North Lane, the Far Corners and the West Meadow")
+	for i = 24, 29 do
+		eq(Lots.community[i].land, Lots.westMeadowLand, "Community lot " .. i .. " in the West Meadow")
+		ok(Lots.community[i].z - 6 > 12, "Community lot " .. i .. " clear of the West Meadow's pen row")
+	end
 	local data = Profile.migrate(nil) :: any
 	data.level = 16
 	eq(TownRules.houseLotCount(data, 0), 32, "Main Street only")

@@ -878,6 +878,42 @@ TYPES.BusDepot = function(b, s)
 	return body
 end
 
+-- Filling Station (content bank, level 28): a little red-roofed kiosk beside a canopy on four
+-- posts sheltering two old-fashioned pumps, with a round sign on a pole.
+TYPES.FillingStation = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.road, { collide = true })
+	local t = b.into(body, true)
+	-- The kiosk at the back
+	local kz = w / 2 - 2
+	t.block("Kiosk", Vector3.new(4.4, 3.6, 3), Vector3.new(-w / 4, 2.2, kz), Palette.cream)
+	t.block("KioskRoof", Vector3.new(5, 0.6, 3.6), Vector3.new(-w / 4, 4.3, kz), Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(-w / 4, 0.4, kz - 1.5), 1.4, 2.8, Palette.roofRed, Palette.cream)
+	-- The canopy over the pumps
+	local cz = -0.6
+	for _, x in { -2.6, 2.6 } do
+		for _, z in { cz - 1.6, cz + 1.6 } do
+			t.post("CanopyPost", 4, 0.4, Vector3.new(x + w / 8, 2.4, z), Palette.cream)
+		end
+	end
+	t.block("Canopy", Vector3.new(6.6, 0.6, 4.4), Vector3.new(w / 8, 4.7, cz), Palette.roofRed)
+	-- Sign object: the two pumps, red with cream faces
+	for _, x in { -1, 1 } do
+		t.block("Pump", Vector3.new(0.9, 2, 0.7), Vector3.new(w / 8 + x * 1.2, 1.4, cz), Palette.roofRed)
+		t.block(
+			"PumpFace",
+			Vector3.new(0.7, 0.6, 0.1),
+			Vector3.new(w / 8 + x * 1.2, 1.9, cz - 0.4),
+			Palette.cream,
+			{ shadow = false }
+		)
+	end
+	t.post("SignPole", 4.6, 0.3, Vector3.new(w / 2 - 0.8, 2.7, -w / 2 + 0.8), Palette.metal)
+	t.cyl("Sign", 0.3, 1.6, CFrame.new(w / 2 - 0.8, 5.4, -w / 2 + 0.8) * TURN, Palette.roofMustard, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
