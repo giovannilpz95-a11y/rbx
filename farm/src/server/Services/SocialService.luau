@@ -7,6 +7,7 @@
 -- UserId of the plot they're standing on, 0 off-plot). Friendship in Studio counts everyone as
 -- a friend, so a local 2-player server can test the friends-only rules.
 
+local HttpService = game:GetService("HttpService")
 local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ServerStorage = game:GetService("ServerStorage")
@@ -316,6 +317,38 @@ end
 -- Send a friend a Crop Pop heart. Crop Pop owns hearts, the daily limit and the pending gift
 -- (ServerStorage.CropPopGiftHeart: (fromPlayer, toUserId) -> (ok, message?)); this checks
 -- the pair are friends and neither has blocked the other.
+-- Who this player has already sent a heart today, and how many they have left, as player
+-- attributes the Neighbors panel greys the ❤ buttons out by (ServerStorage.
+-- CropPopHeartGiftStatus: (player) -> { sentTo = { userId }, left, perDay }).
+local function refreshHeartStatus(player: Player)
+	local hook = ServerStorage:FindFirstChild("CropPopHeartGiftStatus")
+	if hook == nil or not hook:IsA("BindableFunction") then
+		return
+	end
+	local ok, status = pcall(function()
+		return (hook :: BindableFunction):Invoke(player)
+	end)
+	if not ok or type(status) ~= "table" then
+		return
+	end
+	local sentTo = {}
+	if type(status.sentTo) == "table" then
+		for _, userId in status.sentTo do
+			if type(userId) == "number" then
+				table.insert(sentTo, userId)
+			end
+		end
+	end
+	local encoded = HttpService:JSONEncode(sentTo)
+	if player:GetAttribute("HeartsSentTo") ~= encoded then
+		player:SetAttribute("HeartsSentTo", encoded)
+	end
+	local left = if type(status.left) == "number" then status.left else nil
+	if player:GetAttribute("HeartsLeft") ~= left then
+		player:SetAttribute("HeartsLeft", left)
+	end
+end
+
 local function giftHeart(player: Player, toUserId: any): (boolean, string?)
 	local friend = playerByUserId(toUserId)
 	if friend == nil or friend == player or typeof(friend) ~= "Instance" then
@@ -336,8 +369,9 @@ local function giftHeart(player: Player, toUserId: any): (boolean, string?)
 	elseif sent ~= true then
 		return false, if type(message) == "string" then message else "You can't send another heart today"
 	end
+	refreshHeartStatus(player)
 	NetService.toast(friend, string.format("%s sent you a ❤ for Crop Pop!", player.DisplayName))
-	return false, string.format("Sent %s a ❤!", friend.DisplayName)
+	return false, if type(message) == "string" then message else string.format("Sent %s a ❤!", friend.DisplayName)
 end
 
 local function setOption(key: string, options: { string })
@@ -475,6 +509,7 @@ function SocialService.playerLoaded(player: Player)
 		end
 	end
 	player:SetAttribute("OnPlot", 0)
+	task.spawn(refreshHeartStatus, player)
 	local data = DataService.get(player)
 	if data then
 		player:SetAttribute("FarmLevel", data.level)
@@ -508,8 +543,13 @@ function SocialService.init()
 		"Farm stalls open here soon.\n\nSell your goods to your neighbors for Coins."
 	)
 
-	-- The Puzzle Porch opens Crop Pop (the client does the opening)
-	PlotService.square.porch:SetAttribute("Interact", "PuzzlePorch")
+	-- The Puzzle Porch opens Crop Pop (the client does the opening). Every part of it takes
+	-- taps: the screen, buttons and roof cover most of the cabinet's body.
+	for _, part in PlotService.square.porchModel:GetDescendants() do
+		if part:IsA("BasePart") then
+			part:SetAttribute("Interact", "PuzzlePorch")
+		end
+	end
 	local sign = Instance.new("SurfaceGui")
 	sign.Face = Enum.NormalId.Front
 	sign.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
@@ -542,9 +582,16 @@ function SocialService.init()
 	end)
 
 	task.spawn(function()
+		local ticks = 0
 		while true do
 			task.wait(1)
 			presenceTick()
+			ticks += 1
+			if ticks % 30 == 0 then -- hearts reset at the UTC day; Crop Pop may send some too
+				for _, player in Players:GetPlayers() do
+					task.spawn(refreshHeartStatus, player)
+				end
+			end
 		end
 	end)
 end

@@ -29,7 +29,8 @@ export type Square = {
 	model: Model,
 	-- Each board's face: a SurfaceGui on its Front shows the board's text; also the tap target
 	boards: { [string]: Part },
-	porch: Part, -- the Puzzle Porch cabinet's body (tap target: opens Crop Pop)
+	porch: Part, -- the Puzzle Porch cabinet's body (where an errand walks to)
+	porchModel: Model, -- every part of the porch; all of it is a tap target (opens Crop Pop)
 	porchSign: Part, -- its marquee; a SurfaceGui on its Front shows the name
 }
 
@@ -66,12 +67,13 @@ local function fountain(b: Kit.Builder, at: Vector3)
 end
 
 -- The Puzzle Porch: a little wooden game cabinet under a porch roof, where Crop Pop is played
--- (Design/Features F12). Front at local -Z. ~16 parts. Returns the body and the marquee.
-local function puzzlePorch(b: Kit.Builder, at: CFrame): (Part, Part)
-	local t = Kit.builder(b.parent, b.origin * at, true)
+-- (Design/Features F12). Front at local -Z. ~16 parts. Returns the body, the marquee and the
+-- porch's own model.
+local function puzzlePorch(b: Kit.Builder, at: CFrame): (Part, Part, Model)
+	local porch = Kit.model("PuzzlePorch", b.parent)
+	local t = Kit.builder(porch, b.origin * at, true)
 	t.block("PorchDeck", Vector3.new(9, 0.4, 7), Vector3.new(0, 0.2, 0.5), Palette.woodLight)
-	local body =
-		t.block("PuzzlePorch", Vector3.new(4, 6, 3), Vector3.new(0, 3.4, 1), Palette.barnRed, { collide = true })
+	local body = t.block("Cabinet", Vector3.new(4, 6, 3), Vector3.new(0, 3.4, 1), Palette.barnRed, { collide = true })
 	t.block("CabinetTrim", Vector3.new(4.3, 0.4, 3.3), Vector3.new(0, 0.6, 1), Palette.woodDark)
 	t.block("Screen", Vector3.new(3, 2.2, 0.2), Vector3.new(0, 4.6, -0.55), Palette.glassDeep, { shadow = false })
 	t.wedge("Controls", Vector3.new(3.6, 0.8, 1.2), CFrame.new(0, 3.2, -1.05), Palette.cream)
@@ -86,7 +88,7 @@ local function puzzlePorch(b: Kit.Builder, at: CFrame): (Part, Part)
 		t.block("PorchPost", Vector3.new(0.5, 7.6, 0.5), Vector3.new(x, 4, 3.6), Palette.woodDark)
 	end
 	Kit.gableRoof(t, "PorchRoof", Vector3.new(0, 7.8, 0.5), 9.6, 7.6, 1.8, Palette.roofMustard)
-	return body, sign
+	return body, sign, porch
 end
 
 local function bench(b: Kit.Builder, at: CFrame)
@@ -153,9 +155,9 @@ function ArtTownSquare.build(parent: Instance, origin: CFrame): Square
 		)
 	end
 
-	local porch, porchSign = puzzlePorch(b, CFrame.new(ArtTownSquare.PORCH) * Kit.yaw(-90))
+	local porch, porchSign, porchModel = puzzlePorch(b, CFrame.new(ArtTownSquare.PORCH) * Kit.yaw(-90))
 
-	return { model = model, boards = boards, porch = porch, porchSign = porchSign }
+	return { model = model, boards = boards, porch = porch, porchModel = porchModel, porchSign = porchSign }
 end
 
 return ArtTownSquare
