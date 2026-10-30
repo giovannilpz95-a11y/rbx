@@ -40,6 +40,7 @@ local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
+local Townsfolk = require(script.Parent.Townsfolk)
 local Ui = require(script.Parent.Ui)
 local DecorPlacer = require(script.Parent.Parent.Controllers.DecorPlacer)
 
@@ -249,43 +250,6 @@ local function releaseIcons()
 	table.clear(iconsUsed)
 end
 
--- An order's wanted items as icon chips with have / need counts (green once there's enough).
-local function wantsChips(wants: { [string]: number }, parent: Instance): boolean
-	local strip = Ui.new("Frame", {
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -110, 0, 30),
-		Parent = parent,
-	}, { Ui.list(10, true) })
-	local ids = {}
-	for id in wants do
-		table.insert(ids, id)
-	end
-	table.sort(ids)
-	local complete = true
-	for i, id in ids do
-		local have = ClientStore.itemCount(id)
-		local enough = have >= wants[id]
-		complete = complete and enough
-		local chip = Ui.new("Frame", {
-			Name = id,
-			BackgroundTransparency = 1,
-			Size = UDim2.fromOffset(76, 30),
-			LayoutOrder = i,
-			Parent = strip,
-		})
-		itemIcon(id, chip, 30)
-		Ui.label(string.format("%d/%d", math.min(have, wants[id]), wants[id]), {
-			Position = UDim2.fromOffset(32, 0),
-			Size = UDim2.new(1, -32, 1, 0),
-			Font = Enum.Font.GothamBold,
-			TextSize = 16,
-			TextColor3 = if enough then Ui.colors.ready else Ui.colors.text,
-			Parent = chip,
-		})
-	end
-	return complete
-end
-
 local function row(height: number, order: number): Frame
 	local card = Ui.card({
 		Size = UDim2.new(1, -8, 0, height),
@@ -300,51 +264,104 @@ end
 -- Panel renderers
 ---------------------------------------------------------------------------------------------
 
+local ORDER_CARD = 104
+
 local function renderOrders(state: { [string]: any })
 	titleLabel.Text = "Order Board"
 	local now = ClientStore.now()
+	local Kit = Ui.theme.Kit
 	for i, slot in state.board do
-		local card = row(if slot.order then 70 else 44, i)
+		local card = row(if slot.order then ORDER_CARD else 44, i)
 		if slot.order then
-			local complete = wantsChips(slot.order.wants, card)
-			local reward = Ui.label(string.format("+%d Coins   +%d XP", slot.order.rewardCoins, slot.order.rewardXP), {
-				Position = UDim2.fromOffset(0, 36),
-				Size = UDim2.new(1, -110, 0, 20),
-				TextColor3 = Ui.colors.muted,
-				TextSize = 14,
+			local order = slot.order
+			-- The customer (C14): one of the townsfolk, the same while the order is up
+			local person = Townsfolk.forOrder(i, order.wants)
+			Kit.portrait(person.look, 60, person.name, { Parent = card })
+
+			-- What they want: have / need chips (C5)
+			local strip = Ui.new("Frame", {
+				BackgroundTransparency = 1,
+				Position = UDim2.fromOffset(72, 0),
+				Size = UDim2.new(1, -110, 0, 36),
 				Parent = card,
-			})
-			local deliver = Ui.button("Deliver", function()
-				Remotes.fire("Order_Fulfill", i)
-			end, {
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -36, 0, 0),
-				Size = UDim2.fromOffset(70, 30),
-				Parent = card,
-			})
-			Ui.setEnabled(deliver, complete)
-			if not complete then
-				local buy, what = missingButton("order:" .. i, slot.order.wants, {
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.new(1, 0, 0, 34),
-					Size = UDim2.fromOffset(170, 28),
-				}, "Order", i)
-				if buy and what then
-					buy.Parent = card
-					card.Size = UDim2.new(1, -8, 0, 84)
-					reward.Size = UDim2.new(1, -180, 0, 20)
-					missingLine(card, what, 56, 180)
-				end
+			}, { Ui.list(6, true) })
+			local ids = {}
+			for id in order.wants do
+				table.insert(ids, id)
 			end
+			table.sort(ids)
+			local complete = true
+			for n, id in ids do
+				local chip = Kit.needChip(ClientStore.itemCount(id), order.wants[id], {
+					Name = id,
+					Size = UDim2.fromOffset(78, 36),
+					LayoutOrder = n,
+					Parent = strip,
+				})
+				itemIcon(id, chip.iconSlot, 34)
+				complete = complete and chip.met
+			end
+			local reward = Ui.label(string.format("+%d Coins   +%d XP", order.rewardCoins, order.rewardXP), {
+				Position = UDim2.fromOffset(72, 40),
+				Size = UDim2.new(1, -72, 0, 20),
+				Font = Enum.Font.GothamBold,
+				TextColor3 = Ui.colors.muted,
+				TextSize = 15,
+				Parent = card,
+			})
 			Ui.button("X", function()
 				Remotes.fire("Order_Discard", i)
 			end, {
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, 0, 0, 0),
-				Size = UDim2.fromOffset(30, 30),
+				Size = UDim2.fromOffset(32, 32),
 				BackgroundColor3 = Ui.colors.danger,
 				Parent = card,
 			})
+
+			-- Deliver is the biggest button on the card; a short order offers Buy missing (G3)
+			local buy, what = nil, nil
+			if not complete then
+				buy, what = missingButton("order:" .. i, order.wants, {
+					AnchorPoint = Vector2.new(1, 1),
+					Position = UDim2.new(1, 0, 1, 0),
+					Size = UDim2.fromOffset(180, 36),
+				}, "Order", i)
+			end
+			if buy and what then
+				buy.Parent = card
+				reward.Size = UDim2.new(1, -72, 0, 20)
+				Ui.label(what, {
+					Position = UDim2.fromOffset(72, 60),
+					Size = UDim2.new(1, -260, 0, 30),
+					TextColor3 = Ui.colors.danger,
+					TextSize = 13,
+					TextWrapped = true,
+					TextYAlignment = Enum.TextYAlignment.Top,
+					Parent = card,
+				})
+			else
+				local deliver = Ui.button("Deliver", function()
+					Remotes.fire("Order_Fulfill", i)
+				end, {
+					AnchorPoint = Vector2.new(1, 1),
+					Position = UDim2.new(1, 0, 1, 0),
+					Size = UDim2.fromOffset(130, 40),
+					TextSize = 20,
+					Parent = card,
+				})
+				Ui.setEnabled(deliver, complete)
+			end
+			-- A finished card glows green
+			if complete then
+				local stroke = card:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					stroke.Color = Ui.colors.ready
+					stroke.Thickness = 3
+					stroke.Transparency = 0
+				end
+				card.BackgroundColor3 = Ui.theme.Palette.hex("#F1FBE9")
+			end
 		else
 			local waitLeft = Timer.remaining(slot.refreshAt or 0, now)
 			Ui.label(
