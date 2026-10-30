@@ -51,6 +51,7 @@ TileStyle.GoalGlyphs = {
 	Weeds = "🌿",
 	Pumpkins = "🎃",
 	Clover = "🍀",
+	Stones = "🧱", -- the rock emoji (Unicode 13) does not render in Roblox
 }
 
 TileStyle.BoosterGlyphs = {
@@ -74,6 +75,7 @@ TileStyle.Board = {
 	frost = Color3.fromRGB(196, 232, 255),
 	weed = Color3.fromRGB(96, 158, 66),
 	clover = Color3.fromRGB(72, 170, 92),
+	stone = Color3.fromRGB(150, 146, 140),
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

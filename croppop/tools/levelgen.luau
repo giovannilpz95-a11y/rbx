@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..150 from original shape and
+	Crop Pop level generator. Builds levels 6..175 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 150 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 175 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 150
+local LAST = tonumber(ARGS[2]) or 175
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -58,6 +58,11 @@ local NAMES = {
 	"Gooseberry Lane", "Paddock Gate", "Summer Breeze", "Clover Honey", "Village Fete",
 	"Nettle Bank", "Plum Orchard", "Dandelion Clock", "Rye Field", "Kitchen Garden",
 	"Mill Wheel", "Lamb Meadow", "Buttercup Lane", "Cloverleaf Crossing", "Golden Meadows",
+	"Old Stone Wall", "Frozen Pond", "Woodpile", "Snowy Barn", "Quarry Road",
+	"Hot Cocoa", "Sleigh Path", "Winter Wheat", "Holly Bush", "Midwinter Market",
+	"Pine Cone Lane", "Icicle Eaves", "Mitten Hill", "Rock Garden", "Hearth Bread",
+	"Snowdrop Field", "Chimney Smoke", "Wool Socks", "Lantern Walk", "Winter Feast",
+	"Cobblestone Bridge", "Robin's Perch", "Frosted Turnips", "Firelight Barn", "New Year Fields",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -67,7 +72,8 @@ local FROST_INTRO = 21 -- first level with frost
 local WEEDS_INTRO = 41 -- first level with weeds
 local PUMPKIN_INTRO = 101 -- first level with pumpkins
 local CLOVER_INTRO = 126 -- first level with clover
-local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true }
+local STONE_INTRO = 151 -- first level with stone walls
+local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -384,6 +390,8 @@ local function mechanics(id)
 		weeds = id >= WEEDS_INTRO, -- "w"
 		pumpkins = id >= PUMPKIN_INTRO, -- "p"
 		clover = id >= CLOVER_INTRO, -- "c"
+		stones = id >= STONE_INTRO, -- "s"
+		thickStones = id >= 160, -- "S"
 	}
 end
 
@@ -391,6 +399,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_STONES = { "Stones", "Clover", "Collect", "Pumpkins", "Stones", "Weeds", "Mud", "Frost", "Stones", "HayBale", "Mix", "Clover" }
 local FOCUS_CLOVER = { "Clover", "Pumpkins", "Collect", "Weeds", "Clover", "Mud", "Frost", "HayBale", "Clover", "Mix", "Pumpkins", "Collect" }
 local FOCUS_PUMPKINS = { "Pumpkins", "Collect", "Weeds", "Mud", "Pumpkins", "Frost", "HayBale", "Mix", "Pumpkins", "Weeds", "Collect", "Mix" }
 
@@ -402,6 +411,7 @@ local NAME_HINTS = {
 	{ words = { "Thistle", "Bramble", "Wild Oats" }, focus = "Weeds", needs = "weeds" },
 	{ words = { "Pumpkin", "Gourd", "Squash" }, focus = "Pumpkins", needs = "pumpkins" },
 	{ words = { "Clover", "Shamrock", "Green" }, focus = "Clover", needs = "clover" },
+	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 }
 
 local function focusOf(id, name)
@@ -414,6 +424,8 @@ local function focusOf(id, name)
 		return "Pumpkins"
 	elseif id == CLOVER_INTRO then
 		return "Clover"
+	elseif id == STONE_INTRO then
+		return "Stones"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -425,7 +437,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -503,6 +515,17 @@ local function placePumpkins(g, rng, id)
 		return 0
 	end
 	return placed + (if id == PUMPKIN_INTRO then 0 else rng:int(0, 1))
+end
+
+-- Stone walls use the bale shapes; the first stone level keeps them few and thin.
+local function placeStones(g, rng, id, mech)
+	local name = if id == STONE_INTRO then "centre" else rng:pick(BALE_PATTERNS)
+	for _, p in BALES[name](g, rng) do
+		if isCell(g, p[1], p[2]) and p[2] > 1 and g[p[2]][p[1]] == "." then
+			local thick = mech.thickStones and rng:int(1, 3) == 1
+			setSym(g, p[1], p[2], if thick then "S" else "s")
+		end
+	end
 end
 
 -- A small clover patch to grow from, low and in the middle (mirrored).
@@ -585,6 +608,9 @@ local function draft(id, variant)
 	if focus == "Clover" then
 		placeClover(g, rng, id)
 	end
+	if focus == "Stones" or (focus == "Mix" and mech.stones and rng:int(1, 3) == 1) then
+		placeStones(g, rng, id, mech)
+	end
 	local pumpkins = 0
 	if focus == "Pumpkins" or (focus == "Mix" and mech.pumpkins and rng:int(1, 3) == 1) then
 		pumpkins = placePumpkins(g, rng, id)
@@ -620,6 +646,9 @@ local function draft(id, variant)
 	end
 	if has(g, "c") > 0 then
 		table.insert(goals, { kind = "Clover" })
+	end
+	if has(g, "sS") > 0 then
+		table.insert(goals, { kind = "Stones" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most

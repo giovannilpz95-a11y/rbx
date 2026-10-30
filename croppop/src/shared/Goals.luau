@@ -8,6 +8,7 @@
 	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
 	  { kind = "Pumpkins", count = 3 }                   -- bring N pumpkins down to the bottom row
 	  { kind = "Clover" }                                -- grow clover on every cell
+	  { kind = "Stones" }                                -- break every stone wall (blasts only)
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -26,14 +27,16 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local mudLayers, bales, frost, weeds, bare = 0, 0, 0, 0, 0
+	local mudLayers, bales, frost, weeds, bare, stones = 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if not cell.clover then
 			bare += 1
 		end
 		mudLayers += cell.mud
 		frost += cell.frost
-		if cell.weed then
+		if cell.stone then
+			stones += 1
+		elseif cell.weed then
 			weeds += 1
 		elseif cell.bale > 0 then
 			bales += 1
@@ -59,6 +62,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Weeds", target = def.count or weeds, progress = 0 })
 		elseif def.kind == "Pumpkins" then
 			table.insert(list, { kind = "Pumpkins", target = def.count, progress = 0 })
+		elseif def.kind == "Stones" then
+			table.insert(list, { kind = "Stones", target = def.count or stones, progress = 0 })
 		elseif def.kind == "Clover" then
 			table.insert(list, { kind = "Clover", target = def.count or bare, progress = 0 })
 		else
@@ -100,6 +105,10 @@ end
 
 function Goals.onPumpkin(self)
 	bump(self, "Pumpkins", nil)
+end
+
+function Goals.onStone(self)
+	bump(self, "Stones", nil)
 end
 
 function Goals.onClover(self)

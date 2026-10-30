@@ -10,10 +10,10 @@ test("every level validates", function()
 		truthy(not seen[level.id], "duplicate id " .. level.id)
 		seen[level.id] = true
 	end
-	eq(#Levels.List, 150)
+	eq(#Levels.List, 175)
 end)
 
-test("levels run 1 to 150 in order, with unique names and the difficulty pattern", function()
+test("levels run 1 to 175 in order, with unique names and the difficulty pattern", function()
 	local names = {}
 	for i, level in Levels.List do
 		eq(level.id, i)
@@ -58,7 +58,7 @@ test("goal targets come from the layout", function()
 	eq(kinds.Collect, 15)
 end)
 
-test("frost first shows up on level 21, weeds on 41, pumpkins on 101 and clover on 126, each alone with its goal", function()
+test("frost first shows up on level 21, weeds on 41, pumpkins on 101, clover on 126 and stone on 151, each alone with its goal", function()
 	local function first(chars)
 		for _, level in Levels.List do
 			for _, row in level.layout do
@@ -84,4 +84,8 @@ test("frost first shows up on level 21, weeds on 41, pumpkins on 101 and clover 
 	eq(clover and clover.id, 126)
 	eq(#clover.goals, 1)
 	eq(clover.goals[1].kind, "Clover")
+	local stone = first("sS")
+	eq(stone and stone.id, 151)
+	eq(#stone.goals, 1)
+	eq(stone.goals[1].kind, "Stones")
 end)
