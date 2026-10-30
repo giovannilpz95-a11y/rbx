@@ -66,8 +66,10 @@ function NoticeService.init()
 	body.Position = UDim2.fromScale(0.04, 0.2)
 	body.Size = UDim2.fromScale(0.92, 0.76)
 	body.BackgroundTransparency = 1
-	body.TextScaled = true
-	body.TextWrapped = true
+	-- One line per find at a fixed size (scaled text clipped long lines); too long ends in "..."
+	body.TextSize = 22
+	body.TextWrapped = false
+	body.TextTruncate = Enum.TextTruncate.AtEnd
 	body.TextXAlignment = Enum.TextXAlignment.Left
 	body.TextYAlignment = Enum.TextYAlignment.Top
 	body.Font = Enum.Font.Gotham

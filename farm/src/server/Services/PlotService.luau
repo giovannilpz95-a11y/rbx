@@ -138,7 +138,7 @@ local LAYOUT = {
 	} :: { [string]: Vector3 },
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
-	prizeShelf = Vector3.new(-14, 0, 32), -- between the Barn and the spine path
+	prizeShelf = Vector3.new(-28, 0, 43), -- south of the Barn, clear of its door
 	truck = Vector3.new(26, 0, 36),
 	spawn = Vector3.new(0, 0, 16), -- far enough inside that the camera behind you clears the gate
 }
@@ -554,7 +554,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 	})
 	board:SetAttribute("Interact", "OrderBoard")
 
-	-- Prize Shelf: a plank on two legs by the spawn path; refreshShelf puts the crops on it
+	-- Prize Shelf: a plank on two legs by the Barn; refreshShelf puts the crops on it
 	local shelf = part({
 		Name = "PrizeShelf",
 		Size = Vector3.new(7, 0.4, 1.8),
