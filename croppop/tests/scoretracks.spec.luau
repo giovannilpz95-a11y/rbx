@@ -21,6 +21,7 @@ local function makeStore(start, config)
 			return seeds:int(1, 2 ^ 31 - 1)
 		end,
 		unlockAll = true,
+		cups = false, -- its personal goal pays hearts too (see cup.spec)
 	}
 	for k, v in config or {} do
 		settings[k] = v

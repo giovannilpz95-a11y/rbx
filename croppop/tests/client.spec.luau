@@ -596,6 +596,29 @@ test("the score track shows on the Trail, lists its steps and pays free start bo
 	passTime(2 * 60 * 60) -- let the free boosters and x2 points run out for the tests after this
 end)
 
+test("the Harvest Cup shows on the Trail with standings, and a finished cup can be claimed", function()
+	refillHearts()
+	PuzzleScreen.open()
+	local select = playerGui.CropPop.Backdrop.LevelSelect
+	PuzzleScreen.debugCup("add")
+	local row = select.List.Cup
+	truthy(string.find(row.Text, "Harvest Cup", 1, true), row.Text)
+	truthy(string.find(row.Text, "cups", 1, true), row.Text)
+	row.Activated:Fire()
+	local first = select.List:FindFirstChild("CupRow1")
+	truthy(first, "standings open")
+	truthy(string.find(first.Text, "You", 1, true), first.Text)
+	-- Alone in the group: the cup ends with no place prize, and OK clears it.
+	PuzzleScreen.debugCup("end")
+	local ended = select.List.CupEnded
+	truthy(string.find(ended.Text, "is over", 1, true), ended.Text)
+	ended.Activated:Fire()
+	truthy(string.find(select.Status.Text, "You came 1st of 1", 1, true), select.Status.Text)
+	eq(select.List:FindFirstChild("CupEnded"), nil)
+	select.List.Cup.Activated:Fire()
+	PuzzleScreen.close()
+end)
+
 test("a heart from a neighbor shows on the Trail and fills an empty heart", function()
 	PuzzleScreen.open()
 	local select = playerGui.CropPop.Backdrop.LevelSelect

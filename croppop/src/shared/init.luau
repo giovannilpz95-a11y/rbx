@@ -10,6 +10,7 @@
 
 return {
 	Board = require(script.Board),
+	Cup = require(script.Cup),
 	Bot = require(script.Bot),
 	Boosters = require(script.Boosters),
 	Engine = require(script.Engine),

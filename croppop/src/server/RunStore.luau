@@ -21,6 +21,10 @@
 	out in the win's rewards (`trackCoins`, `gems`) for the farm to pay; the
 	rest (boosters, unlimited hearts, x2 points, free start boosters) lands in
 	the save here.
+
+	Harvest Cup (see Cup, CupBoard): a verified win during a cup enters the
+	player into a group and adds cups by difficulty. When the cup is over,
+	refreshCup() looks up their final place and claimCup() pays the prize.
 ]]
 
 local CropPop = require(game:GetService("ReplicatedStorage"):WaitForChild("CropPop"))
@@ -30,6 +34,8 @@ local Hearts = CropPop.Hearts
 local Gifts = Hearts.Gifts
 local ScoreTracks = CropPop.ScoreTracks
 local GiftInbox = require(script.Parent.GiftInbox)
+local CupBoard = require(script.Parent.CupBoard)
+local Cup = CropPop.Cup
 
 local RunStore = {}
 RunStore.__index = RunStore
@@ -38,6 +44,8 @@ local MIN_START_GAP = 1 -- seconds between level starts per player
 local MAX_RUN_SECONDS = 2 * 60 * 60
 local SAVE_VERSION = 1
 local GIFT_CHECK_SECONDS = 30 -- how often a player's gift box is read again
+local CUP_CHECK_SECONDS = 30 -- how often the cup standings are read again
+local CUP_SHOWN = 10 -- standings rows sent to the client
 local DAY = 24 * 60 * 60
 
 export type Config = {
@@ -56,6 +64,9 @@ export type Config = {
 	-- Where heart gifts wait (see GiftInbox); defaults to an in-memory store.
 	giftInbox: any?,
 	scoreTracks: boolean?, -- false turns the score tracks off (on by default)
+	-- Where Harvest Cup groups and scores live (see CupBoard); defaults to in-memory.
+	cupBoard: any?,
+	cups: boolean?, -- false turns the Harvest Cup off (on by default)
 }
 
 function RunStore.new(config: Config)
@@ -71,6 +82,8 @@ function RunStore.new(config: Config)
 		autoLoad = config.autoLoad ~= false,
 		giftInbox = config.giftInbox or GiftInbox.memory(),
 		scoreTracks = config.scoreTracks ~= false,
+		cupBoard = config.cupBoard or CupBoard.memory(),
+		cups = config.cups ~= false,
 		players = {},
 	}, RunStore)
 end
@@ -87,6 +100,11 @@ function RunStore._fresh(self)
 		track = { id = "", key = -1, points = 0, paid = 0 },
 		doubleUntil = 0, -- x2 track points until then (wall clock)
 		freeStarts = {}, -- pre-level booster kind -> free on every level until then
+		-- This cup: group -1 until the first win enters it.
+		cup = { key = -1, group = -1, cups = 0, goalPaid = false },
+		-- A finished cup the player was in, until its prize is claimed. `place`
+		-- and `players` are filled in once the final standings are read.
+		pendingCup = nil,
 	}
 end
 
@@ -101,6 +119,8 @@ function RunStore._player(self, userId: number)
 			state = self:_fresh(),
 			giftsWaiting = 0, -- gifts in this player's box, as last read
 			giftsReadAt = -math.huge,
+			standings = nil, -- this cup's group standings, as last read
+			standingsAt = -math.huge,
 		}
 		self.players[userId] = record
 	end
@@ -127,6 +147,8 @@ function RunStore.exportSave(self, userId: number)
 		track = table.clone(state.track),
 		doubleUntil = state.doubleUntil,
 		freeStarts = table.clone(state.freeStarts),
+		cup = table.clone(state.cup),
+		pendingCup = state.pendingCup and table.clone(state.pendingCup),
 	}
 end
 
@@ -180,6 +202,23 @@ function RunStore.importSave(self, userId: number, block: any)
 				state.freeStarts[kind] = count(block.freeStarts[kind], 2 ^ 40)
 			end
 		end
+		local function cleanCup(raw)
+			if type(raw) ~= "table" or not count(raw.key, 2 ^ 31) or type(raw.group) ~= "number" or raw.group ~= raw.group then
+				return nil
+			end
+			return {
+				key = count(raw.key, 2 ^ 31) :: number,
+				group = math.max(-1, math.floor(raw.group)),
+				cups = count(raw.cups, 10 ^ 6) or 0,
+				goalPaid = raw.goalPaid == true,
+				place = count(raw.place, 10 ^ 6),
+				players = count(raw.players, 10 ^ 6),
+			}
+		end
+		state.cup = cleanCup(block.cup) or state.cup
+		state.cup.place, state.cup.players = nil, nil
+		local pending = cleanCup(block.pendingCup)
+		state.pendingCup = if pending and pending.group >= 0 then pending else nil
 	end
 	record.state = state
 	record.run = nil -- a run from before the load belongs to the old state
@@ -216,7 +255,132 @@ function RunStore.getProgress(self, userId: number)
 		gifts = self:_giftProgress(record),
 		track = self:_trackProgress(state, now),
 		freeStarts = self:_freeStartsLeft(state, now),
+		cup = self:_cupProgress(record, now),
 	}
+end
+
+-- Harvest Cup ------------------------------------------------------------------
+
+-- The running cup's state; a cup the player was in that has ended waits in pendingCup.
+function RunStore._cup(self, state, now: number)
+	local running = Cup.at(now)
+	if state.cup.key ~= running.key then
+		if state.cup.group >= 0 and state.cup.key < running.key then
+			state.pendingCup = { key = state.cup.key, group = state.cup.group, cups = state.cup.cups, goalPaid = state.cup.goalPaid }
+		end
+		state.cup = { key = running.key, group = -1, cups = 0, goalPaid = false }
+	end
+	return running, state.cup
+end
+
+function RunStore._cupProgress(self, record, now: number)
+	if not self.cups then
+		return nil
+	end
+	local running, cup = self:_cup(record.state, now)
+	local pending = record.state.pendingCup
+	local standings = record.standings
+	return {
+		cups = cup.cups,
+		entered = cup.group >= 0,
+		goal = Cup.PERSONAL_GOAL,
+		goalPaid = cup.goalPaid,
+		secondsLeft = running.endsAt - now,
+		standings = if standings and standings.key == cup.key then standings else nil,
+		-- A finished cup: its place once known, and the prize to claim.
+		ended = pending and {
+			cups = pending.cups,
+			place = pending.place,
+			players = pending.players,
+			prize = pending.place and Cup.prizeFor(pending.place, pending.players or 0) or nil,
+		},
+	}
+end
+
+-- Adds a win's cups, entering the cup on the first one. May yield (the board).
+function RunStore._addCups(self, userId: number, state, difficulty: string?)
+	local now = self.now()
+	local running, cup = self:_cup(state, now)
+	if cup.group < 0 then
+		local ok, group = self.cupBoard.join(running.key)
+		if not ok or type(group) ~= "number" then
+			return nil -- try again on the next win
+		end
+		cup.group = group
+	end
+	local gained = Cup.cupsFor(difficulty)
+	cup.cups += gained
+	self.cupBoard.setScore(running.key, cup.group, userId, cup.cups)
+	local goalReached = false
+	if not cup.goalPaid and cup.cups >= Cup.PERSONAL_GOAL then
+		cup.goalPaid = true
+		goalReached = true
+		self:_payStep(state, Cup.PersonalPrize, {}, now)
+	end
+	self.players[userId].standingsAt = -math.huge -- show the new score next time
+	return { gained = gained, cups = cup.cups, goalReached = goalReached }
+end
+
+-- Reads the cup standings: this cup's group (every CUP_CHECK_SECONDS unless
+-- forced), and the final place in a finished cup. May yield.
+function RunStore.refreshCup(self, userId: number, force: boolean?)
+	if not self.cups then
+		return
+	end
+	local record = self:_player(userId)
+	local state = record.state
+	local _, cup = self:_cup(state, self.now())
+	local pending = state.pendingCup
+	if pending and not pending.place then
+		local ok, list, players = self.cupBoard.top(pending.key, pending.group, Cup.GROUP_SIZE)
+		if ok and type(list) == "table" then
+			local place = 0 -- not in the top list
+			for i, row in list do
+				if row.userId == userId then
+					place = i
+				end
+			end
+			pending.place = place
+			pending.players = players or #list
+		end
+	end
+	local clockNow = self.clock()
+	if cup.group >= 0 and (force or clockNow - record.standingsAt >= CUP_CHECK_SECONDS) then
+		local ok, list, players = self.cupBoard.top(cup.key, cup.group, CUP_SHOWN)
+		if ok and type(list) == "table" then
+			local mine = nil
+			for i, row in list do
+				if row.userId == userId then
+					mine = i
+				end
+			end
+			record.standings = { key = cup.key, rows = list, players = players or #list, place = mine }
+			record.standingsAt = clockNow
+		end
+	end
+end
+
+-- Pays a finished cup's prize (if it placed) and clears it. Returns
+-- { place, players, prize?, progress } or nil and a reason.
+function RunStore.claimCup(self, userId: number)
+	local record = self:_player(userId)
+	if not record.loaded then
+		return nil, "loading"
+	end
+	local state = record.state
+	local pending = state.pendingCup
+	if not pending then
+		return nil, "no cup to claim"
+	end
+	if not pending.place then
+		return nil, "still counting"
+	end
+	local prize = Cup.prizeFor(pending.place, pending.players or 0)
+	if prize then
+		self:_payStep(state, prize, {}, self.now())
+	end
+	state.pendingCup = nil
+	return { place = pending.place, players = pending.players, prize = prize, progress = self:getProgress(userId) }
 end
 
 -- Score tracks ---------------------------------------------------------------
@@ -475,6 +639,7 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 		rewards.chestCoins = chest.coins
 		rewards.coins += chest.coins
 	end
+	local cup = if self.cups then self:_addCups(userId, state, level.difficulty) else nil
 	local track
 	if self.scoreTracks then
 		local _, running = self:_track(state, self.now())
@@ -487,6 +652,7 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 		rewards = rewards,
 		chest = chest,
 		track = track,
+		cup = cup,
 		firstWin = firstWin,
 		stats = result.stats,
 		progress = self:getProgress(userId),
@@ -767,6 +933,29 @@ function RunStore.devTrackPoints(self, userId: number, points: number)
 	local rewards = { coins = 0 }
 	local track = self:_addTrackPoints(self:_player(userId).state, math.floor(points), false, rewards)
 	return { track = track, rewards = rewards, progress = self:getProgress(userId) }
+end
+
+-- Studio testing: "add" scores 10 cups (as 10 Normal wins), "end" ends the
+-- player's cup now so the final place and prize can be checked.
+function RunStore.devCup(self, userId: number, action: any)
+	if not self.devActions or not self.cups then
+		return nil, "not in Studio"
+	end
+	local state = self:_player(userId).state
+	if action == "end" then
+		local _, cup = self:_cup(state, self.now())
+		if cup.group < 0 then
+			return nil, "win a level first"
+		end
+		state.pendingCup = { key = cup.key, group = cup.group, cups = cup.cups, goalPaid = cup.goalPaid }
+		state.cup = { key = cup.key, group = -1, cups = 0, goalPaid = false }
+	else
+		for _ = 1, 10 do
+			self:_addCups(userId, state, "Normal")
+		end
+	end
+	self:refreshCup(userId, true)
+	return self:getProgress(userId)
 end
 
 -- Studio testing: a heart gift from a pretend neighbor (the "Dev 🎁" button).
