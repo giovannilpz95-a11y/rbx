@@ -1192,6 +1192,8 @@ local function renderField(state: { [string]: any }, fieldId: string)
 	})
 	-- Speed Up All: every growing field of this crop
 	local total, count = Speedup.allFields(state.fields, field.crop, now)
+	-- The short Field frame holds one row; grow it by one row for Finish all
+	frame.Size = UDim2.new(0.9, 0, 0, if count >= 2 then 124 + 48 else 124)
 	if count >= 2 then
 		local allLine = row(42, 2)
 		Ui.label(

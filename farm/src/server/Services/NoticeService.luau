@@ -11,7 +11,7 @@ local Prize = require(Shared.Config.Prize)
 
 local NoticeService = {}
 
-local lines: { string } = {}
+local lines: { { text: string, count: number } } = {} -- newest first; repeats grouped
 local text: TextLabel? = nil
 
 local function render()
