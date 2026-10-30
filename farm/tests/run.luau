@@ -21,7 +21,9 @@ local Prize = require("../src/shared/Config/Prize")
 local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
+local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
+local Lots = require("../src/shared/Lots")
 local OrderConfig = require("../src/shared/Config/Orders")
 local OrderGen = require("../src/shared/OrderGen")
 local Pen = require("../src/shared/Pen")
@@ -29,6 +31,7 @@ local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
 local Recipes = require("../src/shared/Config/Recipes")
 local Rng = require("../src/shared/Rng")
+local Settings = require("../src/shared/Settings")
 local Social = require("../src/shared/Config/Social")
 local SocialRules = require("../src/shared/Social")
 local Speedup = require("../src/shared/Speedup")
@@ -36,6 +39,7 @@ local Timer = require("../src/shared/Timer")
 local Town = require("../src/shared/Config/Town")
 local TownRules = require("../src/shared/TownRules")
 local Tutorial = require("../src/shared/Tutorial")
+local Unlocks = require("../src/shared/Unlocks")
 
 local passed, failed = 0, 0
 
@@ -223,6 +227,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
+	for _, id in { "Bathhouse", "ArtStudio" } do
+		local def = Town.community[id]
+		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
+		eq(Lots.community[def.order].land, Lots.northLaneLand, id .. " stands on North Lane")
+	end
 	for _, id in { "SnackFactory", "Diner" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
@@ -426,6 +435,71 @@ test("Houses take the first free lot", function()
 	eq(TownRules.freeLot(data, 32), 2, "a gap is reused")
 	eq(TownRules.freeLot(data, 3), 2, "still fits")
 	eq(TownRules.freeLot(data, 1), nil, "street full")
+end)
+
+test("North Lane opens more lots once the North Fields are cleared", function()
+	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
+	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
+	eq(#Lots.houses, 48, "House lots with North Lane")
+	eq(#Lots.community, 17, "Community lots with North Lane")
+	local data = Profile.migrate(nil) :: any
+	data.level = 16
+	eq(TownRules.houseLotCount(data, 0), 32, "Main Street only")
+	eq((TownRules.communityLotOpen(data, "Greenhouse", 0)), true, "Greenhouse is on Main Street")
+	local open, land = TownRules.communityLotOpen(data, "Bathhouse", 0)
+	eq(open, false, "Bathhouse waits")
+	eq(land, Lots.northLaneLand, "for the North Fields")
+	for stage = 1, Lots.northLaneLand do
+		data.land[stage] = { readyAt = 100 }
+	end
+	eq(TownRules.houseLotCount(data, 50), 32, "still clearing")
+	eq(TownRules.houseLotCount(data, 100), 48, "cleared")
+	eq((TownRules.communityLotOpen(data, "ArtStudio", 100)), true, "Art Studio open")
+	for lot = 5, 32 do
+		table.insert(data.town.houses, { type = "LeanTo", lot = lot })
+	end
+	eq(TownRules.freeLot(data, TownRules.houseLotCount(data, 100)), 33, "first North Lane lot")
+end)
+
+test("every lot sits on the plot, on its land, clear of the streets and the other lots", function()
+	local boxes = {}
+	local function add(list: { any }, size: number, what: string)
+		for i, lot in list do
+			local box = { lot.x - size / 2, lot.z - size / 2, lot.x + size / 2, lot.z + size / 2, what .. " " .. i }
+			ok(box[1] >= -96 and box[3] <= 96 and box[2] >= -96 and box[4] <= 96, box[5] .. " on the plot")
+			if lot.land > 0 then
+				local rect = Land.rects[lot.land]
+				ok(
+					box[1] >= rect.minX and box[3] <= rect.maxX and box[2] >= rect.minZ and box[4] <= rect.maxZ,
+					box[5] .. " inside its land"
+				)
+			end
+			table.insert(boxes, box)
+		end
+	end
+	add(Lots.houses, 8, "House lot")
+	add(Lots.community, 12, "Community lot")
+	local lane, link = Lots.northLane.z, Lots.northLane.linkX
+	local streets = {
+		{ -92, 71, 92, 79, "Main Street" },
+		{ -4, 48, 4, 96, "gate road" },
+		{ -46, lane - 4, 46, lane + 4, "North Lane" },
+		{ link - 4, lane + 4, link + 4, -48, "North Lane link" },
+	}
+	local function overlaps(a, b)
+		return a[1] < b[3] and b[1] < a[3] and a[2] < b[4] and b[2] < a[4]
+	end
+	for i, a in boxes do
+		for _, street in streets do
+			ok(not overlaps(a, street), a[5] .. " is clear of " .. street[5])
+		end
+		for j = i + 1, #boxes do
+			ok(not overlaps(a, boxes[j]), a[5] .. " is clear of " .. boxes[j][5])
+		end
+	end
+	for id, def in Town.community do
+		ok(Lots.community[def.order] ~= nil, id .. " has a lot")
+	end
 end)
 
 test("Township baseline town rows", function()
@@ -961,6 +1035,52 @@ test("a profile from a newer build is refused", function()
 	local data, reason = Profile.migrate({ version = Profile.VERSION + 1 })
 	eq(data, nil, "no data")
 	eq(reason, "newer", "reason")
+end)
+
+test("settings: defaults in new profiles, checked values, the Gem confirm", function()
+	local profile = Profile.template()
+	eq(profile.settings.lastSeed, "Wheat", "lastSeed kept")
+	eq(profile.settings.music, 10, "music default")
+	eq(profile.settings.gemConfirm, "Always", "confirm default")
+	-- An old save without the new keys gets them, and keeps its lastSeed
+	local old = Profile.template()
+	old.settings = { lastSeed = "Corn" }
+	local migrated = Profile.migrate(old) :: any
+	eq(migrated.settings.lastSeed, "Corn", "old lastSeed")
+	eq(migrated.settings.textSize, "Normal", "text size filled in")
+	ok(Settings.valid("music", 0) and Settings.valid("music", 10), "volume ends")
+	ok(not Settings.valid("music", 11) and not Settings.valid("music", 2.5), "volume range and steps")
+	ok(not Settings.valid("lastSeed", "Corn"), "lastSeed isn't a player option")
+	ok(not Settings.valid("textSize", "Huge") and Settings.valid("textSize", "Large"), "choices")
+	ok(Settings.valid("reduceMotion", true) and not Settings.valid("reduceMotion", "yes"), "toggle")
+	ok(not Settings.valid({}, 1) and not Settings.valid(nil, nil), "junk keys")
+	ok(Settings.confirmGems(nil, 1), "asks by default")
+	ok(not Settings.confirmGems({ gemConfirm = "Over 10" }, 10), "10 Gems is one tap with Over 10")
+	ok(Settings.confirmGems({ gemConfirm = "Over 10" }, 11), "11 Gems asks with Over 10")
+	ok(not Settings.confirmGems({ gemConfirm = "Never" }, 500), "never asks")
+	eq(Settings.get({ music = "loud" }, "music"), 10, "a bad saved value reads as the default")
+end)
+
+test("each level's unlocks come from the configs", function()
+	local function has(level: number, kind: string, id: string): boolean
+		for _, unlock in Unlocks.at(level) do
+			if unlock.kind == kind and unlock.id == id then
+				return true
+			end
+		end
+		return false
+	end
+	ok(has(2, "Factory", "Bakery") and has(2, "Recipe", "Bread"), "level 2: Bakery and Bread")
+	ok(has(3, "Crop", "Corn") and has(3, "Factory", "FeedMill"), "level 3: Corn and the Feed Mill")
+	ok(has(5, "Pen", "ChickenCoop") and has(5, "Feature", "Daily"), "level 5: Chickens and daily gifts")
+	ok(not has(1, "Pen", "CowBarn"), "the Cow Barn comes with the farm")
+	ok(has(5, "Community", "VillageWell"), "Community Buildings")
+	ok(has(4, "House", "LeanTo"), "Houses")
+	ok(#Unlocks.at(99) == 0, "nothing past the content")
+	local list = Unlocks.at(5)
+	for i = 2, #list do
+		ok(list[i - 1].kind ~= "Feature" or list[i].kind == "Feature", "features last")
+	end
 end)
 
 ---------------------------------------------------------------------------------------------

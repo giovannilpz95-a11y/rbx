@@ -299,6 +299,44 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Plank", Vector3.new(2, 0.35, 0.7), at(0, 0.18, 0.4), Palette.wood, QUIET)
 		b.block("Plank", Vector3.new(2, 0.35, 0.7), tilt(0, 0.53, 0, 0, 30, 0), Palette.woodLight, QUIET)
 	end,
+	-- Tools (Config/Tools: dropped by harvests, spent on land clearing) -----------------------
+	Shovel = function(b)
+		-- Leaning at 45 degrees: D-grip up and right, blade down and left
+		local tool = CFrame.new(0, 1.15, 0) * CFrame.Angles(0, 0, math.rad(-45))
+		b.cyl("Grip", 0.6, 0.22, tool * at(0, 1, 0), Palette.woodDark, QUIET)
+		b.post("Handle", 1.5, 0.2, tool * at(0, 0.25, 0), Palette.wood, QUIET)
+		b.post("Collar", 0.25, 0.3, tool * at(0, -0.55, 0), Palette.stoneDark, QUIET)
+		b.block("Blade", Vector3.new(0.8, 0.75, 0.12), tool * at(0, -0.95, 0), Palette.metal, QUIET)
+		b.block(
+			"Tip",
+			Vector3.new(0.56, 0.56, 0.11),
+			tool * at(0, -1.3, 0) * CFrame.Angles(0, 0, math.rad(45)),
+			Palette.metal,
+			QUIET
+		)
+	end,
+	Axe = function(b)
+		local tool = CFrame.new(0, 1.1, 0) * CFrame.Angles(0, 0, math.rad(25))
+		b.post("Handle", 2.1, 0.22, tool, Palette.wood, QUIET)
+		b.post("Wrap", 0.45, 0.27, tool * at(0, -0.75, 0), Palette.roofRed, QUIET)
+		b.block("Head", Vector3.new(0.8, 0.5, 0.3), tool * at(0.25, 0.8, 0), Palette.stoneDark, QUIET)
+		b.block("Edge", Vector3.new(0.18, 0.85, 0.28), tool * at(0.7, 0.8, 0), Palette.metal, QUIET)
+	end,
+	Saw = function(b)
+		local tool = CFrame.new(-0.15, 1, 0) * CFrame.Angles(0, 0, math.rad(20))
+		b.block("Blade", Vector3.new(2, 0.7, 0.08), tool, Palette.metal, QUIET)
+		for i, x in { -0.65, 0, 0.65 } do
+			b.block(
+				"Tooth",
+				Vector3.new(0.28, 0.28, 0.07),
+				tool * at(x, -0.35, 0) * CFrame.Angles(0, 0, math.rad(45)),
+				if i == 2 then Palette.stoneDark else Palette.metal,
+				QUIET
+			)
+		end
+		b.block("Handle", Vector3.new(0.6, 0.8, 0.22), tool * at(1.2, 0.05, 0), Palette.wood, QUIET)
+		b.block("Grip", Vector3.new(0.25, 0.45, 0.24), tool * at(1.3, 0.05, 0), Palette.woodDark, QUIET)
+	end,
 }
 
 local function crate(b: Kit.Builder)

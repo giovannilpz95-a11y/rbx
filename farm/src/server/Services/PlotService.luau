@@ -21,6 +21,7 @@ local Pen = require(Shared.Pen)
 local Profile = require(Shared.Profile)
 local Timer = require(Shared.Timer)
 local Land = require(Shared.Config.Land)
+local Lots = require(Shared.Lots)
 local Town = require(Shared.Config.Town)
 local ArtAnimals = require(Shared.Art.Animals)
 local ArtBuildings = require(Shared.Art.Buildings)
@@ -56,33 +57,15 @@ local COLORS = {
 	soil = Palette.soil,
 }
 
--- Main Street: the strip between the gate and the Ring Road (local z 48..96), with two
--- back-to-back rows of 8 x 8 House lots, a street, and a row of 12 x 12 Community Building
--- lots. Lots nearest the gate road come first; the truck's lane (x 20..34) stays clear.
-local function mainStreetLots(): ({ Vector3 }, { Vector3 })
-	local houses, community = {}, {}
-	for step = 1, 9 do
-		local x = step * 10
-		for _, side in { -1, 1 } do
-			if side == 1 and (x == 20 or x == 30) then
-				continue
-			end
-			table.insert(houses, Vector3.new(side * x, 0, 54))
-			table.insert(houses, Vector3.new(side * x, 0, 64))
-		end
+-- House and Community Building lots (Shared/Lots): Main Street, then North Lane
+local function lotPositions(list: { Lots.Lot }): { Vector3 }
+	local out = {}
+	for _, lot in list do
+		table.insert(out, Vector3.new(lot.x, 0, lot.z))
 	end
-	for step = 1, 6 do
-		local x = 13 + (step - 1) * 15
-		for _, side in { -1, 1 } do
-			if side == 1 and x == 28 then
-				continue
-			end
-			table.insert(community, Vector3.new(side * x, 0, 86))
-		end
-	end
-	return houses, community
+	return out
 end
-local HOUSE_LOTS, COMMUNITY_LOTS = mainStreetLots()
+local HOUSE_LOTS, COMMUNITY_LOTS = lotPositions(Lots.houses), lotPositions(Lots.community)
 
 -- Plot-local positions (studs). Fields are 2 x 2 tiles (8 x 8 studs).
 local LAYOUT = {
@@ -501,6 +484,22 @@ local function buildPlot(player: Player, slot: Slot): Model
 		Color = COLORS.path,
 		Parent = model,
 	})
+	-- North Lane in the North Fields (expansion 3), and its link road from the start area.
+	-- Laid before the land is cleared, like the gate road.
+	part({
+		Name = "NorthLaneLink",
+		Size = Vector3.new(8, 0.2, -Lots.northLane.z - 48 - 4),
+		CFrame = at(Vector3.new(Lots.northLane.linkX, 0, (Lots.northLane.z + 4 - 48) / 2), 0.3),
+		Color = COLORS.path,
+		Parent = model,
+	})
+	part({
+		Name = "NorthLane",
+		Size = Vector3.new(92, 0.2, 8),
+		CFrame = at(Vector3.new(0, 0, Lots.northLane.z), 0.3),
+		Color = COLORS.path,
+		Parent = model,
+	})
 	local townFolder = Instance.new("Folder")
 	townFolder.Name = "Town"
 	townFolder.Parent = model
@@ -670,12 +669,10 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		local state = house.type .. ":" .. tostring(TownRules.isDone(house, now))
 		if cache[name] ~= state then
 			cache[name] = state
-			-- The row nearest the gate faces it; the row behind faces Main Street
-			local turn = if pos.Z < 60 then 0 else 180
 			townModel(
 				folder,
 				name,
-				slot.cframe * CFrame.new(pos) * Kit.yaw(turn),
+				slot.cframe * CFrame.new(pos) * Kit.yaw(Lots.houses[house.lot].yaw),
 				"House",
 				house.type,
 				8,
@@ -698,7 +695,7 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 			townModel(
 				folder,
 				name,
-				slot.cframe * CFrame.new(pos),
+				slot.cframe * CFrame.new(pos) * Kit.yaw(Lots.community[def.order].yaw),
 				"Community",
 				id,
 				12,
@@ -803,7 +800,7 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 			old:Destroy()
 		end
 		if field.crop == nil then
-			Kit.model("Crop", bed)
+			ArtCrops.tilled(bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0)).Parent = bed
 		else
 			local def = Crops[field.crop]
 			local top = bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0)
@@ -912,12 +909,21 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 			Kit.fade(child, shell)
 		end
 	end
+	-- Feed shows in the trough while any animal is eating; the crate lid opens while products wait
+	local eating, waiting = false, false
+	for _, mark in marks do
+		eating = eating or mark == "p"
+		waiting = waiting or mark == "r"
+	end
+	ArtAnimals.setPenState(building, eating, waiting)
 	for i = 1, #ANIMAL_SPOTS do
 		local animal = building:FindFirstChild("Animal_" .. i)
 		local product = building:FindFirstChild("Product_" .. i)
 		local mark = marks[i]
 		if animal then
 			Kit.fade(animal, if mark == nil then 1 elseif underConstruction then 0.5 else 0)
+			-- The client's AnimalMotion: hungry ones droop, fed ones eat, ready ones wiggle
+			animal:SetAttribute("Mood", if mark == "h" then "hungry" elseif mark == "r" then "ready" else "eating")
 		end
 		if product then
 			Kit.fade(product, if mark == "r" then 0 else 1)

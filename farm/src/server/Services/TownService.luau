@@ -11,6 +11,8 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Barn = require(Shared.Config.Barn)
 local Drops = require(Shared.Drops)
 local Items = require(Shared.Items)
+local Land = require(Shared.Config.Land)
+local Lots = require(Shared.Lots)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
 local Tools = require(Shared.Config.Tools)
@@ -60,9 +62,14 @@ function TownService.buildHouse(player: Player, houseId: any): (boolean, string?
 	if not ok then
 		return false, reason
 	end
-	local lot = TownRules.freeLot(data, #PlotService.LAYOUT.houseLots)
+	local open = TownRules.houseLotCount(data, now)
+	local lot = TownRules.freeLot(data, open)
 	if lot == nil then
-		return false, "Main Street is full"
+		if open < #Lots.houses then
+			local land = Land.expansions[Lots.northLaneLand].displayName
+			return false, string.format("Main Street is full. Clear the %s to open North Lane.", land)
+		end
+		return false, "Every House lot is taken"
 	end
 	if not EconomyService.spend(player, "Coins", def.coinCost, "build_" .. houseId) then
 		return false, string.format("A %s costs %d Coins", def.displayName, def.coinCost)
@@ -85,6 +92,18 @@ function TownService.buildCommunity(player: Player, buildingId: any): (boolean, 
 	end
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
+	end
+	local open, land = TownRules.communityLotOpen(data, buildingId, Clock.now())
+	if not open then
+		if land == nil then
+			return false
+		end
+		return false,
+			string.format(
+				"The %s's lot is on North Lane, in the %s. Clear it first.",
+				def.displayName,
+				Land.expansions[land].displayName
+			)
 	end
 	if not InventoryService.has(player, def.materials) then
 		return false, "Not enough building materials"

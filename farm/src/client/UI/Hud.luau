@@ -35,6 +35,8 @@ local toastStack: Frame
 local shown: { [string]: number } = {} -- last values on screen, to tick up and bump on change
 local showPanel: (name: string) -> () = function() end
 Hud.actionButton = nil :: TextButton?
+-- Set by UI/LevelUp: shows the celebration window instead of the level-up toast
+Hud.levelUpHandler = nil :: ((payload: { [string]: any }) -> ())?
 Hud.sprintButton = nil :: TextButton?
 
 -- At most this many toasts at once; a burst (Build everything, several new fields) drops
@@ -60,7 +62,9 @@ function Hud.toast(message: string, variant: string?)
 end
 
 function Hud.popup(payload: { [string]: any })
-	if payload.kind == "LevelUp" then
+	if payload.kind == "LevelUp" and Hud.levelUpHandler then
+		Hud.levelUpHandler(payload)
+	elseif payload.kind == "LevelUp" then
 		local parts = { string.format("Level %d!", payload.level) }
 		if (payload.coins or 0) > 0 then
 			table.insert(parts, string.format("+%d Coins", payload.coins))
@@ -109,6 +113,21 @@ function Hud.popup(payload: { [string]: any })
 		ClientStore.away = payload.lines
 		showPanel("Away")
 	end
+end
+
+-- Where a reward of `kind` (Coins, Gems, XP, Barn) flies to: the middle of its HUD icon, in
+-- the HUD ScreenGui's pixels. Other layers using it must share IgnoreGuiInset = false.
+function Hud.flyTarget(kind: string): (Vector2?, Instance?)
+	local icon: GuiObject? = if kind == "Coins"
+		then coins.icon
+		elseif kind == "Gems" then gems.icon
+		elseif kind == "XP" then levelStar
+		elseif kind == "Barn" then barn.icon
+		else nil
+	if icon == nil then
+		return nil, nil
+	end
+	return icon.AbsolutePosition + icon.AbsoluteSize / 2, icon
 end
 
 -- Counts a pill up or down to its new value and bumps its icon when it grows.
@@ -233,6 +252,25 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 	coins = Kit.pill("Coins", 116, { LayoutOrder = 2, Parent = top })
 	gems = Kit.pill("Gems", 96, { LayoutOrder = 3, Parent = top })
 	barn = Kit.pill("Barn", 104, { LayoutOrder = 4, Parent = top })
+
+	-- Settings (K): a round gear at the end of the top row
+	local gear = Ui.button("⚙", function()
+		openPanel("Settings")
+	end, {
+		Name = "SettingsButton",
+		Size = UDim2.fromOffset(40, 40),
+		TextSize = 22,
+		LayoutOrder = 5,
+		TextColor3 = Palette.text,
+		BackgroundColor3 = Palette.button.neutral.face,
+		Parent = top,
+	})
+	for _, part in { gear, gear:FindFirstChild("ButtonLip"), gear:FindFirstChild("ButtonFace") } do
+		local c = (part :: Instance):FindFirstChildOfClass("UICorner")
+		if c then
+			c.CornerRadius = UDim.new(1, 0)
+		end
+	end
 
 	-- Bottom row, left of Sprint: paperwork that works from anywhere on your plot. Kept off the
 	-- right edge so it doesn't cover in-world bubbles, and clear of the touch thumbstick.
