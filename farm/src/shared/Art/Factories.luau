@@ -18,6 +18,19 @@ ArtFactories.DEPTH = 12
 ArtFactories.TABLE_Z = -10
 ArtFactories.QUEUE_SHOWN = 6 -- queued jobs show as crates by the table, two layers of three
 
+-- What the server's merge of a working factory (Art/Merge) leaves out: the moving gimmick,
+-- the queue crates and goods that come and go, the output table (a tap target of its own)
+-- and the glow parts that light up while it works.
+ArtFactories.MERGE_SKIP = {
+	Anim = true,
+	Queue = true,
+	Goods = true,
+	OutputTable = true,
+	OvenGlow = true,
+	NeonSign = true,
+	FurnaceGlow = true,
+} :: { [string]: boolean }
+
 local TURN = CFrame.Angles(0, math.rad(90), 0) -- turns a cylinder's axis from X to Z
 local PLINTH = 0.75
 local WALL = 7

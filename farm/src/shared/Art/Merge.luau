@@ -72,11 +72,22 @@ function Merge.split(container: Instance, primary: BasePart, skip: { [string]: b
 	return merge, keep
 end
 
--- How many parts `container` comes to once merged around `primary`: the union plus the parts
--- that stay separate. Used by the plot-estimate test.
+-- How many parts are under `container`.
+function Merge.parts(container: Instance): number
+	local total = 0
+	for _, d in container:GetDescendants() do
+		if d:IsA("BasePart") then
+			total += 1
+		end
+	end
+	return total
+end
+
+-- How many parts `container` comes to once merged around `primary`: everything but the parts
+-- that join the union (which takes primary's place). Used by the plot-estimate test.
 function Merge.count(container: Instance, primary: BasePart, skip: { [string]: boolean }?): number
-	local _, keep = Merge.split(container, primary, skip)
-	return 1 + #keep
+	local merge = Merge.split(container, primary, skip)
+	return Merge.parts(container) - #merge
 end
 
 local function geometryService(): Geometry?
@@ -100,7 +111,7 @@ function Merge.merge(container: Instance, primary: BasePart, options: Options?, 
 	if primary.Transparency > 0 or primary.Material ~= Enum.Material.SmoothPlastic then
 		return primary
 	end
-	local merge, keep = Merge.split(container, primary, options and options.skip)
+	local merge = Merge.split(container, primary, options and options.skip)
 	if #merge == 0 then
 		return primary
 	end
@@ -162,19 +173,17 @@ function Merge.merge(container: Instance, primary: BasePart, options: Options?, 
 		home = container -- never under a part that's about to go
 	end
 	union.Parent = home
-	-- Separate parts hanging under a part that's about to go move to the union
+	-- Whatever hangs under a part that's about to go (separate parts, skipped ones and their
+	-- models) moves to the union
 	local going: { [Instance]: boolean } = { [primary] = true }
 	for _, p in merge do
 		going[p] = true
 	end
-	for _, p in keep do
-		local up = p.Parent
-		while up and up ~= container do
-			if going[up] then
-				p.Parent = union
-				break
+	for p in going do
+		for _, child in p:GetChildren() do
+			if not going[child] then
+				child.Parent = union
 			end
-			up = up.Parent
 		end
 	end
 	for _, p in merge do
@@ -203,68 +212,61 @@ function Merge.mergeUnder(root: BasePart, geometry: Geometry?): BasePart?
 	if primary == nil then
 		return nil
 	end
-	-- The biggest part under `container` that could lead a merge, leaving out `skip` and, unless
-	-- `colliding`, parts that collide (so a walk-through shell keeps its solid parts as they are).
-	function Merge.leader(container: Instance, skip: { [string]: boolean }?, colliding: boolean?): BasePart?
-		local best: BasePart? = nil
-		local volume = 0
-		for _, d in container:GetDescendants() do
-			if
-				d:IsA("BasePart")
-				and not Merge.keepsSeparate(d)
-				and (colliding or not d.CanCollide)
-				and not skipped(d, container, skip)
-			then
-				local size = d.Size
-				if size.X * size.Y * size.Z > volume then
-					best, volume = d, size.X * size.Y * size.Z
-				end
-			end
-		end
-		return best
-	end
-
-	-- Merges the fences and buildings of an animal pen (Art/Animals) into one walk-through,
-	-- tap-through "Shell", leaving out `skip` (the tap floor, the animals and products, the feed
-	-- and crate lid that change) and every part that collides (the Floor, the coop's house).
-	local function shellSkip(pen: Instance, skip: { [string]: boolean }): { [string]: boolean }
-		local all = table.clone(skip)
-		-- Colliding parts stay as they are: a union of them would collide as one hull
-		for _, d in pen:GetDescendants() do
-			if d:IsA("BasePart") and d.CanCollide then
-				all[d.Name] = true
-			end
-		end
-		return all
-	end
-
-	function Merge.mergeShell(pen: Instance, skip: { [string]: boolean }, geometry: Geometry?): BasePart?
-		local all = shellSkip(pen, skip)
-		local primary = Merge.leader(pen, all)
-		if primary == nil then
-			return nil
-		end
-		return Merge.merge(pen, primary, { collide = false, query = false, name = "Shell", skip = all }, geometry)
-	end
-
-	-- How many parts a pen comes to once its shell is merged (for the plot-estimate test).
-	function Merge.countShell(pen: Instance, skip: { [string]: boolean }): number
-		local all = shellSkip(pen, skip)
-		local primary = Merge.leader(pen, all)
-		local total = 0
-		for _, d in pen:GetDescendants() do
-			if d:IsA("BasePart") then
-				total += 1
-			end
-		end
-		if primary == nil then
-			return total
-		end
-		local merge = Merge.split(pen, primary, all)
-		return total - #merge
-	end
-
 	return Merge.merge(root, primary, { collide = collide, name = "Look" }, geometry)
+end
+
+-- The biggest part under `container` that could lead a merge, leaving out `skip` and, unless
+-- `colliding`, parts that collide (so a walk-through shell keeps its solid parts as they are).
+function Merge.leader(container: Instance, skip: { [string]: boolean }?, colliding: boolean?): BasePart?
+	local best: BasePart? = nil
+	local volume = 0
+	for _, d in container:GetDescendants() do
+		if
+			d:IsA("BasePart")
+			and not Merge.keepsSeparate(d)
+			and (colliding or not d.CanCollide)
+			and not skipped(d, container, skip)
+		then
+			local size = d.Size
+			if size.X * size.Y * size.Z > volume then
+				best, volume = d, size.X * size.Y * size.Z
+			end
+		end
+	end
+	return best
+end
+
+local function shellSkip(pen: Instance, skip: { [string]: boolean }): { [string]: boolean }
+	local all = table.clone(skip)
+	-- Colliding parts stay as they are: a union of them would collide as one hull
+	for _, d in pen:GetDescendants() do
+		if d:IsA("BasePart") and d.CanCollide then
+			all[d.Name] = true
+		end
+	end
+	return all
+end
+
+-- Merges the fences and buildings of an animal pen (Art/Animals) into one walk-through,
+-- tap-through "Shell", leaving out `skip` (the tap floor, the animals and products, the feed
+-- and crate lid that change) and every part that collides (the Floor, the coop's house).
+function Merge.mergeShell(pen: Instance, skip: { [string]: boolean }, geometry: Geometry?): BasePart?
+	local all = shellSkip(pen, skip)
+	local primary = Merge.leader(pen, all)
+	if primary == nil then
+		return nil
+	end
+	return Merge.merge(pen, primary, { collide = false, query = false, name = "Shell", skip = all }, geometry)
+end
+
+-- How many parts a pen comes to once its shell is merged (for the plot-estimate test).
+function Merge.countShell(pen: Instance, skip: { [string]: boolean }): number
+	local all = shellSkip(pen, skip)
+	local primary = Merge.leader(pen, all)
+	if primary == nil then
+		return Merge.parts(pen)
+	end
+	return Merge.count(pen, primary, all)
 end
 
 return Merge
