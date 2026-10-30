@@ -34,8 +34,26 @@ local shown: { [string]: number } = {} -- last values on screen, to tick up and 
 Hud.actionButton = nil :: TextButton?
 Hud.sprintButton = nil :: TextButton?
 
+-- At most this many toasts at once; a burst (Build everything, several new fields) drops
+-- the oldest instead of covering the top of the screen
+local MAX_TOASTS = 3
+local toastCount = 0
+
 function Hud.toast(message: string, variant: string?)
-	Kit.toast(toastStack, message, variant)
+	toastCount += 1
+	Kit.toast(toastStack, message, variant).LayoutOrder = toastCount
+	local shown = {}
+	for _, child in toastStack:GetChildren() do
+		if child:IsA("TextLabel") then
+			table.insert(shown, child)
+		end
+	end
+	table.sort(shown, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i = 1, #shown - MAX_TOASTS do
+		shown[i]:Destroy()
+	end
 end
 
 function Hud.popup(payload: { [string]: any })
