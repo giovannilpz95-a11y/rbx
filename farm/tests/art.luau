@@ -478,6 +478,40 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(look ~= nil and look.Name == "Look" and look.Parent == root, "decoration look merged under its root")
 		ok(look ~= nil and look.CanCollide, "the lamp post still blocks the avatar")
 		ok(root:FindFirstChild("Lantern") ~= nil, "the glowing lantern stays separate")
+
+		-- Pens: fences and shelter become one walk-through, tap-through "Shell"; the floor,
+		-- gate, feed, crate lid, animals and the coop's solid house stay as they are
+		for id in ArtAnimals.ACCENT do
+			local pen = Instance.new("Model")
+			pen.Parent = folder
+			local floor = Instance.new("Part")
+			floor.Name = "Floor"
+			floor.Parent = pen
+			ArtAnimals.pen(id, CFrame.new(), pen)
+			local animal = ArtAnimals.animal(id, CFrame.new(), "Animal_1")
+			animal.Parent = pen
+			local before = Kit.countParts(pen)
+			local expected = ArtMerge.countShell(pen, ArtAnimals.SHELL_SKIP)
+			ok(expected < before - 10, id .. " shell merge saves parts")
+			local shell = ArtMerge.mergeShell(pen, ArtAnimals.SHELL_SKIP, stub)
+			ok(shell ~= nil and shell.Name == "Shell" and shell.Parent == pen, id .. " shell merged")
+			ok(
+				shell ~= nil and not shell.CanCollide and not shell.CanQuery,
+				id .. " shell lets avatars and taps through"
+			)
+			eq(Kit.countParts(pen), expected, id .. " part count matches the estimate")
+			for _, name in { "Floor", "Gate", "Feed", "Lid" } do
+				ok(pen:FindFirstChild(name, true) ~= nil, id .. " keeps its " .. name)
+			end
+			eq(
+				Kit.countParts(pen:FindFirstChild("Animal_1") :: Instance),
+				Kit.countParts(animal),
+				id .. " animal untouched"
+			)
+			if id == "ChickenCoop" then
+				ok(pen:FindFirstChild("House", true) ~= nil, "the coop's solid house stays")
+			end
+		end
 	end)
 
 	test("art: train set and Market stall build within budget", function()
@@ -845,6 +879,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		add(ArtCrops.build("Corn", 4, CFrame.new(), nil), 22)
 		-- Every pen up to the highest built level, copies (Cow Barns 2 and 3) looking like their
 		-- original
+		local pensMerged, pensBuilt = 0, 0
 		for id, def in Animals.pens do
 			if def.unlockLevel > Levels.built then
 				continue
@@ -853,7 +888,11 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			local pen = Instance.new("Model")
 			ArtAnimals.pen(kind, CFrame.new(), pen)
 			ArtAnimals.setPenLevel(pen, kind, ArtAnimals.PEN_LEVEL_MAX)
-			add(pen, 1)
+			-- A working pen's fences and shelter are merged on the server (Art/Merge mergeShell)
+			local shell = ArtMerge.countShell(pen, ArtAnimals.SHELL_SKIP)
+			total += shell
+			pensMerged += shell
+			pensBuilt += Kit.countParts(pen)
 			add(ArtAnimals.animal(kind, CFrame.new()), 6)
 			add(ArtAnimals.product(kind, CFrame.new()), 6)
 		end
@@ -940,6 +979,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				decor
 			)
 		)
+		print(string.format("      pen shells: %d parts once merged (%d as built)", pensMerged, pensBuilt))
 		print(string.format("      full level-%d plot estimate: %d parts", Levels.built, total))
 		ok(total <= PLOT_PARTS_MAX, string.format("full plot estimate %d parts, budget %d", total, PLOT_PARTS_MAX))
 	end)
