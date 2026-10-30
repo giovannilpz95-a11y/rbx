@@ -1394,6 +1394,8 @@ local function ensureUi()
 				PuzzleScreen.debugOneMoveLeft()
 			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.H and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugEmptyHearts()
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.J and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugPlayMove()
 			end
 		end)
 	end
@@ -1570,6 +1572,20 @@ function PuzzleScreen.debugOneMoveLeft()
 		table.insert(current.moves, { "DevOneMove" })
 	end
 	refreshHud()
+end
+
+-- Studio only: play the test bot's next move, as if swiped (the J key). It
+-- goes through the normal swap path, so the run records it and the server
+-- checks it like any other.
+local debugRng = CropPop.Rng.new(os.time() % 100000 + 1)
+function PuzzleScreen.debugPlayMove()
+	if not RunService:IsStudio() or not current or current.game.status ~= "Playing" or busy then
+		return
+	end
+	local m = CropPop.Bot.chooseMove(current.game, debugRng)
+	if m then
+		onSwap(m[1], m[2], m[3], m[4])
+	end
 end
 
 -- The level being played, for debugging and tests.
