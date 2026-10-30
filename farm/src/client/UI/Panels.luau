@@ -560,7 +560,7 @@ local function sellDrawer(state: { [string]: any }, order: number)
 			Parent = line,
 		}
 	)
-	Ui.button("✕", function()
+	Ui.button("X", function() -- "✕" is missing from the button font
 		barnPick = nil
 		Panels.refresh()
 	end, {
@@ -675,7 +675,7 @@ local function renderBarn(state: { [string]: any })
 	order += 1
 
 	if tab == "All" or tab == "Materials" then
-		order = barnUpgradeRow(state, order, tab == "Materials")
+		order = barnUpgradeRow(state, order, true) -- have / need chips on both tabs
 	end
 
 	if tab == "Prizes" then

@@ -95,7 +95,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		return
 	end
 	local panel = SHORTCUTS[input.KeyCode]
-	if panel then
+	if panel and Panels.isShowing(panel) then
+		Panels.close() -- the same key again closes it (Escape also opens Roblox's menu)
+	elseif panel then
 		Panels.open(panel)
 	elseif input.KeyCode == Enum.KeyCode.Escape then
 		Panels.close()
