@@ -25,6 +25,7 @@ local ArtMerge = require("../src/shared/Art/Merge")
 local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
+local Palette = require("../src/shared/Art/Palette")
 local ArtFolk = require("../src/shared/Art/Folk")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
@@ -526,11 +527,88 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ArtRail.track(kind, t, CFrame.new())
 			within(t, ArtRail.TRACK_PARTS_MAX, kind .. " track")
 			paletteRules(t, kind .. " track")
-			inside(t, Vector3.new(ArtRail.TRACK_LENGTH / 2, 0, 4), kind .. " track")
+			-- the Curve bends out of the straight pieces' strip, toward -Z
+			local half = if kind == "Curve" then Vector3.new(10, 0, 8) else Vector3.new(ArtRail.TRACK_LENGTH / 2, 0, 4)
+			inside(t, half, kind .. " track")
 		end
 		local x = Instance.new("Model")
 		ArtRail.track("Crossing", x, CFrame.new())
 		hinged(x, "Barrier")
+
+		-- The Town Express: hub station with tier flags, and a giant train from the same builders
+		local xs = Instance.new("Model")
+		local express, expressBoard = ArtRail.expressStation(xs, CFrame.new())
+		eq(expressBoard.Name, "ExpressBoard", "Express server board")
+		within(xs, ArtRail.EXPRESS_PARTS_MAX, "Express station")
+		paletteRules(xs, "Express station")
+		inside(xs, ArtRail.EXPRESS_SIZE / 2, "Express station")
+		hinged(express, "Bell")
+		local function raised(): number
+			local n = 0
+			for _, d in express:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "TierFlag" and d.CFrame == d:GetAttribute("HighCFrame") then
+					n += 1
+				end
+			end
+			return n
+		end
+		eq(raised(), 0, "no tier flags up at the start")
+		ArtRail.setExpressProgress(express, 0.6)
+		eq(raised(), 2, "25% and 50% flags up at 60%")
+		ArtRail.setExpressProgress(express, 1)
+		eq(raised(), #ArtRail.EXPRESS_TIERS, "every flag up when the train is full")
+		local small, big = Instance.new("Model"), Instance.new("Model")
+		ArtRail.engine(small, CFrame.new())
+		ArtRail.engine(big, CFrame.new(), ArtRail.EXPRESS_SCALE)
+		eq(Kit.countParts(big), Kit.countParts(small), "the giant engine has the same parts")
+		local function top(m: Instance): number
+			local y = 0
+			Kit.eachPart(m, function(p)
+				y = math.max(y, p.CFrame.Position.Y + p.Size.Y / 2)
+			end)
+			return y
+		end
+		ok(math.abs(top(big) / top(small) - ArtRail.EXPRESS_SCALE) < 0.01, "and is EXPRESS_SCALE times as tall")
+		local gc = Instance.new("Model")
+		local giantCar = ArtRail.cargoCar(gc, CFrame.new(), ArtRail.EXPRESS_SCALE)
+		ArtRail.setCarCrates(giantCar, 2)
+		local crate = giantCar:FindFirstChild("Crate", true) :: BasePart
+		ok(math.abs(crate.Size.Y - 2 * ArtRail.EXPRESS_SCALE) < 0.01, "giant cars carry giant crates")
+
+		-- Event Tent: closed and open
+		local et = Instance.new("Model")
+		local tent, eventSign = ArtTown.eventTent(et, CFrame.new())
+		eq(eventSign.Name, "EventSign", "event sign")
+		within(et, ArtTown.TENT_PARTS_MAX, "Event Tent")
+		paletteRules(et, "Event Tent")
+		inside(et, ArtTown.TENT_SIZE / 2, "Event Tent")
+		local function bunting(): number
+			local n = 0
+			for _, d in tent:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "Bunting" and d.Transparency == 0 then
+					n += 1
+				end
+			end
+			return n
+		end
+		eq(bunting(), 0, "no bunting while closed")
+		ArtTown.setEventTent(tent, true, Palette.plum)
+		ok(bunting() > 0, "bunting while open")
+		local flap = tent:FindFirstChild("Flap") :: BasePart
+		eq(flap.CFrame, flap:GetAttribute("OpenCFrame"), "flaps tied back")
+		ArtTown.setEventTent(tent, false)
+		eq(bunting(), 0, "closed again")
+
+		-- Factory queue crates
+		local fm = Instance.new("Model")
+		ArtFactories.build("Bakery", fm, CFrame.new())
+		local plain = Kit.countParts(fm)
+		ArtFactories.setQueue(fm, 2)
+		eq(Kit.countParts(fm), plain + 2, "two jobs waiting, two crates")
+		ArtFactories.setQueue(fm, 99)
+		eq(Kit.countParts(fm), plain + ArtFactories.QUEUE_SHOWN, "never more than QUEUE_SHOWN")
+		ArtFactories.setQueue(fm, 0)
+		eq(Kit.countParts(fm), plain, "an empty queue shows none")
 
 		local s = Instance.new("Model")
 		local stall, price = ArtMarket.stall(s, CFrame.new(), "Teal")
@@ -753,6 +831,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			local m = Instance.new("Model")
 			ArtFactories.build(id, m, CFrame.new())
 			add(m, 1)
+			total += ArtFactories.QUEUE_SHOWN
 			local makes = Factories[id].makes or id
 			local biggestProp = 0
 			for recipeId, recipe in Recipes do

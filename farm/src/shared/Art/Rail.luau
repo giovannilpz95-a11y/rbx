@@ -14,8 +14,14 @@ ArtRail.ENGINE_PARTS_MAX = 15
 ArtRail.CAR_PARTS_MAX = 10 -- with all 3 crates loaded
 ArtRail.CAR_CRATES = 3
 ArtRail.HELPCRATE_PARTS_MAX = 5
-ArtRail.TRACK_PARTS_MAX = 6
-ArtRail.TRACK_TYPES = { "Straight", "Buffer", "Crossing" }
+ArtRail.TRACK_PARTS_MAX = 9 -- the Curve; the others are 6 or fewer
+ArtRail.TRACK_TYPES = { "Straight", "Buffer", "Crossing", "Curve" }
+ArtRail.EXPRESS_PARTS_MAX = 60
+ArtRail.EXPRESS_SIZE = Vector3.new(48, 0, 14) -- the Town Express hub station's footprint
+ArtRail.EXPRESS_SCALE = 1.6 -- the giant server train: the same engine and cars, bigger
+ArtRail.EXPRESS_TIERS = { 0.25, 0.5, 0.75, 1 } -- reward tiers (14 Multiplayer Features C1)
+ArtRail.CURVE_RADIUS = 20 -- the Curve turns 45 degrees toward local -Z over this radius
+ArtRail.CURVE_DEGREES = 45
 
 ArtRail.STATION_SIZE = Vector3.new(32, 0, 14) -- footprint: width (X) x depth (Z)
 ArtRail.TRACK_LENGTH = 16
@@ -99,9 +105,9 @@ end
 -- the rails at local y = RAIL_TOP. The "Stack" part is where the client puffs smoke.
 ---------------------------------------------------------------------------------------------
 
-function ArtRail.engine(parent: Instance, cf: CFrame): Model
+function ArtRail.engine(parent: Instance, cf: CFrame, scale: number?): Model
 	local model = Kit.model("Engine", parent)
-	local b = Kit.builder(model, cf, true)
+	local b = Kit.builder(model, cf, true, scale)
 	local axle = ArtRail.RAIL_TOP + 1.1
 	local deck = axle + 0.7
 	b.block("Chassis", Vector3.new(11, 0.8, 3.8), Vector3.new(0, deck, 0), Palette.cocoa)
@@ -134,9 +140,10 @@ end
 -- along local X.
 ---------------------------------------------------------------------------------------------
 
-function ArtRail.cargoCar(parent: Instance, cf: CFrame): (Model, Part)
+function ArtRail.cargoCar(parent: Instance, cf: CFrame, scale: number?): (Model, Part)
 	local model = Kit.model("CargoCar", parent)
-	local b = Kit.builder(model, cf, true)
+	local b = Kit.builder(model, cf, true, scale)
+	model:SetAttribute("Scale", scale or 1)
 	local axle = ArtRail.RAIL_TOP + 0.9
 	local deck = axle + 0.8
 	b.block("Bed", Vector3.new(9.6, 0.6, 3.8), Vector3.new(0, deck, 0), Palette.woodLight)
@@ -163,7 +170,8 @@ function ArtRail.setCarCrates(car: Model, count: number)
 	end
 	local crates = Kit.model("Crates", car)
 	local bed = car:FindFirstChild("Bed") :: BasePart
-	local b = Kit.builder(crates, bed.CFrame, true)
+	local scale = (car:GetAttribute("Scale") :: number?) or 1
+	local b = Kit.builder(crates, bed.CFrame, true, scale)
 	for i = 1, count do
 		-- the bed is 0.6 thick, so a 2-stud crate sits 1.3 above its centre
 		b.block("Crate", Vector3.new(2.4, 2, 2.6), Vector3.new(3 - (i - 1) * 3, 1.3, 0), Palette.crate)
@@ -214,6 +222,40 @@ local TRACKS: { [string]: (Kit.Builder, CFrame) -> () } = {
 		b.block("Stop", Vector3.new(1.2, 1.6, 4.4), Vector3.new(2.6, 0.8, 0), Palette.woodDark, SOLID)
 		b.block("StopBeam", Vector3.new(0.6, 0.7, 4.8), Vector3.new(1.8, 1.4, 0), Palette.barnRed)
 	end,
+	-- A gentle 45-degree curve: starts at local x = -8 heading +X like the Straight, and bends
+	-- toward -Z around a centre at (-8, 0, -CURVE_RADIUS). Rails in three chords each.
+	Curve = function(b)
+		local r, sweep = ArtRail.CURVE_RADIUS, math.rad(ArtRail.CURVE_DEGREES)
+		local centre = Vector3.new(-8, 0, -r)
+		local function at(radius: number, a: number): Vector3
+			return centre + Vector3.new(radius * math.sin(a), 0, radius * math.cos(a))
+		end
+		for _, offset in { -ArtRail.GAUGE / 2, ArtRail.GAUGE / 2 } do
+			local radius = r - offset
+			for i = 0, 2 do
+				local a0, a1 = sweep * i / 3, sweep * (i + 1) / 3
+				local p0, p1 = at(radius, a0), at(radius, a1)
+				local mid = (p0 + p1) / 2
+				b.block(
+					"Rail",
+					Vector3.new((p1 - p0).Magnitude + 0.2, 0.35, 0.35),
+					CFrame.lookAt(mid, mid + (p1 - p0)) * Kit.yaw(90) + Vector3.new(0, ArtRail.RAIL_TOP - 0.18, 0),
+					Palette.stone
+				)
+			end
+		end
+		for i = 1, 3 do
+			local a = sweep * (i - 0.5) / 3
+			local p = at(r, a)
+			b.block(
+				"Sleeper",
+				Vector3.new(1.2, 0.35, 4.6),
+				CFrame.lookAt(p, centre) + Vector3.new(0, 0.18, 0),
+				Palette.woodLight,
+				QUIET
+			)
+		end
+	end,
 	Crossing = function(b, cf)
 		rails(b, ArtRail.TRACK_LENGTH, 0)
 		b.block("Planks", Vector3.new(6, 0.5, 5), Vector3.new(0, 0.25, 0), Palette.path, QUIET)
@@ -225,6 +267,90 @@ local TRACKS: { [string]: (Kit.Builder, CFrame) -> () } = {
 		end
 	end,
 }
+
+---------------------------------------------------------------------------------------------
+-- Town Express hub station (14 Multiplayer Features C1, Model List §5): the Town Square's big
+-- station for the whole-server train. A long platform under a two-bay teal canopy, a clock
+-- tower with a whistle bell in the middle, a wide server board (SurfaceGui: crates loaded,
+-- time left) and four tier flags on poles that rise as the server fills the train
+-- (setExpressProgress). Front (track side) faces local -Z. Returns the model and the board.
+---------------------------------------------------------------------------------------------
+
+function ArtRail.expressStation(parent: Instance, cf: CFrame): (Model, Part)
+	local model = Kit.model("ExpressStation", parent)
+	local b = Kit.builder(model, cf, true)
+	b.block("Platform", Vector3.new(46, FLOOR, 10), Vector3.new(0, FLOOR / 2, 0), Palette.woodLight, SOLID)
+	b.block("EdgeLine", Vector3.new(46, 0.1, 0.5), Vector3.new(0, FLOOR + 0.05, -4.6), Palette.roofMustard, QUIET)
+	for _, x in { -23.5, 23.5 } do
+		b.block("Steps", Vector3.new(1.4, FLOOR / 2, 10), Vector3.new(x, FLOOR / 4, 0), Palette.wood, SOLID)
+	end
+	-- Two canopy bays either side of the tower
+	for _, side in { -1, 1 } do
+		local cx = side * 13
+		for _, x in { cx - 7, cx + 7 } do
+			for _, z in { -3.8, 3.8 } do
+				b.post("CanopyPost", 6, 0.6, Vector3.new(x, FLOOR + 3, z), Palette.cream)
+			end
+		end
+		Kit.archRoof(b, "Canopy", CFrame.new(cx, FLOOR + 6, 0) * Kit.yaw(90), 10.6, 16, 2, 3, 0.4, Palette.roofTeal)
+	end
+	-- The clock tower: a brick tower with a clock on the front, a gold whistle bell in an open
+	-- belfry, a mustard cap and an XL Sprout Tag
+	b.block("Tower", Vector3.new(6, 12, 6), Vector3.new(0, FLOOR + 6, 1), Palette.brick, SOLID)
+	b.block("TowerBand", Vector3.new(6.4, 0.6, 6.4), Vector3.new(0, FLOOR + 8.4, 1), Palette.cream, QUIET)
+	local face = CFrame.new(0, FLOOR + 10, -2.05) * Kit.yaw(90)
+	b.cyl("ClockRim", 0.3, 3.6, face, Palette.cream)
+	b.cyl("Clock", 0.3, 3, face * CFrame.new(0.08, 0, 0), Palette.oat, QUIET)
+	local hand =
+		b.block("ClockHand", Vector3.new(0.2, 1.2, 0.1), Vector3.new(0, FLOOR + 10.5, -2.3), Palette.cocoa, QUIET)
+	hand:SetAttribute("HingeCFrame", cf * CFrame.new(0, FLOOR + 10, -2.3))
+	for _, x in { -2.6, 2.6 } do
+		b.block("Belfry", Vector3.new(0.8, 3, 0.8), Vector3.new(x, FLOOR + 13.5, 1), Palette.cream)
+	end
+	local bell = b.ball("Bell", 1.6, Vector3.new(0, FLOOR + 13.4, 1), Palette.coins, QUIET)
+	bell:SetAttribute("HingeCFrame", bell.CFrame * CFrame.new(0, 1, 0))
+	b.block("TowerCap", Vector3.new(7, 0.8, 7), Vector3.new(0, FLOOR + 15.4, 1), Palette.roofMustard)
+	b.ball("Dome", 3.4, Vector3.new(0, FLOOR + 16.2, 1), Palette.roofTeal)
+	Kit.sproutTag(b, Vector3.new(0, FLOOR + 17.6, 1), 4, Palette.wood, Palette.lime)
+	-- The server board on the back wall, left of the tower
+	b.block("BackWall", Vector3.new(16, 3.6, 0.4), Vector3.new(-13, FLOOR + 1.8, 4.8), Palette.oat, SOLID)
+	local board = b.block("ExpressBoard", Vector3.new(10, 3, 0.2), Vector3.new(-13, FLOOR + 2.6, 4.5), Palette.cocoa)
+	b.block("BoardFrame", Vector3.new(10.6, 3.6, 0.15), Vector3.new(-13, FLOOR + 2.6, 4.58), Palette.wood, QUIET)
+	-- Four tier flags on the right, lowered until the server reaches that share of the train
+	for i = 1, #ArtRail.EXPRESS_TIERS do
+		local x = 8 + (i - 1) * 3.6
+		b.post("FlagPole", 7, 0.25, Vector3.new(x, FLOOR + 3.5, 4.2), Palette.cocoa)
+		local high = CFrame.new(x + 0.9, FLOOR + 6.3, 4.2)
+		local flag = b.block("TierFlag", Vector3.new(1.6, 1.1, 0.12), high, Palette.cream)
+		flag:SetAttribute("Tier", i)
+		flag:SetAttribute("HighCFrame", cf * high)
+		flag:SetAttribute("LowCFrame", cf * (high - Vector3.new(0, 4.4, 0)))
+	end
+	-- Two flower barrels by the steps
+	for _, x in { -21.5, 21.5 } do
+		b.post("Barrel", 1.2, 1.3, Vector3.new(x, FLOOR + 0.6, 3.6), Palette.wood)
+		Kit.bush(b, "Flowers", Vector3.new(x, FLOOR + 1.1, 3.6), 0.6, Palette.treeTop, Palette.flowerPink)
+	end
+	ArtRail.setExpressProgress(model, 0)
+	return model, board
+end
+
+-- Raises the tier flags the server has reached (`fraction` of the train loaded, 0-1) and
+-- paints them gold; the rest hang low in cream.
+function ArtRail.setExpressProgress(station: Model, fraction: number)
+	for _, d in station:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == "TierFlag" then
+			local tier = ArtRail.EXPRESS_TIERS[d:GetAttribute("Tier") :: number]
+			local reached = tier ~= nil and fraction >= tier
+			local cf = d:GetAttribute(if reached then "HighCFrame" else "LowCFrame")
+			if typeof(cf) == "CFrame" then
+				d.CFrame = cf
+			end
+			d.Color = if reached then Palette.coins else Palette.cream
+		end
+	end
+	station:SetAttribute("Progress", fraction)
+end
 
 function ArtRail.track(kind: string, parent: Instance, cf: CFrame): Model
 	local model = Kit.model("Track_" .. kind, parent)

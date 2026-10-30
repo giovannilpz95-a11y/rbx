@@ -838,6 +838,46 @@ local function buildField(fieldsFolder: Instance, slot: Slot, id: string)
 	bed.Parent = fieldsFolder
 end
 
+-- The chunk-clear reveal: the wild props and the signpost hop and sink into the ground while
+-- confetti bursts over the new land, then the overlay goes.
+local REVEAL_SECONDS = 0.9
+local function revealLand(overlay: Instance)
+	overlay:SetAttribute("LandStage", nil) -- done: later refreshes leave it alone
+	local burstAt: BasePart? = nil
+	for _, d in overlay:GetDescendants() do
+		if d:IsA("BasePart") and d.Transparency < 1 then
+			d.CanQuery = false
+			burstAt = burstAt or d
+			TweenService:Create(
+				d,
+				TweenInfo.new(REVEAL_SECONDS, Enum.EasingStyle.Back, Enum.EasingDirection.In),
+				{ CFrame = d.CFrame * CFrame.new(0, -d.Size.Y - 0.5, 0), Transparency = 1 }
+			):Play()
+		end
+	end
+	local board = overlay:FindFirstChild("Board", true) :: BasePart?
+	local at = board or burstAt
+	if at then
+		local confetti = Instance.new("ParticleEmitter")
+		confetti.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Palette.roofMustard),
+			ColorSequenceKeypoint.new(0.5, Palette.flowerPink),
+			ColorSequenceKeypoint.new(1, Palette.lime),
+		})
+		confetti.Size = NumberSequence.new(0.5, 0.2)
+		confetti.Lifetime = NumberRange.new(0.8, 1.4)
+		confetti.Speed = NumberRange.new(14, 22)
+		confetti.SpreadAngle = Vector2.new(60, 60)
+		confetti.Acceleration = Vector3.new(0, -30, 0)
+		confetti.Rate = 0
+		confetti.Parent = at
+		confetti:Emit(60)
+	end
+	task.delay(REVEAL_SECONDS + 1.5, function()
+		overlay:Destroy()
+	end)
+end
+
 local function refreshLand(player: Player, model: Model, data: { [string]: any }, now: number)
 	local folder = model:FindFirstChild("Land")
 	if folder == nil then
@@ -850,12 +890,15 @@ local function refreshLand(player: Player, model: Model, data: { [string]: any }
 		if cache[stage] == state then
 			continue
 		end
+		local seen = cache[stage] ~= nil -- false on the first pass after joining
 		cache[stage] = state
 		for _, overlay in folder:GetChildren() do
 			if overlay:GetAttribute("LandStage") ~= stage then
 				continue
 			end
-			if state == "open" then
+			if state == "open" and seen then
+				revealLand(overlay)
+			elseif state == "open" then
 				overlay:Destroy()
 			else
 				-- While it's being cleared the wild thins out
@@ -945,8 +988,15 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	local outputCount = Timer.countOutput(output)
 	local underConstruction = factory.built and factory.constructionReadyAt ~= nil and now < factory.constructionReadyAt
 	local busy = #queue > 0 and queue[1].startedAt ~= nil
-	local state =
-		string.format("%s:%s:%s:%d", tostring(factory.built), tostring(underConstruction), tostring(busy), outputCount)
+	local waiting = if busy then #queue - 1 else #queue
+	local state = string.format(
+		"%s:%s:%s:%d:%d",
+		tostring(factory.built),
+		tostring(underConstruction),
+		tostring(busy),
+		outputCount,
+		waiting
+	)
 
 	local cache = factoryVisualState[player]
 	if cache[id] == state then
@@ -963,6 +1013,8 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	end)
 	-- The client's FactoryMotion turns the factory's moving parts while this is set
 	building:SetAttribute("Busy", busy)
+	-- Jobs waiting their turn stack up as crates by the table
+	ArtFactories.setQueue(building, if factory.built and not underConstruction then waiting else 0)
 	local chimney = building:FindFirstChild("Chimney")
 	local smoke = chimney and chimney:FindFirstChildOfClass("Smoke")
 	if smoke then

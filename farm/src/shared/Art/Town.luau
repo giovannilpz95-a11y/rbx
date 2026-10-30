@@ -13,6 +13,8 @@ ArtTown.TOWNHALL_PARTS_MAX = 36
 ArtTown.SIGNPOST_PARTS_MAX = 4
 ArtTown.OBSTACLE_PARTS_MAX = 4
 ArtTown.PORCH_PARTS_MAX = 10
+ArtTown.TENT_PARTS_MAX = 24
+ArtTown.TENT_SIZE = Vector3.new(14, 0, 14)
 
 ArtTown.TOWNHALL_SIZE = Vector3.new(11, 0, 9) -- footprint: width (X) x depth (Z)
 
@@ -254,6 +256,76 @@ function ArtTown.porch(parent: Instance, cf: CFrame): Model
 		{ shadow = false, material = Enum.Material.Neon }
 	)
 	return porch
+end
+
+---------------------------------------------------------------------------------------------
+-- Event Tent (Model List §6, 20 Live Ops & Events): the hub for limited-time events. A cream
+-- festival marquee under a big gable roof with a scalloped valance, a pennant pole, door
+-- flaps and a sign over the door. Closed, the flaps are shut and the roof is plain; open
+-- (setEventTent), the flaps tie back, the roof and valance take the event's color and a
+-- string of bunting appears across the front.
+---------------------------------------------------------------------------------------------
+
+function ArtTown.eventTent(parent: Instance, cf: CFrame): (Model, Part)
+	local model = Kit.model("EventTent", parent)
+	local b = Kit.builder(model, cf, true)
+	b.block("Wall", Vector3.new(12, 4.6, 12), Vector3.new(0, 2.3, 0), Palette.cream, { collide = true })
+	b.block("Mat", Vector3.new(3.6, 0.2, 1.6), Vector3.new(0, 0.1, -6.8), Palette.roofRed, QUIET)
+	Kit.gableRoof(b, "Roof", CFrame.new(0, 4.6, 0) * Kit.yaw(90), 13, 13, 4.6, Palette.cream)
+	for _, d in model:GetChildren() do
+		if d.Name == "Roof" then
+			d:SetAttribute("Stripe", true) -- takes the event color while open
+		end
+	end
+	for _, x in { -6.4, 6.4 } do
+		for i = 1, 4 do
+			local ball = b.ball("Valance", 1.3, Vector3.new(x, 4.3, -4.8 + (i - 1) * 3.2), Palette.roofTeal, QUIET)
+			ball:SetAttribute("Stripe", i % 2 == 1)
+		end
+	end
+	b.post("Pole", 3, 0.3, Vector3.new(0, 10.6, 0), Palette.cocoa)
+	b.block("Pennant", Vector3.new(1.8, 1, 0.12), Vector3.new(0.9, 11.6, 0), Palette.roofRed, QUIET)
+	local sign = b.block("EventSign", Vector3.new(4, 1.2, 0.3), Vector3.new(0, 6.3, -6.75), Palette.cream)
+	b.block("SignTrim", Vector3.new(4.6, 1.7, 0.2), Vector3.new(0, 6.3, -6.6), Palette.wood, QUIET)
+	-- Door flaps: shut across the doorway, or tied back to either side
+	for _, side in { -1, 1 } do
+		local shut = CFrame.new(side * 0.95, 2, -6.1)
+		local open = CFrame.new(side * 2.4, 2, -6.4) * Kit.yaw(side * 35)
+		local flap = b.block("Flap", Vector3.new(1.9, 4, 0.2), shut, Palette.roofTeal)
+		flap:SetAttribute("ShutCFrame", cf * shut)
+		flap:SetAttribute("OpenCFrame", cf * open)
+	end
+	-- Bunting: a string of little pennants under the front eave, shown only while open
+	for i = 1, 5 do
+		local color = ({ Palette.roofMustard, Palette.flowerPink, Palette.roofTeal, Palette.lime })[(i - 1) % 4 + 1]
+		local at = CFrame.new(-4 + (i - 1) * 2, 5.4 - math.abs(i - 3) * -0.2 - 0.6, -6.6)
+		b.block("Bunting", Vector3.new(0.9, 0.9, 0.1), at * CFrame.Angles(0, 0, math.rad(45)), color, QUIET)
+	end
+	ArtTown.setEventTent(model, false)
+	return model, sign
+end
+
+-- Opens or closes the tent; open, the roof stripes take `color` (the event's color).
+function ArtTown.setEventTent(tent: Model, open: boolean, color: Color3?)
+	for _, d in tent:GetDescendants() do
+		if not d:IsA("BasePart") then
+			continue
+		end
+		if d.Name == "Flap" then
+			local cf = d:GetAttribute(if open then "OpenCFrame" else "ShutCFrame")
+			if typeof(cf) == "CFrame" then
+				d.CFrame = cf
+			end
+		elseif (d.Name == "Roof" or d.Name == "Valance") and d:GetAttribute("Stripe") then
+			d.Color = if open then color or Palette.roofRed else Palette.cream
+		elseif d.Name == "Valance" or d.Name == "RoofRidge" then
+			d.Color = if open then Palette.cream else Palette.roofTeal
+		elseif d.Name == "Bunting" then
+			d.Transparency = if open then 0 else 1
+			d.CanQuery = open
+		end
+	end
+	tent:SetAttribute("Open", open)
 end
 
 return ArtTown
