@@ -169,7 +169,7 @@ local function act(part: BasePart)
 		Remotes.fire("Factory_Collect", part:GetAttribute("FactoryId"))
 	elseif kind == "Factory" then
 		Panels.open(part:GetAttribute("FactoryId") :: string)
-	elseif kind == "Barn" then
+	elseif kind == "Barn" or kind == "PrizeShelf" then
 		Panels.open("Barn")
 	elseif kind == "Town" then
 		Panels.open("Town")

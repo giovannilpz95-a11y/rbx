@@ -21,7 +21,10 @@ local ArtCommunity = require("../src/shared/Art/Community")
 local ArtCrops = require("../src/shared/Art/Crops")
 local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
+local ArtItemProps = require("../src/shared/Art/ItemProps")
+local ArtMotion = require("../src/shared/Art/Motion")
 local Crops = require("../src/shared/Config/Crops")
+local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
 local Town = require("../src/shared/Config/Town")
 
@@ -122,6 +125,69 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: every factory's moving part works and returns to rest", function()
+		for _, id in FACTORIES do
+			local m = Instance.new("Model")
+			ArtFactories.build(id, m, CFrame.new(10, 0, 5) * Kit.yaw(90))
+			local rig = ArtMotion.bind(id, m)
+			ok(rig ~= nil, id .. " has a motion rig")
+			local r = rig :: ArtMotion.Rig
+			ok(#r.parts > 0, id .. " moves some parts")
+			local before = {}
+			for i, p in r.parts do
+				before[i] = { cf = p.CFrame, color = p.Color }
+			end
+			ArtMotion.pose(r, 0.7)
+			local changed = false
+			for i, p in r.parts do
+				local was = before[i]
+				if (p.CFrame.Position - was.cf.Position).Magnitude > 0.01 or not p.CFrame:FuzzyEq(was.cf, 1e-3) then
+					changed = true
+				end
+				if p.Color ~= was.color then
+					changed = true
+				end
+				if r.spec.kind == "spin" then
+					-- Spinning keeps every part the same distance from the pivot
+					local d0 = (was.cf.Position - r.pivot.Position).Magnitude
+					local d1 = (p.CFrame.Position - r.pivot.Position).Magnitude
+					ok(math.abs(d0 - d1) < 1e-3, id .. ": " .. p.Name .. " stays on its axis")
+				elseif r.spec.kind == "bob" then
+					ok(p.CFrame.Position.Y > was.cf.Position.Y, id .. ": " .. p.Name .. " lifts up")
+				end
+			end
+			ok(changed, id .. " moves at t = 0.7")
+			ArtMotion.reset(r)
+			for i, p in r.parts do
+				ok(
+					(p.CFrame.Position - before[i].cf.Position).Magnitude < 1e-3,
+					id .. ": " .. p.Name .. " back at rest"
+				)
+				ok(p.Color == before[i].color, id .. ": " .. p.Name .. " colour back")
+			end
+		end
+		eq(ArtMotion.bind("NoSuchFactory", Instance.new("Model")), nil, "unknown factory")
+	end)
+
+	test("art: every item has a small prop for its icon", function()
+		local half = ArtItemProps.SIZE / 2 + 0.3
+		for id in Items do
+			ok(ArtItemProps.has(id), "prop for " .. id)
+			local m = ArtItemProps.build(id)
+			eq(m.Name, id, id .. " model name")
+			within(m, ArtItemProps.PARTS_MAX, id .. " prop")
+			paletteRules(m, id)
+			Kit.eachPart(m, function(p)
+				ok(p.CanQuery == false, id .. ": " .. p.Name .. " lets taps through")
+				-- Each part's centre stays inside the icon box, standing on the ground
+				local c = p.CFrame.Position
+				ok(math.abs(c.X) <= half and math.abs(c.Z) <= half, id .. ": " .. p.Name .. " inside the box")
+				ok(c.Y >= -0.1 and c.Y <= ArtItemProps.SIZE + 0.3, id .. ": " .. p.Name .. " height")
+			end)
+		end
+		within(ArtItemProps.build("NoSuchItem"), ArtItemProps.PARTS_MAX, "fallback crate")
+	end)
+
 	test("art: Barn, Order Board, truck and gate stay within budget", function()
 		local m = Instance.new("Model")
 		local barn = ArtBuildings.barn(m, CFrame.new(), 14, 16)
@@ -204,10 +270,16 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			add(ArtAnimals.animal(id, CFrame.new()), 6)
 			add(ArtAnimals.product(id, CFrame.new()), 6)
 		end
+		-- Every factory with a full output tray (8 goods) of its biggest prop
+		local biggestProp = 0
+		for id in Items do
+			biggestProp = math.max(biggestProp, Kit.countParts(ArtItemProps.build(id)))
+		end
 		for _, id in FACTORIES do
 			local m = Instance.new("Model")
 			ArtFactories.build(id, m, CFrame.new())
 			add(m, 1)
+			total += biggestProp * 8
 		end
 		-- Barn, board, dock, truck, gate, decoration: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25 + 40

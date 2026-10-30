@@ -32,6 +32,7 @@ local Motion = TileStyle.Theme.Motion
 local Boosters = CropPop.Boosters
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
+local TrailChest = CropPop.TrailChest
 local Colors = TileStyle.Board
 local LOCKED_AHEAD = 4 -- locked levels shown on the trail past the next one
 local ROW_STEP = 60 -- a trail row plus the list padding, in pixels
@@ -795,6 +796,9 @@ renderTrail = function()
 		elseif not unlocked then
 			text ..= "  🔒"
 		end
+		if not beaten and TrailChest.forLevel(level.id) then
+			text ..= "  🎁"
+		end
 		local row = button(ui.list, "Level" .. level.id, text, UDim2.new(1, -10, 0, 52), UDim2.new())
 		row.LayoutOrder = level.id
 		row.TextXAlignment = Enum.TextXAlignment.Left
@@ -936,6 +940,21 @@ local function rewardText(rewards): string
 	return text
 end
 
+-- "🎁 Trail Chest: +1 💥, +2 🧹, 15 min of unlimited ❤️ and 120 Coins"
+local function chestText(chest): string
+	local parts = {}
+	for _, list in { Boosters.PreLevel, Boosters.InLevel } do
+		for _, kind in list do
+			local count = chest.boosters[kind]
+			if count then
+				table.insert(parts, string.format("+%d %s", count, TileStyle.BoosterGlyphs[kind] or kind))
+			end
+		end
+	end
+	table.insert(parts, string.format("%d min of unlimited ❤️", chest.unlimitedMinutes))
+	return string.format("🎁 Trail Chest: %s and %d Coins", table.concat(parts, ", "), chest.coins)
+end
+
 local function finishRun(run)
 	local status = run.game.status
 	busy = true -- no taps while the server checks
@@ -954,6 +973,9 @@ local function finishRun(run)
 		end
 		local nextLevel = Levels.get(run.levelId + 1)
 		local body = rewardText(result.rewards)
+		if result.chest then
+			body ..= "\n" .. chestText(result.chest)
+		end
 		if streak() >= 2 then
 			body ..= string.format("\n🔥 Hot Streak: %d wins in a row!", streak())
 		end
