@@ -10,6 +10,7 @@
 	  BuyHearts(packIndex)                -> progress | { error }
 	  BuyBooster(kind)                    -> progress | { error }
 	  BuyContinue(token, actions)         -> { continues, progress } | { error }   (+5 moves once out of moves)
+	  ClaimHeartGifts()                   -> { claimed, from, progress } | { error }  (neighbors' hearts into empty ones)
 
 	Farm hooks in ServerStorage:
 	  CropPopLevelWon (BindableEvent, fired)     (player, levelId, rewards, firstWin) after a verified win
@@ -17,6 +18,14 @@
 	  CropPopGetSave  (BindableFunction, ours)   (player) -> puzzleBlock, for the farm's saves
 	  CropPopSpendGems (BindableFunction, farm's) (player, amount, reason) -> boolean
 	  CropPopGetGems   (BindableFunction, farm's, optional) (player) -> number, for "Not enough 💎" states
+
+	Neighbor hooks in ServerStorage (the caller checks the two are neighbors):
+	  CropPopGiftHeart       (BindableFunction, ours) (fromPlayer, toUserId) -> (ok, message?)
+	                           one heart into their gift box; message is for the sender
+	  CropPopHeartGiftStatus (BindableFunction, ours) (player) -> { sentTo = { userId }, left, perDay }
+
+	Gift boxes live in the CropPopHeartGifts DataStore so they reach players who
+	are offline or on another server; Studio keeps them in memory.
 ]]
 
 local Players = game:GetService("Players")
@@ -24,6 +33,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
+local GiftInbox = require(script.Parent.GiftInbox)
 local RunStore = require(script.Parent.RunStore)
 
 local SAVE_WAIT_SECONDS = 10 -- play with a fresh state if the farm hasn't loaded a save by then
@@ -53,6 +63,21 @@ local function getGems(userId: number): number?
 	return if ok and type(gems) == "number" then gems else nil
 end
 
+-- Studio keeps gift boxes in memory, so tests never touch real saves.
+local function giftInbox()
+	if RunService:IsStudio() then
+		return GiftInbox.memory()
+	end
+	local ok, store = pcall(function()
+		return game:GetService("DataStoreService"):GetDataStore("CropPopHeartGifts")
+	end)
+	if not ok then
+		warn("[CropPop] no gift box store:", store)
+		return GiftInbox.memory()
+	end
+	return GiftInbox.dataStore(store)
+end
+
 local random = Random.new()
 local store = RunStore.new({
 	clock = os.clock,
@@ -66,6 +91,7 @@ local store = RunStore.new({
 	unlockAll = RunService:IsStudio(),
 	devActions = RunService:IsStudio(), -- the "Dev: 1 move" button
 	autoLoad = false,
+	giftInbox = giftInbox(),
 })
 
 local remotes = Instance.new("Folder")
@@ -105,6 +131,7 @@ end
 getSave.Parent = ServerStorage
 
 remote("GetProgress", function(player)
+	store:refreshGifts(player.UserId)
 	local progress = store:getProgress(player.UserId)
 	progress.unlockAll = store.unlockAll
 	return progress
@@ -147,6 +174,41 @@ remote("BuyContinue", function(player, token, moves)
 	return reply(result, err)
 end)
 
+remote("ClaimHeartGifts", function(player)
+	return reply(store:claimGifts(player.UserId))
+end)
+
+-- What the sender sees when a gift doesn't go.
+local GIFT_MESSAGES = {
+	["already sent today"] = "You already sent them a heart today.",
+	["no gifts left today"] = "You've sent all your hearts for today.",
+	["their gift box is full"] = "Their gift box is full.",
+	["that's you"] = "You can't send a heart to yourself.",
+	["loading"] = "Still loading, try again in a moment.",
+}
+
+local giftHeart = Instance.new("BindableFunction")
+giftHeart.Name = "CropPopGiftHeart"
+giftHeart.OnInvoke = function(fromPlayer, toUserId)
+	local ok, result, err = pcall(store.sendHeart, store, fromPlayer.UserId, toUserId)
+	if not ok then
+		warn("[CropPop] heart gift failed for", fromPlayer.Name, result)
+		return false, "Couldn't send the heart, try again later."
+	end
+	if not result then
+		return false, GIFT_MESSAGES[err] or "Couldn't send the heart, try again later."
+	end
+	return true, string.format("Heart sent! %d left today.", result.left)
+end
+giftHeart.Parent = ServerStorage
+
+local giftStatus = Instance.new("BindableFunction")
+giftStatus.Name = "CropPopHeartGiftStatus"
+giftStatus.OnInvoke = function(player)
+	return store:giftStatus(player.UserId)
+end
+giftStatus.Parent = ServerStorage
+
 -- Studio only: empty the hearts so the refill offer can be checked quickly.
 if RunService:IsStudio() then
 	remote("DevEmptyHearts", function(player)
@@ -154,6 +216,9 @@ if RunService:IsStudio() then
 	end)
 	remote("DevAddBoosters", function(player, count)
 		return reply(store:devAddBoosters(player.UserId, if type(count) == "number" then math.clamp(count, 1, 10) else 5))
+	end)
+	remote("DevGiftHeart", function(player)
+		return reply(store:devGiftSelf(player.UserId))
 	end)
 end
 

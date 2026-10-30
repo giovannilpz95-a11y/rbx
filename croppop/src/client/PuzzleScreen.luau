@@ -256,7 +256,7 @@ local function buildUi()
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
 	-- Studio only: empty the hearts to check the refill offer.
-	local devNoHearts, devEditor, devLock, devBoosters = nil, nil, nil, nil
+	local devNoHearts, devEditor, devLock, devBoosters, devGift = nil, nil, nil, nil, nil
 	if RunService:IsStudio() then
 		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
 		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
@@ -268,6 +268,9 @@ local function buildUi()
 		-- And +5 of every booster, for checks that need a lot of them.
 		devBoosters = button(levelSelect, "DevBoosters", "Dev +5🎒", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.01, 0.03))
 		devBoosters.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+		-- And a heart gift from a pretend neighbor, to check claiming.
+		devGift = button(levelSelect, "DevGift", "Dev 🎁", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.82, 0.03))
+		devGift.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
 	-- End-of-level panel.
@@ -414,6 +417,7 @@ local function buildUi()
 		devEditor = devEditor,
 		devLock = devLock,
 		devBoosters = devBoosters,
+		devGift = devGift,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -775,6 +779,40 @@ local function addHeartShop()
 	end
 end
 
+local function claimGifts()
+	local result = invoke("ClaimHeartGifts")
+	if result.error then
+		ui.status.Text = "Couldn't open your gifts: " .. tostring(result.error)
+		fetchProgress()
+		renderTrail()
+		return
+	end
+	setProgress(result.progress)
+	renderTrail()
+	ui.status.Text = string.format("+%d ❤️ from your neighbors!", result.claimed)
+	Sfx.event("Open")
+end
+
+-- Hearts neighbors sent, at the top of the list: a Claim button when some fit.
+local function addGiftRow()
+	local gifts = progress and progress.gifts
+	if not gifts or (gifts.waiting or 0) <= 0 then
+		return
+	end
+	local name = "Gifts"
+	if (gifts.claimable or 0) > 0 then
+		local b = button(ui.list, name, string.format("🎁 Claim %d ❤️ from neighbors", gifts.claimable), UDim2.new(1, -10, 0, 52), UDim2.new())
+		b.LayoutOrder = -1
+		b.BackgroundColor3 = Color3.fromRGB(214, 72, 92)
+		b.Activated:Connect(claimGifts)
+		return
+	end
+	local why = if (gifts.claimedToday or 0) >= (gifts.claimPerDay or 0) then "more tomorrow" else "they'll fill empty hearts"
+	local note = label(ui.list, name, string.format("🎁 %d ❤️ from neighbors waiting (%s)", gifts.waiting, why), UDim2.new(1, -10, 0, 36), UDim2.new())
+	note.LayoutOrder = -1
+	note.TextWrapped = true
+end
+
 renderTrail = function()
 	for _, child in ui.list:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -782,6 +820,7 @@ renderTrail = function()
 		end
 	end
 	ui.heartsLine.Text = heartsText()
+	addGiftRow()
 	addHeartShop()
 	local highest = progress and progress.highestBeaten or 0
 	local unlockAll = progress and progress.unlockAll and not devLocked
@@ -1340,6 +1379,9 @@ local function ensureUi()
 		ui.devBoosters.Activated:Connect(function()
 			PuzzleScreen.debugAddBoosters()
 		end)
+		ui.devGift.Activated:Connect(function()
+			PuzzleScreen.debugGiftHeart()
+		end)
 		ui.devLock.Activated:Connect(function()
 			devLocked = not devLocked
 			ui.devLock.Text = if devLocked then "Dev 🔓" else "Dev 🔒"
@@ -1493,6 +1535,20 @@ function PuzzleScreen.debugAddBoosters()
 		return
 	end
 	local result = invoke("DevAddBoosters", 5)
+	if not result.error then
+		setProgress(result)
+	end
+	if ui.select.Visible then
+		renderTrail()
+	end
+end
+
+-- Studio only: a heart gift from a pretend neighbor (the "Dev 🎁" button).
+function PuzzleScreen.debugGiftHeart()
+	if not RunService:IsStudio() or current then
+		return
+	end
+	local result = invoke("DevGiftHeart")
 	if not result.error then
 		setProgress(result)
 	end

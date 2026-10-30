@@ -18,6 +18,16 @@ Hearts.Packs = {
 	{ count = 5, gems = 36 },
 }
 
+-- Heart gifts between neighbors. Township lets co-op members send lives on
+-- request (township.fandom.com Match-3 page) but gives no numbers, so these
+-- are first-pass. A gift only fills an empty heart; the rest wait in the box.
+Hearts.Gifts = {
+	SEND_PER_DAY = 10, -- hearts a player can send each day, one per neighbor
+	CLAIM_PER_DAY = 5, -- hearts a player can take from their gift box each day
+	BOX_MAX = 20, -- gifts waiting in a box; more are refused until some are claimed
+	KEEP_DAYS = 7, -- unclaimed gifts expire after this
+}
+
 export type State = {
 	count: number,
 	updatedAt: number, -- when the current refill countdown started
