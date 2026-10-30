@@ -97,7 +97,10 @@ function QuarryService.claimFree(player: Player): (boolean, string?)
 	local now = Clock.now()
 	local given = Quarry.claimFree(data, DailyRules.utcDay(now), now)
 	if given == 0 then
-		return false
+		return false,
+			if Quarry.isRestored(data, now)
+				then "You've taken today's free Pickaxes. Come back tomorrow."
+				else "The Quarry isn't open yet."
 	end
 	NetService.toast(player, string.format("%d free Pickaxes", given))
 	return true

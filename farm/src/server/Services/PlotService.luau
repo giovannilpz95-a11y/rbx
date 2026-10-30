@@ -1137,7 +1137,8 @@ local function refreshFactory(
 	if smoke then
 		smoke.Enabled = busy
 	end
-	local glow = building:FindFirstChild("OvenGlow", true) :: BasePart?
+	-- The Bakery's oven and the Smelters' furnace mouths light up while they work
+	local glow = (building:FindFirstChild("OvenGlow", true) or building:FindFirstChild("FurnaceGlow", true)) :: BasePart?
 	if glow then
 		glow.Material = if busy then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	end
