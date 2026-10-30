@@ -149,6 +149,14 @@ function Profile.template(): { [string]: any }
 			period = -1, -- restock window of `bought`
 			bought = {}, -- slot index (string) -> true
 		},
+		quarry = { -- the Quarry (shared/Quarry); readyAt is set when reopening starts
+			seed = 0,
+			rows = {}, -- row (string) -> bitmask of dug cells
+			hits = {}, -- "row:col" -> hits a Stone block has taken
+			freeDay = -1,
+		},
+		oreShed = {}, -- ore id -> qty; no cap and no Barn space (shared/Quarry)
+		buildingLevels = {}, -- building id -> Tinker's Guild upgrade level (Features/F01), unused yet
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
 		social = { -- visiting, Helping Hands and boosts (shared/Social)

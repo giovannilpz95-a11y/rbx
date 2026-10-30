@@ -30,6 +30,8 @@ local OrderGen = require("../src/shared/OrderGen")
 local Pen = require("../src/shared/Pen")
 local Profile = require("../src/shared/Profile")
 local Progression = require("../src/shared/Progression")
+local Quarry = require("../src/shared/Quarry")
+local QuarryConfig = require("../src/shared/Config/Quarry")
 local Recipes = require("../src/shared/Config/Recipes")
 local Records = require("../src/shared/Records")
 local Missing = require("../src/shared/Missing")
@@ -362,6 +364,112 @@ test("the content bank stays locked at the live cap", function()
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
 	end
 	eq(Recipes.FarmBurger.inputs.Tomatoes, 1, "Farm Burger uses the bank's Tomatoes")
+end)
+
+test("the Quarry: Township's numbers, a fixed shaft and Pickaxe digging", function()
+	eq(QuarryConfig.unlockLevel, 21, "opens at 21")
+	eq(QuarryConfig.restoreCost, 3000, "3,000 Coins to reopen")
+	eq(QuarryConfig.restoreSeconds, 30 * 3600, "1 d 6 h")
+	eq(QuarryConfig.ores.CopperOre.sellPrice, 8, "Copper Ore sells for 8")
+	local data = Profile.migrate(nil) :: any
+	eq(data.quarry.readyAt, nil, "closed on a new farm")
+	eq(next(data.oreShed), nil, "empty Ore Shed")
+	local ok1, why = Quarry.canDig(data, 1, 1, 0)
+	eq(ok1, false, "can't dig before it reopens")
+	ok(why ~= nil, "says why")
+	Quarry.restore(data, 100, 12345)
+	eq(Quarry.pickaxes(data), QuarryConfig.restoreGift, "opening Pickaxes")
+	eq(Quarry.isRestored(data, 100 + QuarryConfig.restoreSeconds - 1), false, "still reopening")
+	local now = 100 + QuarryConfig.restoreSeconds
+	eq(Quarry.isRestored(data, now), true, "open")
+	-- The same seed always gives the same shaft
+	local seed = data.quarry.seed
+	for row = 1, 40 do
+		for col = 1, QuarryConfig.width do
+			local a, b = Quarry.cell(seed, row, col), Quarry.cell(seed, row, col)
+			eq(a.block, b.block, "fixed block")
+			eq(a.find, b.find, "fixed find")
+		end
+	end
+	-- Bedrock never sits beside Bedrock, and every row has room to dig
+	for row = 1, 300 do
+		local free = 0
+		for col = 1, QuarryConfig.width do
+			if Quarry.cell(seed, row, col).block == "Bedrock" then
+				ok(Quarry.cell(seed, row, col + 1).block ~= "Bedrock", "no Bedrock pair across")
+				ok(Quarry.cell(seed, row + 1, col).block ~= "Bedrock", "no Bedrock pair down")
+				eq(Quarry.cell(seed, row, col).find, nil, "Bedrock holds nothing")
+			else
+				free += 1
+			end
+		end
+		ok(free > 0, "row " .. row .. " can be dug")
+	end
+	-- Deeper ores only below their depth
+	local seen: { [string]: number } = {}
+	for row = 1, 400 do
+		for col = 1, QuarryConfig.width do
+			local find = Quarry.cell(seed, row, col).find
+			if find and QuarryConfig.ores[find] then
+				ok(row >= QuarryConfig.ores[find].fromDepth, find .. " not above its depth")
+				seen[find] = (seen[find] or 0) + 1
+			end
+		end
+	end
+	for _, id in Quarry.ORE_IDS do
+		ok((seen[id] or 0) > 0, id .. " turns up somewhere in 400 m")
+	end
+	ok(seen.CopperOre > seen.GoldOre, "copper is commoner than gold")
+	-- Digging: only next to an open spot, Stone takes two swings, a Pickaxe a swing
+	eq((Quarry.canDig(data, 2, 1, now)), false, "row 2 is out of reach from the surface")
+	local col = 1
+	while Quarry.cell(seed, 1, col).block == "Bedrock" do
+		col += 1
+	end
+	local cell = Quarry.cell(seed, 1, col)
+	local before = Quarry.pickaxes(data)
+	local result = Quarry.dig(data, 1, col)
+	if cell.block == "Stone" then
+		eq(result.cleared, false, "Stone stands after one swing")
+		eq(Quarry.isOpen(data.quarry, 1, col), false, "not open yet")
+		result = Quarry.dig(data, 1, col)
+	end
+	eq(result.cleared, true, "dug out")
+	eq(Quarry.isOpen(data.quarry, 1, col), true, "open")
+	eq(Quarry.depth(data.quarry), 1, "1 m down")
+	local swings = if cell.block == "Stone" then 2 else 1
+	local gift = if result.pickaxes then result.pickaxes else 0
+	eq(Quarry.pickaxes(data), before - swings + gift, "a Pickaxe per swing")
+	eq((Quarry.canDig(data, 1, col, now)), false, "already open")
+	ok(Quarry.inReach(data.quarry, 2, col), "the cell below is in reach")
+	-- Ore lands in the Ore Shed, never the Barn
+	local oreRow, oreCol
+	for row = 1, 60 do
+		for c = 1, QuarryConfig.width do
+			if Quarry.cell(seed, row, c).find == "CopperOre" and not oreRow then
+				oreRow, oreCol = row, c
+			end
+		end
+	end
+	local copy = Profile.deepCopy(data)
+	copy.quarry.rows[tostring(oreRow - 1)] = 0xFFF -- open the row above it
+	local items = Profile.deepCopy(copy.inventory.items)
+	local swing = Quarry.dig(copy, oreRow, oreCol)
+	if not swing.cleared then
+		swing = Quarry.dig(copy, oreRow, oreCol)
+	end
+	eq(swing.find, "CopperOre", "found Copper Ore")
+	eq(copy.oreShed.CopperOre, 1, "in the Ore Shed")
+	eq(swing.xp, QuarryConfig.ores.CopperOre.xp, "ore XP")
+	eq(copy.inventory.items.CopperOre, items.CopperOre, "not in the Barn")
+	-- Out of Pickaxes
+	data.toolShed.items.Pickaxe = 0
+	local _, noPick = Quarry.canDig(data, 2, col, now)
+	ok(noPick ~= nil, "needs a Pickaxe")
+	-- The day's free Pickaxes, once a day
+	eq(Quarry.claimFree(data, 7, now), QuarryConfig.dailyFree, "free Pickaxes")
+	eq(Quarry.claimFree(data, 7, now), 0, "once a day")
+	eq(Quarry.claimFree(data, 8, now), QuarryConfig.dailyFree, "next day")
 end)
 
 test("level rewards", function()
