@@ -20,6 +20,8 @@ local ArtBuildings = require("../src/shared/Art/Buildings")
 local ArtCommunity = require("../src/shared/Art/Community")
 local ArtCrops = require("../src/shared/Art/Crops")
 local ArtDecor = require("../src/shared/Art/Decor")
+local ArtMarket = require("../src/shared/Art/Market")
+local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
 local ArtFolk = require("../src/shared/Art/Folk")
@@ -369,6 +371,98 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		local top = ArtMotion.harvestPath(from, to, 0.25)
 		ok(top.Y > from.Y + 2, "hops up first")
 		ok(ArtMotion.cropSway(1.3).Position:FuzzyEq(Vector3.zero, 1e-6), "sway only rotates")
+	end)
+
+	test("art: train set and Market stall build within budget", function()
+		local function hinged(root: Instance, name: string)
+			local found = 0
+			for _, d in root:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == name then
+					found += 1
+					ok(typeof(d:GetAttribute("HingeCFrame")) == "CFrame", name .. " has a hinge")
+				end
+			end
+			ok(found > 0, name .. " exists")
+		end
+		local function inside(root: Instance, half: Vector3, what: string)
+			Kit.eachPart(root, function(p)
+				local c = p.CFrame.Position
+				ok(
+					math.abs(c.X) <= half.X and math.abs(c.Z) <= half.Z,
+					what .. ": " .. p.Name .. " inside its footprint"
+				)
+			end)
+		end
+
+		local m = Instance.new("Model")
+		local station, board, crane = ArtRail.station(m, CFrame.new())
+		eq(station.Name, "TrainStation", "station model")
+		eq(board.Name, "DepartureBoard", "departure board")
+		ok(crane:IsDescendantOf(station), "crane belongs to the station")
+		within(m, ArtRail.STATION_PARTS_MAX, "Train Station")
+		paletteRules(m, "Train Station")
+		inside(m, ArtRail.STATION_SIZE / 2, "Train Station")
+		hinged(crane, "Jib")
+		hinged(station, "ClockHand")
+
+		local e = Instance.new("Model")
+		ArtRail.engine(e, CFrame.new())
+		within(e, ArtRail.ENGINE_PARTS_MAX, "Engine")
+		paletteRules(e, "Engine")
+		ok(e:FindFirstChild("Stack", true) ~= nil, "engine has a smokestack for puffs")
+
+		local c = Instance.new("Model")
+		local car, sign = ArtRail.cargoCar(c, CFrame.new())
+		eq(sign.Name, "ItemSign", "cargo car sign")
+		local base = Kit.countParts(c)
+		for n = 0, ArtRail.CAR_CRATES do
+			ArtRail.setCarCrates(car, n)
+			eq(Kit.countParts(c), base + n, n .. " crates shown")
+		end
+		ArtRail.setCarCrates(car, 9)
+		eq(Kit.countParts(c), base + ArtRail.CAR_CRATES, "never more than the slots")
+		within(c, ArtRail.CAR_PARTS_MAX, "Cargo car")
+		paletteRules(c, "Cargo car")
+
+		local h = Instance.new("Model")
+		ArtRail.helpCrate(h, CFrame.new())
+		within(h, ArtRail.HELPCRATE_PARTS_MAX, "Help Crate")
+		hinged(h, "HelpFlag")
+		for _, kind in ArtRail.TRACK_TYPES do
+			local t = Instance.new("Model")
+			ArtRail.track(kind, t, CFrame.new())
+			within(t, ArtRail.TRACK_PARTS_MAX, kind .. " track")
+			paletteRules(t, kind .. " track")
+			inside(t, Vector3.new(ArtRail.TRACK_LENGTH / 2, 0, 4), kind .. " track")
+		end
+		local x = Instance.new("Model")
+		ArtRail.track("Crossing", x, CFrame.new())
+		hinged(x, "Barrier")
+
+		local s = Instance.new("Model")
+		local stall, price = ArtMarket.stall(s, CFrame.new(), "Teal")
+		eq(price.Name, "PriceBoard", "stall price board")
+		within(s, ArtMarket.STALL_PARTS_MAX, "Market stall")
+		paletteRules(s, "Market stall")
+		inside(s, ArtMarket.STALL_SIZE / 2, "Market stall")
+		for i = 1, ArtMarket.SLOTS do
+			ok(ArtMarket.slot(stall, i) ~= nil, "stall slot " .. i)
+		end
+		ok(ArtMarket.slot(stall, ArtMarket.SLOTS + 1) == nil, "no slot past the last")
+		for name, color in ArtMarket.COLORS do
+			ArtMarket.setStallColor(stall, name)
+			local painted = 0
+			for _, d in stall:GetDescendants() do
+				if d:IsA("BasePart") and d.Name == "Awning" and d.Color == color then
+					painted += 1
+				end
+			end
+			eq(painted, 4, name .. " awning stripes")
+		end
+		local p = Instance.new("Model")
+		ArtMarket.pennant(p, CFrame.new())
+		within(p, ArtMarket.PENNANT_PARTS_MAX, "pennant")
+		hinged(p, "Pennant")
 	end)
 
 	test("art: Town Hall, locked land, Puzzle Porch, townsfolk and pickups", function()

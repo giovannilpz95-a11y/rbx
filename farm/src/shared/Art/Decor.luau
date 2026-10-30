@@ -180,6 +180,148 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			)
 		end
 	end,
+	-- Level 13+ decorations (Model List - Town & Factories §7, P1)
+	SteppingStones = function(b)
+		for i, spot in { at(-0.9, 0, -1), at(0.8, 0, 0.1), at(-0.6, 0, 1.2) } do
+			local w = 1.6 - i * 0.15
+			b.post(
+				"Stone",
+				0.22,
+				w,
+				spot + Vector3.new(0, LIFT + 0.11, 0),
+				if i == 2 then Palette.stoneLight else Palette.stone,
+				QUIET
+			)
+		end
+	end,
+	FarmLane = function(b)
+		b.block("Lane", Vector3.new(3.9, 0.2, 3.9), at(0, LIFT + 0.1, 0), Palette.path, QUIET)
+		for _, x in { -1, 1 } do
+			b.block("Rut", Vector3.new(0.55, 0.22, 3.9), at(x, LIFT + 0.11, 0), Palette.soilLight, QUIET)
+		end
+	end,
+	RailFence = function(b)
+		for _, x in { -1.7, 1.7 } do
+			b.block("Post", Vector3.new(0.5, 2.6, 0.5), at(x, 1.3, 0), Palette.woodDark, SOLID)
+			b.block("Cap", Vector3.new(0.6, 0.2, 0.6), at(x, 2.7, 0), Palette.cocoa, QUIET)
+		end
+		for _, y in { 1, 2 } do
+			b.block("Rail", Vector3.new(3.6, 0.35, 0.25), at(0, y, 0), Palette.wood, QUIET)
+		end
+	end,
+	StoneWall = function(b)
+		b.block("Wall", Vector3.new(4, 1.6, 1.4), at(0, 0.8, 0), Palette.stone, SOLID)
+		b.block("Coping", Vector3.new(4, 0.35, 1.6), at(0, 1.78, 0), Palette.stoneLight, QUIET)
+		-- a few odd-sized face stones, staggered like a dry-stone course
+		for i, s in { { -1.2, 0.35, 1.3 }, { 0.2, 0.35, 1.1 }, { 1.4, 1.05, 0.9 } } do
+			b.block(
+				"Stone",
+				Vector3.new(s[3], 0.5, 0.2),
+				at(s[1], s[2], -0.71),
+				if i == 2 then Palette.stoneDark else Palette.stoneLight,
+				QUIET
+			)
+		end
+		b.ball("Moss", 0.8, at(-1.6, 1.9, -0.3), Palette.leafLight, QUIET)
+	end,
+	PottedFlowers = function(b)
+		for i, spot in { at(-0.9, 0, 0.4), at(0.9, 0, -0.5) } do
+			local h = 1.4 - (i - 1) * 0.4
+			b.post("Pot", h, 1.5, spot + Vector3.new(0, h / 2, 0), Palette.brick, SOLID)
+			b.post("Rim", 0.25, 1.75, spot + Vector3.new(0, h, 0), Palette.brick:Lerp(Palette.cream, 0.3), QUIET)
+			b.ball("Leaves", 1.4, spot + Vector3.new(0, h + 0.5, 0), Palette.leafLight, QUIET)
+			b.ball(
+				"Bloom",
+				0.7,
+				spot + Vector3.new(0.2, h + 1.1, -0.2),
+				if i == 1 then Palette.flowerPink else Palette.flowerYellow,
+				QUIET
+			)
+		end
+	end,
+	SunflowerPatch = function(b)
+		b.block("Soil", Vector3.new(3.6, 0.35, 3.6), at(0, 0.18, 0), Palette.soil, QUIET)
+		for i, spot in { at(-1, 0, 0.8), at(1, 0, 0.5), at(0, 0, -0.9) } do
+			local h = 3.4 + i * 0.4
+			b.post("Stalk", h, 0.25, spot + Vector3.new(0, h / 2, 0), Palette.leaf, QUIET)
+			-- the head faces the front (local -Z), nodding down a little
+			local head = CFrame.new(spot + Vector3.new(0, h + 0.2, -0.15))
+				* CFrame.Angles(math.rad(-20), math.rad(90), 0)
+			b.cyl("Petals", 0.25, 1.6, head, Palette.flowerYellow)
+			if i == 3 then
+				b.cyl("Face", 0.3, 0.8, head * CFrame.new(0.05, 0, 0), Palette.soilDark, QUIET)
+			end
+		end
+	end,
+	Scarecrow = function(b)
+		b.post("Pole", 5, 0.35, at(0, 2.5, 0.2), Palette.woodDark, SOLID)
+		b.block("Arms", Vector3.new(3.4, 0.3, 0.3), at(0, 3.6, 0.2), Palette.woodDark, QUIET)
+		b.block("Shirt", Vector3.new(2, 1.7, 0.9), at(0, 3.2, 0), Palette.roofTeal)
+		b.block("Patch", Vector3.new(0.5, 0.5, 0.1), at(0.45, 2.9, -0.47), Palette.roofMustard, QUIET)
+		b.ball("Head", 1.3, at(0, 4.6, 0), Palette.sack)
+		b.post("HatBrim", 0.15, 2, at(0, 5.15, 0), Palette.straw, QUIET)
+		b.post("HatTop", 0.7, 1, at(0, 5.55, 0), Palette.straw, QUIET)
+		for _, x in { -1.75, 1.75 } do
+			b.ball("Straw", 0.5, at(x, 3.6, 0.2), Palette.wheat, QUIET)
+		end
+		b.ball("Crow", 0.6, at(1.3, 3.95, 0.2), Palette.cocoa, QUIET)
+	end,
+	RoundPine = function(b)
+		b.post("Trunk", 2, 1, at(0, 1, 0), Palette.trunk)
+		for i, d in { 5.6, 4.4, 3 } do
+			b.ball("Pine", d, at(0, 1.6 + i * 1.7, 0), if i == 2 then Palette.treeTopDark else Palette.leaf)
+		end
+		b.ball("Cone", 0.5, at(1.2, 3.6, -1.9), Palette.woodDark, QUIET)
+	end,
+	BlossomTree = function(b)
+		Kit.tree(
+			b,
+			"Blossom",
+			at(0, 0, 0),
+			1.2,
+			Palette.flowerPink,
+			Palette.flowerPink:Lerp(Palette.cream, 0.5),
+			Palette.trunk
+		)
+		b.ball("Blossom", 2.6, at(-1.3, 5, -0.5), Palette.flowerPink:Lerp(Palette.plum, 0.15))
+		for _, spot in { at(1.6, 0.12, -1.2), at(-1.4, 0.12, 1.5), at(0.4, 0.12, 2.2) } do
+			b.post("Petals", 0.05, 0.9, spot, Palette.flowerPink, QUIET)
+		end
+	end,
+	Topiary = function(b)
+		b.post("Planter", 1.2, 2.4, at(0, 0.6, 0), Palette.stoneLight, SOLID)
+		b.post("Stem", 1.6, 0.3, at(0, 1.9, 0), Palette.trunk, QUIET)
+		b.ball("Ball", 2.2, at(0, 2.5, 0), Palette.treeTopDark)
+		b.ball("Ball", 1.5, at(0, 4, 0), Palette.treeTop)
+		b.ball("Ball", 0.8, at(0, 5, 0), Palette.treeTopDark, QUIET)
+	end,
+	Birdbath = function(b)
+		b.post("Foot", 0.4, 1.8, at(0, 0.2, 0), Palette.stone, SOLID)
+		b.post("Stem", 2, 0.7, at(0, 1.4, 0), Palette.stoneLight)
+		b.post("Bowl", 0.5, 3, at(0, 2.6, 0), Palette.stoneLight)
+		b.post("Water", 0.1, 2.5, at(0, 2.86, 0), Palette.water, QUIET)
+		b.ball("Bird", 0.55, at(1, 3.1, 0.6), Palette.roofTeal, QUIET)
+		b.ball("Beak", 0.2, at(1, 3.15, 0.3), Palette.beak, QUIET)
+	end,
+	GardenSwing = function(b)
+		for _, x in { -3.4, 3.4 } do
+			for _, z in { -0.9, 0.9 } do
+				b.block(
+					"Leg",
+					Vector3.new(0.35, 5.6, 0.35),
+					CFrame.new(x, 2.7, z * 0.55) * CFrame.Angles(math.rad(z > 0 and 10 or -10), 0, 0),
+					Palette.woodDark,
+					SOLID
+				)
+			end
+		end
+		b.block("Beam", Vector3.new(7.4, 0.4, 0.4), at(0, 5.5, 0), Palette.wood, QUIET)
+		for _, x in { -1.5, 1.5 } do
+			b.block("Rope", Vector3.new(0.1, 3, 0.1), at(x, 3.95, 0), Palette.sack, QUIET)
+		end
+		b.block("Seat", Vector3.new(3.6, 0.3, 1.1), at(0, 2.35, 0), Palette.roofMustard)
+		b.block("Back", Vector3.new(3.6, 1, 0.2), at(0, 2.9, 0.5), Palette.roofMustard:Lerp(Palette.cream, 0.3), QUIET)
+	end,
 }
 
 function ArtDecor.has(id: string): boolean
@@ -187,7 +329,7 @@ function ArtDecor.has(id: string): boolean
 end
 
 function ArtDecor.isPath(id: string): boolean
-	return id == "GravelPath" or id == "BrickPath"
+	return id == "GravelPath" or id == "BrickPath" or id == "SteppingStones" or id == "FarmLane"
 end
 
 -- Builds decoration `id` into `parent`, centred on `origin`.
