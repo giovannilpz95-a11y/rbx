@@ -120,7 +120,7 @@ test("every recipe of an enabled factory can be made in the MVP", function()
 			for input in recipe.inputs do
 				ok(enabled[input], id .. " needs " .. input .. ", which the MVP can't make")
 			end
-			ok(recipe.unlockLevel <= 12, id .. " unlocks past the MVP cap")
+			ok(recipe.unlockLevel <= Levels.built, id .. " unlocks past the content bank")
 			ok(recipe.unlockLevel >= Factories[recipe.factory].unlockLevel, id .. " unlocks before its factory")
 		end
 	end
@@ -162,8 +162,9 @@ test("no item id is both a crop and a recipe", function()
 	end
 end)
 
-test("levels run 1..cap in order", function()
-	eq(#Levels.list, Levels.cap, "level rows")
+test("levels run 1..built in order, and the live cap is within them", function()
+	eq(#Levels.list, Levels.built, "level rows")
+	ok(Levels.cap >= 12 and Levels.cap <= Levels.built, "cap inside the built levels")
 	for i, def in Levels.list do
 		eq(def.level, i, "level order")
 		ok(def.xpToNext > 0, "xp > 0")
@@ -198,6 +199,30 @@ test("level-up gifts are the new crop or feed", function()
 	end
 	eq(Levels.gifts[3].Corn, 4, "Corn at 3")
 	eq(Balance.starterCowFeed, 9, "Cow Feed at 1")
+end)
+
+test("the content bank: XP past the live cap is banked until the cap is raised", function()
+	eq(Levels.list[13].xpToNext, 1935, "L13 row")
+	eq(Levels.list[15].rewardCoins, 500, "L15 coins")
+	local toThirteen = 6231 -- Township total to reach 13
+	eq(Progression.levelFor(toThirteen), Levels.cap, "held at the live cap")
+	Progression.preview(Levels.built)
+	eq(Progression.cap(), Levels.built, "preview opens the bank")
+	eq(Progression.levelFor(toThirteen - 1), 12, "just under 13")
+	eq(Progression.levelFor(toThirteen), 13, "13 once open")
+	eq(Progression.levelFor(999999), Levels.built, "never past the built levels")
+	Progression.preview(99)
+	eq(Progression.cap(), Levels.built, "preview clamps")
+	Progression.preview(nil)
+	eq(Progression.cap(), Levels.cap, "preview off")
+end)
+
+test("the content bank stays locked at the live cap", function()
+	ok(Crops.Strawberries.unlockLevel > Levels.cap, "Strawberries")
+	ok(Recipes.WoolScarf.unlockLevel > Levels.cap, "Wool Scarf")
+	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
+	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
+	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
 end)
 
 test("level rewards", function()
@@ -340,9 +365,10 @@ end)
 
 test("queue slots cost 8 Gems and up, to 7 slots", function()
 	eq(Speedup.nextSlotCost(3, 3), 8, "first extra (Bakery)")
-	eq(Speedup.nextSlotCost(3, 6), 20, "fourth extra")
-	eq(Speedup.nextSlotCost(3, 7), nil, "max")
-	eq(Speedup.nextSlotCost(2, 6), 24, "fifth extra (Sugar Mill)")
+	eq(Speedup.nextSlotCost(3, 5), 16, "third extra")
+	eq(Speedup.nextSlotCost(3, 6), nil, "max 6 until factory upgrades")
+	eq(Speedup.nextSlotCost(2, 5), 20, "fourth extra (Sugar Mill)")
+	eq(Speedup.nextSlotCost(2, 6), nil, "max")
 end)
 
 test("a pen's speed-up prices each producing animal", function()
@@ -405,8 +431,10 @@ test("Township baseline town rows", function()
 	eq(Factories.TextileMill.population, 105, "Textile Mill needs 105")
 	local total = 0
 	for _, def in Town.community do
-		total += def.capBonus
-		ok(def.unlockLevel <= 12, def.id .. " past the MVP")
+		if def.unlockLevel <= 12 then
+			total += def.capBonus
+		end
+		ok(def.unlockLevel <= Levels.built, def.id .. " past the content bank")
 		for material in def.materials do
 			ok(Town.materials[material] ~= nil and Items[material].kind == "Material", def.id .. " " .. material)
 		end
@@ -570,6 +598,23 @@ test("the first-session guide walks the opening loop", function()
 	ok(not Tutorial.freeFinish(data, "Dairy"), "free only while its step is on")
 	eq(Tutorial.current(data).id, "WrapUp", "ends on a tap")
 	eq(#Tutorial.advance(data, 500), 0, "the last step waits for Got it")
+end)
+
+test("the guide moves on when the player does the next step first", function()
+	local data = Profile.migrate(nil) :: any
+	Profile.welcome(data, 100)
+	Tutorial.start(data, 100)
+	-- Harvested two of the three ripe fields and replanted one; the third is still ripe
+	data.fields.F1 = { crop = "Wheat", plantedAt = 110, readyAt = 140 }
+	data.fields.F2 = {}
+	eq(table.concat(Tutorial.advance(data, 110), ","), "Harvest,Plant", "went around the last ripe field")
+	eq(Tutorial.current(data).id, "Ship", "on to the order")
+	-- The replanted Wheat ripens before the order ships: the guide doesn't fall back
+	data.orders.delivered = 1
+	eq(table.concat(Tutorial.advance(data, 200), ","), "Ship", "shipped")
+	eq(Tutorial.current(data).id, "Level2", "next")
+	-- Nothing ahead done: it waits
+	eq(#Tutorial.advance(data, 200), 0, "waits for level 2")
 end)
 
 test("decorations snap to the grid, stay on owned land and don't overlap", function()

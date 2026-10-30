@@ -236,11 +236,41 @@ function Tutorial.start(data: { [string]: any }, now: number)
 	}
 end
 
--- Move past every finished step. Returns the ids of the steps finished, in order.
+-- How many steps ahead advance() looks: a player who did the next thing first (replanted
+-- while one ripe field was still waiting) moves on instead of the card going stale.
+Tutorial.lookahead = 3
+
+-- Index of the first step after the current one, within the lookahead, that is already
+-- done; nil if none. Steps without a goal ("Got it") are never jumped to.
+local function doneAhead(data: { [string]: any }, now: number): number?
+	local current = data.tutorial.step
+	for i = current + 1, math.min(current + Tutorial.lookahead, #Tutorial.steps) do
+		local step = Tutorial.steps[i]
+		if step.done and step.done(data, now) then
+			return i
+		end
+	end
+	return nil
+end
+
+-- Move past every finished step, and past steps the player went around (a later step's goal
+-- is already met). Returns the ids of the steps passed, in order, for the onboarding funnel.
 function Tutorial.advance(data: { [string]: any }, now: number): { string }
 	local finished = {}
 	local step = Tutorial.current(data)
-	while step and step.done and step.done(data, now) do
+	while step and step.done do
+		if not step.done(data, now) then
+			local ahead = doneAhead(data, now)
+			if ahead == nil then
+				break
+			end
+			while data.tutorial.step < ahead do -- the steps went around count as passed
+				table.insert(finished, (Tutorial.current(data) :: Step).id)
+				data.tutorial.step += 1
+			end
+			step = Tutorial.current(data)
+			continue
+		end
 		table.insert(finished, step.id)
 		data.tutorial.step += 1
 		step = Tutorial.current(data)

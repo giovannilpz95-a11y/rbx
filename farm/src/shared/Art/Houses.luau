@@ -420,6 +420,51 @@ TYPES.Townhouse = {
 	end,
 }
 
+-- Garden Villa (content bank, level 14): a wide two-story stone villa under a hipped-look
+-- double gable, with a glass garden room on one side and a round topiary by the door.
+TYPES.GardenVilla = {
+	roof = Palette.roofMustard,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.62, s * 0.75, STORY * 2 - 1
+		local body = walls(b, w, d, h, Palette.stoneLight, -s * 0.12)
+		local t = b.into(body, true)
+		local x0 = -s * 0.12
+		t.block("Band", Vector3.new(w + 0.3, 0.4, d + 0.3), Vector3.new(x0, PLINTH + STORY - 0.4, 0), Palette.cream)
+		Kit.gableRoof(t, "Roof", Vector3.new(x0, PLINTH + h, 0), w + 1.4, d + 1.4, 3.6, roof, Palette.cream)
+		t.post("Chimney", 3.4, 1.4, Vector3.new(x0 - w / 2 + 1.2, PLINTH + h + 2.2, 1.4), Palette.brick)
+		-- Garden room: a low glass box with a cream frame and a flat roof
+		local gx = x0 + w / 2 + s * 0.14
+		t.block("GardenFloor", Vector3.new(s * 0.26, 0.6, d * 0.7), Vector3.new(gx, 0.3, 0.6), Palette.stone)
+		t.block(
+			"GardenGlass",
+			Vector3.new(s * 0.24, 3.6, d * 0.66),
+			Vector3.new(gx, 2.4, 0.6),
+			Palette.glass,
+			{ shadow = false }
+		)
+		t.block("GardenRoof", Vector3.new(s * 0.28, 0.4, d * 0.72), Vector3.new(gx, 4.4, 0.6), Palette.cream)
+		Kit.bush(t, "Plant", Vector3.new(gx, 0.6, 0.6), 0.7, Palette.leaf, Palette.flowerPink)
+		Kit.door(t, "Door", CFrame.new(x0, PLINTH, front(d)), 2.2, 4.4, Palette.roofTeal, Palette.cream)
+		for _, x in { -1, 1 } do
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x0 + x * (w / 2 - 1.3), PLINTH + STORY + 2, front(d)),
+				1.5,
+				2,
+				Palette.cream,
+				Palette.glass,
+				true
+			)
+		end
+		flowerBox(t, CFrame.new(x0, PLINTH + STORY + 0.4, front(d)), 2.6)
+		t.ball("Topiary", 1.8, Vector3.new(x0 - 2.4, 1.6, front(d) - 1.2), Palette.treeTop)
+		t.post("TopiaryPot", 0.8, 1.2, Vector3.new(x0 - 2.4, 0.4, front(d) - 1.2), Palette.brick)
+		Kit.sproutTag(t, Vector3.new(x0 + w / 4, PLINTH + h + 3.4, 0), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)

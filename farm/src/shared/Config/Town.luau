@@ -1,7 +1,7 @@
 --!strict
 -- Houses, Community Buildings and building materials from Design/07 Town Building and
--- Township Baseline Numbers §7-8 (Township baseline; names are ours). Only the rows a
--- level-12 player can reach are listed; the rest arrive with the levels past the MVP cap.
+-- Township Baseline Numbers §7-8 (Township baseline; names are ours). The rows up to level 12,
+-- plus the content bank's (Config/Levels.built); later rows arrive with their updates.
 -- Houses raise Population; Community Buildings raise the Population Cap.
 
 export type HouseDef = {
@@ -41,6 +41,8 @@ local Houses: { [string]: HouseDef } = {
 	Farmhouse = { id = "Farmhouse", displayName = "Farmhouse", population = 25, coinCost = 25, buildSeconds = 1 * HOUR, xp = 25, copyLevels = { 8, 9, 13, 14 }, order = 5, color = { 230, 230, 220 } },
 	Duplex = { id = "Duplex", displayName = "Duplex", population = 30, coinCost = 60, buildSeconds = 1 * HOUR + 30 * MIN, xp = 30, copyLevels = { 10, 11, 15 }, order = 6, color = { 180, 210, 160 } },
 	Townhouse = { id = "Townhouse", displayName = "Brick Townhouse", population = 35, coinCost = 105, buildSeconds = 2 * HOUR, xp = 35, copyLevels = { 12, 13, 16, 17 }, order = 7, color = { 170, 90, 70 } },
+	-- content bank (level 13+)
+	GardenVilla = { id = "GardenVilla", displayName = "Garden Villa", population = 40, coinCost = 160, buildSeconds = 3 * HOUR, xp = 40, copyLevels = { 14, 15, 16, 18 }, order = 8, color = { 215, 210, 195 } },
 }
 
 -- stylua: ignore
@@ -54,6 +56,9 @@ local Community: { [string]: CommunityDef } = {
 	TeaRoom = { id = "TeaRoom", displayName = "Tea Room", unlockLevel = 10, capBonus = 45, coinCost = 125, materials = { Bricks = 2, Planks = 2, Panes = 3 }, buildSeconds = 2 * HOUR, xp = 90, order = 7, color = { 230, 180, 200 } },
 	Library = { id = "Library", displayName = "Library", unlockLevel = 11, capBonus = 50, coinCost = 150, materials = { Bricks = 3, Planks = 3, Panes = 2 }, buildSeconds = 2 * HOUR + 30 * MIN, xp = 100, order = 8, color = { 140, 100, 70 } },
 	Bandstand = { id = "Bandstand", displayName = "Bandstand", unlockLevel = 12, capBonus = 55, coinCost = 175, materials = { Bricks = 4, Planks = 3, Panes = 2 }, buildSeconds = 3 * HOUR, xp = 110, order = 9, color = { 245, 245, 235 } },
+	-- content bank (level 13+); levels 15-16 wait for more Main Street lots
+	ClockTower = { id = "ClockTower", displayName = "Clock Tower", unlockLevel = 13, capBonus = 60, coinCost = 200, materials = { Bricks = 2, Planks = 4, Panes = 4 }, buildSeconds = 3 * HOUR + 30 * MIN, xp = 120, order = 10, color = { 175, 175, 180 } },
+	Greenhouse = { id = "Greenhouse", displayName = "Greenhouse", unlockLevel = 14, capBonus = 65, coinCost = 250, materials = { Bricks = 1, Planks = 6, Panes = 4 }, buildSeconds = 4 * HOUR, xp = 130, order = 11, color = { 180, 220, 210 } },
 }
 
 for _, def in Houses do
