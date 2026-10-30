@@ -31,16 +31,25 @@ local DIFFICULTIES = { "Normal", "Tough", "Super Tough" }
 -- First-pass rewards by difficulty until the economy thread sets them.
 local REWARDS = { Normal = { coins = 25, xp = 5 }, Tough = { coins = 50, xp = 10 }, ["Super Tough"] = { coins = 75, xp = 15 } }
 
--- Paint brushes: layout character, label, cell colour.
-local BRUSHES = {
-	{ char = ".", label = "Cell" },
-	{ char = "#", label = "Hole" },
-	{ char = "m", label = "Mud" },
-	{ char = "M", label = "Mud 2" },
-	{ char = "1", label = "🌾1" },
-	{ char = "2", label = "🌾2" },
-	{ char = "3", label = "🌾3" },
+-- Paint brushes in two rows: layout character and label.
+local BRUSH_ROWS = {
+	Brushes = {
+		{ char = ".", label = "Cell" },
+		{ char = "#", label = "Hole" },
+		{ char = "m", label = "Mud" },
+		{ char = "M", label = "Mud 2" },
+		{ char = "1", label = "🌾1" },
+		{ char = "2", label = "🌾2" },
+		{ char = "3", label = "🌾3" },
+	},
+	MoreBrushes = {
+		{ char = "f", label = "❄️1" },
+		{ char = "F", label = "❄️2" },
+		{ char = "w", label = "🌿 Weed" },
+	},
 }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds" }
+local GOAL_BUTTONS = { Collect = "+ Collect", Mud = "+ Mud", HayBale = "+ Bales", Frost = "+ Frost", Weeds = "+ Weeds" }
 
 local ui = nil
 local state = nil -- the level being edited
@@ -219,6 +228,12 @@ local function cellLook(char: string): (Color3, string)
 		return Colors.mud, ""
 	elseif char == "1" or char == "2" or char == "3" then
 		return Colors.bale, "🌾" .. char
+	elseif char == "f" then
+		return Colors.frost, "❄️"
+	elseif char == "F" then
+		return Colors.frost, "❄️2"
+	elseif char == "w" then
+		return Colors.weed, "🌿"
 	end
 	return Colors.cellLight, ""
 end
@@ -255,6 +270,10 @@ local function goalLabel(goal): string
 		return TileStyle.Glyphs[Tiles.ByName[goal.tile]] .. " " .. goal.tile
 	elseif goal.kind == "Mud" then
 		return "🟫 all mud"
+	elseif goal.kind == "Frost" then
+		return "❄️ all frost"
+	elseif goal.kind == "Weeds" then
+		return "🌿 all weeds"
 	end
 	return "🌾 all bales"
 end
@@ -277,7 +296,10 @@ local function renderPanel()
 		return order
 	end
 
-	local title = row("Title", nextOrder())
+	-- Load, the actions and the status line sit at the top so adding goals
+	-- doesn't push them around (LayoutOrder 2 to 4); the rest follow.
+	local title = row("Title", 1)
+	order = 10
 	textItem("TextLabel", title, "Label", "Level editor", UDim2.new(0.6, 0, 1, 0))
 	button(title, "Close", "Back", UDim2.new(0.35, 0, 1, -4), function()
 		LevelEditor.close()
@@ -304,14 +326,17 @@ local function renderPanel()
 		render()
 	end)
 
-	local brushRow = row("Brushes", nextOrder())
-	for i, brush in BRUSHES do
-		local b = button(brushRow, "Brush" .. brush.char, brush.label, UDim2.new(1 / #BRUSHES, -4, 1, -4), function()
-			state.brush = brush.char
-			render()
-		end)
-		b.LayoutOrder = i
-		b.BackgroundColor3 = if state.brush == brush.char then Colors.accent else Colors.locked
+	for _, rowName in { "Brushes", "MoreBrushes" } do
+		local brushes = BRUSH_ROWS[rowName]
+		local brushRow = row(rowName, nextOrder())
+		for i, brush in brushes do
+			local b = button(brushRow, "Brush" .. brush.char, brush.label, UDim2.new(1 / #BRUSH_ROWS.Brushes, -4, 1, -4), function()
+				state.brush = brush.char
+				render()
+			end)
+			b.LayoutOrder = i
+			b.BackgroundColor3 = if state.brush == brush.char then Colors.accent else Colors.locked
+		end
 	end
 
 	local movesRow = row("Moves", nextOrder())
@@ -342,6 +367,8 @@ local function renderPanel()
 		b.BackgroundTransparency = if on then 0 else 0.5
 	end
 
+	-- The add buttons go above the goals so they stay put as goals are added.
+	local addGoalOrder = nextOrder()
 	for i, goal in state.goals do
 		local goalRow = row("Goal" .. i, nextOrder())
 		local label = button(goalRow, "Kind", goalLabel(goal), UDim2.fromOffset(120, ROW_HEIGHT - 4), function()
@@ -365,9 +392,9 @@ local function renderPanel()
 			render()
 		end)
 	end
-	local addRow = row("AddGoal", nextOrder())
-	for _, kind in { "Collect", "Mud", "HayBale" } do
-		button(addRow, "Add" .. kind, "+ " .. (if kind == "HayBale" then "Bales" else kind), UDim2.new(1 / 3, -4, 1, -4), function()
+	local addRow = row("AddGoal", addGoalOrder)
+	for _, kind in GOAL_KINDS do
+		button(addRow, "Add" .. kind, GOAL_BUTTONS[kind], UDim2.new(1 / #GOAL_KINDS, -4, 1, -4), function()
 			if #state.goals >= 3 then
 				setStatus("3 goals at most.")
 				return
@@ -381,7 +408,7 @@ local function renderPanel()
 		end)
 	end
 
-	local loadRow = row("Load", nextOrder())
+	local loadRow = row("Load", 2)
 	stepper(loadRow, "LoadId", "Level " .. state.loadId, function(d)
 		state.loadId = math.clamp(state.loadId + d, 1, #Levels.List)
 		render()
@@ -394,12 +421,12 @@ local function renderPanel()
 		render()
 	end)
 
-	local actions = row("Actions", nextOrder())
+	local actions = row("Actions", 3)
 	button(actions, "TestPlay", "Test play", UDim2.new(1 / 3, -4, 1, -4), LevelEditor.testPlay)
 	button(actions, "BotCheck", "Bot check", UDim2.new(1 / 3, -4, 1, -4), LevelEditor.botCheck)
 	button(actions, "Export", "Export", UDim2.new(1 / 3, -4, 1, -4), LevelEditor.export)
 
-	local statusRow = row("StatusRow", nextOrder(), 2)
+	local statusRow = row("StatusRow", 4, 2)
 	local status = textItem("TextLabel", statusRow, "Status", state.status or "", UDim2.new(1, 0, 1, 0))
 	status.TextWrapped = true
 	status.TextColor3 = Colors.accent

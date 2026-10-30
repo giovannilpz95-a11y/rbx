@@ -31,6 +31,8 @@ return table.freeze({
 	Order_SkipWait = "Order_SkipWait", -- slotIndex: a new card now (Gems)
 	Barn_Sell = "Barn_Sell", -- itemId, qty
 	Barn_Upgrade = "Barn_Upgrade", -- (the next upgrade)
+	Shop_Prompt = "Shop_Prompt", -- product key (server looks up the id and prompts)
+	Shop_PromptPass = "Shop_PromptPass", -- game pass key
 	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
 	Prize_Shelve = "Prize_Shelve", -- basket index -> Prize Shelf
 	Prize_Unshelve = "Prize_Unshelve", -- shelf slot -> basket

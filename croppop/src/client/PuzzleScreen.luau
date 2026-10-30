@@ -255,12 +255,15 @@ local function buildUi()
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
 	-- Studio only: empty the hearts to check the refill offer.
-	local devNoHearts, devEditor = nil, nil
+	local devNoHearts, devEditor, devLock = nil, nil, nil
 	if RunService:IsStudio() then
 		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
 		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 		devEditor = button(levelSelect, "DevEditor", "Dev: Editor", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.02, 0.87))
 		devEditor.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+		-- Studio unlocks every level; this shows the Trail as a real player sees it.
+		devLock = button(levelSelect, "DevLock", "Dev 🔒", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.91, 0.03))
+		devLock.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
 	-- End-of-level panel.
@@ -405,6 +408,7 @@ local function buildUi()
 		closeSelect = closeSelect,
 		devNoHearts = devNoHearts,
 		devEditor = devEditor,
+		devLock = devLock,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -702,6 +706,7 @@ end
 -- The Trail ------------------------------------------------------------------------
 
 local renderTrail -- forward declaration
+local devLocked = false -- Studio: show the Trail locked to real progress
 
 local function buyHearts(packIndex: number, b: TextButton)
 	local pack = Hearts.Packs[packIndex]
@@ -774,7 +779,7 @@ renderTrail = function()
 	ui.heartsLine.Text = heartsText()
 	addHeartShop()
 	local highest = progress and progress.highestBeaten or 0
-	local unlockAll = progress and progress.unlockAll
+	local unlockAll = progress and progress.unlockAll and not devLocked
 	for _, level in Levels.List do
 		-- Show a few locked levels ahead, not the whole trail.
 		if not unlockAll and level.id > highest + 1 + LOCKED_AHEAD then
@@ -1299,6 +1304,11 @@ local function ensureUi()
 			if PuzzleScreen.onDevEditor then
 				PuzzleScreen.onDevEditor()
 			end
+		end)
+		ui.devLock.Activated:Connect(function()
+			devLocked = not devLocked
+			ui.devLock.Text = if devLocked then "Dev 🔓" else "Dev 🔒"
+			renderTrail()
 		end)
 		-- Same thing from the keyboard: L.
 		UserInputService.InputBegan:Connect(function(input, gameProcessed)
