@@ -422,7 +422,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ok(#merge > 0, id .. " has parts to merge")
 			ok(ArtMerge.count(m, body) <= 3, id .. " merges down to 3 parts or fewer")
 		end
-		for id in Town.community do
+		for id, def in Town.community do
+			if def.townHallStorey then
+				continue -- builds onto the Town Hall
+			end
 			local m = Instance.new("Model")
 			local body = ArtCommunity.build(id, m, CFrame.new(), 12)
 			ok(ArtMerge.count(m, body) <= 8, id .. " merges down to 8 parts or fewer")
