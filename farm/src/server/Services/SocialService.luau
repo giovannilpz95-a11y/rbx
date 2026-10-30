@@ -213,6 +213,12 @@ end
 local function moveTo(player: Player, target: CFrame?)
 	local character = player.Character
 	if character and target then
+		-- With streaming on, load the ground there first so the avatar doesn't land in nothing
+		if typeof(player) == "Instance" then
+			pcall(function()
+				player:RequestStreamAroundAsync(target.Position, 3)
+			end)
+		end
 		character:PivotTo(target)
 	end
 end

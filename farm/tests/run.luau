@@ -230,7 +230,21 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 20, "levels 17 to 20 are banked")
+	eq(Levels.built, 22, "levels 17 to 22 are banked")
+	eq(Levels.list[22].xpToNext, 9011, "L22 row")
+	ok(table.find(Balance.enabledCrops, "Potatoes") ~= nil and Crops.Potatoes.unlockLevel == 22, "Potatoes at 22")
+	eq(Levels.gifts[22].Potatoes, 3, "Potatoes to start with")
+	eq(Recipes.PotatoChips.inputs.Potatoes, 2, "Potato Chips")
+	eq(Recipes.PumpkinPie.inputs.Butter, 1, "Pumpkin Pie")
+	eq(Town.houses.LakesideManor.copyLevels[1], 22, "Lakeside Manor")
+	eq(
+		Lots.community[TownRules.communityLot("PuppetTheatre") :: number].land,
+		Lots.farCornersLand,
+		"Puppet Theatre in the Far Corners"
+	)
+	eq(Levels.list[21].xpToNext, 7813, "L21 row")
+	eq(Recipes.StrawberryYogurt.factory, "Dairy", "Strawberry Yogurt")
+	eq(Recipes.StrawberryIcePop.factory, "IceCreamParlor", "Strawberry Ice Pop")
 	eq(Levels.list[20].xpToNext, 6736, "L20 row")
 	eq(Recipes.IceCreamCone.factory, "IceCreamParlor", "Ice Cream Cone")
 	eq(Recipes.PatchworkQuilt.inputs.Yarn, 1, "Patchwork Quilt")
@@ -258,7 +272,7 @@ test("the content bank stays locked at the live cap", function()
 		ok(table.find(Balance.enabledFactories, Recipes[id].factory) ~= nil, id .. "'s factory is enabled")
 	end
 	eq(Town.houses.ThatchedLonghouse.copyLevels[1], 17, "Thatched Longhouse")
-	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower", "RoseGarden" } do
+	for _, id in { "Bathhouse", "ArtStudio", "MusicHall", "StargazingTower", "RoseGarden", "SeedExchange" } do
 		local def = Town.community[id]
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
@@ -471,8 +485,8 @@ end)
 test("North Lane opens more lots once the North Fields are cleared", function()
 	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
 	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
-	eq(#Lots.houses, 48, "House lots with North Lane")
-	eq(#Lots.community, 17, "Community lots with North Lane")
+	eq(#Lots.houses, 64, "House lots with North Lane and the Far Corners")
+	eq(#Lots.community, 23, "Community lots with North Lane and the Far Corners")
 	local data = Profile.migrate(nil) :: any
 	data.level = 16
 	eq(TownRules.houseLotCount(data, 0), 32, "Main Street only")
@@ -521,11 +535,19 @@ test("every lot sits on the plot, on its land, clear of the streets and the othe
 			local box = { lot.x - size / 2, lot.z - size / 2, lot.x + size / 2, lot.z + size / 2, what .. " " .. i }
 			ok(box[1] >= -96 and box[3] <= 96 and box[2] >= -96 and box[4] <= 96, box[5] .. " on the plot")
 			if lot.land > 0 then
-				local rect = Land.rects[lot.land]
-				ok(
-					box[1] >= rect.minX and box[3] <= rect.maxX and box[2] >= rect.minZ and box[4] <= rect.maxZ,
-					box[5] .. " inside its land"
-				)
+				local inside = false
+				for _, rect in Land.rects do -- an expansion can clear more than one rectangle
+					if
+						rect.stage == lot.land
+						and box[1] >= rect.minX
+						and box[3] <= rect.maxX
+						and box[2] >= rect.minZ
+						and box[4] <= rect.maxZ
+					then
+						inside = true
+					end
+				end
+				ok(inside, box[5] .. " inside its land")
 			end
 			table.insert(boxes, box)
 		end
@@ -536,7 +558,7 @@ test("every lot sits on the plot, on its land, clear of the streets and the othe
 	local streets = {
 		{ -92, 71, 92, 79, "Main Street" },
 		{ -4, 48, 4, 96, "gate road" },
-		{ -46, lane - 4, 46, lane + 4, "North Lane" },
+		{ -Lots.northLane.halfWidth, lane - 4, Lots.northLane.halfWidth, lane + 4, "North Lane" },
 		{ link - 4, lane + 4, link + 4, -48, "North Lane link" },
 	}
 	local function overlaps(a, b)

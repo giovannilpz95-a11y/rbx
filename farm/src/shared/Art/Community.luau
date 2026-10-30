@@ -610,6 +610,74 @@ TYPES.RoseGarden = function(b, s)
 	return body
 end
 
+-- Seed Exchange (content bank, level 21): a sage-green market hall with a mustard gable roof,
+-- a seed-sack counter out front, and a giant seed packet on the gable as its sign.
+TYPES.SeedExchange = function(b, s)
+	local w, d, h = s * 0.7, s * 0.55, 5
+	local body = hall(b, w, d, h, Palette.leafLight:Lerp(Palette.cream, 0.4))
+	local t = b.into(body, true)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.8, Palette.roofMustard)
+	Kit.door(t, "Door", CFrame.new(w / 4, PLINTH, -d / 2), 2.2, 3.8, Palette.woodDark, Palette.cream)
+	Kit.window(t, "Window", CFrame.new(-w / 4, PLINTH + 2.8, -d / 2), 2, 2, Palette.cream, Palette.glass)
+	-- Sign object: a seed packet (paper, a picture band and a sprout) on the gable
+	local packet = Vector3.new(0, PLINTH + h + 1.1, -d / 2 - 0.65)
+	t.block("Packet", Vector3.new(2, 2.6, 0.3), packet, Palette.cream, { shadow = false })
+	t.block(
+		"PacketBand",
+		Vector3.new(2.02, 0.9, 0.32),
+		packet + Vector3.new(0, -0.5, 0),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	t.ball("PacketSeed", 0.7, packet + Vector3.new(0, 0.5, -0.2), Palette.lime, { shadow = false })
+	-- The counter out front, with seed sacks on it
+	local counter = Vector3.new(-w / 4, 0, -d / 2 - 1.6)
+	t.block("Counter", Vector3.new(3.2, 1.4, 1.2), counter + Vector3.new(0, 0.7, 0), Palette.wood)
+	for i, x in { -0.8, 0.8 } do
+		t.ball("SeedSack", 1.1, counter + Vector3.new(x, 1.8, 0), if i == 1 then Palette.sack else Palette.straw)
+	end
+	Kit.bush(t, "Bush", Vector3.new(w / 2 + 0.8, 0.3, -d / 2 + 0.6), 0.9, Palette.treeTop, Palette.flowerYellow)
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1.2, PLINTH + h + 1.2, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Puppet Theatre (content bank, level 22): a little crimson theatre with a gold-trimmed gable,
+-- a stage window between two drawn curtains, and a giant marionette dangling over the door.
+TYPES.PuppetTheatre = function(b, s)
+	local w, d, h = s * 0.72, s * 0.6, 5.6
+	local body = hall(b, w, d, h, Palette.barnRed)
+	local t = b.into(body, true)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 3, Palette.plum)
+	t.block("Trim", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h - 0.25, 0), Palette.coins)
+	-- The stage: a cream opening framed by two curtains
+	local face = -d / 2
+	t.block("Stage", Vector3.new(4, 2.6, 0.3), Vector3.new(-w / 6, PLINTH + 2.6, face - 0.15), Palette.cream)
+	for _, x in { -1.6, 1.6 } do
+		t.block(
+			"Curtain",
+			Vector3.new(1, 2.8, 0.3),
+			Vector3.new(-w / 6 + x, PLINTH + 2.6, face - 0.3),
+			Palette.roofRed,
+			{ shadow = false }
+		)
+	end
+	Kit.door(t, "Door", CFrame.new(w / 3, PLINTH, face), 1.8, 3.6, Palette.woodDark, Palette.coins)
+	-- Sign object: a marionette on strings from a crossbar on the gable
+	local bar = Vector3.new(0, PLINTH + h + 1.4, face - 0.7)
+	t.block("Crossbar", Vector3.new(2.4, 0.3, 0.3), bar, Palette.woodDark, { shadow = false })
+	t.block("String", Vector3.new(0.08, 1.2, 0.08), bar + Vector3.new(0, -0.7, 0), Palette.cream, { shadow = false })
+	t.ball("PuppetHead", 0.9, bar + Vector3.new(0, -1.6, 0), Palette.skinTan, { shadow = false })
+	t.block(
+		"PuppetBody",
+		Vector3.new(0.9, 1.2, 0.5),
+		bar + Vector3.new(0, -2.6, 0),
+		Palette.flowerYellow,
+		{ shadow = false }
+	)
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1.2, PLINTH + h + 1.2, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)

@@ -2,8 +2,9 @@
 -- Lots for Houses and Community Buildings, in plot-local studs (+Z is south, toward the gate;
 -- Design/07 Town Building). Main Street, between the gate and the Ring Road, holds the
 -- level 1-14 town. North Lane, in the North Fields (land expansion 3), takes the content
--- bank's buildings once Main Street is full. Houses take the first free lot; a Community
--- Building stands on the lot of its `order`.
+-- bank's buildings once Main Street is full, and runs on into the Far Corners (expansion 4)
+-- for the level 22+ lots. Houses take the first free lot; a Community Building stands on the
+-- lot its `order` gives it (TownRules.communityLot).
 -- Each lot says which way its front faces (yaw 0 = local -Z) and which land expansion it
 -- needs (0 = none). Plain numbers so the shared rules and tests can use them outside Roblox.
 
@@ -12,7 +13,9 @@ export type Lot = { x: number, z: number, yaw: number, land: number }
 local Lots = {}
 
 Lots.northLaneLand = 3 -- the North Fields
-Lots.northLane = table.freeze({ z = -73, linkX = 12 }) -- the lane, and the road up to it
+Lots.farCornersLand = 4 -- both north corners
+-- The lane (x -halfWidth..halfWidth), and the road up to it
+Lots.northLane = table.freeze({ z = -73, linkX = 12, halfWidth = 92 })
 
 local houses: { Lot } = {}
 local community: { Lot } = {}
@@ -52,6 +55,16 @@ for _, x in { 0, 24, -10, 34, -20, 44, -30, -40 } do
 end
 for _, x in { 6, 21, -9, 36, -24, -39 } do
 	table.insert(community, table.freeze({ x = x, z = -86, yaw = 180, land = LAND }))
+end
+
+-- The Far Corners: the same rows on North Lane's two ends, the lots nearest the middle first
+local CORNERS = Lots.farCornersLand
+for _, x in { 56, -56, 66, -66, 76, -76, 86, -86 } do
+	table.insert(houses, table.freeze({ x = x, z = -64, yaw = 0, land = CORNERS }))
+	table.insert(houses, table.freeze({ x = x, z = -54, yaw = 180, land = CORNERS }))
+end
+for _, x in { 55, -55, 70, -70, 85, -85 } do
+	table.insert(community, table.freeze({ x = x, z = -86, yaw = 180, land = CORNERS }))
 end
 
 Lots.houses = table.freeze(houses)
