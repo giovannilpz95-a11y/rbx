@@ -18,6 +18,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local TelemetryService = require(script.Parent.TelemetryService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local FactoryService = {}
@@ -73,6 +74,7 @@ function FactoryService.build(player: Player, factoryId: any): (boolean, string?
 	factory.built = true
 	factory.constructionReadyAt = Clock.now() + Clock.duration(def.buildSeconds)
 	EconomyService.add(player, "XP", def.xp, "build_" .. factoryId)
+	TelemetryService.custom(player, "FactoryBuilt", 0, factoryId)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	return true

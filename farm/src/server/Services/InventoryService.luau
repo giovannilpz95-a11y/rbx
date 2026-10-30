@@ -6,11 +6,13 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local BarnRules = require(Shared.BarnRules)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
+local PrizeRules = require(Shared.Prize)
 local Shop = require(Shared.Shop)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local NetService = require(script.Parent.NetService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local InventoryService = {}
 
@@ -30,9 +32,10 @@ function InventoryService.space(player: Player): number
 	return math.max(0, Shop.barnCapacity(data) - InventoryService.used(data))
 end
 
+-- Barn units plus Prize Basket units of that crop (a Prize Crop counts as a normal one)
 function InventoryService.count(player: Player, item: string): number
 	local data = DataService.get(player)
-	return if data then data.inventory.items[item] or 0 else 0
+	return if data then (data.inventory.items[item] or 0) + PrizeRules.basketCount(data, item) else 0
 end
 
 function InventoryService.has(player: Player, wants: { [string]: number }): boolean
@@ -55,6 +58,7 @@ function InventoryService.add(player: Player, items: { [string]: number }): bool
 		total += qty
 	end
 	if total > InventoryService.space(player) then
+		TelemetryService.custom(player, "StorageFull", Shop.barnCapacity(data), "Barn", true)
 		return false
 	end
 	for item, qty in items do
@@ -70,9 +74,14 @@ function InventoryService.remove(player: Player, items: { [string]: number }): b
 	if data == nil or not InventoryService.has(player, items) then
 		return false
 	end
+	-- Barn units first; Prize Crops only cover what the Barn is short
 	for item, qty in items do
-		local left = data.inventory.items[item] - qty
+		local fromBarn = math.min(qty, data.inventory.items[item] or 0)
+		local left = (data.inventory.items[item] or 0) - fromBarn
 		data.inventory.items[item] = if left > 0 then left else nil
+		if fromBarn < qty then
+			PrizeRules.take(data, item, qty - fromBarn)
+		end
 	end
 	DataService.markDirty(player)
 	return true
@@ -86,9 +95,12 @@ function InventoryService.sell(player: Player, itemId: any, qty: any): (boolean,
 	if item == nil or item.sellPrice <= 0 then
 		return false
 	end
-	if not InventoryService.remove(player, { [itemId] = qty }) then
+	-- Barn units only: Prize Crops sell at the Prize Stand instead
+	local data = DataService.get(player)
+	if data == nil or (data.inventory.items[itemId] or 0) < qty then
 		return false, "You don't have that many"
 	end
+	InventoryService.remove(player, { [itemId] = qty })
 	EconomyService.add(player, "Coins", item.sellPrice * qty, "sell_" .. itemId)
 	return true
 end
