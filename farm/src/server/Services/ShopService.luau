@@ -15,6 +15,7 @@ local Shop = require(Shared.Shop)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local NetService = require(script.Parent.NetService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local ShopService = {}
 
@@ -29,6 +30,8 @@ local function grant(player: Player, data: { [string]: any }, product: Products.
 	EconomyService.add(player, "Gems", product.gems, "robux_" .. product.key, "IAP")
 	for tool, qty in product.tools or {} do
 		data.toolShed.items[tool] = (data.toolShed.items[tool] or 0) + qty
+		local balance = data.toolShed.items[tool]
+		TelemetryService.economy(player, "Tools", "Source", qty, balance, "robux_" .. product.key, "IAP", tool .. "s")
 	end
 	if product.once then
 		data.purchases.bought[product.key] = true
@@ -72,6 +75,7 @@ local function processReceipt(receipt: { [string]: any }): Enum.ProductPurchaseD
 		return Enum.ProductPurchaseDecision.NotProcessedYet
 	end
 	NetService.popup(player, { kind = "Purchase", key = product.key, name = product.displayName, gems = product.gems })
+	TelemetryService.shopGranted(player)
 	NetService.pushState(player)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
@@ -87,6 +91,7 @@ function ShopService.prompt(player: Player, key: any): (boolean, string?)
 		return false, reason
 	end
 	MarketplaceService:PromptProductPurchase(player, Products.products[key].productId)
+	TelemetryService.shopPrompted(player)
 	return true
 end
 
@@ -103,6 +108,7 @@ function ShopService.promptPass(player: Player, key: any): (boolean, string?)
 		return false, "Already yours"
 	end
 	MarketplaceService:PromptGamePassPurchase(player, pass.passId)
+	TelemetryService.shopPrompted(player)
 	return true
 end
 

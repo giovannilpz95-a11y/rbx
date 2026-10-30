@@ -1521,6 +1521,9 @@ function Panels.open(name: string, arg: string?)
 	end
 	current = name
 	currentArg = arg
+	if name == "Shop" then
+		Remotes.fire("Shop_Opened") -- analytics: Shop funnel step 1
+	end
 	-- One-row panels get a short frame instead of the full-size one
 	frame.Size = if COMPACT[name] then UDim2.new(0.9, 0, 0, COMPACT[name]) else FULL_SIZE
 	if not frame.Visible then
