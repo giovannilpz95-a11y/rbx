@@ -21,4 +21,5 @@ return {
 	Replay = require(script.Replay),
 	Rng = require(script.Rng),
 	Tiles = require(script.Tiles),
+	TrailChest = require(script.TrailChest),
 }

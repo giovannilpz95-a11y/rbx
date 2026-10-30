@@ -615,6 +615,8 @@ test("the Studio Dev: Lock button shows the Trail as a real player sees it", fun
 	PuzzleScreen.open()
 	local select = playerGui.CropPop.Backdrop.LevelSelect
 	truthy(select.List:FindFirstChild("Level100"), "Studio unlocks every level")
+	truthy(string.find(select.List.Level10.Text, "🎁", 1, true), "chest levels show a 🎁")
+	falsy(string.find(select.List.Level11.Text, "🎁", 1, true))
 	select.DevLock.Activated:Fire()
 	local highest = serverProgress().highestBeaten
 	truthy(select.List:FindFirstChild("Level" .. (highest + 5)), "the next 4 locked levels show")
