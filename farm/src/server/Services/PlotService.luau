@@ -720,6 +720,59 @@ end
 -- Visuals that follow the data
 ---------------------------------------------------------------------------------------------
 
+-- A one-off burst of confetti from `at` (land clearing, a finished build).
+local function confettiBurst(at: BasePart, count: number)
+	local confetti = Instance.new("ParticleEmitter")
+	confetti.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Palette.roofMustard),
+		ColorSequenceKeypoint.new(0.5, Palette.flowerPink),
+		ColorSequenceKeypoint.new(1, Palette.lime),
+	})
+	confetti.Size = NumberSequence.new(0.5, 0.2)
+	confetti.Lifetime = NumberRange.new(0.8, 1.4)
+	confetti.Speed = NumberRange.new(14, 22)
+	confetti.SpreadAngle = Vector2.new(60, 60)
+	confetti.Acceleration = Vector3.new(0, -30, 0)
+	confetti.Rate = 0
+	confetti.Parent = at
+	confetti:Emit(count)
+end
+
+-- The build-finished pop (16 §3.1 scaffold): the seed on top bursts open in confetti while
+-- the poles, planks and Builder drop away, then the scaffold goes. Only when a build finishes
+-- while someone is there; on join a finished building simply has no scaffold.
+local POP_SECONDS = 0.7
+local function finishPop(scaffold: Instance, parent: Instance?)
+	scaffold.Name = "ScaffoldPop" -- lookups for a live "Scaffold" no longer find it
+	if parent then
+		scaffold.Parent = parent
+	end
+	local seed = scaffold:FindFirstChild("Seed", true) :: BasePart?
+	for _, d in scaffold:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanQuery = false
+			local goal = if d == seed
+				then { Size = d.Size * 2.4, Transparency = 1 }
+				else { CFrame = d.CFrame * CFrame.new(0, -d.Size.Y * 0.6, 0), Transparency = 1 }
+			TweenService:Create(
+				d,
+				TweenInfo.new(
+					POP_SECONDS,
+					if d == seed then Enum.EasingStyle.Back else Enum.EasingStyle.Quad,
+					if d == seed then Enum.EasingDirection.Out else Enum.EasingDirection.In
+				),
+				goal
+			):Play()
+		end
+	end
+	if seed then
+		confettiBurst(seed, 50)
+	end
+	task.delay(POP_SECONDS + 1.5, function()
+		scaffold:Destroy()
+	end)
+end
+
 -- Show or remove a construction scaffold around a building. `holder` must carry the
 -- "BaseCFrame" attribute (its bottom-centre, front at local -Z).
 local function setScaffold(holder: Instance, show: boolean, w: number, d: number, h: number)
@@ -732,7 +785,7 @@ local function setScaffold(holder: Instance, show: boolean, w: number, d: number
 			ArtFolk.build("Builder", base * CFrame.new(w / 2 + 1, 0, -d / 2 - 1) * Kit.yaw(-40)).Parent = scaffold
 		end
 	elseif not show and existing then
-		existing:Destroy()
+		finishPop(existing)
 	end
 end
 
@@ -751,6 +804,12 @@ local function townModel(
 )
 	local old = folder:FindFirstChild(name)
 	if old then
+		-- Finished while we watched: the old scaffold pops beside the new building (outside
+		-- it, so the merge below never unions it in)
+		local scaffold = old:FindFirstChild("Scaffold")
+		if scaffold and not building then
+			finishPop(scaffold, folder)
+		end
 		old:Destroy()
 	end
 	local holder = Instance.new("Model")
@@ -883,20 +942,7 @@ local function revealLand(overlay: Instance)
 	local board = overlay:FindFirstChild("Board", true) :: BasePart?
 	local at = board or burstAt
 	if at then
-		local confetti = Instance.new("ParticleEmitter")
-		confetti.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Palette.roofMustard),
-			ColorSequenceKeypoint.new(0.5, Palette.flowerPink),
-			ColorSequenceKeypoint.new(1, Palette.lime),
-		})
-		confetti.Size = NumberSequence.new(0.5, 0.2)
-		confetti.Lifetime = NumberRange.new(0.8, 1.4)
-		confetti.Speed = NumberRange.new(14, 22)
-		confetti.SpreadAngle = Vector2.new(60, 60)
-		confetti.Acceleration = Vector3.new(0, -30, 0)
-		confetti.Rate = 0
-		confetti.Parent = at
-		confetti:Emit(60)
+		confettiBurst(at, 60)
 	end
 	task.delay(REVEAL_SECONDS + 1.5, function()
 		overlay:Destroy()
@@ -1034,7 +1080,10 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	setScaffold(building, underConstruction, 10, 12, 10)
 	Kit.fade(building, fade, function(p)
 		local name = p.Name
-		return name == "OutputTable" or name == "TableTop" or p:FindFirstAncestor("Scaffold") ~= nil
+		return name == "OutputTable"
+			or name == "TableTop"
+			or p:FindFirstAncestor("Scaffold") ~= nil
+			or p:FindFirstAncestor("ScaffoldPop") ~= nil
 	end)
 	-- The client's FactoryMotion turns the factory's moving parts while this is set
 	building:SetAttribute("Busy", busy)
@@ -1104,7 +1153,12 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 	setScaffold(building, underConstruction, 12, 12, 6)
 	for _, child in building:GetChildren() do
 		local name = child.Name
-		if name:sub(1, 7) ~= "Animal_" and name:sub(1, 8) ~= "Product_" and name ~= "Scaffold" then
+		if
+			name:sub(1, 7) ~= "Animal_"
+			and name:sub(1, 8) ~= "Product_"
+			and name ~= "Scaffold"
+			and name ~= "ScaffoldPop"
+		then
 			Kit.fade(child, shell)
 		end
 	end
