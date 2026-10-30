@@ -1,5 +1,7 @@
 --!strict
--- What Robux buy (Design/10 Monetization, first-pass Gem amounts). The MVP sells three Gem
+-- What Robux buy (Design/10 Monetization). Gem amounts match Township's ~33 Gems per 100 R$
+-- (decided 2026-10-30, Wiki Data - Orders & Economy §6) at the planned 49 / 99 / 249 R$ and
+-- the 99 R$ Starter Pack. The MVP sells three Gem
 -- packs, the one-time Starter Pack and the Big Barn game pass. Prices are NOT here: the
 -- client reads each one from Roblox at runtime (regional pricing), never hard-codes it.
 --
@@ -23,16 +25,16 @@ return table.freeze({
 			key = "Handful",
 			displayName = "Handful of Gems",
 			productId = 0,
-			gems = 30,
+			gems = 15, -- 49 R$
 			order = 1,
 		}),
-		Pouch = table.freeze({ key = "Pouch", displayName = "Pouch of Gems", productId = 0, gems = 65, order = 2 }),
-		Sack = table.freeze({ key = "Sack", displayName = "Sack of Gems", productId = 0, gems = 175, order = 3 }),
+		Pouch = table.freeze({ key = "Pouch", displayName = "Pouch of Gems", productId = 0, gems = 31, order = 2 }), -- 99 R$
+		Sack = table.freeze({ key = "Sack", displayName = "Sack of Gems", productId = 0, gems = 80, order = 3 }), -- 249 R$
 		StarterPack = table.freeze({
 			key = "StarterPack",
 			displayName = "Starter Pack",
 			productId = 0,
-			gems = 100,
+			gems = 50, -- 99 R$
 			tools = table.freeze({ Shovel = 1, Axe = 1, Saw = 1 }),
 			once = true,
 			fromLevel = 5,
