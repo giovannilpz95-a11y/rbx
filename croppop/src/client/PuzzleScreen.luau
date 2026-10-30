@@ -256,7 +256,7 @@ local function buildUi()
 	listLayout.Parent = list
 	local closeSelect = button(levelSelect, "Close", "Back to the farm", UDim2.fromScale(0.6, 0.09), UDim2.fromScale(0.2, 0.87))
 	-- Studio only: empty the hearts to check the refill offer.
-	local devNoHearts, devEditor, devLock = nil, nil, nil
+	local devNoHearts, devEditor, devLock, devBoosters = nil, nil, nil, nil
 	if RunService:IsStudio() then
 		devNoHearts = button(levelSelect, "DevNoHearts", "Dev: 0 hearts", UDim2.fromScale(0.16, 0.09), UDim2.fromScale(0.82, 0.87))
 		devNoHearts.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
@@ -265,6 +265,9 @@ local function buildUi()
 		-- Studio unlocks every level; this shows the Trail as a real player sees it.
 		devLock = button(levelSelect, "DevLock", "Dev 🔒", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.91, 0.03))
 		devLock.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
+		-- And +5 of every booster, for checks that need a lot of them.
+		devBoosters = button(levelSelect, "DevBoosters", "Dev +5🎒", UDim2.fromScale(0.08, 0.07), UDim2.fromScale(0.01, 0.03))
+		devBoosters.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
 	end
 
 	-- End-of-level panel.
@@ -410,6 +413,7 @@ local function buildUi()
 		devNoHearts = devNoHearts,
 		devEditor = devEditor,
 		devLock = devLock,
+		devBoosters = devBoosters,
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
@@ -955,6 +959,8 @@ local function chestText(chest): string
 	return string.format("🎁 Trail Chest: %s and %d Coins", table.concat(parts, ", "), chest.coins)
 end
 
+local refreshBoosters -- forward declaration
+
 local function finishRun(run)
 	local status = run.game.status
 	busy = true -- no taps while the server checks
@@ -963,6 +969,11 @@ local function finishRun(run)
 	setProgress(result.progress)
 	if current ~= run then
 		return -- the player left while the server was checking
+	end
+	-- The server's counts now include what was used and any Trail Chest.
+	if result.progress and result.progress.boosters then
+		run.stock = table.clone(result.progress.boosters)
+		refreshBoosters()
 	end
 	if status == "Won" then
 		if result.error then
@@ -1012,8 +1023,7 @@ end
 
 local POWER_NAMES = { Sprayer = "Seed Sprayer", HayBomb = "Hay Bomb", Sunflower = "Sunflower", Bumblebee = "Bumblebee" }
 
-local offerContinue -- forward declarations
-local refreshBoosters
+local offerContinue -- forward declaration
 
 local function buyContinue(run, count: number, step)
 	if not askToSpend("Continue" .. count, step.gems) then
@@ -1327,6 +1337,9 @@ local function ensureUi()
 				PuzzleScreen.onDevEditor()
 			end
 		end)
+		ui.devBoosters.Activated:Connect(function()
+			PuzzleScreen.debugAddBoosters()
+		end)
 		ui.devLock.Activated:Connect(function()
 			devLocked = not devLocked
 			ui.devLock.Text = if devLocked then "Dev 🔓" else "Dev 🔒"
@@ -1466,6 +1479,20 @@ function PuzzleScreen.debugEmptyHearts()
 		return
 	end
 	local result = invoke("DevEmptyHearts")
+	if not result.error then
+		setProgress(result)
+	end
+	if ui.select.Visible then
+		renderTrail()
+	end
+end
+
+-- Studio only: +5 of every booster (the "Dev +5🎒" button on the Trail).
+function PuzzleScreen.debugAddBoosters()
+	if not RunService:IsStudio() or current then
+		return
+	end
+	local result = invoke("DevAddBoosters", 5)
 	if not result.error then
 		setProgress(result)
 	end

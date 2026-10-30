@@ -40,6 +40,12 @@ local walkToken = 0
 local actionHeld = false
 local MIN_ARRIVE = 6 -- with Reach 0 the avatar still has to stand next to the target
 
+-- Set by the social controls: what a tap on something off our plot does (nil: nothing), and
+-- whether the avatar must walk into reach first.
+ReachController.otherTarget = function(_part: BasePart): ((() -> ())?, boolean)
+	return nil, false
+end
+
 local function rootPart(): BasePart?
 	local character = player.Character
 	return character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -283,17 +289,31 @@ local function handleTap(screenPosition: Vector2)
 	params.FilterDescendantsInstances = { player.Character :: Instance }
 	local result = Workspace:Raycast(ray.Origin, ray.Direction * 600, params)
 	local target = result and interactiveFrom(result.Instance)
-	if target == nil or not target:IsDescendantOf(plot :: Model) then
+	if target == nil then
 		return
+	end
+	-- Anything off our own plot (the Town Square boards, a neighbor's fields) belongs to the
+	-- social controls, which say what a tap does and whether it needs the avatar close by.
+	local action: () -> () = function()
+		act(target)
+	end
+	if not target:IsDescendantOf(plot :: Model) then
+		local other, handsOn = ReachController.otherTarget(target)
+		if other == nil then
+			return
+		elseif not handsOn then
+			cancelWalk()
+			other()
+			return
+		end
+		action = other
 	end
 	Panels.close()
 	if inReach(target) then
 		cancelWalk()
-		act(target)
+		action()
 	else
-		autoWalk(target, function()
-			act(target)
-		end)
+		autoWalk(target, action)
 	end
 end
 

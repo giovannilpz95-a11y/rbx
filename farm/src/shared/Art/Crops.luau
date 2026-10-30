@@ -257,4 +257,42 @@ function ArtCrops.hasCustomLook(cropId: string): boolean
 	return READY[cropId] ~= nil
 end
 
+-- The shimmer over a ready Prize Crop (Design/02 Farming, Prize Crops lite): a soft glowing
+-- ring around the bed and a slow drift of sparkles, gold for Sunkissed, gem-teal for
+-- Heirloom. 1 part plus a ParticleEmitter, added to the crop model so it goes when the crop
+-- does. `top` is the bed's top centre; `size` the bed's width.
+ArtCrops.PRIZE_COLORS = {
+	Sunkissed = Palette.coins,
+	Heirloom = Palette.gems,
+}
+
+function ArtCrops.prizeShimmer(crop: Model, tier: string, top: CFrame, size: number): BasePart?
+	local color = ArtCrops.PRIZE_COLORS[tier]
+	if color == nil then
+		return nil
+	end
+	local b = Kit.builder(crop, top, false)
+	local ring = b.post(
+		"PrizeGlow",
+		0.12,
+		size + 0.4,
+		Vector3.new(0, 0.08, 0),
+		color,
+		{ material = Enum.Material.Neon, transparency = 0.55, shadow = false }
+	)
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Name = "PrizeSparkles"
+	sparkles.Color = ColorSequence.new(color, Palette.cream)
+	sparkles.LightEmission = 0.8
+	sparkles.Size = NumberSequence.new(0.35, 0)
+	sparkles.Transparency = NumberSequence.new(0.1, 1)
+	sparkles.Lifetime = NumberRange.new(1, 1.6)
+	sparkles.Rate = if tier == "Heirloom" then 8 else 4
+	sparkles.Speed = NumberRange.new(1.5, 2.5)
+	sparkles.SpreadAngle = Vector2.new(15, 15)
+	sparkles.EmissionDirection = Enum.NormalId.Right -- the post's local X points up
+	sparkles.Parent = ring
+	return ring
+end
+
 return ArtCrops

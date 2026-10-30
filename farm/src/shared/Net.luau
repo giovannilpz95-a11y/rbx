@@ -37,6 +37,13 @@ return table.freeze({
 	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
 	Prize_Shelve = "Prize_Shelve", -- basket index -> Prize Shelf
 	Prize_Unshelve = "Prize_Unshelve", -- shelf slot -> basket
+	Visit_Go = "Visit_Go", -- targetUserId: walk onto a neighbor's plot (teleport to their gate)
+	Visit_Home = "Visit_Home", -- back to your own plot
+	Visit_Square = "Visit_Square", -- to the Town Square
+	Visit_SendHome = "Visit_SendHome", -- visitorUserId: send a visitor off your plot
+	Social_SetPrivacy = "Social_SetPrivacy", -- "Open" | "Friends" | "Closed"
+	Social_SetHelpers = "Social_SetHelpers", -- "Nobody" | "Friends" | "Anyone"
+	Social_SetBlocked = "Social_SetBlocked", -- { userId } from the player's Roblox block list
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)

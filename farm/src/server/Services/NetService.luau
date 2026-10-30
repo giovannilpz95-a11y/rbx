@@ -35,6 +35,7 @@ local limiters: { [Player]: { [string]: RateLimiter.RateLimiter } } = {}
 local pushQueued: { [Player]: boolean } = {}
 local readyPlayers: { [Player]: boolean } = {}
 local onReady: { [Player]: { () -> () } } = {}
+local lastActive: { [Player]: number } = {} -- os.clock() of the player's last handled intent
 
 -- Argument checks used by handlers
 NetService.check = {}
@@ -89,6 +90,7 @@ local function snapshot(data: { [string]: any })
 		tools = data.toolShed.items,
 		prizes = data.prizes,
 		prizeShelf = data.prizeShelf,
+		social = data.social,
 		board = data.orders.board,
 		settings = data.settings,
 		tutorial = data.tutorial,
@@ -143,6 +145,7 @@ function NetService.on(name: string, rate: number, burst: number, handler: Handl
 		if DataService.get(player) == nil then
 			return
 		end
+		lastActive[player] = os.clock()
 		local ok, result, message = pcall(handler, player, ...)
 		if not ok then
 			warn("[NetService]", name, "errored:", result)
@@ -168,6 +171,12 @@ function NetService.isNear(player: Player, position: Vector3, studs: number): bo
 	return Vector3.new(offset.X, 0, offset.Z).Magnitude <= studs
 end
 
+-- Seconds since the player last did anything (any intent the server handled).
+function NetService.idleSeconds(player: Player): number
+	local at = lastActive[player]
+	return if at then os.clock() - at else math.huge
+end
+
 -- Run fn once the player's UI is listening (now, if it already is).
 function NetService.whenReady(player: Player, fn: () -> ())
 	if readyPlayers[player] then
@@ -184,6 +193,7 @@ function NetService.init()
 		pushQueued[player] = nil
 		readyPlayers[player] = nil
 		onReady[player] = nil
+		lastActive[player] = nil
 	end)
 	-- The client asks for its first snapshot once its UI is listening. If the farm is still
 	-- loading, the push after the load delivers it instead.

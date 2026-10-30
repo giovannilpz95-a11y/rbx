@@ -1490,6 +1490,17 @@ end
 
 ---------------------------------------------------------------------------------------------
 
+-- Panels that live in their own files (UI/Social): name -> renderer into the shared window
+local extraPanels: { [string]: (state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?) -> () } =
+	{}
+
+function Panels.register(
+	name: string,
+	renderer: (state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?) -> ()
+)
+	extraPanels[name] = renderer
+end
+
 local function render()
 	local state = ClientStore.state
 	if current == nil or state == nil then
@@ -1521,6 +1532,8 @@ local function render()
 		renderAway()
 	elseif current == "Debug" then
 		renderDebug(state)
+	elseif extraPanels[current] then
+		extraPanels[current](state, body, titleLabel, currentArg)
 	end
 end
 

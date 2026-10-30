@@ -10,15 +10,22 @@ Vector3 = roblox.Vector3
 CFrame = roblox.CFrame
 Color3 = roblox.Color3
 Enum = roblox.Enum
+ColorSequence = roblox.ColorSequence
+NumberSequence = roblox.NumberSequence
+NumberRange = roblox.NumberRange
+Vector2 = roblox.Vector2
 
 local ArtAnimals = require("../src/shared/Art/Animals")
 local ArtBuildings = require("../src/shared/Art/Buildings")
 local ArtCommunity = require("../src/shared/Art/Community")
 local ArtCrops = require("../src/shared/Art/Crops")
+local ArtDecor = require("../src/shared/Art/Decor")
+local Decor = require("../src/shared/Config/Decor")
 local ArtFactories = require("../src/shared/Art/Factories")
 local ArtHouses = require("../src/shared/Art/Houses")
 local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
+local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Crops = require("../src/shared/Config/Crops")
 local Items = require("../src/shared/Items")
 local Kit = require("../src/shared/Art/Kit")
@@ -70,6 +77,17 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: a ready Prize Crop shimmers in its tier's colour", function()
+		for tier in ArtCrops.PRIZE_COLORS do
+			local crop = ArtCrops.build("Wheat", 4, CFrame.new(0, 1, 0), nil)
+			local ring = ArtCrops.prizeShimmer(crop, tier, CFrame.new(0, 1, 0), 8)
+			ok(ring ~= nil and ring:IsDescendantOf(crop), tier .. " ring in the crop model")
+			ok((ring :: BasePart):FindFirstChildOfClass("ParticleEmitter") ~= nil, tier .. " sparkles")
+			eq((ring :: BasePart).CanQuery, false, tier .. " ring lets taps through")
+		end
+		eq(ArtCrops.prizeShimmer(Instance.new("Model"), "Plain", CFrame.new(), 8), nil, "unknown tier")
+	end)
+
 	test("art: crop stages follow growth", function()
 		eq(ArtCrops.stageFor(0, false), 1, "just planted")
 		eq(ArtCrops.stageFor(0.3, false), 2, "sprout")
@@ -107,6 +125,28 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ok(parts.window:IsDescendantOf(m) and parts.chimney:IsDescendantOf(m), id .. " window and chimney")
 			-- The plot puts the table at LAYOUT.factoryOutputOffset (10 studs in front)
 			ok(math.abs(parts.outputTable.CFrame.Position.Z - ArtFactories.TABLE_Z) < 0.01, id .. " table position")
+		end
+	end)
+
+	test("art: every decoration builds inside its footprint and budget", function()
+		for id, def in Decor.items do
+			ok(ArtDecor.has(id), "decoration model for " .. id)
+			local root = Instance.new("Part")
+			root.CanTouch = false
+			ArtDecor.build(id, root, CFrame.new())
+			local max = if ArtDecor.isPath(id) then ArtDecor.PATH_PARTS_MAX else ArtDecor.PARTS_MAX
+			-- Count only the parts under root
+			local n = Kit.countParts(root) - 1
+			ok(n > 0 and n <= max, string.format("%s has %d parts, budget %d", id, n, max))
+			paletteRules(root, id)
+			local hw, hd = def.size[1] * Decor.tile / 2, def.size[2] * Decor.tile / 2
+			Kit.eachPart(root, function(p)
+				if p ~= root then
+					local c = p.CFrame.Position
+					ok(math.abs(c.X) <= hw and math.abs(c.Z) <= hd, id .. ": " .. p.Name .. " inside its footprint")
+					ok(p.CanQuery, id .. ": " .. p.Name .. " can be tapped")
+				end
+			end)
 		end
 	end)
 
@@ -221,6 +261,16 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ArtCommunity.build(id, m, CFrame.new(), 12)
 			within(m, ArtCommunity.PARTS_MAX, id)
 			paletteRules(m, id)
+		end
+	end)
+
+	test("art: the Town Square stays within its budget, with its three boards", function()
+		local m = Instance.new("Model")
+		local square = ArtTownSquare.build(m, CFrame.new())
+		within(square.model, ArtTownSquare.PARTS_MAX, "Town Square")
+		paletteRules(square.model, "Town Square")
+		for _, name in { "Notice", "Neighbors", "Market" } do
+			ok(square.boards[name] ~= nil and square.boards[name].CanQuery, name .. " board is a tap target")
 		end
 	end)
 
