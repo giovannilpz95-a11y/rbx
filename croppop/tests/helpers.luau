@@ -43,6 +43,7 @@ end
 	Overwrites the board from rows of space-separated tokens:
 	  1-6   a tile of that colour          1r 2c 3b 1h  that tile as a power-up
 	  S     Sunflower                      B1 B2 B3     hay bale
+	  W     weed                           1f 2F        frosted tile (1 or 2 layers)
 	  x     filler (a 4/5 checkerboard that never matches on its own)
 	  #     hole (must also be a hole in the layout)
 	Tests use colours 1-3 for the tiles they care about.
@@ -59,17 +60,25 @@ function Helpers.setBoard(pop, rows)
 			else
 				assert(cell, "no cell at " .. x .. "," .. y)
 				cell.bale = 0
+				cell.weed = false
+				cell.frost = 0
 				if token == "x" then
 					cell.piece = board:newPiece(if (x + y) % 2 == 0 then 4 else 5)
 				elseif token == "S" then
 					cell.piece = board:newPiece(0, "Sunflower")
+				elseif token == "W" then
+					cell.piece = nil
+					cell.bale = 1
+					cell.weed = true
 				elseif string.sub(token, 1, 1) == "B" then
 					cell.piece = nil
 					cell.bale = tonumber(string.sub(token, 2)) :: number
 				else
 					local color = tonumber(string.sub(token, 1, 1))
 					assert(color, "bad token " .. token)
-					cell.piece = board:newPiece(color, POWER_SUFFIX[string.sub(token, 2, 2)])
+					local suffix = string.sub(token, 2, 2)
+					cell.piece = board:newPiece(color, POWER_SUFFIX[suffix])
+					cell.frost = if suffix == "f" then 1 elseif suffix == "F" then 2 else 0
 				end
 			end
 		end

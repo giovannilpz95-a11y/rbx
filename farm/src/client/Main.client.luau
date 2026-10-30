@@ -34,6 +34,7 @@ local SHORTCUTS = {
 	[Enum.KeyCode.B] = "Barn",
 	[Enum.KeyCode.F] = "Buildings",
 	[Enum.KeyCode.T] = "Town",
+	[Enum.KeyCode.G] = "Shop",
 	[Enum.KeyCode.Backquote] = "Debug",
 }
 UserInputService.InputBegan:Connect(function(input, processed)

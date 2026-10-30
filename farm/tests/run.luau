@@ -15,6 +15,8 @@ local DailyRules = require("../src/shared/Daily")
 local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
 local Drops = require("../src/shared/Drops")
+local Products = require("../src/shared/Config/Products")
+local Shop = require("../src/shared/Shop")
 local Prize = require("../src/shared/Config/Prize")
 local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
@@ -431,6 +433,33 @@ test("Prize Crops: rare rolls, a 10-slot basket and Prize Stand prices", functio
 	ok((PrizeRules.unshelve(data, 2)), "take one down")
 	eq(#data.prizeShelf, 2, "two left on show")
 	eq(PrizeRules.unshelve(data, 5), false, "no such slot")
+end)
+
+test("the Shop: buy rules, receipt de-duplication and the Big Barn bonus", function()
+	local data = Profile.migrate(nil) :: any
+	eq((Shop.canBuy(data, "Pouch")), false, "no product id yet")
+	eq(select(2, Shop.canBuy(data, "Pouch")), "Coming soon", "says so")
+	eq((Shop.canBuy(data, "Nope")), false, "unknown key")
+	for _, product in Products.products do
+		eq(product.productId, 0, product.key .. " ships as a placeholder")
+		ok(product.gems > 0, product.key .. " gives Gems")
+	end
+	ok(not Shop.processed(data, "r1"), "new receipt")
+	Shop.record(data, "r1", 1)
+	ok(Shop.processed(data, "r1"), "remembered")
+	for i = 2, Products.keepReceipts + 5 do
+		Shop.record(data, "r" .. i, i)
+	end
+	local kept = 0
+	for _ in data.purchases.receipts do
+		kept += 1
+	end
+	eq(kept, Products.keepReceipts, "trimmed to the newest")
+	ok(not Shop.processed(data, "r1"), "oldest dropped")
+	ok(Shop.processed(data, "r" .. (Products.keepReceipts + 5)), "newest kept")
+	eq(Shop.barnCapacity(data), data.inventory.barnCapacity, "no pass")
+	data.purchases.passes.BigBarn = true
+	eq(Shop.barnCapacity(data), data.inventory.barnCapacity + 50, "+50 with Big Barn")
 end)
 
 test("harvests drop tools and materials on one roll, with a pity tool", function()
