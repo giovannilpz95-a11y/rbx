@@ -24,11 +24,14 @@ local Speedup = require(Shared.Speedup)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 local Tutorial = require(Shared.Tutorial)
+local Decor = require(Shared.Config.Decor)
+local DecorRules = require(Shared.DecorRules)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Ui = require(script.Parent.Ui)
+local DecorPlacer = require(script.Parent.Parent.Controllers.DecorPlacer)
 
 local Panels = {}
 
@@ -966,6 +969,50 @@ local function renderTown(state: { [string]: any })
 		Ui.label("All land for now is cleared.", { TextColor3 = Ui.colors.muted, LayoutOrder = order, Parent = body })
 		order += 1
 	end
+
+	heading("Decorations (placed in front of you)")
+	for _, id in sortedKeys(Decor.items) do
+		local def = Decor.items[id]
+		if def.unlockLevel > state.level + 2 then
+			continue
+		end
+		local unlocked = state.level >= def.unlockLevel
+		local card = line(
+			string.format("%s   %d Coins   +%d XP", def.displayName, def.coinCost, def.xp),
+			if unlocked
+				then string.format("%s, %d x %d tiles", def.category, def.size[1], def.size[2])
+				else string.format("Unlocks at level %d", def.unlockLevel)
+		)
+		rightButton(card, "Place", unlocked and state.currencies.Coins >= def.coinCost, function()
+			Panels.close()
+			DecorPlacer.start(id)
+		end)
+	end
+end
+
+-- A placed decoration: turn it or sell it back
+local function renderDecor(state: { [string]: any }, index: number)
+	local placed = state.decor[index]
+	if placed == nil then
+		Panels.close()
+		return
+	end
+	local def = Decor.items[placed.id]
+	titleLabel.Text = def.displayName
+	local line = row(42, 1)
+	Ui.button("Turn", function()
+		Remotes.fire("Decor_Rotate", index)
+	end, { Size = UDim2.fromOffset(100, 30), Parent = line })
+	Ui.button(string.format("Sell for %d Coins", DecorRules.refund(placed.id)), function()
+		Remotes.fire("Decor_Sell", index)
+		Panels.close()
+	end, {
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.fromOffset(180, 30),
+		BackgroundColor3 = Ui.colors.danger,
+		Parent = line,
+	})
 end
 
 local function renderField(state: { [string]: any }, fieldId: string)
@@ -1128,6 +1175,8 @@ local function render()
 		renderField(state, currentArg)
 	elseif current == "Seeds" then
 		renderSeeds(state)
+	elseif current == "Decor" and currentArg then
+		renderDecor(state, tonumber(currentArg) :: number)
 	elseif current == "Away" then
 		renderAway()
 	elseif current == "Debug" then

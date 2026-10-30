@@ -14,6 +14,7 @@ local Panels = require(script.Parent.UI.Panels)
 local WorldLabels = require(script.Parent.UI.WorldLabels)
 local ReachController = require(script.Parent.Controllers.ReachController)
 local MovementController = require(script.Parent.Controllers.MovementController)
+local DecorPlacer = require(script.Parent.Controllers.DecorPlacer)
 
 local player = Players.LocalPlayer
 
@@ -25,6 +26,7 @@ WorldLabels.init()
 Guide.init()
 ReachController.init()
 MovementController.init()
+DecorPlacer.init()
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
 local SHORTCUTS = {
@@ -57,6 +59,7 @@ local function usePlot(model: Model)
 	ReachController.setPlot(model)
 	WorldLabels.setPlot(model)
 	Guide.setPlot(model)
+	DecorPlacer.setPlot(model)
 end
 for _, child in plots:GetChildren() do
 	if isMine(child) then

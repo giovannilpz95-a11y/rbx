@@ -22,6 +22,9 @@ return table.freeze({
 	Town_SpeedUp = "Town_SpeedUp", -- "House", lot | "Community", id | "Land", stage (Gems)
 	Town_BuyMaterial = "Town_BuyMaterial", -- materialId, building or Barn (Gems)
 	Town_Expand = "Town_Expand", -- (the next land expansion)
+	Decor_Place = "Decor_Place", -- decorId, x, z (plot-local studs), quarter turns
+	Decor_Rotate = "Decor_Rotate", -- index in data.decor
+	Decor_Sell = "Decor_Sell", -- index in data.decor
 	Order_Fulfill = "Order_Fulfill", -- slotIndex
 	Order_Discard = "Order_Discard", -- slotIndex
 	Order_SkipWait = "Order_SkipWait", -- slotIndex: a new card now (Gems)
