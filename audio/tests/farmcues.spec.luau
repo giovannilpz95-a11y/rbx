@@ -204,3 +204,8 @@ test("putting a prize crop on the Prize Shelf and taking it back", function()
 	expect.eq(names(FarmCues.diff(inBasket, onShelf)), "DecorPlace")
 	expect.eq(names(FarmCues.diff(onShelf, inBasket)), "DecorRotate")
 end)
+
+test("shop purchases", function()
+	expect.eq(names(FarmCues.popup({ kind = "Purchase", key = "Gems100", name = "Pile of Gems", gems = 100 })), "Purchase,Gem")
+	expect.eq(names(FarmCues.popup({ kind = "Purchase", key = "VIP", name = "Farm Pass" })), "Purchase")
+end)

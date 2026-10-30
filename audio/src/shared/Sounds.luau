@@ -70,6 +70,7 @@ local Sounds: { [string]: Sound } = {
 	PrizeFind = original("prize_find", "Effects", 0.65, { cooldown = 0.5, voices = 1, length = 0.8 }),
 	PrizeHeirloom = original("prize_heirloom", "Effects", 0.75, { cooldown = 1, voices = 1, duck = true, length = 1.5 }),
 	PrizeLost = original("prize_lost", "Effects", 0.45, { cooldown = 0.5, voices = 1, length = 0.6 }),
+	Purchase = original("purchase", "Effects", 0.7, { cooldown = 1, voices = 1, duck = true, length = 0.95 }),
 	CrierBell = original("crier_bell", "Ui", 0.5, { cooldown = 2, voices = 1, length = 1.2 }),
 
 	-- Farm -------------------------------------------------------------------

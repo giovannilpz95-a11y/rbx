@@ -288,6 +288,14 @@ def crier_bell():
     return sequence([(0, ring()), (0.28, ring() * 0.75)])
 
 
+def purchase():
+    # A shop purchase: a bright till-bell "ding-ding", a little marimba lift and a sparkle.
+    ding = lambda f: bell(f, 0.6, 8, ratio=3.01, index=1.0) * 0.5
+    lift = [(0.16 + i * 0.07, marimba(note(n), 0.4) * 0.45) for i, n in enumerate(["C6", "E6", "G6"])]
+    sparkle = [(0.38 + i * 0.05, bell(note(n), 0.5, 8) * 0.22) for i, n in enumerate(["G7", "C8", "E8"])]
+    return sequence([(0, ding(note("A6"))), (0.08, ding(note("E7")))] + lift + sparkle)
+
+
 def plant():
     s = 0.16
     puff = one_pole_lowpass(noise(s), 900) * attack_decay(s, 0.01, 30) * 3
@@ -517,6 +525,7 @@ SOUNDS = {
     "prize_heirloom": prize_heirloom,
     "prize_lost": prize_lost,
     "crier_bell": crier_bell,
+    "purchase": purchase,
     "decor_place": decor_place,
     "decor_rotate": decor_rotate,
     "pop_swap": pop_swap,

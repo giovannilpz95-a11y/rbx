@@ -264,7 +264,7 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 end
 
 -- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order" | "Drop" |
--- "Field" | "BarnUpgrade" | "Prize" | "PrizeLost" | "Crier", ... }).
+-- "Field" | "BarnUpgrade" | "Prize" | "PrizeLost" | "Crier" | "Purchase", ... }).
 function FarmCues.popup(payload: { [string]: any }?): { Cue }
 	local kind = type(payload) == "table" and payload.kind
 	if kind == "LevelUp" then
@@ -277,6 +277,13 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 		return { { sound = if payload.tier == "Heirloom" then "PrizeHeirloom" else "PrizeFind" } }
 	elseif kind == "PrizeLost" then
 		return { { sound = "PrizeLost" } } -- a prize crop, but the Prize Basket was full
+	elseif kind == "Purchase" then
+		-- A shop purchase; a Gem pack adds the Gem shimmer (its snapshot's Gems stay quiet).
+		local cues = { { sound = "Purchase" } }
+		if type(payload.gems) == "number" and payload.gems > 0 then
+			table.insert(cues, { sound = "Gem", delay = 0.45 })
+		end
+		return cues
 	elseif kind == "Crier" then
 		return { { sound = "CrierBell" } } -- news from another player's farm
 	elseif kind == "Drop" or kind == "Field" or kind == "BarnUpgrade" then
