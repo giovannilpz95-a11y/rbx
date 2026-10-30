@@ -10,15 +10,16 @@
 
 return {
 	Board = require(script.Board),
-	Cup = require(script.Cup),
 	Bot = require(script.Bot),
 	Boosters = require(script.Boosters),
+	Cup = require(script.Cup),
 	Engine = require(script.Engine),
 	Goals = require(script.Goals),
 	Hearts = require(script.Hearts),
 	LevelText = require(script.LevelText),
 	Levels = require(script.Levels),
 	Matcher = require(script.Matcher),
+	Race = require(script.Race),
 	Replay = require(script.Replay),
 	Rng = require(script.Rng),
 	ScoreTracks = require(script.ScoreTracks),

@@ -31,6 +31,7 @@ local Motion = TileStyle.Theme.Motion
 
 local Boosters = CropPop.Boosters
 local Cup = CropPop.Cup
+local Race = CropPop.Race
 local Hearts = CropPop.Hearts
 local Levels = CropPop.Levels
 local ScoreTracks = CropPop.ScoreTracks
@@ -47,6 +48,7 @@ local current = nil -- the level being played
 local busy = false
 local trackOpen = false -- the score track's step list is showing on the Trail
 local cupOpen = false -- the Harvest Cup standings are showing on the Trail
+local raceOpen = false -- the Tractor Race rivals are showing on the Trail
 local progress = nil -- the latest hearts / boosters / unlocks from the server
 local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 
@@ -1089,6 +1091,88 @@ local function cupResultText(result): string?
 	return text
 end
 
+-- Tractor Race ------------------------------------------------------------------------
+
+-- The race at the top of the Trail on race weekends; a tap shows the rivals.
+local function addRaceRows()
+	local race = progress and progress.race
+	if not race then
+		return
+	end
+	if not race.running then
+		local note = label(
+			ui.list,
+			"Race",
+			string.format("%s %s: next race in %s (Fri–Sun)", Race.GLYPH, Race.NAME, durationText(since(race.secondsToNext) or 0)),
+			UDim2.new(1, -10, 0, 30),
+			UDim2.new()
+		)
+		note.LayoutOrder = -40
+		return
+	end
+	local left = durationText(since(race.secondsLeft) or 0)
+	local text
+	if race.finished then
+		text = if race.prize
+			then string.format("%s You finished the %s %s! Win a level to race again", Race.GLYPH, Race.NAME, ordinal(race.place or 1))
+			else string.format("%s You finished the %s! Win a level to race again", Race.GLYPH, Race.NAME)
+	elseif race.over then
+		text = string.format("%s %s over: 3 others finished first. Win a level to race again", Race.GLYPH, Race.NAME)
+	elseif not race.entered then
+		text = string.format("%s %s: win a level to join a 4-player race · ends in %s", Race.GLYPH, Race.NAME, left)
+	else
+		text = string.format("%s %s  %d/%d wins · ends in %s", Race.GLYPH, Race.NAME, race.wins, race.target, left)
+	end
+	text ..= string.format("\nFirst to %d wins: %s", Race.WINS, trackRewardText(Race.Places[1]))
+	local row = button(ui.list, "Race", text .. (if raceOpen then "  ▲" else "  ▼"), UDim2.new(1, -10, 0, 60), UDim2.new())
+	row.LayoutOrder = -40
+	row.TextWrapped = true
+	row.TextXAlignment = Enum.TextXAlignment.Left
+	row.BackgroundColor3 = Color3.fromRGB(110, 150, 70)
+	row.Activated:Connect(function()
+		raceOpen = not raceOpen
+		renderTrail()
+		if raceOpen then
+			ui.list.CanvasPosition = Vector2.new()
+		end
+	end)
+	if not raceOpen then
+		return
+	end
+	local rows = race.standings or {}
+	for i, entry in rows do
+		local line = string.format(
+			"%s %s  %d/%d",
+			if entry.finished then "🏁" else "🚜",
+			nameOf(entry.userId),
+			entry.wins,
+			Race.WINS
+		)
+		local r = label(ui.list, "RaceRow" .. i, line, UDim2.new(1, -10, 0, 30), UDim2.new())
+		r.LayoutOrder = -40 + i
+		r.TextXAlignment = Enum.TextXAlignment.Left
+	end
+	if #rows < Race.SIZE then
+		local wait = label(ui.list, "RaceWaiting", string.format("Waiting for %d more racers to join", Race.SIZE - math.max(#rows, 1)), UDim2.new(1, -10, 0, 30), UDim2.new())
+		wait.LayoutOrder = -40 + Race.SIZE + 1
+	end
+end
+
+-- "🚜 7/15 wins in the Tractor Race", or the finish and its prize.
+local function raceResultText(result): string?
+	local r = result.race
+	if not r then
+		return nil
+	end
+	if not r.finished then
+		return string.format("%s %d/%d wins in the %s", Race.GLYPH, r.wins, r.target, Race.NAME)
+	end
+	if r.prize then
+		return string.format("%s You finished the %s %s! %s", Race.GLYPH, Race.NAME, ordinal(r.place), trackRewardText(r.prize))
+	end
+	return string.format("%s You finished the %s!", Race.GLYPH, Race.NAME)
+end
+
 renderTrail = function()
 	for _, child in ui.list:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -1098,6 +1182,7 @@ renderTrail = function()
 	ui.heartsLine.Text = heartsText()
 	addTrackRows()
 	addCupRows()
+	addRaceRows()
 	addGiftRow()
 	addHeartShop()
 	local highest = progress and progress.highestBeaten or 0
@@ -1312,6 +1397,10 @@ local function finishRun(run)
 		local body = rewardText(result.rewards)
 		if result.chest then
 			body ..= "\n" .. chestText(result.chest)
+		end
+		local raceText = raceResultText(result)
+		if raceText then
+			body ..= "\n" .. raceText
 		end
 		local cupText = cupResultText(result)
 		if cupText then
@@ -1697,6 +1786,8 @@ local function ensureUi()
 				PuzzleScreen.debugCup("add")
 			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.E and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugCup("end")
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.T and PuzzleScreen.isOpen() then
+				PuzzleScreen.debugRace()
 			end
 		end)
 	end
@@ -1869,6 +1960,26 @@ function PuzzleScreen.debugGiftHeart()
 	local result = invoke("DevGiftHeart")
 	if not result.error then
 		setProgress(result)
+	end
+	if ui.select.Visible then
+		renderTrail()
+	end
+end
+
+-- Studio only: 5 Tractor Race wins without playing (the T key).
+function PuzzleScreen.debugRace()
+	if not RunService:IsStudio() or current then
+		return
+	end
+	local result = invoke("DevRace")
+	if result.error then
+		ui.status.Text = "Dev race: " .. tostring(result.error)
+	else
+		setProgress(result.progress)
+		local text = raceResultText(result)
+		if text then
+			ui.status.Text = text
+		end
 	end
 	if ui.select.Visible then
 		renderTrail()

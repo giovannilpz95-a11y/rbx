@@ -22,6 +22,7 @@ local function makeStore(start, config)
 		end,
 		unlockAll = true,
 		cups = false, -- its personal goal pays hearts too (see cup.spec)
+		races = false,
 	}
 	for k, v in config or {} do
 		settings[k] = v
