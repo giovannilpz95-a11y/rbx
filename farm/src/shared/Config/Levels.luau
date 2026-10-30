@@ -1,6 +1,9 @@
 --!strict
 -- XP curve and level-up rewards from Township Baseline Numbers §9 (Township baseline).
--- The MVP caps at level 12 (Launch/18 MVP & Roadmap). Level 1's reward is the starting wallet.
+-- Level 1's reward is the starting wallet. `cap` is the live level cap: 12 at launch, raised
+-- by about one a week (Launch/18 MVP & Roadmap §4). Rows and content past it are the content
+-- bank, built ahead and switched on by raising `cap` on update day; `built` is the highest
+-- level whose content exists.
 
 export type LevelDef = {
 	level: number,
@@ -9,7 +12,8 @@ export type LevelDef = {
 	rewardGems: number,
 }
 
-local CAP = 12
+local CAP = 12 -- raise on update day (week 1: 13), never past BUILT
+local BUILT = 16
 
 local rows = {
 	-- level, xpToNext, rewardCoins, rewardGems
@@ -25,6 +29,11 @@ local rows = {
 	{ 10, 963, 300, 0 },
 	{ 11, 1234, 400, 0 },
 	{ 12, 1555, 400, 0 },
+	-- content bank (Update 1+)
+	{ 13, 1935, 400, 0 },
+	{ 14, 2377, 400, 0 },
+	{ 15, 2889, 500, 0 },
+	{ 16, 3478, 500, 0 },
 }
 
 local list: { LevelDef } = {}
@@ -42,5 +51,6 @@ end
 
 return table.freeze({
 	cap = CAP,
+	built = BUILT,
 	list = table.freeze(list),
 })

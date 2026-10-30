@@ -217,7 +217,44 @@ READY.Cotton = function(b)
 	end
 end
 
--- Crops beyond the level-12 MVP: green rows, then rows of fruit in the crop's own color.
+-- Strawberries (level 13): low leafy mounds with white flowers, then the same mounds hung
+-- with fat red berries.
+GROWING.Strawberries = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Mound", Vector3.new(6.2, 0.9, 1.3), Vector3.new(0, 0.75, z), Palette.leaf)
+		for _, x in { -2, 0.2, 2.2 } do
+			b.ball("Flower", 0.6, Vector3.new(x, 1.3, z - 0.3), Palette.cream, { shadow = false })
+		end
+	end
+end
+READY.Strawberries = function(b, color)
+	for i, z in ArtCrops.ROWS do
+		b.block("Mound", Vector3.new(6.4, 1, 1.4), Vector3.new(0, 0.8, z), Palette.leaf)
+		for j, x in { -2.2, 0, 2.2 } do
+			b.ball("Berry", 1.1, Vector3.new(x, 1.2, z - 0.7 + ((i + j) % 2) * 0.2), color)
+		end
+	end
+end
+
+-- Tomatoes (level 15): staked vines, then a tall hedge of vine heavy with round tomatoes.
+GROWING.Tomatoes = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Vine", Vector3.new(6.2, 1.6, 0.9), Vector3.new(0, 1.2, z), Palette.leafLight)
+		for _, x in { -2.6, 2.6 } do
+			b.block("Stake", Vector3.new(0.25, 2.6, 0.25), Vector3.new(x, 1.6, z + 0.5), Palette.wood)
+		end
+	end
+end
+READY.Tomatoes = function(b, color)
+	for i, z in ArtCrops.ROWS do
+		b.block("Vine", Vector3.new(6.4, 2.6, 1), Vector3.new(0, 1.7, z), Palette.leaf)
+		for j, x in { -2.2, 0, 2.2 } do
+			b.ball("Tomato", 1.05, Vector3.new(x, if (i + j) % 2 == 0 then 2.3 else 1.5, z - 0.6), color)
+		end
+	end
+end
+
+-- Crops past the content bank: green rows, then rows of fruit in the crop's own color.
 local function genericGrowing(b: Kit.Builder, _color: Color3)
 	for _, z in ArtCrops.ROWS do
 		b.block("Leaves", Vector3.new(6.2, 1, 1.3), Vector3.new(0, 0.8, z), Palette.leafLight)
