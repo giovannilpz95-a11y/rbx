@@ -9,6 +9,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
@@ -1487,6 +1488,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Build everything (ignores level and Population)", "Debug_BuildAll", 360, 7)
 	devButton("+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
 	devButton("Fuzz every remote with junk (farm restored after)", "Debug_Fuzz", 380, 9)
+	devButton("+1 level (opens the content bank past the cap)", "Debug_LevelUp", 380, 10)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -1542,6 +1544,25 @@ Panels.refresh = render
 
 local FULL_SIZE = UDim2.fromScale(0.9, 0.62)
 local COMPACT: { [string]: number } = { Field = 124 }
+-- Phones in landscape (11 UI & UX, mobile-first) are only ~390 px tall: a centred panel at
+-- 62% showed one row. Below this height the panel fills the space under the HUD's top row,
+-- down to the bottom edge (over the HUD's bottom row: one panel at a time).
+local SHORT_SCREEN = 560
+
+local function layout()
+	local camera = Workspace.CurrentCamera
+	local short = camera ~= nil and camera.ViewportSize.Y < SHORT_SCREEN
+	local compact = if current then COMPACT[current] else nil
+	if short then
+		frame.AnchorPoint = Vector2.new(0.5, 1)
+		frame.Position = UDim2.new(0.5, 0, 1, -6)
+		frame.Size = if compact then UDim2.new(0.9, 0, 0, compact) else UDim2.new(0.9, 0, 1, -70)
+	else
+		frame.AnchorPoint = Vector2.new(0.5, 0.5)
+		frame.Position = UDim2.fromScale(0.5, 0.55)
+		frame.Size = if compact then UDim2.new(0.9, 0, 0, compact) else FULL_SIZE
+	end
+end
 
 function Panels.open(name: string, arg: string?)
 	if name == "Debug" and not RunService:IsStudio() then
@@ -1557,7 +1578,7 @@ function Panels.open(name: string, arg: string?)
 		Remotes.fire("Shop_Opened") -- analytics: Shop funnel step 1
 	end
 	-- One-row panels get a short frame instead of the full-size one
-	frame.Size = if COMPACT[name] then UDim2.new(0.9, 0, 0, COMPACT[name]) else FULL_SIZE
+	layout()
 	if not frame.Visible then
 		Ui.theme.Motion.popIn(frame)
 	end
@@ -1592,9 +1613,7 @@ function Panels.init()
 	-- The window look (ribbon title, round close button, paper inset) comes from the theme
 	local window = Ui.theme.Kit.panel(Panels.close)
 	frame = window.root
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.Position = UDim2.fromScale(0.5, 0.55)
-	frame.Size = FULL_SIZE
+	layout()
 	frame.Visible = false
 	Ui.new("UISizeConstraint", { MaxSize = Vector2.new(480, 420) }).Parent = frame
 	frame.Parent = gui
@@ -1620,6 +1639,16 @@ function Panels.init()
 				render()
 			end
 		end
+	end)
+	-- Rotating a phone or resizing the window re-lays the panel out
+	local function watch(camera: Camera?)
+		if camera then
+			camera:GetPropertyChangedSignal("ViewportSize"):Connect(layout)
+		end
+	end
+	watch(Workspace.CurrentCamera)
+	Workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+		watch(Workspace.CurrentCamera)
 	end)
 end
 

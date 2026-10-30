@@ -724,12 +724,17 @@ test("a pumpkin level shows pumpkins and exit arrows and plays in step", functio
 	truthy(pumpkin.pumpkin)
 	eq(run.view.tiles[pumpkin.id].Face.Text, "🎃")
 	local arrows = 0
-	for _, cell in run.view.cellLayer:GetChildren() do
-		if cell:FindFirstChild("Exit") then
+	for _, item in run.view.baleLayer:GetChildren() do
+		if item.Name == "Exit" then
 			arrows += 1
 		end
 	end
 	eq(arrows, 8, "one under each column")
+	-- Studio's J key plays a move without clicks.
+	local before = run.game.movesMade
+	PuzzleScreen.debugPlayMove()
+	eq(run.game.movesMade, before + 1)
+	eq(#run.moves, before + 1)
 	run = playToEnd(80, false)
 	truthy(run.game.status ~= "Playing")
 	eq(mismatches, 0, "tiles out of step before sync")

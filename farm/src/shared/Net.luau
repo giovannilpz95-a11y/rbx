@@ -49,6 +49,9 @@ return table.freeze({
 	Social_SetBlocked = "Social_SetBlocked", -- { userId } from the player's Roblox block list
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
+	Quest_Claim = "Quest_Claim", -- index: a finished Daily Quest's reward
+	Quest_Reroll = "Quest_Reroll", -- index: swap an unfinished quest (once a day, free)
+	Quest_Chest = "Quest_Chest", -- the bonus chest for all three
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)
@@ -56,6 +59,7 @@ return table.freeze({
 	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
+	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client

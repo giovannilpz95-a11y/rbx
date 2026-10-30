@@ -34,8 +34,8 @@ if RunService:IsStudio() then
 
 	local openButton = Instance.new("TextButton")
 	openButton.Name = "Open"
-	openButton.AnchorPoint = Vector2.new(0, 1)
-	openButton.Position = UDim2.new(0, 16, 1, -16)
+	openButton.AnchorPoint = Vector2.new(1, 0)
+	openButton.Position = UDim2.new(1, -16, 0, 16) -- top right, clear of the farm HUD
 	openButton.Size = UDim2.fromOffset(150, 48)
 	openButton.BackgroundColor3 = TileStyle.Board.accent
 	openButton.TextColor3 = Color3.new(1, 1, 1)

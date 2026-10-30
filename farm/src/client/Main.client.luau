@@ -17,6 +17,7 @@ local ReachController = require(script.Parent.Controllers.ReachController)
 local MovementController = require(script.Parent.Controllers.MovementController)
 local DecorPlacer = require(script.Parent.Controllers.DecorPlacer)
 local FactoryMotion = require(script.Parent.Controllers.FactoryMotion)
+local QuestsUi = require(script.Parent.UI.Quests)
 local SocialUi = require(script.Parent.UI.Social)
 
 local player = Players.LocalPlayer
@@ -32,6 +33,7 @@ MovementController.init()
 DecorPlacer.init()
 task.spawn(FactoryMotion.init)
 SocialUi.init()
+QuestsUi.init()
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
 local SHORTCUTS = {
@@ -40,6 +42,7 @@ local SHORTCUTS = {
 	[Enum.KeyCode.F] = "Buildings",
 	[Enum.KeyCode.T] = "Town",
 	[Enum.KeyCode.G] = "Shop",
+	[Enum.KeyCode.Q] = "Quests",
 	[Enum.KeyCode.Backquote] = "Debug",
 }
 -- Studio only: ] steps through every screen, for phone screenshots in the device emulator
@@ -51,7 +54,8 @@ local TOUR = {
 	{ "Shop", "Shop" },
 	{ "Buildings", "Buildings" },
 	{ "Town", "Town" },
-	{ "Field (F1)", "Field", "F1" },
+	{ "Quests", "Quests" },
+	{ "Seeds (F1)", "Seeds", "F1" },
 	{ "Debug", "Debug" },
 }
 local tourStep = 0

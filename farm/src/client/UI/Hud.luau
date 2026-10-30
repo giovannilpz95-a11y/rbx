@@ -93,6 +93,12 @@ function Hud.popup(payload: { [string]: any })
 		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
 	elseif payload.kind == "Daily" then
 		Hud.toast(string.format("Daily gift, day %d of %d:  %s", payload.day, payload.days, payload.reward))
+	elseif payload.kind == "Quest" then
+		Hud.toast(string.format("Quest done: %s! Claim it in Quests (Q).", payload.text), "celebrate")
+	elseif payload.kind == "QuestClaim" then
+		Hud.toast(string.format("Quest reward:  +%d Coins  +%d XP", payload.coins, payload.xp))
+	elseif payload.kind == "QuestChest" then
+		Hud.toast(string.format("Bonus chest:  +%d Gems!", payload.gems), "celebrate")
 	elseif payload.kind == "Away" then
 		ClientStore.away = payload.lines
 		showPanel("Away")
@@ -288,8 +294,9 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 	local sprint = Ui.button("Sprint", function()
 		ClientStore.setSetting("sprinting", not ClientStore.settings.sprinting)
 	end, {
+		-- Stacked above Use: beside it, the guide card covered it on phones
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -128, 1, -118),
+		Position = UDim2.new(1, -34, 1, -212),
 		Size = UDim2.fromOffset(72, 44),
 		Parent = gui,
 	})

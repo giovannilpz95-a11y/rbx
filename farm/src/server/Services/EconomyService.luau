@@ -43,6 +43,14 @@ local function checkLevelUp(player: Player, data: { [string]: any })
 	end
 end
 
+-- On joining: XP banked at the old level cap levels the player up once the cap is raised
+function EconomyService.checkLevel(player: Player)
+	local data = DataService.get(player)
+	if data then
+		checkLevelUp(player, data)
+	end
+end
+
 -- `transactionType`: an Enum.AnalyticsEconomyTransactionType name ("IAP" for Robux purchases)
 function EconomyService.add(player: Player, currency: string, amount: number, reason: string, transactionType: string?)
 	assert(CURRENCIES[currency], "Unknown currency " .. currency)
