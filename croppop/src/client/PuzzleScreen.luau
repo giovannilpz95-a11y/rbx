@@ -235,7 +235,8 @@ local function buildUi()
 	local selectSize = Instance.new("UISizeConstraint")
 	selectSize.MaxSize = Vector2.new(520, 640)
 	selectSize.Parent = levelSelect
-	label(levelSelect, "Title", "Crop Pop Trail", UDim2.fromScale(0.8, 0.1), UDim2.fromScale(0.1, 0.03))
+	-- Narrow enough to leave the top corners to the Studio Dev buttons.
+	label(levelSelect, "Title", "Crop Pop Trail", UDim2.fromScale(0.62, 0.1), UDim2.fromScale(0.19, 0.03))
 	local heartsLine = label(levelSelect, "Hearts", "", UDim2.fromScale(0.9, 0.06), UDim2.fromScale(0.05, 0.13))
 	local status = label(levelSelect, "Status", "", UDim2.fromScale(0.9, 0.045), UDim2.fromScale(0.05, 0.195))
 	status.TextColor3 = Colors.accentText

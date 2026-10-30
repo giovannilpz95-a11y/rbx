@@ -13,6 +13,9 @@ local function goalText(goal): string
 	if goal.kind == "Collect" then
 		return string.format("{ kind = \"Collect\", tile = %s, count = %d }", quote(goal.tile), goal.count)
 	end
+	if goal.count then
+		return string.format("{ kind = %s, count = %d }", quote(goal.kind), goal.count)
+	end
 	return string.format("{ kind = %s }", quote(goal.kind))
 end
 

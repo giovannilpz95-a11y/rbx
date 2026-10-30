@@ -7,6 +7,9 @@
 	slide in diagonally to fill cells that nothing can reach from above.
 	Frosted tiles stay put: they can't be swapped and don't fall, but they
 	still match.
+	Pumpkins are pieces that never match and can't be blasted: they fall and
+	swap like tiles, and the engine collects them from the bottom cell of a
+	column. Refills drop new ones while `pumpkinsToSpawn` is above 0.
 
 	Everything here is deterministic: loops run in row/column order and all
 	randomness comes from the Rng passed in.
@@ -19,8 +22,9 @@ Board.__index = Board
 
 export type Piece = {
 	id: number,
-	color: number, -- 1..6, 0 for a Sunflower
+	color: number, -- 1..6, 0 for a Sunflower or a pumpkin
 	power: string?, -- see Tiles.Power
+	pumpkin: boolean?,
 }
 
 export type Cell = {
@@ -44,6 +48,8 @@ function Board.new(width: number, height: number)
 		height = height,
 		cells = {},
 		nextId = 1,
+		startPumpkins = {}, -- cells that start with a pumpkin ("p" in the layout)
+		pumpkinsToSpawn = 0, -- set by the engine before each refill
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -74,6 +80,8 @@ function Board.fromLayout(layout: { string })
 					cell.weed = true
 				elseif ch == "1" or ch == "2" or ch == "3" then
 					cell.bale = tonumber(ch) :: number
+				elseif ch == "p" then
+					self.startPumpkins[cell] = true
 				end
 				self.cells[y][x] = cell
 			end
@@ -93,6 +101,12 @@ function Board.newPiece(self, color: number, power: string?): Piece
 	return piece
 end
 
+function Board.newPumpkin(self): Piece
+	local piece = self:newPiece(0)
+	piece.pumpkin = true
+	return piece
+end
+
 -- Calls fn(cell) for every cell in row-major order.
 function Board.eachCell(self, fn: (Cell) -> ())
 	for y = 1, self.height do
@@ -109,6 +123,16 @@ end
 -- A piece the player can swap (and that gravity and shuffles can move).
 function Board.isMovable(cell: Cell?): boolean
 	return cell ~= nil and cell.piece ~= nil and cell.bale == 0 and cell.frost == 0
+end
+
+-- A movable plain tile: no power-up, not a pumpkin (power-ups and weeds can land on it).
+function Board.isPlainTile(cell: Cell?): boolean
+	return Board.isMovable(cell) and (cell :: Cell).piece.power == nil and not (cell :: Cell).piece.pumpkin
+end
+
+-- The cell pumpkins leave from: the lowest one in its column.
+function Board.isExit(self, cell: Cell): boolean
+	return self:cellBelow(cell.x, cell.y) == nil
 end
 
 function Board.isEmptySlot(cell: Cell?): boolean
@@ -164,7 +188,9 @@ end
 function Board.fillInitial(self, rng, colors: { number })
 	for _ = 1, MAX_SHUFFLE_TRIES do
 		self:eachCell(function(cell)
-			if cell.bale == 0 then
+			if self.startPumpkins[cell] then
+				cell.piece = self:newPumpkin()
+			elseif cell.bale == 0 then
 				cell.piece = self:newPiece(pickCalmColor(self, cell.x, cell.y, rng, colors))
 			end
 		end)
@@ -234,7 +260,14 @@ function Board.applyGravity(self, rng, colors: { number }): ({ Move }, { Spawn }
 			if top and Board.isEmptySlot(top) then
 				local count = (spawnCounts[x] or 0) + 1
 				spawnCounts[x] = count
-				local piece = self:newPiece(rng:pick(colors))
+				local piece
+				-- Each refill tile has an even chance of being a waiting pumpkin.
+				if self.pumpkinsToSpawn > 0 and rng:int(1, 2) == 1 then
+					self.pumpkinsToSpawn -= 1
+					piece = self:newPumpkin()
+				else
+					piece = self:newPiece(rng:pick(colors))
+				end
 				top.piece = piece
 				tracks[piece.id] = {
 					id = piece.id,
@@ -313,14 +346,15 @@ end
 
 --[[
 	Shuffles every movable piece until the board has no ready-made matches and
-	at least one possible move. Returns the new position of each piece.
+	at least one possible move. Pumpkins stay where they are. Returns the new
+	position of each piece.
 ]]
 function Board.shuffle(self, rng, colors: { number }): { Move }
 	local slots: { Cell } = {}
 	local pieces: { Piece } = {}
 	local origin = {}
 	self:eachCell(function(cell)
-		if Board.isMovable(cell) then
+		if Board.isMovable(cell) and not cell.piece.pumpkin then
 			table.insert(slots, cell)
 			table.insert(pieces, cell.piece :: Piece)
 			origin[(cell.piece :: Piece).id] = cell
@@ -389,7 +423,10 @@ function Board.hash(self): string
 				table.insert(row, "B" .. cell.bale)
 			else
 				local piece = cell.piece
-				local code = if piece then tostring(piece.color) .. (POWER_CODES[piece.power] or "") else "_"
+				local code = if piece and piece.pumpkin
+					then "P"
+					elseif piece then tostring(piece.color) .. (POWER_CODES[piece.power] or "")
+					else "_"
 				if cell.mud > 0 then
 					code ..= "m" .. cell.mud
 				end
@@ -416,7 +453,7 @@ function Board.snapshot(self)
 			weed = cell.weed,
 			mud = cell.mud,
 			frost = cell.frost,
-			piece = piece and { id = piece.id, color = piece.color, power = piece.power },
+			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})
 	end)
 	return out

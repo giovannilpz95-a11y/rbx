@@ -42,12 +42,14 @@ TileStyle.PowerBadges = {
 }
 
 TileStyle.Sunflower = { color = Color3.fromRGB(255, 196, 30), glyph = "🌻" }
+TileStyle.Pumpkin = { color = Color3.fromRGB(196, 120, 52), glyph = "🎃", exit = "⬇️" }
 
 TileStyle.GoalGlyphs = {
 	Mud = "🟫",
 	HayBale = "🌾",
 	Frost = "❄️",
 	Weeds = "🌿",
+	Pumpkins = "🎃",
 }
 
 TileStyle.BoosterGlyphs = {

@@ -7,6 +7,7 @@
 	  m  mud, 1 layer        M  mud, 2 layers
 	  f  frost, 1 layer      F  frost, 2 layers (the tile is frozen in place)
 	  w  weed (spreads when a swap pulls none)
+	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  1 2 3  hay bale with that many layers
 
 	Difficulty: every 5th level is Tough, and every 10th from level 20 is
@@ -19,7 +20,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -52,6 +53,7 @@ local VALID_CHARS = {
 	f = true,
 	F = true,
 	w = true,
+	p = true,
 	["1"] = true,
 	["2"] = true,
 	["3"] = true,
@@ -86,7 +88,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds = 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins = 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -104,11 +106,29 @@ function Levels.validate(level): string?
 				frost += 1
 			elseif ch == "w" then
 				weeds += 1
+			elseif ch == "p" then
+				pumpkins += 1
+				local below = false
+				for yy = y + 1, height do
+					below = below or string.sub(level.layout[yy], x, x) ~= "#"
+				end
+				if not below then
+					return string.format("pumpkin at %d,%d is already at the bottom", x, y)
+				end
 			end
 		end
 	end
 	if #level.goals == 0 then
 		return "level needs at least one goal"
+	end
+	if pumpkins > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Pumpkins"
+		end
+		if not wanted then
+			return "pumpkins in the layout but no pumpkins goal"
+		end
 	end
 	for _, goal in level.goals do
 		if goal.kind == "Collect" then
@@ -133,6 +153,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Weeds" then
 			if weeds == 0 then
 				return "weeds goal but no weeds in the layout"
+			end
+		elseif goal.kind == "Pumpkins" then
+			if type(goal.count) ~= "number" or goal.count < math.max(1, pumpkins) then
+				return "pumpkins goal needs a count of at least the pumpkins in the layout"
 			end
 		else
 			return "unknown goal kind " .. tostring(goal.kind)

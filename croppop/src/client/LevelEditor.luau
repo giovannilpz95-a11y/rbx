@@ -46,10 +46,18 @@ local BRUSH_ROWS = {
 		{ char = "f", label = "❄️1" },
 		{ char = "F", label = "❄️2" },
 		{ char = "w", label = "🌿 Weed" },
+		{ char = "p", label = "🎃" },
 	},
 }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds" }
-local GOAL_BUTTONS = { Collect = "+ Collect", Mud = "+ Mud", HayBale = "+ Bales", Frost = "+ Frost", Weeds = "+ Weeds" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins" }
+local GOAL_BUTTONS = {
+	Collect = "+ Collect",
+	Mud = "+ Mud",
+	HayBale = "+ Bales",
+	Frost = "+ Frost",
+	Weeds = "+ Weeds",
+	Pumpkins = "+ 🎃",
+}
 
 local ui = nil
 local state = nil -- the level being edited
@@ -234,6 +242,8 @@ local function cellLook(char: string): (Color3, string)
 		return Colors.frost, "❄️2"
 	elseif char == "w" then
 		return Colors.weed, "🌿"
+	elseif char == "p" then
+		return TileStyle.Pumpkin.color, TileStyle.Pumpkin.glyph
 	end
 	return Colors.cellLight, ""
 end
@@ -274,6 +284,8 @@ local function goalLabel(goal): string
 		return "❄️ all frost"
 	elseif goal.kind == "Weeds" then
 		return "🌿 all weeds"
+	elseif goal.kind == "Pumpkins" then
+		return "🎃 pumpkins"
 	end
 	return "🌾 all bales"
 end
@@ -386,6 +398,11 @@ local function renderPanel()
 				goal.count = math.clamp(goal.count + d * 5, 5, 200)
 				render()
 			end)
+		elseif goal.kind == "Pumpkins" then
+			stepper(goalRow, "Count", tostring(goal.count), function(d)
+				goal.count = math.clamp(goal.count + d, 1, 20)
+				render()
+			end)
 		end
 		button(goalRow, "Remove", "X", UDim2.fromOffset(32, ROW_HEIGHT - 4), function()
 			table.remove(state.goals, i)
@@ -401,6 +418,8 @@ local function renderPanel()
 			end
 			if kind == "Collect" then
 				table.insert(state.goals, { kind = "Collect", tile = state.colors[1] or "Tomato", count = 15 })
+			elseif kind == "Pumpkins" then
+				table.insert(state.goals, { kind = "Pumpkins", count = 3 })
 			else
 				table.insert(state.goals, { kind = kind })
 			end

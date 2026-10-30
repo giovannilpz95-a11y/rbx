@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..100 from original shape and
+	Crop Pop level generator. Builds levels 6..125 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 100 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 125 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 100
+local LAST = tonumber(ARGS[2]) or 125
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -48,6 +48,11 @@ local NAMES = {
 	"Rain Barrel", "Tilled Earth", "Picket Fence", "Goose Green", "Saddle Hill",
 	"Acorn Grove", "Market Stall", "Cabbage Corner", "Shearing Shed", "Harvest Feast",
 	"Starry Paddock", "Lucky Horseshoe", "Fresh Furrows", "Apple Cart", "Golden Harvest",
+	"Pumpkin Patch", "Hayride Hollow", "Gourd Garden", "Cranberry Bog", "Maple Lane",
+	"Squash Rows", "Barley Maze", "Apple Bobbing", "Barn Owl", "Harvest Fair",
+	"Leaf Pile", "Cider Mill", "Pumpkin Pie", "Bonfire Night", "Walnut Grove",
+	"Haystack Maze", "Autumn Mist", "Turnip Lanterns", "Root Market", "Giant Gourd Show",
+	"Hazel Hedge", "First Frost", "Harvest Supper", "Quilting Bee", "Moonlit Pumpkins",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -55,6 +60,8 @@ local MIN_MOVES, MAX_MOVES = 15, 35
 local MAX_COLLECT = 45
 local FROST_INTRO = 21 -- first level with frost
 local WEEDS_INTRO = 41 -- first level with weeds
+local PUMPKIN_INTRO = 101 -- first level with pumpkins
+local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -369,6 +376,7 @@ local function mechanics(id)
 		frost = id >= FROST_INTRO, -- "f"
 		thickFrost = id >= 33, -- "F"
 		weeds = id >= WEEDS_INTRO, -- "w"
+		pumpkins = id >= PUMPKIN_INTRO, -- "p"
 	}
 end
 
@@ -376,6 +384,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_PUMPKINS = { "Pumpkins", "Collect", "Weeds", "Mud", "Pumpkins", "Frost", "HayBale", "Mix", "Pumpkins", "Weeds", "Collect", "Mix" }
 
 -- Names that promise an obstacle get it (when it's in the game by then).
 local NAME_HINTS = {
@@ -383,6 +392,7 @@ local NAME_HINTS = {
 	{ words = { "Bale", "Hay" }, focus = "HayBale" },
 	{ words = { "Frost", "Foggy" }, focus = "Frost", needs = "frost" },
 	{ words = { "Thistle", "Bramble", "Wild Oats" }, focus = "Weeds", needs = "weeds" },
+	{ words = { "Pumpkin", "Gourd", "Squash" }, focus = "Pumpkins", needs = "pumpkins" },
 }
 
 local function focusOf(id, name)
@@ -391,6 +401,8 @@ local function focusOf(id, name)
 		return "Frost"
 	elseif id == WEEDS_INTRO then
 		return "Weeds"
+	elseif id == PUMPKIN_INTRO then
+		return "Pumpkins"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -402,7 +414,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -455,6 +467,31 @@ local function placeWeeds(g, rng)
 			placed += 1
 		end
 	end
+end
+
+-- Pumpkins start near the top, never in a column's bottom cell. Returns how
+-- many the goal asks for (more drop in as these are collected).
+local function placePumpkins(g, rng, id)
+	local want = if id == PUMPKIN_INTRO then 2 else rng:int(1, 3)
+	local placed = 0
+	for _ = 1, 40 do
+		if placed >= want then
+			break
+		end
+		local x, y = rng:int(1, g.w), rng:int(1, 2)
+		local below = false
+		for yy = y + 1, g.h do
+			below = below or isCell(g, x, yy)
+		end
+		if isCell(g, x, y) and g[y][x] == "." and below then
+			g[y][x] = "p"
+			placed += 1
+		end
+	end
+	if placed == 0 then
+		return 0
+	end
+	return placed + (if id == PUMPKIN_INTRO then 0 else rng:int(0, 1))
 end
 
 -- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
@@ -516,6 +553,10 @@ local function draft(id, variant)
 	if focus == "Weeds" or (focus == "Mix" and mech.weeds and rng:int(1, 3) == 1) then
 		placeWeeds(g, rng)
 	end
+	local pumpkins = 0
+	if focus == "Pumpkins" or (focus == "Mix" and mech.pumpkins and rng:int(1, 3) == 1) then
+		pumpkins = placePumpkins(g, rng, id)
+	end
 	keepRowsOpen(g)
 	if not connected(g) then
 		return nil
@@ -542,6 +583,9 @@ local function draft(id, variant)
 	if has(g, "w") > 0 then
 		table.insert(goals, { kind = "Weeds" })
 	end
+	if pumpkins > 0 then
+		table.insert(goals, { kind = "Pumpkins", count = pumpkins })
+	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most
 	end
@@ -556,7 +600,7 @@ local function draft(id, variant)
 	if focus == "Collect" and collects == 0 then
 		collects = 1
 	end
-	if id == FROST_INTRO or id == WEEDS_INTRO then
+	if INTROS[id] then
 		collects = 0 -- an intro level is about the new obstacle alone
 	end
 	local picks = table.clone(colors)
@@ -620,13 +664,30 @@ local function scaleCollects(level, factor)
 	end
 end
 
+-- The bot is much worse at steering pumpkins down than a person, so it gets
+-- a lower bar on pumpkin levels (the intro level uses the usual one).
+local PUMPKIN_TARGET_SCALE = 0.7
+
+local function hasGoal(level, kind)
+	for _, goal in level.goals do
+		if goal.kind == kind then
+			return true
+		end
+	end
+	return false
+end
+
 local function build(id)
-	local target = targetOf(id, difficultyOf(id))
+	local baseTarget = targetOf(id, difficultyOf(id))
 	for variant = 0, 9 do
 		local level = draft(id, variant)
+		local target = baseTarget
+		if level and id ~= PUMPKIN_INTRO and hasGoal(level, "Pumpkins") then
+			target *= PUMPKIN_TARGET_SCALE
+		end
 		if level and Levels.validate(level) == nil then
 			local moves, note = tune(level, target)
-			if note == "too easy" and (id == FROST_INTRO or id == WEEDS_INTRO) then
+			if note == "too easy" and INTROS[id] then
 				-- An intro level may be easy; it only teaches the new obstacle.
 				moves, note = MIN_MOVES + 3, nil
 			end
@@ -645,7 +706,7 @@ local function build(id)
 			end
 			if moves and note == nil then
 				level.moves = moves
-				return level, rate(level, moves), variant
+				return level, rate(level, moves), variant, target
 			end
 		end
 	end
@@ -654,7 +715,7 @@ end
 
 for id = FIRST, LAST do
 	local started = clock()
-	local level, winRate, variant = build(id)
-	print(string.format("-- level %d: bot wins %d%% (target %d%%), variant %d, %.0fs", id, winRate * 100, targetOf(id, level.difficulty) * 100, variant, clock() - started))
+	local level, winRate, variant, target = build(id)
+	print(string.format("-- level %d: bot wins %d%% (target %d%%), variant %d, %.0fs", id, winRate * 100, target * 100, variant, clock() - started))
 	print(LevelText.write(level))
 end
