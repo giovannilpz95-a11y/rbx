@@ -104,7 +104,7 @@ function TownService.buildCommunity(player: Player, buildingId: any): (boolean, 
 		end
 		return false,
 			string.format(
-				"The %s's lot is on North Lane, in the %s. Clear it first.",
+				"The %s's lot is in the %s. Clear that land first.",
 				def.displayName,
 				Land.expansions[land].displayName
 			)

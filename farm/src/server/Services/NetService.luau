@@ -102,6 +102,8 @@ local function snapshot(data: { [string]: any })
 		daily = data.daily, -- the login calendar strip (client/UI/DailyGift)
 		tutorial = data.tutorial,
 		seedCart = data.seedCart,
+		quarry = data.quarry, -- with its seed: the client draws the shaft from it (shared/Quarry)
+		oreShed = data.oreShed,
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
 		quests = data.quests,

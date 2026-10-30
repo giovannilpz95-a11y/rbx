@@ -206,6 +206,8 @@ local function act(part: BasePart)
 		Panels.open("Orders")
 	elseif kind == "PuzzlePorch" then
 		ReachController.openCropPop()
+	elseif kind == "Quarry" then
+		Panels.open("Quarry")
 	end
 end
 

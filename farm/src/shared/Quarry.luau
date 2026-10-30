@@ -203,11 +203,11 @@ function Quarry.dig(data: { [string]: any }, row: number, col: number): DigResul
 	return result
 end
 
--- Starts reopening the Quarry (check level and Coins first). Picks the seed and gives the
--- opening Pickaxes.
-function Quarry.restore(data: { [string]: any }, now: number, seed: number)
+-- Starts reopening the Quarry (check level, land and Coins first), finishing at `readyAt`.
+-- Takes the seed and gives the opening Pickaxes.
+function Quarry.restore(data: { [string]: any }, readyAt: number, seed: number)
 	local q = data.quarry
-	q.readyAt = now + Config.restoreSeconds
+	q.readyAt = readyAt
 	q.seed = seed % 2147483646 + 1
 	local items = data.toolShed.items
 	items[Config.pickaxe] = (items[Config.pickaxe] or 0) + Config.restoreGift

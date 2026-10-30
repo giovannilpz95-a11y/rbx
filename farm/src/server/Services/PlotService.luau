@@ -35,6 +35,7 @@ local ArtMerge = require(Shared.Art.Merge)
 local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtFolk = require(Shared.Art.Folk)
 local ArtLighting = require(Shared.Art.Lighting)
+local ArtQuarry = require(Shared.Art.Quarry)
 local ArtTown = require(Shared.Art.Town)
 local ArtTownSquare = require(Shared.Art.TownSquare)
 local Kit = require(Shared.Art.Kit)
@@ -128,6 +129,9 @@ local LAYOUT = {
 		JamKitchen = Vector3.new(88, 0, 30),
 	} :: { [string]: Vector3 },
 	factoryOutputOffset = Vector3.new(-10, 0, 0),
+	-- The Quarry's hill at the north end of the East Meadow's third column, its mine door
+	-- facing west like the factories (Features/F01)
+	quarry = Vector3.new(89, 0, -40),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine
 	pens = {
 		CowBarn = Vector3.new(-12, 0, 6),
@@ -403,6 +407,17 @@ local ANIMAL_TURNS = { 160, 200, 175, 20, -15, 200 }
 
 -- A pen: a floor you tap (feed / collect), its fences and shelter (FarmShared.Art.Animals) and
 -- up to six animals, each with the product it shows when ready.
+local function buildQuarry(plot: Model, at: (Vector3, number) -> CFrame)
+	local quarry = Instance.new("Model")
+	quarry.Name = "Quarry"
+	local base = at(LAYOUT.quarry, 0) * Kit.yaw(90)
+	quarry:SetAttribute("BaseCFrame", base)
+	local parts = ArtQuarry.build(quarry, base)
+	parts.body:SetAttribute("Interact", "Quarry")
+	label(parts.body, "Quarry", 7, UDim2.fromOffset(140, 28), 50)
+	quarry.Parent = plot
+end
+
 local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
 	local def = Animals.pens[id]
 	local kind = def.copyOf or id -- a copy looks like its original
@@ -666,6 +681,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 	for _, id in Balance.enabledPens do
 		buildPen(model, id, at)
 	end
+	buildQuarry(model, at)
 
 	-- Order Board with the truck waiting at its dock. The cards show on the board's west face.
 	local board = part({
@@ -1133,6 +1149,25 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	end
 end
 
+-- Boarded up until it reopens; in a scaffold while reopening; then the boards come down
+local function refreshQuarry(player: Player, model: Model, data: { [string]: any }, now: number)
+	local quarry = model:FindFirstChild("Quarry")
+	if quarry == nil then
+		return
+	end
+	local readyAt = data.quarry.readyAt
+	local reopening = readyAt ~= nil and now < readyAt
+	local open = readyAt ~= nil and not reopening
+	local state = tostring(reopening) .. ":" .. tostring(open)
+	local cache = factoryVisualState[player]
+	if cache.Quarry == state then
+		return
+	end
+	cache.Quarry = state
+	setScaffold(quarry, reopening, ArtQuarry.WIDTH, ArtQuarry.DEPTH, 10)
+	ArtQuarry.setOpen(quarry, open)
+end
+
 local function refreshPen(player: Player, model: Model, id: string, pen: { [string]: any }, now: number)
 	local def = Animals.pens[id]
 	local building = model:FindFirstChild(id)
@@ -1313,6 +1348,7 @@ function PlotService.refresh(player: Player)
 	for id, pen in data.pens do
 		refreshPen(player, model, id, pen, now)
 	end
+	refreshQuarry(player, model, data, now)
 	refreshTown(player, model, data, now)
 	refreshLand(player, model, data, now)
 	refreshDecor(player, model, data)
