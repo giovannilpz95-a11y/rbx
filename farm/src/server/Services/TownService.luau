@@ -1,10 +1,14 @@
 --!strict
 -- The town (Design/07 Town Building): Houses raise Population, Community Buildings raise the
--- Cap, and building materials (Bricks, Planks, Panes) pay for Community Buildings.
+-- Cap, and building materials (Bricks, Planks, Panes) pay for Community Buildings. Population
+-- also brings free fields, and land expansion opens room for them (02 Farming).
 -- Everything here is paperwork, done from the Town panel; new buildings take the next free
 -- lot on Main Street (no free placement in the greybox).
 
+local Players = game:GetService("Players")
+
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local Barn = require(Shared.Config.Barn)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
@@ -21,11 +25,35 @@ local Clock = require(script.Parent.Parent.Util.Clock)
 local TownService = {}
 
 local rng = Random.new()
-local materialIds: { string } = {}
-for id in Town.materials do
-	table.insert(materialIds, id)
+
+-- Building and Barn materials share one roll (at most one item per harvest or delivery),
+-- each item weighted by its group's chance
+local dropPool: { { id: string, weight: number } } = {}
+local dropWeight = 0
+local function addDrops(materials: { [string]: any }, chance: number)
+	local ids = {}
+	for id in materials do
+		table.insert(ids, id)
+	end
+	table.sort(ids)
+	for _, id in ids do
+		table.insert(dropPool, { id = id, weight = chance / #ids })
+		dropWeight += chance / #ids
+	end
 end
-table.sort(materialIds)
+addDrops(Town.materials, Town.harvestDropChance)
+addDrops(Barn.materials, Barn.harvestDropChance)
+
+local function pickDrop(): string
+	local roll = rng:NextNumber() * dropWeight
+	for _, drop in dropPool do
+		roll -= drop.weight
+		if roll < 0 then
+			return drop.id
+		end
+	end
+	return dropPool[#dropPool].id
+end
 
 function TownService.buildHouse(player: Player, houseId: any): (boolean, string?)
 	if not NetService.check.id(houseId) or Town.houses[houseId] == nil then
@@ -90,6 +118,8 @@ function TownService.speedUp(player: Player, kind: any, key: any): (boolean, str
 		end
 	elseif kind == "Community" and NetService.check.id(key) then
 		entry = data.town.community[key]
+	elseif kind == "Land" and NetService.check.int(key, 1, 99) then
+		entry = data.land[key]
 	end
 	local now = Clock.now()
 	if entry == nil or TownRules.isDone(entry, now) then
@@ -104,27 +134,73 @@ function TownService.speedUp(player: Player, kind: any, key: any): (boolean, str
 	return true
 end
 
+-- One building material (8 Gems) or Barn material (12 Gems).
 function TownService.buyMaterial(player: Player, itemId: any): (boolean, string?)
-	if not NetService.check.id(itemId) or Town.materials[itemId] == nil then
+	if not NetService.check.id(itemId) then
+		return false
+	end
+	local price = if Town.materials[itemId]
+		then Town.materialGemPrice
+		elseif Barn.materials[itemId] then Barn.materialGemPrice
+		else nil
+	if price == nil then
 		return false
 	end
 	if InventoryService.space(player) < 1 then
 		return false, "Your Barn is full. Sell something from the Barn first."
 	end
-	if not EconomyService.spend(player, "Gems", Town.materialGemPrice, "material_" .. itemId) then
+	if not EconomyService.spend(player, "Gems", price, "material_" .. itemId) then
 		return false, "Not enough Gems"
 	end
 	InventoryService.add(player, { [itemId] = 1 })
 	return true
 end
 
--- A chance at one building material (from level 5). Silent when the Barn is full.
+function TownService.expand(player: Player): (boolean, string?)
+	local data = DataService.get(player) :: { [string]: any }
+	local now = Clock.now()
+	local ok, reason = TownRules.canExpand(data, now)
+	if not ok then
+		return false, reason
+	end
+	local def = TownRules.nextExpansion(data) :: any
+	if not EconomyService.spend(player, "Coins", def.coinCost, "expand_" .. def.stage) then
+		return false, string.format("Clearing the %s costs %d Coins", def.displayName, def.coinCost)
+	end
+	table.insert(data.land, { readyAt = now + Clock.duration(def.buildSeconds) })
+	EconomyService.add(player, "XP", def.xp, "expand_" .. def.stage)
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	return true
+end
+
+-- Place every field the farm has earned and has land for (free; XP on placing).
+function TownService.placeFields(player: Player): boolean
+	local data = DataService.get(player)
+	if data == nil then
+		return false
+	end
+	local placed = TownRules.fieldsToPlace(data, Clock.now())
+	for _, unlock in placed do
+		data.fields["F" .. unlock.field] = {}
+		EconomyService.add(player, "XP", unlock.xp, "field_" .. unlock.field)
+		NetService.popup(player, { kind = "Field", field = unlock.field, xp = unlock.xp })
+	end
+	if #placed > 0 then
+		DataService.markDirty(player, true)
+		PlotService.refresh(player)
+		return true
+	end
+	return false
+end
+
+-- A chance at one building or Barn material (both from level 5). Silent when the Barn is full.
 local function rollMaterial(player: Player, chance: number)
 	local data = DataService.get(player)
 	if data == nil or data.level < Town.materialsFromLevel or rng:NextNumber() >= chance then
 		return
 	end
-	local id = materialIds[rng:NextInteger(1, #materialIds)]
+	local id = pickDrop()
 	if InventoryService.add(player, { [id] = 1 }) then
 		NetService.popup(player, { kind = "Drop", item = id, name = Items[id].displayName })
 	end
@@ -143,6 +219,19 @@ function TownService.init()
 	NetService.on(Net.Town_BuildCommunity, 1, 2, TownService.buildCommunity)
 	NetService.on(Net.Town_SpeedUp, 2, 3, TownService.speedUp)
 	NetService.on(Net.Town_BuyMaterial, 2, 3, TownService.buyMaterial)
+	NetService.on(Net.Town_Expand, 1, 2, TownService.expand)
+
+	-- Houses and expansions finish on their own; new fields follow
+	task.spawn(function()
+		while true do
+			task.wait(2)
+			for _, player in Players:GetPlayers() do
+				if TownService.placeFields(player) then
+					NetService.pushState(player)
+				end
+			end
+		end
+	end)
 end
 
 return TownService

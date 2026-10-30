@@ -10,6 +10,7 @@ local Net = require(Shared.Net)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local TownRules = require(Shared.TownRules)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -54,6 +55,16 @@ function FactoryService.build(player: Player, factoryId: any): (boolean, string?
 	end
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
+	end
+	local population = TownRules.population(data, Clock.now())
+	if population < def.population then
+		return false,
+			string.format(
+				"The %s needs Population %d (you have %d). Build Houses.",
+				def.displayName,
+				def.population,
+				population
+			)
 	end
 	if not EconomyService.spend(player, "Coins", def.buildCost, "build_" .. factoryId) then
 		return false, string.format("Building the %s costs %d Coins", def.displayName, def.buildCost)

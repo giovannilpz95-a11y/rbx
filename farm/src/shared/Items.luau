@@ -1,16 +1,18 @@
 --!strict
--- One lookup for every Barn item, built from the crop, animal and recipe configs.
+-- One lookup for every Barn item, built from the crop, animal, recipe and town configs.
 
 local Animals = require("./Config/Animals")
+local Barn = require("./Config/Barn")
 local Crops = require("./Config/Crops")
 local Recipes = require("./Config/Recipes")
+local Town = require("./Config/Town")
 
 export type ItemDef = {
 	id: string,
 	displayName: string,
-	kind: "Crop" | "Animal" | "Product",
+	kind: "Crop" | "Animal" | "Product" | "Material",
 	unlockLevel: number,
-	sellPrice: number,
+	sellPrice: number, -- 0 = can't be sold
 	xpPerUnit: number, -- XP for producing one unit (order rewards use it)
 	unitSeconds: number, -- production time for one unit, including its inputs
 	isFeed: boolean,
@@ -86,6 +88,24 @@ for id, recipe in Recipes do
 		isFeed = recipe.isFeed == true,
 	}
 end
+
+-- Building and Barn materials take Barn space but can't be sold or ordered
+local function addMaterials(materials: { [string]: { displayName: string } }, unlockLevel: number)
+	for id, material in materials do
+		Items[id] = {
+			id = id,
+			displayName = material.displayName,
+			kind = "Material",
+			unlockLevel = unlockLevel,
+			sellPrice = 0,
+			xpPerUnit = 0,
+			unitSeconds = 0,
+			isFeed = false,
+		}
+	end
+end
+addMaterials(Town.materials, Town.materialsFromLevel)
+addMaterials(Barn.materials, Barn.materialsFromLevel)
 
 for _, item in Items do
 	table.freeze(item)

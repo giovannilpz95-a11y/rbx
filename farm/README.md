@@ -19,7 +19,10 @@ A walkable greybox of the farm, built from plain blocks, for testing the walk-fi
   - Factories: Bakery (L2), Feed Mill (L3), Dairy (L4), Sugar Mill (L7), Textile Mill (L9), with 13 recipes: Bread, Cookies, Bagel; Cow, Chicken and Sheep Feed (3 bags a batch); Cream, Cheese, Butter; Sugar; Cotton Fabric, Yarn, Shirt.
   - Order cards only ask for things your farm can make right now (and never feed).
 - **Gem speed-ups** (Township baseline prices, two taps to confirm): finish a growing field (tap it), a factory job or construction, every producing animal in a pen, or an Order Board wait; buy extra factory queue slots (8 Gems and up, to 7 slots).
-- **Paperwork from anywhere:** Orders (O), Barn (B) and Buildings (F) panels from the HUD. Buildings lists every factory and pen with its status.
+- **Town** (*07 Town Building*, Township baseline): Houses raise Population, Community Buildings raise the Population Cap (base 80). A farm starts with 4 Houses (Population 60). House copies unlock by level and need room under the Cap; factories need a minimum Population to build (Bakery 55 … Textile Mill 105). Community Buildings also cost Bricks, Planks and Panes, which drop from harvests (2%, more for long crops) and Order Board deliveries (25%) from level 5, or cost 8 Gems each (drop rates first-pass). New buildings go on the next free lot of **Main Street**, the strip between your gate and the Ring Road. Tap any town building, or press T, for the Town panel.
+- **More fields and land** (*02 Farming*, Township baseline): fields 7 to 22 arrive free as Population grows (65 up to 360), with XP. Fields 7 to 10 fit in the start area; from field 11 on they need the West Meadow cleared. Four land expansions (West Meadow, East Meadow, North Fields, Far Corners) cost 25 to 50 Coins and take 20 to 35 minutes, each needing a Population and the previous one finished. Start them from the Land section of the Town panel.
+- **Barn upgrades** (*02 Farming*, Township baseline): upgrade *n* costs *n* each of Nails, Hinges and Paint and no Coins (50 → 70 → 90 → 110, then +25 each). Barn materials drop from harvests and orders from level 5 on the same roll as building materials, or cost 12 Gems each. When the Barn is full (less than 2 free), its panel says so; it always lists what you have most of first, with Sell buttons.
+- **Paperwork from anywhere:** Orders (O), Barn (B), Buildings (F) and Town (T) panels from the HUD. Buildings lists every factory and pen with its status.
 - **Saving:** one profile per player in a DataStore, with a session lock, autosave every 90 s, save on leave and on shutdown, schema version and migrations.
 - **Server decides everything:** the client only sends intents (plant this field, deliver card 2). Every remote is rate-limited and checked, hands-on actions check that your avatar is near, and all Coins, Gems and XP go through one service.
 
@@ -45,6 +48,7 @@ The project maps to:
 | Folder | Goes to |
 |---|---|
 | `src/shared` | `ReplicatedStorage.FarmShared` |
+| `../uitheme/src` | `ReplicatedStorage.UiTheme` (shared UI look, see Design/25 UI Style Guide) |
 | `src/server` | `ServerScriptService.FarmServer` (`Main` is the Script) |
 | `src/client` | `StarterPlayer.StarterPlayerScripts.FarmClient` (`Main` is the LocalScript) |
 
@@ -65,4 +69,4 @@ CI runs both and a Rojo build on every pull request that touches `farm/`.
 
 ## Not in the greybox yet
 
-Overview camera and the Errand queue, tool drops and tool orders, pen upgrades, placing and moving buildings, new fields from Population, Houses and Population, visiting and Helping Hands, the tutorial, and the Train Station. Selene linting and `luau-lsp` strict type checks should be added to CI next.
+Overview camera and the Errand queue, tool drops and tool orders, pen upgrades, builders, placing and moving buildings (Main Street lots are assigned for now), decorations, land expansion past the fourth (it needs tools), visiting and Helping Hands, the tutorial, and the Train Station. Selene linting and `luau-lsp` strict type checks should be added to CI next.

@@ -16,6 +16,7 @@
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
+local Sfx = require(script.Parent.Sfx)
 local TileStyle = require(script.Parent.TileStyle)
 
 local BoardView = {}
@@ -560,7 +561,12 @@ end
 
 -- Plays the phases from Engine:trySwap in order. Yields.
 function BoardView.play(self, phases)
+	local pops = 0 -- cascades pop higher (Sfx)
 	for _, phase in phases do
+		if phase.kind == "Pop" then
+			pops += 1
+		end
+		Sfx.phase(phase, pops)
 		if phase.kind == "Swap" then
 			self:_swap(phase)
 		elseif phase.kind == "Pop" then

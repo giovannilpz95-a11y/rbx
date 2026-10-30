@@ -8,6 +8,7 @@ local process = require("@lune/process")
 
 local Animals = require("../src/shared/Config/Animals")
 local Balance = require("../src/shared/Config/Balance")
+local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
@@ -21,6 +22,8 @@ local Recipes = require("../src/shared/Config/Recipes")
 local Rng = require("../src/shared/Rng")
 local Speedup = require("../src/shared/Speedup")
 local Timer = require("../src/shared/Timer")
+local Town = require("../src/shared/Config/Town")
+local TownRules = require("../src/shared/TownRules")
 
 local passed, failed = 0, 0
 
@@ -325,6 +328,133 @@ test("a pen's speed-up prices each producing animal", function()
 end)
 
 ---------------------------------------------------------------------------------------------
+-- Town (07 Town Building)
+---------------------------------------------------------------------------------------------
+
+test("a new farm starts at Population 60 with Cap 80", function()
+	local data = Profile.migrate(nil) :: any
+	eq(TownRules.population(data, 0), 60, "starter Houses")
+	eq(TownRules.cap(data, 0), 80, "base Cap")
+	eq(#data.town.houses, 4, "four starter Houses")
+end)
+
+test("House copies unlock by level and need room under the Cap", function()
+	local data = Profile.migrate(nil) :: any
+	local first, reason = TownRules.canBuildHouse(data, "Cottage", 0)
+	eq(first, false, "second Cottage is level 5")
+	ok(reason ~= nil and reason:find("level 5") ~= nil, "says when")
+	data.level = 4
+	eq(TownRules.copiesAllowed("LeanTo", 4), 3, "three Lean-tos at level 4")
+	for lot = 5, 7 do
+		local can = TownRules.canBuildHouse(data, "LeanTo", 0)
+		eq(can, true, "Lean-to " .. lot)
+		table.insert(data.town.houses, { type = "LeanTo", lot = lot, readyAt = 100 })
+	end
+	eq(TownRules.population(data, 50), 60, "building ones don't count yet")
+	eq(TownRules.pending(data, 50), 15, "pending")
+	eq(TownRules.population(data, 100), 75, "done at readyAt")
+	data.level = 5
+	local can, why = TownRules.canBuildHouse(data, "Cottage", 100)
+	eq(can, false, "75 + 10 > 80")
+	ok(why and why:find("Community Building"), "asks for a Community Building")
+	data.town.community.VillageWell = { readyAt = 200 }
+	eq(TownRules.cap(data, 150), 80, "Cap waits for the Well")
+	eq(TownRules.cap(data, 200), 90, "Well done")
+	eq((TownRules.canBuildHouse(data, "Cottage", 200)), true, "room now")
+end)
+
+test("Houses take the first free lot", function()
+	local data = Profile.migrate(nil) :: any
+	eq(TownRules.freeLot(data, 32), 5, "after the starters")
+	table.remove(data.town.houses, 2)
+	eq(TownRules.freeLot(data, 32), 2, "a gap is reused")
+	eq(TownRules.freeLot(data, 3), 2, "still fits")
+	eq(TownRules.freeLot(data, 1), nil, "street full")
+end)
+
+test("Township baseline town rows", function()
+	eq(Town.houses.RowHouse.population, 20, "Row House")
+	eq(Town.houses.Townhouse.coinCost, 105, "Townhouse cost")
+	eq(Town.community.Bandstand.capBonus, 55, "Bandstand")
+	eq(Town.community.FireHall.materials.Bricks, 2, "Fire Hall bricks")
+	eq(Factories.Dairy.population, 65, "Dairy needs 65")
+	eq(Factories.TextileMill.population, 105, "Textile Mill needs 105")
+	local total = 0
+	for _, def in Town.community do
+		total += def.capBonus
+		ok(def.unlockLevel <= 12, def.id .. " past the MVP")
+		for material in def.materials do
+			ok(Town.materials[material] ~= nil and Items[material].kind == "Material", def.id .. " " .. material)
+		end
+	end
+	eq(Town.baseCap + total, 390, "Cap with every MVP Community Building")
+end)
+
+test("materials can't be sold or ordered; longer crops drop more", function()
+	eq(Items.Bricks.sellPrice, 0, "not sellable")
+	local data = Profile.migrate(nil) :: any
+	ok(table.find(OrderGen.makeablePool(data), "Bricks") == nil, "not on orders")
+	ok(math.abs(TownRules.harvestDropChance(0) - 0.04) < 1e-9, "building + Barn materials")
+	ok(math.abs(TownRules.harvestDropChance(8 * 3600) - 0.12) < 1e-9, "x3 cap")
+end)
+
+test("Barn upgrades follow the Township steps", function()
+	eq(BarnRules.capacity(0), 50, "start")
+	eq(BarnRules.capacity(1), 70, "1")
+	eq(BarnRules.capacity(3), 110, "+20 to 3")
+	eq(BarnRules.capacity(4), 135, "+25 from 4")
+	eq(BarnRules.capacity(38), 985, "38")
+	eq(BarnRules.capacity(39), 1035, "+50 from 39")
+	eq(BarnRules.capacity(58), 1985, "58")
+	eq(BarnRules.capacity(59), 2060, "+75 from 59")
+	local cost = BarnRules.upgradeCost(4)
+	eq(cost.Nails, 4, "n of each")
+	eq(cost.Hinges, 4, "Hinges")
+	eq(cost.Paint, 4, "Paint")
+	eq(Items.Paint.sellPrice, 0, "Barn materials can't be sold")
+	eq(Profile.migrate(nil).inventory.upgrades, 0, "saved")
+end)
+
+test("Population brings fields; later ones need the West Meadow", function()
+	local data = Profile.migrate(nil) :: any
+	eq(#TownRules.fieldsToPlace(data, 0), 0, "none at Population 60")
+	-- Population 100: fields 7-11 earned (65, 70, 75, 85, 95)
+	table.insert(data.town.houses, { type = "Duplex", lot = 5 })
+	table.insert(data.town.houses, { type = "LeanTo", lot = 6 })
+	table.insert(data.town.houses, { type = "LeanTo", lot = 7 })
+	eq(TownRules.population(data, 0), 100, "Population")
+	local place = TownRules.fieldsToPlace(data, 0)
+	eq(#place, 4, "7-10 fit in the start area")
+	eq(place[1].field, 7, "first")
+	eq(place[1].xp, 2, "XP on placing")
+	eq(TownRules.fieldsWaiting(data, 0), 1, "field 11 waits for land")
+	for _, unlock in place do
+		data.fields["F" .. unlock.field] = {}
+	end
+	data.land[1] = { readyAt = 50 }
+	eq(#TownRules.fieldsToPlace(data, 10), 0, "still clearing")
+	eq(TownRules.fieldsToPlace(data, 50)[1].field, 11, "placed once cleared")
+end)
+
+test("land expansions go in order and need Population", function()
+	local data = Profile.migrate(nil) :: any
+	eq((TownRules.canExpand(data, 0)), true, "first needs 60")
+	eq(TownRules.nextExpansion(data).coinCost, 25, "Township baseline cost")
+	data.land[1] = { readyAt = 100 }
+	local can, why = TownRules.canExpand(data, 50)
+	eq(can, false, "first still clearing")
+	ok(why and why:find("Finish"), "says why")
+	can, why = TownRules.canExpand(data, 100)
+	eq(can, false, "second needs 75")
+	ok(why and why:find("75"), "says the need")
+end)
+
+test("an old save gains the starter town", function()
+	local data = Profile.migrate({ version = 1 }) :: any
+	eq(TownRules.population(data, 0), 60, "starter Houses")
+end)
+
+---------------------------------------------------------------------------------------------
 -- Rng and OrderGen
 ---------------------------------------------------------------------------------------------
 
@@ -468,6 +598,54 @@ test("a profile from a newer build is refused", function()
 end)
 
 ---------------------------------------------------------------------------------------------
+-- UI theme (uitheme/, Design/25 UI Style Guide): the pure parts, loaded with Lune's Color3
+---------------------------------------------------------------------------------------------
+
+local roblox = require("@lune/roblox")
+
+local function loadTheme(name: string): any
+	local path = "../uitheme/src/" .. name .. ".luau"
+	return luau.load(fs.readFile(path), { debugName = path, environment = { Color3 = roblox.Color3 } })()
+end
+
+local Format = loadTheme("Format")
+local Palette = loadTheme("Palette")
+
+test("theme numbers abbreviate like 11 UI & UX", function()
+	eq(Format.short(0), "0", "zero")
+	eq(Format.short(9999), "9999", "below 10K")
+	eq(Format.short(12400), "12.4K", "12.4K")
+	eq(Format.short(12499), "12.4K", "rounds down")
+	eq(Format.short(50000), "50K", "drops .0")
+	eq(Format.short(3200000), "3.2M", "millions")
+end)
+
+test("theme brand colours match the 3D palette hex values", function()
+	eq(Palette.coins:ToHex():upper(), "FFC93C", "Coins")
+	eq(Palette.gems:ToHex():upper(), "29C7AC", "Gems")
+	eq(Palette.xp:ToHex():upper(), "8BD346", "XP")
+	eq(Palette.cream:ToHex():upper(), "FFF6E5", "cream")
+	eq(Palette.cocoa:ToHex():upper(), "4A3426", "cocoa")
+end)
+
+test("theme buttons get their own lip, other colours a darker shade", function()
+	for name, colors in Palette.button do
+		eq(Palette.lipFor(colors.face), colors.lip, name .. " lip")
+		ok(Palette.luminance(colors.lip) < Palette.luminance(colors.face), name .. " lip is darker")
+	end
+	local odd = roblox.Color3.fromRGB(100, 200, 50)
+	ok(Palette.luminance(Palette.lipFor(odd)) < Palette.luminance(odd), "fallback lip is darker")
+end)
+
+test("theme text on coloured buttons stays readable", function()
+	-- White text with an outline on every coloured face; cocoa text on the light neutral face
+	for _, name in { "primary", "secondary", "premium", "attention", "danger" } do
+		ok(Palette.luminance(Palette.button[name].face) < 0.8, name .. " face is dark enough for white text")
+	end
+	ok(Palette.luminance(Palette.button.neutral.face) > 0.8, "neutral face takes dark text")
+end)
+
+---------------------------------------------------------------------------------------------
 -- Every Luau file compiles
 ---------------------------------------------------------------------------------------------
 
@@ -482,11 +660,13 @@ local function eachLuau(dir: string, fn: (string) -> ())
 	end
 end
 
-eachLuau("src", function(path)
-	test("compiles: " .. path, function()
-		luau.compile(fs.readFile(path))
+for _, root in { "src", "../uitheme/src" } do
+	eachLuau(root, function(path)
+		test("compiles: " .. path, function()
+			luau.compile(fs.readFile(path))
+		end)
 	end)
-end)
+end
 
 print(string.format("%d passed, %d failed", passed, failed))
 if failed > 0 then

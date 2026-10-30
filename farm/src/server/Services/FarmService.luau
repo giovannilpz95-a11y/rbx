@@ -13,6 +13,7 @@ local EconomyService = require(script.Parent.EconomyService)
 local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local FarmService = {}
@@ -82,6 +83,7 @@ function FarmService.harvest(player: Player, fieldId: any): (boolean, string?)
 	field.plantedAt = nil
 	field.readyAt = nil
 	EconomyService.add(player, "XP", crop.xp, "harvest_" .. crop.id)
+	TownService.onHarvest(player, crop.growSeconds)
 	PlotService.refresh(player)
 	return true
 end

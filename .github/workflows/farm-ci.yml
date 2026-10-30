@@ -3,9 +3,9 @@ name: Farm CI
 on:
   push:
     branches: [main]
-    paths: ["farm/**", ".github/workflows/farm-ci.yml"]
+    paths: ["farm/**", "uitheme/**", ".github/workflows/farm-ci.yml"]
   pull_request:
-    paths: ["farm/**", ".github/workflows/farm-ci.yml"]
+    paths: ["farm/**", "uitheme/**", ".github/workflows/farm-ci.yml"]
 
 jobs:
   check:
@@ -21,7 +21,7 @@ jobs:
           path: farm
 
       - name: Format check (StyLua)
-        run: stylua --check src tests
+        run: stylua --check src tests ../uitheme
 
       - name: Unit tests and compile check (Lune)
         run: lune run tests/run.luau

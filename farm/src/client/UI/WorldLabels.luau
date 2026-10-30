@@ -1,7 +1,7 @@
 --!strict
 -- In-world status for your own plot: a timer or a "ready" bubble over each bed, each factory's
--- current job or finished goods, each pen's products or hunger, and the order cards on the
--- Order Board's face.
+-- current job or finished goods, each pen's products or hunger, Town construction timers, and
+-- the order cards on the Order Board's face.
 -- Countdowns run locally from the server timestamps (Design/11 UI & UX ready bubbles).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,6 +14,7 @@ local Factories = require(Shared.Config.Factories)
 local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Timer = require(Shared.Timer)
+local TownRules = require(Shared.TownRules)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Ui = require(script.Parent.Ui)
@@ -38,29 +39,30 @@ local function billboard(adornee: BasePart, offsetY: number, maxDistance: number
 	})
 	local label = Ui.label("", {
 		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = Ui.colors.bar,
-		BackgroundTransparency = 0.35,
-		TextColor3 = Color3.new(1, 1, 1),
 		TextXAlignment = Enum.TextXAlignment.Center,
-		Font = Enum.Font.GothamBold,
 		TextScaled = true,
 		Parent = gui,
 	})
-	Ui.corner(10).Parent = label
-	Ui.padding(3).Parent = label
+	Ui.padding(4).Parent = label
+	Ui.theme.Kit.skinBubble(label)
+	-- Ready bubbles bob gently so they catch the eye (12 Art & Audio Direction)
+	local bob: Tween? = nil
+	label:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+		local ready = label.BackgroundColor3 == Ui.colors.ready
+		if ready and bob == nil then
+			bob = Ui.theme.Motion.loop(gui, { StudsOffset = Vector3.new(0, offsetY + 0.6, 0) })
+		elseif not ready and bob ~= nil then
+			bob:Cancel()
+			bob = nil
+			gui.StudsOffset = Vector3.new(0, offsetY, 0)
+		end
+	end)
 	return label
 end
 
 local function attach(model: Model)
 	plot = model
-	table.clear(bedLabels)
-	local fields = model:WaitForChild("Fields")
-	for _, bed in fields:GetChildren() do
-		local id = bed:GetAttribute("FieldId")
-		if bed:IsA("BasePart") and type(id) == "string" then
-			bedLabels[id] = billboard(bed, 4)
-		end
-	end
+	table.clear(bedLabels) -- beds arrive over time (new fields); render adds their labels
 	table.clear(factoryLabels)
 	for _, id in Balance.enabledFactories do
 		local building = model:WaitForChild(id)
@@ -88,7 +90,7 @@ local function attach(model: Model)
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextWrapped = true,
 		TextScaled = true,
-		Font = Enum.Font.GothamBold,
+		Font = Ui.theme.Type.display,
 		Parent = surface,
 	})
 	Ui.padding(12).Parent = boardText
@@ -101,6 +103,15 @@ local function render()
 	end
 	local now = ClientStore.now()
 
+	local fieldsFolder = plot:FindFirstChild("Fields")
+	if fieldsFolder then
+		for id in state.fields do
+			local bed = if bedLabels[id] == nil then fieldsFolder:FindFirstChild("Field_" .. id) else nil
+			if bed and bed:IsA("BasePart") then
+				bedLabels[id] = billboard(bed, 4)
+			end
+		end
+	end
 	for id, label in bedLabels do
 		local field = state.fields[id]
 		local gui = label.Parent :: BillboardGui
@@ -109,7 +120,7 @@ local function render()
 		elseif Timer.isReady(field.readyAt, now) then
 			gui.Enabled = true
 			label.Text = Crops[field.crop].displayName .. " ready!"
-			label.BackgroundColor3 = Color3.fromRGB(90, 160, 60)
+			label.BackgroundColor3 = Ui.colors.ready
 		else
 			gui.Enabled = true
 			label.Text = Timer.format(Timer.remaining(field.readyAt, now))
@@ -133,7 +144,7 @@ local function render()
 			label.Text = "Building " .. Timer.format(Timer.remaining(preview.constructionReadyAt, now))
 		elseif preview.outputCount > 0 then
 			label.Text = string.format("%d ready!", preview.outputCount)
-			label.BackgroundColor3 = Color3.fromRGB(90, 160, 60)
+			label.BackgroundColor3 = Ui.colors.ready
 		elseif #preview.queue > 0 and preview.queue[1].readyAt then
 			local job = preview.queue[1]
 			label.Text = Items[job.recipe].displayName .. " " .. Timer.format(Timer.remaining(job.readyAt, now))
@@ -159,13 +170,43 @@ local function render()
 			local counts = Pen.counts(pen, now)
 			if counts.ready > 0 then
 				label.Text = string.format("%d %s ready!", counts.ready, def.productName)
-				label.BackgroundColor3 = Color3.fromRGB(90, 160, 60)
+				label.BackgroundColor3 = Ui.colors.ready
 			elseif counts.hungry > 0 then
 				local hasFeed = (pen.feedLeft or 0) > 0 or ClientStore.itemCount(def.feed) > 0
 				label.Text = if hasFeed then "Hungry" else "Needs " .. Items[def.feed].displayName
-				label.BackgroundColor3 = Color3.fromRGB(200, 120, 50)
+				label.BackgroundColor3 = Ui.colors.warn
 			elseif counts.nextReadyAt then
 				label.Text = def.productName .. " " .. Timer.format(Timer.remaining(counts.nextReadyAt, now))
+			end
+		end
+	end
+
+	-- Town buildings under construction: a countdown over each (the server swaps the block
+	-- for the finished one, which drops the bubble)
+	local town = plot:FindFirstChild("Town")
+	if town and state.town then
+		local function bubble(name: string, readyAt: number)
+			local holder = town:FindFirstChild(name)
+			local body = holder and holder:FindFirstChild("Body") :: BasePart?
+			if body == nil then
+				return
+			end
+			local gui = body:FindFirstChild("FarmStatus")
+			local label = if gui
+				then gui:FindFirstChildOfClass("TextLabel")
+				else billboard(body, body.Size.Y / 2 + 3, 60)
+			if label then
+				label.Text = "Building " .. Timer.format(Timer.remaining(readyAt, now))
+			end
+		end
+		for _, house in state.town.houses do
+			if not TownRules.isDone(house, now) then
+				bubble("House_" .. house.lot, house.readyAt)
+			end
+		end
+		for id, entry in state.town.community do
+			if not TownRules.isDone(entry, now) then
+				bubble("Community_" .. id, entry.readyAt)
 			end
 		end
 	end

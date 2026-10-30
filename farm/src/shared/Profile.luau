@@ -7,6 +7,7 @@ local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
 local Factories = require("./Config/Factories")
 local Levels = require("./Config/Levels")
+local Town = require("./Config/Town")
 
 local Profile = {}
 
@@ -69,6 +70,11 @@ function Profile.template(): { [string]: any }
 		}
 	end
 
+	local houses = {}
+	for lot, houseId in Town.starterHouses do
+		table.insert(houses, { type = houseId, lot = lot }) -- built: no readyAt
+	end
+
 	return {
 		version = Profile.VERSION,
 		meta = {
@@ -85,10 +91,16 @@ function Profile.template(): { [string]: any }
 		inventory = {
 			items = {}, -- never put starting items here: reconcile would refill them on every load
 			barnCapacity = Balance.barnStartCapacity,
+			upgrades = 0, -- Barn upgrades done (shared/BarnRules)
 		},
 		fields = fields,
 		factories = factories,
 		pens = pens,
+		land = {}, -- land expansions started, in order: { readyAt? } (shared/TownRules)
+		town = {
+			houses = houses, -- { type, lot, readyAt? } (shared/TownRules)
+			community = {}, -- id -> { readyAt? }
+		},
 		orders = {
 			board = {}, -- array of slots: an order, or { refreshAt = n } while empty
 			seed = 0,

@@ -3,6 +3,7 @@
 -- Selling from the Barn is the worst rate on purpose (Design/05 Orders & Economy).
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local BarnRules = require(Shared.BarnRules)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 
@@ -81,7 +82,7 @@ function InventoryService.sell(player: Player, itemId: any, qty: any): (boolean,
 		return false
 	end
 	local item = Items[itemId]
-	if item == nil then
+	if item == nil or item.sellPrice <= 0 then
 		return false
 	end
 	if not InventoryService.remove(player, { [itemId] = qty }) then
@@ -91,8 +92,26 @@ function InventoryService.sell(player: Player, itemId: any, qty: any): (boolean,
 	return true
 end
 
+-- The next Barn upgrade: n of each Barn material, no Coins (Design/02 Farming).
+function InventoryService.upgrade(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if data == nil then
+		return false
+	end
+	local n = data.inventory.upgrades + 1
+	if not InventoryService.remove(player, BarnRules.upgradeCost(n)) then
+		return false, string.format("Upgrade %d needs %d Nails, %d Hinges and %d Paint", n, n, n, n)
+	end
+	data.inventory.upgrades = n
+	data.inventory.barnCapacity = BarnRules.capacity(n)
+	DataService.markDirty(player, true)
+	NetService.popup(player, { kind = "BarnUpgrade", capacity = data.inventory.barnCapacity })
+	return true
+end
+
 function InventoryService.init()
 	NetService.on(Net.Barn_Sell, 4, 6, InventoryService.sell)
+	NetService.on(Net.Barn_Upgrade, 1, 2, InventoryService.upgrade)
 end
 
 return InventoryService
