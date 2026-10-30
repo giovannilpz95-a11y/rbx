@@ -620,6 +620,24 @@ test("the Harvest Cup shows on the Trail with standings, and a finished cup can 
 	PuzzleScreen.close()
 end)
 
+test("the Tractor Race shows on the Trail with rivals, and finishing says so", function()
+	refillHearts()
+	PuzzleScreen.open()
+	local select = playerGui.CropPop.Backdrop.LevelSelect
+	PuzzleScreen.debugRace()
+	local row = select.List.Race
+	truthy(string.find(row.Text, "5/15", 1, true), row.Text)
+	row.Activated:Fire()
+	truthy(string.find(select.List.RaceRow1.Text, "You", 1, true), select.List.RaceRow1.Text)
+	truthy(select.List:FindFirstChild("RaceWaiting"), "waiting for racers")
+	PuzzleScreen.debugRace()
+	PuzzleScreen.debugRace()
+	truthy(string.find(select.Status.Text, "You finished", 1, true), select.Status.Text)
+	truthy(string.find(select.List.Race.Text, "race again", 1, true), select.List.Race.Text)
+	select.List.Race.Activated:Fire()
+	PuzzleScreen.close()
+end)
+
 test("a heart from a neighbor shows on the Trail and fills an empty heart", function()
 	PuzzleScreen.open()
 	local select = playerGui.CropPop.Backdrop.LevelSelect

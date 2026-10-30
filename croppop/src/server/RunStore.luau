@@ -25,6 +25,10 @@
 	Harvest Cup (see Cup, CupBoard): a verified win during a cup enters the
 	player into a group and adds cups by difficulty. When the cup is over,
 	refreshCup() looks up their final place and claimCup() pays the prize.
+
+	Tractor Race (see Race): on race weekends a win puts the player in a
+	4-player race (shared through a CupBoard with groups of 4) and counts
+	towards its 15 wins; the win that finishes pays the place's prize.
 ]]
 
 local CropPop = require(game:GetService("ReplicatedStorage"):WaitForChild("CropPop"))
@@ -36,6 +40,7 @@ local ScoreTracks = CropPop.ScoreTracks
 local GiftInbox = require(script.Parent.GiftInbox)
 local CupBoard = require(script.Parent.CupBoard)
 local Cup = CropPop.Cup
+local Race = CropPop.Race
 
 local RunStore = {}
 RunStore.__index = RunStore
@@ -67,6 +72,9 @@ export type Config = {
 	-- Where Harvest Cup groups and scores live (see CupBoard); defaults to in-memory.
 	cupBoard: any?,
 	cups: boolean?, -- false turns the Harvest Cup off (on by default)
+	raceBoard: any?, -- where Tractor Races live (a CupBoard with groups of 4); defaults to in-memory
+	races: boolean?, -- false turns the Tractor Race off (on by default)
+	raceEveryDay: boolean?, -- Studio testing: a one-day race weekend every day
 }
 
 function RunStore.new(config: Config)
@@ -84,6 +92,9 @@ function RunStore.new(config: Config)
 		scoreTracks = config.scoreTracks ~= false,
 		cupBoard = config.cupBoard or CupBoard.memory(),
 		cups = config.cups ~= false,
+		raceBoard = config.raceBoard or CupBoard.memory(Race.SIZE),
+		races = config.races ~= false,
+		raceEveryDay = config.raceEveryDay == true,
 		players = {},
 	}, RunStore)
 end
@@ -105,6 +116,9 @@ function RunStore._fresh(self)
 		-- A finished cup the player was in, until its prize is claimed. `place`
 		-- and `players` are filled in once the final standings are read.
 		pendingCup = nil,
+		-- This weekend's race: group -1 until a win enters one. finishedAt and
+		-- place are set by the win that finishes it; `over` once others have.
+		race = { key = -1, group = -1, wins = 0 },
 	}
 end
 
@@ -121,6 +135,8 @@ function RunStore._player(self, userId: number)
 			giftsReadAt = -math.huge,
 			standings = nil, -- this cup's group standings, as last read
 			standingsAt = -math.huge,
+			raceStandings = nil, -- the current race, as last read
+			raceStandingsAt = -math.huge,
 		}
 		self.players[userId] = record
 	end
@@ -149,6 +165,7 @@ function RunStore.exportSave(self, userId: number)
 		freeStarts = table.clone(state.freeStarts),
 		cup = table.clone(state.cup),
 		pendingCup = state.pendingCup and table.clone(state.pendingCup),
+		race = table.clone(state.race),
 	}
 end
 
@@ -219,6 +236,18 @@ function RunStore.importSave(self, userId: number, block: any)
 		state.cup.place, state.cup.players = nil, nil
 		local pending = cleanCup(block.pendingCup)
 		state.pendingCup = if pending and pending.group >= 0 then pending else nil
+		local race = block.race
+		if type(race) == "table" and count(race.key, 2 ^ 31) and type(race.group) == "number" and race.group == race.group then
+			state.race = {
+				key = count(race.key, 2 ^ 31) :: number,
+				group = math.max(-1, math.floor(race.group)),
+				wins = count(race.wins, Race.WINS) or 0,
+				finishedAt = count(race.finishedAt, 2 ^ 40),
+				place = count(race.place, Race.SIZE),
+				racers = count(race.racers, Race.SIZE),
+				over = race.over == true,
+			}
+		end
 	end
 	record.state = state
 	record.run = nil -- a run from before the load belongs to the old state
@@ -256,7 +285,149 @@ function RunStore.getProgress(self, userId: number)
 		track = self:_trackProgress(state, now),
 		freeStarts = self:_freeStartsLeft(state, now),
 		cup = self:_cupProgress(record, now),
+		race = self:_raceProgress(record, now),
 	}
+end
+
+-- Tractor Race -------------------------------------------------------------------
+
+-- The race weekend running now, if any (every day is one in Studio).
+function RunStore._raceWeekend(self, now: number)
+	local running = Race.at(now)
+	if not running and self.raceEveryDay then
+		local today = now // DAY
+		running = { key = today, startsAt = today * DAY, endsAt = (today + 1) * DAY }
+	end
+	return running
+end
+
+-- The weekend and this player's race in it, starting over on a new weekend.
+function RunStore._race(self, state, now: number)
+	local running = self:_raceWeekend(now)
+	local key = if running then running.key else -1
+	if state.race.key ~= key then
+		state.race = { key = key, group = -1, wins = 0 }
+	end
+	return running, state.race
+end
+
+function RunStore._raceProgress(self, record, now: number)
+	if not self.races then
+		return nil
+	end
+	local running, race = self:_race(record.state, now)
+	if not running then
+		return { running = false, secondsToNext = Race.secondsToNext(now) }
+	end
+	local standings = record.raceStandings
+	local current = standings and standings.key == race.key and standings.group == race.group
+	return {
+		running = true,
+		secondsLeft = running.endsAt - now,
+		entered = race.group >= 0,
+		wins = race.wins,
+		target = Race.WINS,
+		finished = race.finishedAt ~= nil,
+		place = race.place,
+		racers = race.racers,
+		prize = race.place and Race.prizeFor(race.place, race.racers or 0) or nil,
+		over = race.over == true,
+		standings = if current then standings.rows else nil,
+	}
+end
+
+-- Rows of a race board as { userId, wins, finished }, best first.
+local function raceRows(list)
+	local rows = {}
+	for _, row in list do
+		local score = if type(row.cups) == "number" then row.cups else 0
+		table.insert(rows, { userId = row.userId, wins = Race.winsOf(score), finished = Race.finished(score) })
+	end
+	return rows
+end
+
+--[[
+	Counts a win in the player's race, joining a new race first when they
+	have none or theirs is done. The win that reaches Race.WINS pays the
+	place's prize. May yield (the board). Returns { wins, target, finished,
+	place?, racers?, prize? } or nil outside race weekends.
+]]
+function RunStore._addRaceWin(self, userId: number, state)
+	local now = self.now()
+	local running, race = self:_race(state, now)
+	if not running then
+		return nil
+	end
+	if race.group < 0 or race.finishedAt or race.over then
+		local ok, group = self.raceBoard.join(running.key)
+		if not ok or type(group) ~= "number" then
+			return nil -- try again on the next win
+		end
+		race = { key = running.key, group = group, wins = 0 }
+		state.race = race
+	end
+	race.wins += 1
+	if race.wins >= Race.WINS then
+		race.finishedAt = now
+	end
+	self.raceBoard.setScore(race.key, race.group, userId, Race.score(race.wins, race.finishedAt, running.startsAt))
+	self.players[userId].raceStandingsAt = -math.huge
+	local out = { wins = race.wins, target = Race.WINS, finished = race.finishedAt ~= nil }
+	if race.finishedAt then
+		local ok, list, racers = self.raceBoard.top(race.key, race.group, Race.SIZE)
+		if ok and type(list) == "table" then
+			local place = 0
+			for _, row in raceRows(list) do
+				if row.finished then
+					place += 1
+				end
+				if row.userId == userId then
+					break
+				end
+			end
+			race.place = place
+			race.racers = racers or #list
+			local prize = Race.prizeFor(place, race.racers)
+			if prize then
+				self:_payStep(state, prize, {}, now)
+			end
+			out.place, out.racers, out.prize = place, race.racers, prize
+		end
+	end
+	return out
+end
+
+-- Reads the player's race standings (every CUP_CHECK_SECONDS unless forced),
+-- and marks the race over once enough others have finished. May yield.
+function RunStore.refreshRace(self, userId: number, force: boolean?)
+	if not self.races then
+		return
+	end
+	local record = self:_player(userId)
+	local running, race = self:_race(record.state, self.now())
+	if not running or race.group < 0 then
+		return
+	end
+	local clockNow = self.clock()
+	if not force and clockNow - record.raceStandingsAt < CUP_CHECK_SECONDS then
+		return
+	end
+	local ok, list = self.raceBoard.top(race.key, race.group, Race.SIZE)
+	if not ok or type(list) ~= "table" then
+		return
+	end
+	local rows = raceRows(list)
+	record.raceStandings = { key = race.key, group = race.group, rows = rows }
+	record.raceStandingsAt = clockNow
+	local finishers = 0
+	for _, row in rows do
+		if row.finished then
+			finishers += 1
+		end
+	end
+	if not race.finishedAt and finishers >= Race.FINISHERS then
+		race.over = true
+	end
 end
 
 -- Harvest Cup ------------------------------------------------------------------
@@ -640,6 +811,7 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 		rewards.coins += chest.coins
 	end
 	local cup = if self.cups then self:_addCups(userId, state, level.difficulty) else nil
+	local race = if self.races then self:_addRaceWin(userId, state) else nil
 	local track
 	if self.scoreTracks then
 		local _, running = self:_track(state, self.now())
@@ -653,6 +825,7 @@ function RunStore.finish(self, userId: number, token: any, rawMoves: any)
 		chest = chest,
 		track = track,
 		cup = cup,
+		race = race,
 		firstWin = firstWin,
 		stats = result.stats,
 		progress = self:getProgress(userId),
@@ -933,6 +1106,23 @@ function RunStore.devTrackPoints(self, userId: number, points: number)
 	local rewards = { coins = 0 }
 	local track = self:_addTrackPoints(self:_player(userId).state, math.floor(points), false, rewards)
 	return { track = track, rewards = rewards, progress = self:getProgress(userId) }
+end
+
+-- Studio testing: 5 race wins without playing (the T key).
+function RunStore.devRace(self, userId: number)
+	if not self.devActions or not self.races then
+		return nil, "not in Studio"
+	end
+	local state = self:_player(userId).state
+	local last
+	for _ = 1, 5 do
+		last = self:_addRaceWin(userId, state) or last
+		if last and last.finished then
+			break
+		end
+	end
+	self:refreshRace(userId, true)
+	return { race = last, progress = self:getProgress(userId) }
 end
 
 -- Studio testing: "add" scores 10 cups (as 10 Normal wins), "end" ends the

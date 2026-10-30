@@ -22,6 +22,7 @@ local function makeStore(start, config)
 		end,
 		unlockAll = true,
 		scoreTracks = false,
+		races = false,
 	}
 	for k, v in config or {} do
 		settings[k] = v
