@@ -21,7 +21,9 @@ local Prize = require("../src/shared/Config/Prize")
 local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
+local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
+local Lots = require("../src/shared/Lots")
 local OrderConfig = require("../src/shared/Config/Orders")
 local OrderGen = require("../src/shared/OrderGen")
 local Pen = require("../src/shared/Pen")
@@ -223,6 +225,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
+	for _, id in { "Bathhouse", "ArtStudio" } do
+		local def = Town.community[id]
+		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
+		eq(Lots.community[def.order].land, Lots.northLaneLand, id .. " stands on North Lane")
+	end
 	for _, id in { "SnackFactory", "Diner" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
@@ -426,6 +433,71 @@ test("Houses take the first free lot", function()
 	eq(TownRules.freeLot(data, 32), 2, "a gap is reused")
 	eq(TownRules.freeLot(data, 3), 2, "still fits")
 	eq(TownRules.freeLot(data, 1), nil, "street full")
+end)
+
+test("North Lane opens more lots once the North Fields are cleared", function()
+	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
+	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
+	eq(#Lots.houses, 48, "House lots with North Lane")
+	eq(#Lots.community, 17, "Community lots with North Lane")
+	local data = Profile.migrate(nil) :: any
+	data.level = 16
+	eq(TownRules.houseLotCount(data, 0), 32, "Main Street only")
+	eq((TownRules.communityLotOpen(data, "Greenhouse", 0)), true, "Greenhouse is on Main Street")
+	local open, land = TownRules.communityLotOpen(data, "Bathhouse", 0)
+	eq(open, false, "Bathhouse waits")
+	eq(land, Lots.northLaneLand, "for the North Fields")
+	for stage = 1, Lots.northLaneLand do
+		data.land[stage] = { readyAt = 100 }
+	end
+	eq(TownRules.houseLotCount(data, 50), 32, "still clearing")
+	eq(TownRules.houseLotCount(data, 100), 48, "cleared")
+	eq((TownRules.communityLotOpen(data, "ArtStudio", 100)), true, "Art Studio open")
+	for lot = 5, 32 do
+		table.insert(data.town.houses, { type = "LeanTo", lot = lot })
+	end
+	eq(TownRules.freeLot(data, TownRules.houseLotCount(data, 100)), 33, "first North Lane lot")
+end)
+
+test("every lot sits on the plot, on its land, clear of the streets and the other lots", function()
+	local boxes = {}
+	local function add(list: { any }, size: number, what: string)
+		for i, lot in list do
+			local box = { lot.x - size / 2, lot.z - size / 2, lot.x + size / 2, lot.z + size / 2, what .. " " .. i }
+			ok(box[1] >= -96 and box[3] <= 96 and box[2] >= -96 and box[4] <= 96, box[5] .. " on the plot")
+			if lot.land > 0 then
+				local rect = Land.rects[lot.land]
+				ok(
+					box[1] >= rect.minX and box[3] <= rect.maxX and box[2] >= rect.minZ and box[4] <= rect.maxZ,
+					box[5] .. " inside its land"
+				)
+			end
+			table.insert(boxes, box)
+		end
+	end
+	add(Lots.houses, 8, "House lot")
+	add(Lots.community, 12, "Community lot")
+	local lane, link = Lots.northLane.z, Lots.northLane.linkX
+	local streets = {
+		{ -92, 71, 92, 79, "Main Street" },
+		{ -4, 48, 4, 96, "gate road" },
+		{ -46, lane - 4, 46, lane + 4, "North Lane" },
+		{ link - 4, lane + 4, link + 4, -48, "North Lane link" },
+	}
+	local function overlaps(a, b)
+		return a[1] < b[3] and b[1] < a[3] and a[2] < b[4] and b[2] < a[4]
+	end
+	for i, a in boxes do
+		for _, street in streets do
+			ok(not overlaps(a, street), a[5] .. " is clear of " .. street[5])
+		end
+		for j = i + 1, #boxes do
+			ok(not overlaps(a, boxes[j]), a[5] .. " is clear of " .. boxes[j][5])
+		end
+	end
+	for id, def in Town.community do
+		ok(Lots.community[def.order] ~= nil, id .. " has a lot")
+	end
 end)
 
 test("Township baseline town rows", function()

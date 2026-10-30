@@ -584,6 +584,430 @@ function Kit.skinBubble(label: TextLabel)
 	Kit.stroke(Color3.new(1, 1, 1), 2.5, 0, true).Parent = label
 end
 
+---------------------------------------------------------------------------------------------
+-- Tabs, steppers, have/need chips, portraits, icon bubbles and edge icons
+-- (Design/UI Reference & Gaps G13: the parts most of the bigger screens are built from)
+---------------------------------------------------------------------------------------------
+
+local function applyProps(instance: Instance, props: { [string]: any }?)
+	if props then
+		for key, value in props do
+			(instance :: any)[key] = value
+		end
+	end
+end
+
+-- Pointer press, for buttons that act on the press itself: a window that re-renders between
+-- press and release would otherwise swallow the tap (the farm panels refresh every second).
+local function isPress(input: InputObject): boolean
+	return input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
+end
+
+-- Calls `fn` once per tap, from the press or from Activated (keyboard and gamepad),
+-- whichever comes first.
+local function onTap(button: TextButton, fn: () -> ())
+	local last = -1
+	local function fire()
+		if time() - last < 0.35 or not button.Active then
+			return
+		end
+		last = time()
+		fn()
+	end
+	button.InputBegan:Connect(function(input)
+		if isPress(input) then
+			fire()
+		end
+	end)
+	button.Activated:Connect(fire)
+end
+Kit.onTap = onTap
+
+export type Tabs = { frame: Frame, buttons: { [string]: TextButton } }
+
+--[[
+	A row of tabs across the top of a window (Township splits big windows into 2-6 tabs and
+	never goes deeper). The picked tab is blue, the rest cream. Tapping another tab calls
+	onSelect(name); the caller keeps which one is picked and rebuilds. `badges` puts a red
+	count on a tab ("" hides it). Tabs are 44 px tall, the touch minimum.
+]]
+function Kit.tabs(
+	names: { string },
+	selected: string,
+	onSelect: (name: string) -> (),
+	props: { [string]: any }?,
+	badges: { [string]: string }?
+): Tabs
+	local gap = 6
+	local frame = make("Frame", {
+		Name = "Tabs",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 44),
+	}, {
+		make("UIListLayout", {
+			Padding = UDim.new(0, gap),
+			FillDirection = Enum.FillDirection.Horizontal,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+		}),
+	})
+	applyProps(frame, props)
+	local count = math.max(#names, 1)
+	local buttons = {}
+	for i, name in names do
+		local picked = name == selected
+		local button = Kit.button(name, if picked then "secondary" else "neutral", {
+			Name = name,
+			LayoutOrder = i,
+			Size = UDim2.new(1 / count, -gap * (count - 1) / count, 0, 44),
+			TextSize = Type.size.body,
+			TextScaled = true,
+			TextColor3 = if picked then Palette.textOnColor else Palette.text,
+			Parent = frame,
+		})
+		make("UITextSizeConstraint", { MaxTextSize = Type.size.body, MinTextSize = Type.size.small - 2 }).Parent =
+			button
+		make("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) }).Parent = button
+		if badges and badges[name] then
+			Kit.badge(button, badges[name])
+		end
+		if not picked then
+			onTap(button, function()
+				onSelect(name)
+			end)
+		end
+		buttons[name] = button
+	end
+	return { frame = frame, buttons = buttons }
+end
+
+export type Stepper = {
+	frame: Frame,
+	label: TextLabel,
+	minus: TextButton,
+	plus: TextButton,
+	get: () -> number,
+	set: (value: number) -> (),
+}
+
+-- − value + for picking a quantity. Calls onChange(value) after each step; the ends grey out.
+function Kit.stepper(
+	value: number,
+	min: number,
+	max: number,
+	onChange: (value: number) -> (),
+	props: { [string]: any }?
+): Stepper
+	local frame = make("Frame", {
+		Name = "Stepper",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(150, 44),
+	})
+	applyProps(frame, props)
+	local minus = Kit.button("−", "secondary", {
+		Name = "Minus",
+		Size = UDim2.new(0, 44, 1, 0),
+		TextSize = 24,
+		Parent = frame,
+	})
+	local plus = Kit.button("+", "secondary", {
+		Name = "Plus",
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.new(0, 44, 1, 0),
+		TextSize = 24,
+		Parent = frame,
+	})
+	local label = make("TextLabel", {
+		Name = "Value",
+		BackgroundColor3 = Palette.card,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 48, 0, 2),
+		Size = UDim2.new(1, -96, 1, -8),
+		Font = Type.display,
+		TextSize = Type.size.heading,
+		TextColor3 = Palette.text,
+		Parent = frame,
+	}, { Kit.corner(10), Kit.stroke(Palette.edge, 1.5, 0.3, true) })
+	local current = math.clamp(value, min, math.max(min, max))
+	local function show()
+		label.Text = tostring(current)
+		minus.Active = current > min
+		plus.Active = current < max
+		minus.BackgroundColor3 = if minus.Active then Palette.button.secondary.face else Palette.button.disabled.face
+		plus.BackgroundColor3 = if plus.Active then Palette.button.secondary.face else Palette.button.disabled.face
+	end
+	local function set(v: number)
+		local clamped = math.clamp(math.floor(v + 0.5), min, math.max(min, max))
+		if clamped ~= current then
+			current = clamped
+			show()
+			onChange(current)
+		end
+	end
+	onTap(minus, function()
+		set(current - 1)
+	end)
+	onTap(plus, function()
+		set(current + 1)
+	end)
+	show()
+	return {
+		frame = frame,
+		label = label,
+		minus = minus,
+		plus = plus,
+		get = function()
+			return current
+		end,
+		set = set,
+	}
+end
+
+export type NeedChip = { frame: Frame, iconSlot: Frame, label: TextLabel, met: boolean }
+
+--[[
+	An item requirement: an icon slot (put the item's icon in `iconSlot`) and "have/need".
+	Red when short, green with a tick on the icon once covered. `have` above `need` shows as
+	need/need, so a full Barn doesn't read as a strange 57/3. Numbers use the HUD size (18).
+]]
+function Kit.needChip(have: number, need: number, props: { [string]: any }?): NeedChip
+	local met = have >= need
+	local frame = make("Frame", {
+		Name = "NeedChip",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(84, 36),
+	})
+	applyProps(frame, props)
+	local iconSlot = make("Frame", {
+		Name = "IconSlot",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Parent = frame,
+	}, { make("UIAspectRatioConstraint", { AspectRatio = 1 }) })
+	local label = make("TextLabel", {
+		Name = "Count",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.fromScale(1, 0),
+		Size = UDim2.new(1, -38, 1, 0),
+		Font = Type.display,
+		TextSize = Type.size.hud,
+		TextScaled = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextColor3 = if met then Palette.button.primary.lip else Palette.button.danger.lip,
+		Text = string.format("%d/%d", math.min(have, need), need),
+		Parent = frame,
+	}, { make("UITextSizeConstraint", { MaxTextSize = Type.size.hud, MinTextSize = Type.size.small }) })
+	if met then
+		local tick = make("TextLabel", {
+			Name = "Tick",
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = Palette.ready,
+			Position = UDim2.fromOffset(30, 28),
+			Size = UDim2.fromOffset(16, 16),
+			Font = Type.display,
+			TextSize = 12,
+			TextColor3 = Palette.textOnColor,
+			Text = "✓",
+			ZIndex = 6,
+			Parent = frame,
+		}, { Kit.corner(UDim.new(1, 0)), Kit.stroke(Color3.new(1, 1, 1), 1.5, 0, true) })
+		tick.Visible = true
+	end
+	return { frame = frame, iconSlot = iconSlot, label = label, met = met }
+end
+
+export type PortraitLook = {
+	skin: Color3,
+	hat: Color3,
+	style: string, -- "sunhat" | "cap" | "scarf" | "hardhat" | "hair"
+	backdrop: Color3?,
+}
+export type Portrait = { frame: Frame, face: Frame, plate: TextLabel? }
+
+-- A peg-folk face in a round frame (Design/16 Model Catalog 2.15: big round head, dot eyes,
+-- rosy cheeks), with a hat by style. `name` adds a plate under it. Drawn from frames; the
+-- art pass can drop a rendered headshot into `face` instead.
+function Kit.portrait(look: PortraitLook, size: number, name: string?, props: { [string]: any }?): Portrait
+	local frame = make("Frame", {
+		Name = "Portrait",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromOffset(size, size + (if name then 14 else 0)),
+	})
+	applyProps(frame, props)
+	local ring = make("Frame", {
+		Name = "Ring",
+		BackgroundColor3 = look.backdrop or Palette.hex("#BFE6F7"),
+		BorderSizePixel = 0,
+		ClipsDescendants = true,
+		Size = UDim2.fromOffset(size, size),
+		Parent = frame,
+	}, { Kit.corner(UDim.new(1, 0)), Kit.stroke(Palette.cocoa, 2.5, 0.1, true) })
+	local function blob(color: Color3, x: number, y: number, w: number, h: number, round: boolean?, z: number?): Frame
+		return make("Frame", {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundColor3 = color,
+			BorderSizePixel = 0,
+			Position = UDim2.fromScale(x, y),
+			Size = UDim2.fromScale(w, h),
+			ZIndex = z or 1,
+			Parent = ring,
+		}, { Kit.corner(if round == false then UDim.new(0.25, 0) else UDim.new(1, 0)) })
+	end
+	-- Shoulders, head, face
+	blob(Palette.shade(look.hat, 0.85), 0.5, 1.02, 0.9, 0.42, true, 1)
+	local face = blob(look.skin, 0.5, 0.6, 0.62, 0.58, true, 2)
+	face.Name = "Face"
+	blob(Palette.cocoa, 0.4, 0.6, 0.07, 0.08, true, 3)
+	blob(Palette.cocoa, 0.6, 0.6, 0.07, 0.08, true, 3)
+	local cheek = Palette.hex("#F28B82")
+	blob(cheek, 0.33, 0.7, 0.11, 0.07, true, 3).BackgroundTransparency = 0.25
+	blob(cheek, 0.67, 0.7, 0.11, 0.07, true, 3).BackgroundTransparency = 0.25
+	blob(Palette.shade(look.skin, 0.55), 0.5, 0.76, 0.14, 0.04, true, 3)
+	-- Hat (or hair) over the top of the head
+	local hat = look.hat
+	local style = look.style
+	if style == "sunhat" then
+		blob(hat, 0.5, 0.35, 0.98, 0.14, true, 4)
+		blob(hat, 0.5, 0.27, 0.5, 0.22, true, 4)
+		blob(Palette.shade(hat, 0.7), 0.5, 0.33, 0.5, 0.05, false, 5)
+	elseif style == "cap" then
+		blob(hat, 0.5, 0.33, 0.6, 0.26, true, 4)
+		blob(Palette.shade(hat, 0.8), 0.68, 0.42, 0.42, 0.07, true, 4)
+	elseif style == "scarf" then
+		blob(hat, 0.5, 0.38, 0.68, 0.34, true, 4)
+		blob(hat, 0.78, 0.5, 0.14, 0.12, true, 4)
+		blob(Palette.shade(hat, 0.75), 0.5, 0.45, 0.62, 0.04, false, 5)
+	elseif style == "hardhat" then
+		blob(hat, 0.5, 0.33, 0.6, 0.28, true, 4)
+		blob(Palette.shade(hat, 0.85), 0.5, 0.43, 0.78, 0.06, false, 4)
+		blob(Palette.grass, 0.5, 0.3, 0.1, 0.1, true, 5)
+	else
+		blob(hat, 0.5, 0.36, 0.64, 0.3, true, 4)
+		blob(hat, 0.24, 0.52, 0.12, 0.22, true, 1)
+		blob(hat, 0.76, 0.52, 0.12, 0.22, true, 1)
+	end
+	local plate: TextLabel? = nil
+	if name then
+		local created = make("TextLabel", {
+			Name = "NamePlate",
+			AnchorPoint = Vector2.new(0.5, 1),
+			BackgroundColor3 = Palette.ribbon,
+			BorderSizePixel = 0,
+			Position = UDim2.new(0.5, 0, 1, 0),
+			Size = UDim2.new(1, 8, 0, 20),
+			Font = Type.display,
+			TextScaled = true,
+			TextColor3 = Palette.textOnColor,
+			Text = name,
+			ZIndex = 6,
+			Parent = frame,
+		}, {
+			Kit.corner(UDim.new(1, 0)),
+			Kit.stroke(Palette.ribbonLip, 1.5, 0, true),
+			make("UIPadding", { PaddingLeft = UDim.new(0, 5), PaddingRight = UDim.new(0, 5) }),
+			make("UITextSizeConstraint", { MaxTextSize = Type.size.small, MinTextSize = 9 }),
+		})
+		Kit.textOutline(created, Palette.ribbonLip)
+		plate = created
+	end
+	return { frame = frame, face = face, plate = plate }
+end
+
+export type IconBubble = { frame: Frame, iconSlot: Frame, count: TextLabel }
+
+--[[
+	A ready bubble for the world (Township's convention C4): a round white-rimmed bubble with
+	the product's picture and a count. Put the icon in `iconSlot`; Kit.setIconBubble sets the
+	count ("" leaves just the picture, centred). Fills its parent, usually a BillboardGui.
+]]
+function Kit.iconBubble(props: { [string]: any }?): IconBubble
+	local frame = make("Frame", {
+		Name = "IconBubble",
+		BackgroundColor3 = Palette.ready,
+		BorderSizePixel = 0,
+		Size = UDim2.fromScale(1, 1),
+	}, { Kit.corner(UDim.new(1, 0)), Kit.stroke(Color3.new(1, 1, 1), 2.5, 0, true), Kit.gloss(0.85) })
+	applyProps(frame, props)
+	local iconSlot = make("Frame", {
+		Name = "IconSlot",
+		AnchorPoint = Vector2.new(0, 0.5),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 4, 0.5, 0),
+		Size = UDim2.new(1, -8, 1, -6),
+		Parent = frame,
+	}, { make("UIAspectRatioConstraint", { AspectRatio = 1 }) })
+	local count = make("TextLabel", {
+		Name = "Count",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -6, 0.5, 0),
+		Size = UDim2.new(0.5, -4, 0.8, 0),
+		Font = Type.display,
+		TextScaled = true,
+		TextColor3 = Palette.textOnColor,
+		Text = "",
+		Parent = frame,
+	})
+	Kit.textOutline(count, Palette.cocoa)
+	return { frame = frame, iconSlot = iconSlot, count = count }
+end
+
+function Kit.setIconBubble(bubble: IconBubble, countText: string)
+	bubble.count.Text = countText
+	bubble.count.Visible = countText ~= ""
+	if countText == "" then
+		bubble.iconSlot.AnchorPoint = Vector2.new(0.5, 0.5)
+		bubble.iconSlot.Position = UDim2.fromScale(0.5, 0.5)
+	else
+		bubble.iconSlot.AnchorPoint = Vector2.new(0, 0.5)
+		bubble.iconSlot.Position = UDim2.new(0, 4, 0.5, 0)
+	end
+end
+
+export type EdgeIcon = { button: TextButton, timer: TextLabel }
+
+-- A round icon for the screen edge (convention C10): a glyph, a small countdown under it
+-- (Kit.setEdgeTimer) and a red dot (Kit.badge on `button`). For timed offers, events and passes.
+function Kit.edgeIcon(glyph: string, props: { [string]: any }?): EdgeIcon
+	local button = Kit.button(glyph, "neutral", {
+		Name = "EdgeIcon",
+		Size = UDim2.fromOffset(54, 54),
+		TextSize = 26,
+		TextColor3 = Palette.text,
+	})
+	for _, part in { button, button:FindFirstChild("ButtonLip"), button:FindFirstChild("ButtonFace") } do
+		local c = childOfClass(part :: Instance, "UICorner") :: UICorner?
+		if c then
+			c.CornerRadius = UDim.new(1, 0)
+		end
+	end
+	local timer = make("TextLabel", {
+		Name = "Timer",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Palette.timer,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0.5, 0, 1, 0),
+		Size = UDim2.fromOffset(52, 18),
+		Font = Type.display,
+		TextSize = 12,
+		TextColor3 = Palette.textOnColor,
+		Text = "",
+		ZIndex = 6,
+		Parent = button,
+	}, { Kit.corner(UDim.new(1, 0)) })
+	timer.Visible = false
+	applyProps(button, props)
+	return { button = button, timer = timer }
+end
+
+-- Sets an edge icon's countdown; "" hides it.
+function Kit.setEdgeTimer(edge: EdgeIcon, text: string)
+	edge.timer.Text = text
+	edge.timer.Visible = text ~= ""
+end
+
 -- 12400 -> "12.4K"
 Kit.short = Format.short
 

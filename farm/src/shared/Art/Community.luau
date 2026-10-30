@@ -451,6 +451,88 @@ TYPES.Greenhouse = function(b, s)
 	return body
 end
 
+-- Bathhouse (content bank, level 15): a pale-blue tiled hall under a teal arch roof, with a
+-- round wooden tub on the sign wall and steam puffing from a stone chimney.
+TYPES.Bathhouse = function(b, s)
+	local w, d, h = s * 0.8, s * 0.6, 4.4
+	local body = hall(b, w, d, h, Palette.sky)
+	local t = b.into(body, true)
+	t.block("Trim", Vector3.new(w + 0.2, 0.5, d + 0.2), Vector3.new(0, PLINTH + 1, 0), Palette.cream)
+	Kit.archRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 0.8, d + 0.8, 2.4, 5, 0.5, Palette.roofTeal)
+	t.post("Chimney", 3, 1.4, Vector3.new(w / 2 - 1.6, PLINTH + h + 2.4, d / 4), Palette.stone)
+	for i, y in { 1.2, 2.3, 3.5 } do
+		t.ball(
+			"Steam",
+			0.9 + i * 0.3,
+			Vector3.new(w / 2 - 1.6 + i * 0.3, PLINTH + h + 3.9 + y, d / 4),
+			Palette.flowerWhite,
+			{ shadow = false, transparency = 0.3 }
+		)
+	end
+	-- Sign object: a round wooden tub with water and a bubble, over the door
+	local tub = Vector3.new(0, PLINTH + h + 1.2, -d / 2 - 0.6)
+	t.post("Tub", 1.4, 3, tub, Palette.wood)
+	t.post("TubWater", 0.2, 2.5, tub + Vector3.new(0, 0.65, 0), Palette.water, { shadow = false })
+	t.ball("Bubble", 0.8, tub + Vector3.new(0.5, 1.1, 0), Palette.flowerWhite, { shadow = false })
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, -d / 2), 2.4, 3.6, Palette.woodDark, Palette.cream)
+	for _, x in { -w / 3, w / 3 } do
+		Kit.window(t, "Window", CFrame.new(x, PLINTH + 2.6, -d / 2), 1.6, 1.4, Palette.cream, Palette.glass, true)
+	end
+	t.block("Steps", Vector3.new(4, 0.4, 1.4), Vector3.new(0, 0.2, -d / 2 - 0.7), Palette.stoneLight)
+	Kit.bush(t, "Bush", Vector3.new(-w / 2 + 0.8, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerPink)
+	Kit.bush(t, "Bush", Vector3.new(w / 2 - 0.8, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerWhite)
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1.2, PLINTH + h + 1, d / 2 - 1.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Art Studio (content bank, level 16): a cream studio with a plum gable roof and a big
+-- skylight, and a giant easel with a painted canvas out front. The roof's sign is a paint
+-- palette with four colour dots.
+TYPES.ArtStudio = function(b, s)
+	local w, d, h = s * 0.7, s * 0.55, 5
+	local body = hall(b, w, d, h, Palette.cream)
+	local t = b.into(body, true)
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0), w + 1, d + 1, 2.8, Palette.roofPlum, Palette.woodLight)
+	t.block(
+		"Skylight",
+		Vector3.new(w * 0.5, 0.3, d * 0.35),
+		CFrame.new(0, PLINTH + h + 1.5, -d / 4) * CFrame.Angles(math.rad(-28), 0, 0),
+		Palette.glass,
+		{ shadow = false }
+	)
+	Kit.window(t, "Window", CFrame.new(-w / 4, PLINTH + 2.8, -d / 2), 2, 2.2, Palette.woodLight, Palette.glass)
+	Kit.door(t, "Door", CFrame.new(w / 4, PLINTH, -d / 2), 2.2, 3.8, Palette.roofPlum, Palette.woodLight)
+	-- Sign object: a paint palette on the gable with four colour dots
+	local at = Vector3.new(0, PLINTH + h + 1.2, -d / 2 - 0.65)
+	t.cyl("Palette", 0.3, 2.8, CFrame.new(at) * TURN, Palette.woodLight, { shadow = false })
+	for i, color in { Palette.roofRed, Palette.flowerYellow, Palette.roofTeal, Palette.flowerPink } do
+		local a = math.rad(i * 70 + 20)
+		t.ball("PaintDot", 0.6, at + Vector3.new(math.cos(a) * 0.8, math.sin(a) * 0.8, -0.2), color, { shadow = false })
+	end
+	-- The easel on the lawn, angled toward the street
+	local easel = CFrame.new(-w / 2 - 0.6, 0, -d / 2 - 1.6) * Kit.yaw(20)
+	for _, x in { -0.7, 0.7 } do
+		t.block(
+			"EaselLeg",
+			Vector3.new(0.25, 4.4, 0.25),
+			easel * CFrame.new(x, 2.1, 0) * CFrame.Angles(math.rad(-8), 0, 0),
+			Palette.woodDark
+		)
+	end
+	t.block("Canvas", Vector3.new(2.4, 2, 0.2), easel * CFrame.new(0, 3, -0.4), Palette.flowerWhite)
+	t.block(
+		"Painting",
+		Vector3.new(1.8, 0.7, 0.1),
+		easel * CFrame.new(0, 2.7, -0.55),
+		Palette.grassLight,
+		{ shadow = false }
+	)
+	t.ball("PaintSun", 0.6, easel * CFrame.new(0.5, 3.4, -0.55).Position, Palette.flowerYellow, { shadow = false })
+	Kit.bush(t, "Bush", Vector3.new(w / 2 + 0.4, 0.3, -d / 2 - 1.2), 0.9, Palette.treeTop, Palette.flowerYellow)
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 1.2, d / 2 - 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
