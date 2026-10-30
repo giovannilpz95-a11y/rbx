@@ -375,6 +375,23 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		end
 	end
 
+	if RunService:IsStudio() then
+		heading(body, "Studio test", nextOrder())
+		local line = card(body, 48, nextOrder())
+		Ui.label("A test neighbor's farm next to yours, to try visiting and Helping Hands alone.", {
+			TextSize = Type.size.small,
+			TextWrapped = true,
+			Position = UDim2.fromOffset(10, 0),
+			Size = UDim2.new(1, -150, 1, 0),
+			Parent = line,
+		})
+		smallButton("Test neighbor", function()
+			Panels.close()
+			Remotes.fire("Debug_TestNeighbor")
+		end, Ui.colors.selected, 136).Parent =
+			line
+	end
+
 	local travel = Ui.new("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, -8, 0, 40),

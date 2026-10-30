@@ -113,11 +113,22 @@ function NetService.pushState(player: Player)
 	end)
 end
 
+-- Messages to a Studio test neighbor (not a real Player) go nowhere.
+local function isPlayer(player: any): boolean
+	return typeof(player) == "Instance"
+end
+
 function NetService.toast(player: Player, message: string)
+	if not isPlayer(player) then
+		return
+	end
 	remotes[Net.Toast]:FireClient(player, message)
 end
 
 function NetService.popup(player: Player, payload: { [string]: any })
+	if not isPlayer(player) then
+		return
+	end
 	remotes[Net.Reward_Popup]:FireClient(player, payload)
 end
 

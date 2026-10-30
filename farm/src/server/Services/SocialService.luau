@@ -16,6 +16,7 @@ local Net = require(Shared.Net)
 local Palette = require(Shared.Art.Palette)
 local Social = require(Shared.Config.Social)
 local SocialRules = require(Shared.Social)
+local Profile = require(Shared.Profile)
 
 local DataService = require(script.Parent.DataService)
 local NetService = require(script.Parent.NetService)
@@ -214,12 +215,21 @@ local function moveTo(player: Player, target: CFrame?)
 	end
 end
 
-local function playerByUserId(userId: any): Player?
+-- Studio only: a farm with nobody behind it, so one player can try visiting and Helping Hands
+-- (Debug_TestNeighbor). A stand-in with the few Player fields the services read.
+local TEST_NEIGHBOR_ID = -4242
+local testNeighbor: any = nil
+
+-- The player with this UserId on the server (or the Studio test neighbor).
+function SocialService.playerByUserId(userId: any): Player?
 	if type(userId) ~= "number" or userId ~= userId or userId % 1 ~= 0 then
 		return nil
+	elseif testNeighbor and userId == TEST_NEIGHBOR_ID then
+		return testNeighbor
 	end
 	return Players:GetPlayerByUserId(userId)
 end
+local playerByUserId = SocialService.playerByUserId
 
 ---------------------------------------------------------------------------------------------
 -- Remotes
@@ -264,6 +274,42 @@ local function sendHome(player: Player, visitorUserId: any): (boolean, string?)
 		)
 	end
 	return false, string.format("%s was sent to the Town Square", visitor.DisplayName)
+end
+
+-- Studio: make the test neighbor's farm next to yours (3 ripe Wheat fields, 3 growing Corn),
+-- or go back to it.
+local function testNeighborFarm(player: Player): (boolean, string?)
+	if not RunService:IsStudio() then
+		return false
+	end
+	if testNeighbor == nil then
+		local stand = {
+			UserId = TEST_NEIGHBOR_ID,
+			Name = "TestNeighbor",
+			DisplayName = "Test Neighbor",
+		}
+		function stand.GetAttribute(_self: any, _name: string): any
+			return nil
+		end
+		local data = Profile.template()
+		local now = Clock.now()
+		Profile.welcome(data, now)
+		for i, id in Profile.fieldIds() do
+			local ripe = i <= 3
+			data.fields[id] = {
+				crop = if ripe then "Wheat" else "Corn",
+				plantedAt = now - (if ripe then 600 else 0),
+				readyAt = if ripe then now - 1 else now + Clock.duration(300),
+			}
+		end
+		DataService.addDummy(stand, data)
+		if PlotService.assign(stand :: any, { player }) == nil then
+			return false, "No free plot for a test neighbor"
+		end
+		testNeighbor = stand
+	end
+	moveTo(player, PlotService.gateCFrame(testNeighbor))
+	return false, "Test Neighbor's farm: 3 ripe Wheat fields to harvest and 3 Corn fields to water"
 end
 
 local function setOption(key: string, options: { string })
@@ -434,6 +480,7 @@ function SocialService.init()
 		"Farm stalls open here soon.\n\nSell your goods to your neighbors for Coins."
 	)
 
+	NetService.on(Net.Debug_TestNeighbor, 1, 2, testNeighborFarm)
 	NetService.on(Net.Visit_Go, 1, 2, visit)
 	NetService.on(Net.Visit_Home, 1, 2, goHome)
 	NetService.on(Net.Visit_Square, 1, 2, goToSquare)

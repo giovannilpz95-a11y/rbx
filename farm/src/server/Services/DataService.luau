@@ -163,9 +163,21 @@ function DataService.load(player: Player): boolean
 	return true
 end
 
+-- Studio only: farms with no real player behind them, never saved (SocialService's test
+-- neighbor for single-player checks of visiting and Helping Hands).
+local dummies: { [any]: { [string]: any } } = {}
+
+function DataService.addDummy(owner: any, data: { [string]: any })
+	assert(RunService:IsStudio(), "Dummy farms are Studio-only")
+	dummies[owner] = data
+end
+
 function DataService.get(player: Player): { [string]: any }?
 	local session = sessions[player]
-	return if session and not session.released then session.data else nil
+	if session == nil then
+		return dummies[player]
+	end
+	return if not session.released then session.data else nil
 end
 
 function DataService.markDirty(player: Player, important: boolean?)
