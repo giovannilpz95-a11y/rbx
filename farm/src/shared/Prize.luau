@@ -37,4 +37,28 @@ function PrizeRules.hasRoom(data: { [string]: any }): boolean
 	return #data.prizes < Prize.basketSlots
 end
 
+-- Basket -> Prize Shelf (shown on the plot)
+function PrizeRules.shelve(data: { [string]: any }, index: number): (boolean, string?)
+	if data.prizes[index] == nil then
+		return false
+	end
+	if #data.prizeShelf >= Prize.shelfSlots then
+		return false, string.format("Your Prize Shelf holds %d. Take one down first.", Prize.shelfSlots)
+	end
+	table.insert(data.prizeShelf, table.remove(data.prizes, index))
+	return true
+end
+
+-- Prize Shelf -> basket
+function PrizeRules.unshelve(data: { [string]: any }, slot: number): (boolean, string?)
+	if data.prizeShelf[slot] == nil then
+		return false
+	end
+	if not PrizeRules.hasRoom(data) then
+		return false, "Your Prize Basket is full. Sell one first."
+	end
+	table.insert(data.prizes, table.remove(data.prizeShelf, slot))
+	return true
+end
+
 return PrizeRules

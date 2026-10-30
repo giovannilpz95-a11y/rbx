@@ -98,6 +98,7 @@ function Profile.template(): { [string]: any }
 		pens = pens,
 		decor = {}, -- placed decorations: { id, x, z, r } (shared/DecorRules)
 		prizes = {}, -- the Prize Basket: { crop, tier } (shared/Prize)
+		prizeShelf = {}, -- Prize Crops on show on the plot, same shape
 		purchases = {
 			receipts = {}, -- PurchaseId -> time granted, newest 200 (shared/Shop)
 			bought = {}, -- one-time products bought (StarterPack)

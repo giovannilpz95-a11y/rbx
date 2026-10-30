@@ -33,6 +33,8 @@ return table.freeze({
 	Shop_Prompt = "Shop_Prompt", -- product key (server looks up the id and prompts)
 	Shop_PromptPass = "Shop_PromptPass", -- game pass key
 	Prize_Sell = "Prize_Sell", -- basket index (the Prize Stand)
+	Prize_Shelve = "Prize_Shelve", -- basket index -> Prize Shelf
+	Prize_Unshelve = "Prize_Unshelve", -- shelf slot -> basket
 	Tutorial_Next = "Tutorial_Next", -- "Got it" on a step the player ends by tapping
 	Tutorial_Skip = "Tutorial_Skip", -- end the guide early
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
