@@ -12,6 +12,7 @@ local Shop = require(Shared.Shop)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local NetService = require(script.Parent.NetService)
+local TelemetryService = require(script.Parent.TelemetryService)
 
 local InventoryService = {}
 
@@ -57,6 +58,7 @@ function InventoryService.add(player: Player, items: { [string]: number }): bool
 		total += qty
 	end
 	if total > InventoryService.space(player) then
+		TelemetryService.custom(player, "StorageFull", Shop.barnCapacity(data), "Barn", true)
 		return false
 	end
 	for item, qty in items do
