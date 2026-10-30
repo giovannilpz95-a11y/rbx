@@ -5,6 +5,7 @@
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local ArtDecor = require(Shared.Art.Decor)
+local ArtMerge = require(Shared.Art.Merge)
 local Decor = require(Shared.Config.Decor)
 
 local DecorModels = {}
@@ -28,6 +29,14 @@ function DecorModels.build(id: string, origin: CFrame, index: number): Model
 	model.PrimaryPart = root
 	ArtDecor.build(id, root, origin)
 	return model
+end
+
+-- Once `model` is in the world, union its look into one part in the background (Art/Merge).
+function DecorModels.merge(model: Model)
+	local root = model.PrimaryPart
+	if root then
+		task.spawn(ArtMerge.mergeUnder, root)
+	end
 end
 
 return DecorModels
