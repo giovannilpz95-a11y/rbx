@@ -7,6 +7,7 @@ local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
 local Factories = require("./Config/Factories")
 local Levels = require("./Config/Levels")
+local Social = require("./Config/Social")
 local Town = require("./Config/Town")
 
 local Profile = {}
@@ -127,6 +128,14 @@ function Profile.template(): { [string]: any }
 		},
 		tutorial = {
 			step = 0, -- the first-session guide (shared/Tutorial); 0 = off
+		},
+		social = { -- visiting, Helping Hands and boosts (shared/Social)
+			privacy = Social.defaultPrivacy, -- who may visit: Open / Friends / Closed
+			helpers = Social.defaultHelpers, -- who may help: Nobody / Friends / Anyone
+			help = { day = -1, used = 0, owners = {} }, -- today's helping, owners by user id string
+			boostUntil = 0, -- Welcome Boost end time
+			boostDay = -1,
+			boostPairs = {}, -- friends (user id strings) who already gave today's boost
 		},
 		-- puzzle = Crop Pop's own save block (Hearts, boosters, progress), absent until it
 		-- first saves; the farm stores it without reading it (server/Services/CropPopBridge).

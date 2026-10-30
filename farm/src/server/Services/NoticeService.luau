@@ -1,71 +1,73 @@
 --!strict
 -- The Town Square Notice Board (Design/02 Farming, Prize Crops): the server's recent Prize
--- Crop finds, newest first, on a board by the hub spawn. Works without chat. Server-local and
--- not saved; the social slice can move the board when the Town Square gets its layout.
+-- Crop finds, newest first (repeats grouped), on the board in the Town Square. Works without
+-- chat. Server-local and not saved. Tapping the board opens the Neighbors panel, which lists
+-- the same lines with a Visit button for each farm they're about (Design/02 "tap-to-visit").
 
-local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Palette = require(Shared.Art.Palette)
 local Prize = require(Shared.Config.Prize)
 
+local PlotService = require(script.Parent.PlotService)
+
 local NoticeService = {}
 
-local lines: { { text: string, count: number } } = {} -- newest first; repeats grouped
+type Entry = { text: string, count: number, visit: number? }
+
+local entries: { Entry } = {} -- newest first; repeats grouped
+local board: BasePart? = nil
 local text: TextLabel? = nil
 
+local function shownText(entry: Entry): string
+	return if entry.count > 1 then string.format("%s  x%d", entry.text, entry.count) else entry.text
+end
+
 local function render()
+	local shown = {}
+	for _, entry in entries do
+		table.insert(shown, { text = shownText(entry), visit = entry.visit })
+	end
 	if text then
-		local shown = {}
-		for _, entry in lines do
-			table.insert(
-				shown,
-				if entry.count > 1 then string.format("%s  x%d", entry.text, entry.count) else entry.text
-			)
+		local lines = {}
+		for _, line in shown do
+			table.insert(lines, line.text)
 		end
-		text.Text = if #shown == 0 then "Prize Crop finds show up here." else table.concat(shown, "\n")
+		text.Text = if #lines == 0 then "Prize Crop finds show up here." else table.concat(lines, "\n")
+	end
+	-- The client's Neighbors panel lists the same lines, with Visit buttons
+	if board then
+		board:SetAttribute("Entries", HttpService:JSONEncode(shown))
 	end
 end
 
-function NoticeService.post(line: string)
-	if lines[1] and lines[1].text == line then
-		lines[1].count += 1
+-- Post a line, newest first. `visitUserId`: whose farm the news is about, for tap-to-visit.
+function NoticeService.post(line: string, visitUserId: number?)
+	local first = entries[1]
+	if first and first.text == line and first.visit == visitUserId then
+		first.count += 1
 		render()
 		return
 	end
-	table.insert(lines, 1, { text = line, count = 1 })
-	while #lines > Prize.noticeLines do
-		table.remove(lines)
+	table.insert(entries, 1, { text = line, count = 1, visit = visitUserId })
+	while #entries > Prize.noticeLines do
+		table.remove(entries)
 	end
 	render()
 end
 
 function NoticeService.init()
-	local map = Workspace:WaitForChild("FarmMap")
-	local board = Instance.new("Part")
-	board.Name = "NoticeBoard"
-	board.Anchored = true
-	board.Size = Vector3.new(12, 7, 0.5)
-	-- North of the hub spawn, face toward +Z (where players land and look)
-	board.CFrame = CFrame.new(0, 5, -14)
-	board.Color = Palette.cork
-	board.Material = Enum.Material.SmoothPlastic
-	board.Parent = map
-	for _, x in { -5.5, 5.5 } do
-		local post = Instance.new("Part")
-		post.Name = "Post"
-		post.Anchored = true
-		post.Size = Vector3.new(0.6, 8.5, 0.6)
-		post.CFrame = CFrame.new(x, 4.25, -14.4)
-		post.Color = Palette.trunk
-		post.Parent = board
-	end
+	-- The board stands in the Town Square (shared/Art/TownSquare); this adds its text.
+	local face = PlotService.square.boards.Notice
+	face:SetAttribute("Interact", "Notice")
+	board = face
 
 	local surface = Instance.new("SurfaceGui")
-	surface.Face = Enum.NormalId.Back -- local +Z
+	surface.Face = Enum.NormalId.Front
 	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	surface.PixelsPerStud = 40
-	surface.Parent = board
+	surface.Parent = face
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, 0, 0.18, 0)
 	title.BackgroundTransparency = 1
