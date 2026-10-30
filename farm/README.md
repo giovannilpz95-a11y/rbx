@@ -98,6 +98,8 @@ stylua --check src tests    # formatting
 
 CI runs both and a Rojo build on every pull request that touches `farm/`.
 
+Data safety (`tests/datasafety.luau`): a played farm touching every save block, Crop Pop's included, must pass `SaveCheck` and come back from JSON (what a DataStore keeps) unchanged. Every past save version has a fixture in `tests/fixtures/` that must load into today's layout. When a migration lands, add the old version's fixture. On every save the server runs `SaveCheck` and, if something can't be stored (NaN, an array with holes, number keys in a dictionary, a cycle, over 4 MB), warns with the exact field.
+
 ## Not in the greybox yet
 
 Overview camera and the Errand queue, tool drops and tool orders, pen upgrades, builders, placing and moving buildings (Main Street lots are assigned for now), decorations, land expansion past the fourth (it needs tools), the FTUE's visit step and camera swoop, helping with animals, factories and construction (Helping Hands is water and harvest only in the MVP), and the Train Station. Selene linting and `luau-lsp` strict type checks should be added to CI next.
