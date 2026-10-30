@@ -28,7 +28,7 @@ return table.freeze({
 		"FeedMill2",
 		"IceCreamParlor",
 	}),
-	enabledPens = table.freeze({ "CowBarn", "ChickenCoop", "SheepFold" }),
+	enabledPens = table.freeze({ "CowBarn", "ChickenCoop", "SheepFold", "CowBarn2", "CowBarn3" }),
 
 	-- Cow Feed a new farm starts with, so the given Cows work before the Feed Mill opens at
 	-- level 3 (Township's level-1 gift, Wiki Data - Farming & Animals §1)

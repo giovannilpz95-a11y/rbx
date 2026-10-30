@@ -32,6 +32,7 @@ local ArtMotion = require("../src/shared/Art/Motion")
 local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtTown = require("../src/shared/Art/Town")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
+local Animals = require("../src/shared/Config/Animals")
 local Crops = require("../src/shared/Config/Crops")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
@@ -739,13 +740,19 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ArtCrops.dressBed(b)
 		add(b, 22)
 		add(ArtCrops.build("Corn", 4, CFrame.new(), nil), 22)
-		for _, id in PENS do
+		-- Every pen up to the highest built level, copies (Cow Barns 2 and 3) looking like their
+		-- original
+		for id, def in Animals.pens do
+			if def.unlockLevel > Levels.built then
+				continue
+			end
+			local kind = def.copyOf or id
 			local pen = Instance.new("Model")
-			ArtAnimals.pen(id, CFrame.new(), pen)
-			ArtAnimals.setPenLevel(pen, id, ArtAnimals.PEN_LEVEL_MAX)
+			ArtAnimals.pen(kind, CFrame.new(), pen)
+			ArtAnimals.setPenLevel(pen, kind, ArtAnimals.PEN_LEVEL_MAX)
 			add(pen, 1)
-			add(ArtAnimals.animal(id, CFrame.new()), 6)
-			add(ArtAnimals.product(id, CFrame.new()), 6)
+			add(ArtAnimals.animal(kind, CFrame.new()), 6)
+			add(ArtAnimals.product(kind, CFrame.new()), 6)
 		end
 		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest
 		-- prop it makes
