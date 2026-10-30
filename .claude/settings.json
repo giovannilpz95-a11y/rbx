@@ -1,0 +1,1 @@
+{"permissions":{"allow":["mcp__github__merge_pull_request","Bash(gh api -X PUT repos/giovannilpz95-a11y/rbx/pulls/*/merge *)"]}}
