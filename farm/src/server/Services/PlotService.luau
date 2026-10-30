@@ -32,7 +32,9 @@ local ArtCrops = require(Shared.Art.Crops)
 local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
 local ArtItemProps = require(Shared.Art.ItemProps)
+local ArtFolk = require(Shared.Art.Folk)
 local ArtLighting = require(Shared.Art.Lighting)
+local ArtTown = require(Shared.Art.Town)
 local ArtTownSquare = require(Shared.Art.TownSquare)
 local Kit = require(Shared.Art.Kit)
 local Palette = require(Shared.Art.Palette)
@@ -130,8 +132,29 @@ local LAYOUT = {
 	prizeShelf = Vector3.new(-28, 0, 43), -- south of the Barn, clear of its door
 	truck = Vector3.new(26, 0, 36),
 	spawn = Vector3.new(0, 0, 16), -- far enough inside that the camera behind you clears the gate
+	-- The Town Hall beside the spine path, facing it (west), clear of the output tables' walkway
+	townHall = Vector3.new(10, 0, 2),
+	-- The plot's own Puzzle Porch (Crop Pop) west of the spawn, facing it
+	porch = Vector3.new(-10, 0, 19),
+	-- The guides, each by the part of the farm they teach, facing the paths
+	guides = {
+		Hattie = { at = Vector3.new(-6, 0, -5), yaw = 180 }, -- the fields
+		Pip = { at = Vector3.new(8, 0, 40), yaw = 90 }, -- the Order Board
+		Crumb = { at = Vector3.new(16.5, 0, 22.5), yaw = 90 }, -- the Bakery's table
+		Mort = { at = Vector3.new(7, 0, 11.5), yaw = 90 }, -- the Town Hall
+	} :: { [string]: { at: Vector3, yaw: number } },
 }
 PlotService.LAYOUT = LAYOUT
+
+-- Roads that run through land that isn't cleared yet (the link up to the North Lane, and the
+-- lane itself): no wild obstacles on them.
+local LOCKED_ROADS = {
+	{
+		Vector3.new(Lots.northLane.linkX - 4, 0, Lots.northLane.z - 4),
+		Vector3.new(Lots.northLane.linkX + 4, 0, -48),
+	},
+	{ Vector3.new(-46, 0, Lots.northLane.z - 4), Vector3.new(46, 0, Lots.northLane.z + 4) },
+}
 
 -- Decoration spots (plot-local, on the ground), clear of every building, path and lot.
 local DECOR_TREES = {
@@ -173,6 +196,23 @@ local function part(props: { [string]: any }): Part
 		(p :: any)[key] = value
 	end
 	return p
+end
+
+-- Painted text on one face of a sign board.
+local function paint(board: BasePart, text: string, face: Enum.NormalId)
+	local surface = Instance.new("SurfaceGui")
+	surface.Face = face
+	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surface.PixelsPerStud = 30
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Palette.cocoa
+	label.Text = text
+	label.Parent = surface
+	surface.Parent = board
 end
 
 local function label(parent: Instance, text: string, offsetY: number, size: UDim2?, maxDistance: number?)
@@ -534,8 +574,19 @@ local function buildPlot(player: Player, slot: Slot): Model
 				Parent = landFolder,
 			})
 			overlay:SetAttribute("LandStage", stage)
+			-- Wild obstacles across it, kept off the roads that run through locked land
+			local wild = Instance.new("Folder")
+			wild.Name = "Wild"
+			wild.Parent = overlay
+			for _, spot in ArtTown.scatter(min, max, 16, LOCKED_ROADS) do
+				ArtTown.obstacle(spot.id, wild, at(spot.at, 0.3) * Kit.yaw(spot.yaw))
+			end
 			if i == 1 then
-				label(overlay, def.displayName .. " (locked)", 4, UDim2.fromOffset(180, 30), 80)
+				-- The signpost in the middle faces the start area
+				local signAt = at(center, 0.3)
+				local board = ArtTown.signpost(overlay, CFrame.lookAt(signAt.Position, at(Vector3.zero, 0.3).Position))
+				paint(board, def.displayName, Enum.NormalId.Front)
+				label(board, def.displayName .. " (locked)", 2.5, UDim2.fromOffset(180, 30), 80)
 			end
 		end
 	end
@@ -549,6 +600,23 @@ local function buildPlot(player: Player, slot: Slot): Model
 	-- Barn panel, where the Tool Shed list lives.
 	local shed = ArtBuildings.toolShed(model, barnAt * CFrame.new(-14 / 2 - 2.2, 0, 1) * Kit.yaw(90))
 	shed:SetAttribute("Interact", "Barn")
+
+	-- Town Hall, with the owner's name on the plot sign out front. One storey until Town
+	-- Records (F07) gives it more.
+	local _, plotSign = ArtTown.townHall(model, at(LAYOUT.townHall, 0) * Kit.yaw(90), 1)
+	paint(plotSign, player.DisplayName .. "'s Town", Enum.NormalId.Front)
+	-- The plot's Puzzle Porch: a tap anywhere on it opens Crop Pop (client UI/Social)
+	local porch = ArtTown.porch(model, at(LAYOUT.porch, 0.25) * Kit.yaw(-90))
+	for _, p in porch:GetDescendants() do
+		if p:IsA("BasePart") then
+			p:SetAttribute("Interact", "PuzzlePorch")
+		end
+	end
+	label(porch, "Crop Pop", 4.5, UDim2.fromOffset(120, 28), 50)
+	-- The guides from the tutorial, standing by what they teach
+	for role, spot in LAYOUT.guides do
+		ArtFolk.build(role, at(spot.at, 0.25) * Kit.yaw(spot.yaw)).Parent = model
+	end
 
 	for _, id in Balance.enabledFactories do
 		buildFactory(model, id, at)
@@ -617,7 +685,9 @@ local function setScaffold(holder: Instance, show: boolean, w: number, d: number
 	if show and existing == nil then
 		local base = holder:GetAttribute("BaseCFrame") :: CFrame?
 		if base then
-			Kit.scaffold(holder, base, w, d, h)
+			local scaffold = Kit.scaffold(holder, base, w, d, h)
+			-- The Builder hammers away at the front corner while it's going up
+			ArtFolk.build("Builder", base * CFrame.new(w / 2 + 1, 0, -d / 2 - 1) * Kit.yaw(-40)).Parent = scaffold
 		end
 	elseif not show and existing then
 		existing:Destroy()
@@ -651,7 +721,9 @@ local function townModel(
 	body:SetAttribute("Interact", "Town")
 	if building then
 		Kit.fade(holder, 0.5)
-		Kit.scaffold(holder, at, lotSize - 1, lotSize - 1, if kind == "House" then 8 else 9)
+		local scaffold = Kit.scaffold(holder, at, lotSize - 1, lotSize - 1, if kind == "House" then 8 else 9)
+		ArtFolk.build("Builder", at * CFrame.new(lotSize / 2 - 1, 0, -lotSize / 2 - 1.2) * Kit.yaw(-30)).Parent =
+			scaffold
 	end
 	if labelText then
 		label(body, labelText, 8, UDim2.fromOffset(140, 28), 40)
@@ -753,7 +825,12 @@ local function refreshLand(player: Player, model: Model, data: { [string]: any }
 			if state == "open" then
 				overlay:Destroy()
 			else
-				local sign = overlay:FindFirstChild("Label")
+				-- While it's being cleared the wild thins out
+				local wild = overlay:FindFirstChild("Wild")
+				if wild then
+					Kit.fade(wild, if state == "clearing" then 0.6 else 0)
+				end
+				local sign = overlay:FindFirstChild("Label", true)
 				local text = sign and sign:FindFirstChild("Text") :: TextLabel?
 				if text then
 					text.Text = def.displayName .. (if state == "clearing" then " (clearing...)" else " (locked)")
@@ -849,7 +926,7 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	setScaffold(building, underConstruction, 10, 12, 10)
 	Kit.fade(building, fade, function(p)
 		local name = p.Name
-		return name == "OutputTable" or name == "TableTop" or p.Parent.Name == "Scaffold"
+		return name == "OutputTable" or name == "TableTop" or p:FindFirstAncestor("Scaffold") ~= nil
 	end)
 	-- The client's FactoryMotion turns the factory's moving parts while this is set
 	building:SetAttribute("Busy", busy)
