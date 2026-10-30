@@ -28,6 +28,7 @@ local ArtCommunity = require(Shared.Art.Community)
 local ArtCrops = require(Shared.Art.Crops)
 local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
+local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtLighting = require(Shared.Art.Lighting)
 local Kit = require(Shared.Art.Kit)
 local Palette = require(Shared.Art.Palette)
@@ -52,7 +53,6 @@ local COLORS = {
 	path = Palette.path,
 	hub = Palette.hub,
 	soil = Palette.soil,
-	crate = Palette.crate,
 }
 
 -- Main Street: the strip between the gate and the Ring Road (local z 48..96), with two
@@ -827,8 +827,10 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	setScaffold(building, underConstruction, 10, 12, 10)
 	Kit.fade(building, fade, function(p)
 		local name = p.Name
-		return name == "Crate" or name == "OutputTable" or name == "TableTop" or p.Parent.Name == "Scaffold"
+		return name == "OutputTable" or name == "TableTop" or p.Parent.Name == "Scaffold"
 	end)
+	-- The client's FactoryMotion turns the factory's moving parts while this is set
+	building:SetAttribute("Busy", busy)
 	local chimney = building:FindFirstChild("Chimney")
 	local smoke = chimney and chimney:FindFirstChildOfClass("Smoke")
 	if smoke then
@@ -839,9 +841,10 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 		glow.Material = if busy then Enum.Material.Neon else Enum.Material.SmoothPlastic
 	end
 
-	-- One crate per finished item on the output table
+	-- Each finished item stands on the output table as its own prop (FarmShared.Art.ItemProps):
+	-- four along the table, then a second layer on top.
 	for _, child in building:GetChildren() do
-		if child.Name == "Crate" then
+		if child.Name == "Goods" then
 			child:Destroy()
 		end
 	end
@@ -849,20 +852,21 @@ local function refreshFactory(player: Player, model: Model, id: string, factory:
 	if outputTable == nil then
 		return
 	end
-	local tableTop = outputTable.Size.Y / 2 + 0.25
-	for i = 1, outputCount do
-		local row = (i - 1) % 4
-		local layer = (i - 1) // 4
-		local crate = part({
-			Name = "Crate",
-			Size = Vector3.new(1.6, 1.4, 1.6),
-			CFrame = outputTable.CFrame * CFrame.new(0, tableTop + 0.7 + layer * 1.45, -3 + row * 2),
-			Color = COLORS.crate,
-			CanCollide = false,
-		})
-		crate.CanQuery = false
-		crate.CanTouch = false
-		crate.Parent = building
+	local ids = {}
+	for itemId in output do
+		table.insert(ids, itemId)
+	end
+	table.sort(ids)
+	local tableTop = outputTable.Size.Y / 2 + 0.3
+	local i = 0
+	for _, itemId in ids do
+		for _ = 1, output[itemId] do
+			local row = i % 4
+			local layer = i // 4
+			local at = outputTable.CFrame * CFrame.new(0, tableTop + layer * 2.2, -3 + row * 2)
+			ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods").Parent = building
+			i += 1
+		end
 	end
 end
 

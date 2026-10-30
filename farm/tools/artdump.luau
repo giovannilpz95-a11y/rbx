@@ -1,7 +1,7 @@
 -- Builds the art models outside Roblox and writes every part as JSON, for the preview
 -- renderer in tools/artpreview/ (see tools/artpreview/README.md).
 -- Run from the farm/ folder:  lune run tools/artdump.luau <scene> <out.json>
--- Scenes: crops, animals, buildings, factories, houses, all
+-- Scenes: crops, animals, buildings, factories, houses, community, plot, items, all
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
