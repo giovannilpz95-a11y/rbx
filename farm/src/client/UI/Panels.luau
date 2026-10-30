@@ -24,6 +24,7 @@ local Items = require(Shared.Items)
 local Pen = require(Shared.Pen)
 local Recipes = require(Shared.Config.Recipes)
 local Land = require(Shared.Config.Land)
+local Missing = require(Shared.Missing)
 local Settings = require(Shared.Settings)
 local Speedup = require(Shared.Speedup)
 local Prize = require(Shared.Config.Prize)
@@ -158,6 +159,40 @@ local function gemButton(
 	)
 end
 
+-- "Buy what's missing" (G3, shared/Missing): when `needs` is short only of items, a Gem button
+-- pays for just those and does the action in one step. Returns the button and a line naming
+-- what's missing, or nil when nothing is missing or it can't be bought.
+local function missingButton(
+	key: string,
+	needs: { [string]: number },
+	props: { [string]: any },
+	context: string,
+	a: any?,
+	b: any?
+): (TextButton?, string?)
+	local lines = Missing.list(needs, ClientStore.itemCount)
+	local price = Missing.price(lines)
+	if #lines == 0 or price == nil then
+		return nil, nil
+	end
+	local button = gemButton("missing:" .. key, "Buy missing", price, function()
+		Remotes.fire("Missing_Buy", context, a, b)
+	end, props)
+	return button, "Missing: " .. Missing.describe(lines)
+end
+
+-- A small red line under a row's text, naming what's missing
+local function missingLine(parent: Instance, text: string, y: number, rightInset: number)
+	Ui.label(text, {
+		Position = UDim2.fromOffset(0, y),
+		Size = UDim2.new(1, -rightInset, 0, 16),
+		TextColor3 = Ui.colors.danger,
+		TextSize = 13,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Parent = parent,
+	})
+end
+
 -- Every key of a config table, in its `order`.
 local function sortedKeys(defs: { [string]: { order: number } }): { string }
 	local ids = {}
@@ -272,7 +307,7 @@ local function renderOrders(state: { [string]: any })
 		local card = row(if slot.order then 70 else 44, i)
 		if slot.order then
 			local complete = wantsChips(slot.order.wants, card)
-			Ui.label(string.format("+%d Coins   +%d XP", slot.order.rewardCoins, slot.order.rewardXP), {
+			local reward = Ui.label(string.format("+%d Coins   +%d XP", slot.order.rewardCoins, slot.order.rewardXP), {
 				Position = UDim2.fromOffset(0, 36),
 				Size = UDim2.new(1, -110, 0, 20),
 				TextColor3 = Ui.colors.muted,
@@ -288,6 +323,19 @@ local function renderOrders(state: { [string]: any })
 				Parent = card,
 			})
 			Ui.setEnabled(deliver, complete)
+			if not complete then
+				local buy, what = missingButton("order:" .. i, slot.order.wants, {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, 34),
+					Size = UDim2.fromOffset(170, 28),
+				}, "Order", i)
+				if buy and what then
+					buy.Parent = card
+					card.Size = UDim2.new(1, -8, 0, 84)
+					reward.Size = UDim2.new(1, -180, 0, 20)
+					missingLine(card, what, 56, 180)
+				end
+			end
 			Ui.button("X", function()
 				Remotes.fire("Order_Discard", i)
 			end, {
@@ -342,19 +390,32 @@ local function renderBarn(state: { [string]: any })
 	end
 	local upgradeRow = row(42, order)
 	order += 1
-	Ui.label(
-		string.format("Upgrade %d: room for %d (now %d)", n, BarnRules.capacity(n), state.barnCapacity),
-		{ Size = UDim2.new(1, -110, 1, 0), Font = Enum.Font.GothamBold, Parent = upgradeRow }
-	)
-	local upgrade = Ui.button("Upgrade", function()
-		Remotes.fire("Barn_Upgrade")
-	end, {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		Size = UDim2.fromOffset(100, 30),
+	local buyUpgrade = if canUpgrade
+		then nil
+		else missingButton("barn", cost, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(170, 30),
+		}, "Barn")
+	Ui.label(string.format("Upgrade %d: room for %d (now %d)", n, BarnRules.capacity(n), state.barnCapacity), {
+		Size = UDim2.new(1, if buyUpgrade then -180 else -110, 1, 0),
+		Font = Enum.Font.GothamBold,
+		TextWrapped = true,
 		Parent = upgradeRow,
 	})
-	Ui.setEnabled(upgrade, canUpgrade)
+	if buyUpgrade then
+		buyUpgrade.Parent = upgradeRow
+	else
+		local upgrade = Ui.button("Upgrade", function()
+			Remotes.fire("Barn_Upgrade")
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(100, 30),
+			Parent = upgradeRow,
+		})
+		Ui.setEnabled(upgrade, canUpgrade)
+	end
 	for _, material in sortedKeys(Barn.materials) do
 		local line = row(42, order)
 		order += 1
@@ -643,16 +704,36 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		if locked then
 			text ..= string.format("   Lv %d", recipe.unlockLevel)
 		end
-		Ui.label(text, { Size = UDim2.new(1, -80, 1, 0), TextWrapped = true, TextSize = 15, Parent = line })
-		local make = Ui.button("Make", function()
-			Remotes.fire("Factory_Queue", factoryId, id)
-		end, {
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.fromOffset(70, 30),
+		local hasRoom = #preview.queue < preview.slots
+		local buy, what = nil, nil
+		if not enough and not locked and hasRoom then
+			buy, what = missingButton("recipe:" .. id, recipe.inputs, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(150, 30),
+			}, "Recipe", factoryId, id)
+		end
+		Ui.label(text, {
+			Size = UDim2.new(1, if buy then -160 else -80, 0, 34),
+			TextWrapped = true,
+			TextSize = 15,
 			Parent = line,
 		})
-		Ui.setEnabled(make, enough and not locked and #preview.queue < preview.slots)
+		if buy and what then
+			buy.Parent = line
+			line.Size = UDim2.new(1, -8, 0, 60)
+			missingLine(line, what, 34, 0)
+		else
+			local make = Ui.button("Make", function()
+				Remotes.fire("Factory_Queue", factoryId, id)
+			end, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(70, 30),
+				Parent = line,
+			})
+			Ui.setEnabled(make, enough and not locked and hasRoom)
+		end
 	end
 
 	-- Queue
@@ -1110,7 +1191,22 @@ local function renderTown(state: { [string]: any })
 			),
 			status
 		)
-		if entry == nil then
+		local buy = nil
+		if
+			entry == nil
+			and not enough
+			and state.level >= def.unlockLevel
+			and state.currencies.Coins >= def.coinCost
+		then
+			buy = missingButton("community:" .. id, def.materials, {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, 0, 0, 0),
+				Size = UDim2.fromOffset(160, 30),
+			}, "Community", id)
+		end
+		if buy then
+			buy.Parent = card
+		elseif entry == nil then
 			rightButton(
 				card,
 				"Build",
