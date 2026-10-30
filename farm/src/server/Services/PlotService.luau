@@ -803,7 +803,7 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 			old:Destroy()
 		end
 		if field.crop == nil then
-			Kit.model("Crop", bed)
+			ArtCrops.tilled(bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0)).Parent = bed
 		else
 			local def = Crops[field.crop]
 			local top = bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0)
@@ -912,12 +912,21 @@ local function refreshPen(player: Player, model: Model, id: string, pen: { [stri
 			Kit.fade(child, shell)
 		end
 	end
+	-- Feed shows in the trough while any animal is eating; the crate lid opens while products wait
+	local eating, waiting = false, false
+	for _, mark in marks do
+		eating = eating or mark == "p"
+		waiting = waiting or mark == "r"
+	end
+	ArtAnimals.setPenState(building, eating, waiting)
 	for i = 1, #ANIMAL_SPOTS do
 		local animal = building:FindFirstChild("Animal_" .. i)
 		local product = building:FindFirstChild("Product_" .. i)
 		local mark = marks[i]
 		if animal then
 			Kit.fade(animal, if mark == nil then 1 elseif underConstruction then 0.5 else 0)
+			-- The client's AnimalMotion: hungry ones droop, fed ones eat, ready ones wiggle
+			animal:SetAttribute("Mood", if mark == "h" then "hungry" elseif mark == "r" then "ready" else "eating")
 		end
 		if product then
 			Kit.fade(product, if mark == "r" then 0 else 1)
