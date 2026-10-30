@@ -99,9 +99,10 @@ function DecorPlacer.init()
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = player:WaitForChild("PlayerGui"),
 	})
+	-- Above the HUD button row and the guide card (Guide.luau: 74 high, 92 up)
 	bar = Ui.new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -16),
+		Position = UDim2.new(0.5, 0, 1, -176),
 		Size = UDim2.fromOffset(330, 44),
 		BackgroundTransparency = 1,
 		Visible = false,
