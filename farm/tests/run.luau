@@ -245,12 +245,20 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 22, "levels 17 to 22 are banked")
+	eq(Levels.built, 23, "levels 17 to 23 are banked")
+	eq(Levels.list[23].xpToNext, 10338, "L23 row")
+	eq(Recipes.PaperTowel.inputs.PineTrees, 2, "Paper Towels")
+	eq(Recipes.FrozenYogurt.inputs.Yogurt, 1, "Frozen Yogurt")
+	eq(
+		Lots.community[TownRules.communityLot("BotanicalArch") :: number].land,
+		Lots.farCornersLand,
+		"Botanical Arch in the Far Corners"
+	)
 	eq(Levels.list[22].xpToNext, 9011, "L22 row")
 	ok(table.find(Balance.enabledCrops, "Potatoes") ~= nil and Crops.Potatoes.unlockLevel == 22, "Potatoes at 22")
 	eq(Levels.gifts[22].Potatoes, 3, "Potatoes to start with")
 	eq(Recipes.PotatoChips.inputs.Potatoes, 2, "Potato Chips")
-	eq(Recipes.PumpkinPie.inputs.Butter, 1, "Pumpkin Pie")
+	eq(Recipes.GardenPizza.inputs.Cheese, 1, "Garden Pizza (Township's Pizza inputs)")
 	eq(Town.houses.LakesideManor.copyLevels[1], 22, "Lakeside Manor")
 	eq(
 		Lots.community[TownRules.communityLot("PuppetTheatre") :: number].land,
@@ -258,14 +266,15 @@ test("the content bank stays locked at the live cap", function()
 		"Puppet Theatre in the Far Corners"
 	)
 	eq(Levels.list[21].xpToNext, 7813, "L21 row")
-	eq(Recipes.StrawberryYogurt.factory, "Dairy", "Strawberry Yogurt")
+	eq(Recipes.Yogurt.inputs.Milk, 4, "Yogurt (Township's inputs)")
 	eq(Recipes.StrawberryIcePop.factory, "IceCreamParlor", "Strawberry Ice Pop")
 	eq(Levels.list[20].xpToNext, 6736, "L20 row")
 	eq(Recipes.IceCreamCone.factory, "IceCreamParlor", "Ice Cream Cone")
 	eq(Recipes.PatchworkQuilt.inputs.Yarn, 1, "Patchwork Quilt")
 	eq(Town.houses.CornerFlats.copyLevels[1], 20, "Corner Flats")
 	eq(Levels.list[19].xpToNext, 5771, "L19 row")
-	eq(Recipes.TomatoKetchup.inputs.Tomatoes, 2, "Tomato Ketchup")
+	eq(Recipes.BerryGranola.inputs.Strawberries, 2, "Berry Granola (Township's Granola inputs)")
+	eq(Recipes.BerrySandwich.inputs.Butter, 1, "Berry Sandwich (Township's Sandwich inputs)")
 	-- The second Feed Mill: its own building and queue, making the Feed Mill's recipes
 	local second = Factories.FeedMill2
 	eq(second.makes, "FeedMill", "second Feed Mill makes feed")
@@ -279,8 +288,12 @@ test("the content bank stays locked at the live cap", function()
 		)
 	end
 	eq(Levels.list[18].xpToNext, 4912, "L18 row")
-	ok(table.find(Balance.enabledCrops, "Pumpkins") ~= nil and Crops.Pumpkins.unlockLevel == 18, "Pumpkins at 18")
-	eq(Recipes.RoastedPumpkinSeeds.inputs.Pumpkins, 2, "Roasted Pumpkin Seeds")
+	ok(table.find(Balance.enabledCrops, "PineTrees") ~= nil and Crops.PineTrees.unlockLevel == 18, "Pine Trees at 18")
+	eq(Recipes.Paper.inputs.PineTrees, 1, "Paper from Pine Trees")
+	eq(Recipes.Paper.factory, "PaperMill", "Paper Mill makes Paper")
+	for _, crop in Crops do
+		eq(crop.yield, 1, crop.id .. " gives 1 per field, as in Township")
+	end
 	eq(Levels.list[17].xpToNext, 4149, "L17 row")
 	for _, id in { "CornChips", "CaneSyrup" } do
 		eq(Recipes[id].unlockLevel, 17, id .. " at 17")
@@ -292,7 +305,7 @@ test("the content bank stays locked at the live cap", function()
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "FeedMill2", "IceCreamParlor" } do
+	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor" } do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")

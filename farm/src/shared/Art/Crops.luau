@@ -254,21 +254,25 @@ READY.Tomatoes = function(b, color)
 	end
 end
 
--- Pumpkins (level 18): low sprawling vines, then fat orange pumpkins with green stems.
-GROWING.Pumpkins = function(b)
+-- Pine Trees (level 18): rows of little saplings, then four tall pines in the outer rows, each
+-- three tapering tiers of needles like the RoundPine decoration.
+GROWING.PineTrees = function(b)
 	for _, z in ArtCrops.ROWS do
-		b.block("Vine", Vector3.new(6.2, 0.8, 1.4), Vector3.new(0, 0.7, z), Palette.leafLight)
-		b.ball("Bud", 0.9, Vector3.new(1.2, 1.1, z - 0.4), Palette.flowerYellow, { shadow = false })
+		for _, x in { -2, 2 } do
+			b.ball("Sapling", 1.3, Vector3.new(x, 0.95, z), Palette.treeTopDark)
+		end
 	end
 end
-READY.Pumpkins = function(b, color)
-	for i, z in ArtCrops.ROWS do
-		b.block("Vine", Vector3.new(6.4, 0.8, 1.4), Vector3.new(0, 0.7, z), Palette.leaf)
+READY.PineTrees = function(b)
+	local rows = ArtCrops.ROWS
+	for i, z in { rows[1], rows[3] } do
 		for j, x in { -1.8, 1.8 } do
-			local big = (i + j) % 2 == 0
-			b.ball("Pumpkin", if big then 2 else 1.6, Vector3.new(x, if big then 1.6 else 1.4, z - 0.3), color)
+			local lift = if (i + j) % 2 == 0 then 0.6 else 0
+			for k, d in { 2.6, 1.9, 1.1 } do
+				local color = if k == 2 then Palette.leaf else Palette.treeTopDark
+				b.ball("Pine", d, Vector3.new(x, 0.3 + k * 1.25 + lift, z), color)
+			end
 		end
-		b.block("Stem", Vector3.new(0.3, 0.6, 0.3), Vector3.new(-1.8, 2.7, z - 0.3), Palette.leaf, { shadow = false })
 	end
 end
 

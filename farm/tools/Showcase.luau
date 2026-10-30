@@ -20,7 +20,7 @@ local Items = require("../src/shared/Items")
 
 local Showcase = {}
 
-local CROPS = { "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton", "Tomatoes" }
+local CROPS = { "Wheat", "Corn", "Carrots", "Sugarcane", "Cotton", "Tomatoes", "PineTrees" }
 
 local function ground(root: Instance, size: number)
 	local b = Kit.builder(root, CFrame.new(), false)
@@ -174,6 +174,15 @@ SCENES.factories = function(root)
 	for i, id in { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" } do
 		local m = Kit.model(id, root)
 		ArtFactories.build(id, m, CFrame.new((i - 3) * 14, 0, 0))
+	end
+end
+
+-- The content bank's factories (level 13+), in unlock order
+SCENES.bankFactories = function(root)
+	ground(root, 90)
+	for i, id in { "SnackFactory", "Diner", "PaperMill", "IceCreamParlor" } do
+		local m = Kit.model(id, root)
+		ArtFactories.build(id, m, CFrame.new((i - 2.5) * 14, 0, 0))
 	end
 end
 

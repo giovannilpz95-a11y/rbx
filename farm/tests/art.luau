@@ -52,6 +52,7 @@ local FACTORIES = {
 	"TextileMill",
 	"SnackFactory",
 	"Diner",
+	"PaperMill",
 	"FeedMill2",
 	"IceCreamParlor",
 }
@@ -148,6 +149,18 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			-- The plot puts the table at LAYOUT.factoryOutputOffset (10 studs in front)
 			ok(math.abs(parts.outputTable.CFrame.Position.Z - ArtFactories.TABLE_Z) < 0.01, id .. " table position")
 		end
+	end)
+
+	test("art: the VIP gold fence builds inside one tile and its budget", function()
+		local root = Instance.new("Part")
+		ok(ArtDecor.has("GoldFence"), "gold fence model")
+		ArtDecor.build("GoldFence", root, CFrame.new())
+		local n = Kit.countParts(root) - 1
+		ok(n > 0 and n <= ArtDecor.PARTS_MAX, "gold fence has " .. n .. " parts")
+		Kit.eachPart(root, function(p)
+			local c = p.CFrame.Position
+			ok(p == root or (math.abs(c.X) <= 2 and math.abs(c.Z) <= 2), "gold fence: " .. p.Name .. " inside its tile")
+		end)
 	end)
 
 	test("art: every decoration builds inside its footprint and budget", function()
