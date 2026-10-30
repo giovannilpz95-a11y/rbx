@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Net = require(Shared.Net)
 local Progression = require(Shared.Progression)
+local Records = require(Shared.Records)
 local Shop = require(Shared.Shop)
 local Timer = require(Shared.Timer)
 
@@ -104,6 +105,7 @@ local function snapshot(data: { [string]: any })
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
 		quests = data.quests,
+		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)
 		serverNow = Clock.now(),
 		timeScale = Clock.getTimeScale(),
 	}

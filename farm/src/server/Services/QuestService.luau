@@ -10,6 +10,7 @@ local DailyRules = require(Shared.Daily)
 local Drops = require(Shared.Drops)
 local Net = require(Shared.Net)
 local Quests = require(Shared.Quests)
+local Records = require(Shared.Records)
 local Tools = require(Shared.Config.Tools)
 
 local DataService = require(script.Parent.DataService)
@@ -19,6 +20,9 @@ local TelemetryService = require(script.Parent.TelemetryService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local QuestService = {}
+
+-- Quest kind -> Town Records counter (orders are read from the save instead)
+local RECORD_STAT = { harvest = "harvest", factory = "goods", animal = "animal" }
 
 -- New day's list when the UTC day turns (or the guide just ended). Returns true if changed.
 function QuestService.refresh(player: Player): boolean
@@ -35,6 +39,9 @@ function QuestService.progress(player: Player, kind: string, amount: number)
 	local data = DataService.get(player)
 	if data == nil or amount <= 0 then
 		return
+	end
+	if RECORD_STAT[kind] then
+		Records.add(data, RECORD_STAT[kind], amount)
 	end
 	QuestService.refresh(player)
 	for _, index in Quests.add(data, kind, amount) do

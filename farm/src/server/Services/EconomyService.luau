@@ -5,6 +5,7 @@
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Levels = require(Shared.Config.Levels)
 local Progression = require(Shared.Progression)
+local Records = require(Shared.Records)
 
 local DataService = require(script.Parent.DataService)
 local NetService = require(script.Parent.NetService)
@@ -70,6 +71,9 @@ function EconomyService.add(player: Player, currency: string, amount: number, re
 	end
 	data.currencies[currency] += amount
 	logEconomy(player, currency, "Source", amount, data.currencies[currency], reason, transactionType)
+	if currency == "Coins" and transactionType ~= "IAP" then
+		Records.add(data, "coins", amount) -- Town Records: Coins earned by playing
+	end
 	if currency == "XP" then
 		checkLevelUp(player, data)
 	end
@@ -89,6 +93,9 @@ function EconomyService.spend(player: Player, currency: string, amount: number, 
 	end
 	data.currencies[currency] -= amount
 	logEconomy(player, currency, "Sink", amount, data.currencies[currency], reason)
+	if currency == "Coins" and string.sub(reason, 1, 6) == "decor_" then
+		Records.add(data, "decor", amount) -- Town Records: Coins spent on decorations
+	end
 	DataService.markDirty(player)
 	return true
 end

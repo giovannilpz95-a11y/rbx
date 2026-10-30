@@ -15,6 +15,7 @@ local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local DailyGift = require(script.Parent.DailyGift)
+local FarmerCard = require(script.Parent.FarmerCard)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
 
@@ -62,6 +63,15 @@ local ENTRIES: { Entry } = {
 				end
 			end
 			return false, "", false
+		end,
+	},
+	{
+		glyph = "🏆",
+		order = 3,
+		open = FarmerCard.show,
+		status = function(state)
+			-- Town Records: a dot while a medal can be claimed
+			return true, "", FarmerCard.readyCount(state) > 0
 		end,
 	},
 }
