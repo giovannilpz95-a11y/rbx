@@ -76,6 +76,8 @@ local Sounds: { [string]: Sound } = {
 	BuildDone = original("build_done", "Effects", 0.65, { cooldown = 1, duck = true, length = 0.96 }),
 	FactoryStart = original("factory_start", "Effects", 0.45, { cooldown = 0.2, length = 0.4 }),
 	FactoryCollect = original("factory_collect", "Effects", 0.6, { cooldown = 0.1, length = 0.45 }),
+	DecorPlace = original("decor_place", "Effects", 0.55, { cooldown = 0.1, length = 0.4 }),
+	DecorRotate = original("decor_rotate", "Effects", 0.45, { cooldown = 0.08, length = 0.12 }),
 	Sell = original("sell", "Effects", 0.6, { cooldown = 0.1, length = 0.41 }),
 
 	-- Crop Pop -----------------------------------------------------------------
@@ -94,6 +96,9 @@ local Sounds: { [string]: Sound } = {
 	PopSun = original("pop_sun", "Effects", 0.65, { cooldown = 0.1, length = 0.8 }),
 	PopBale = original("pop_bale", "Effects", 0.5, { cooldown = 0.05, length = 0.16 }),
 	PopMud = original("pop_mud", "Effects", 0.5, { cooldown = 0.05, length = 0.18 }),
+	PopFrost = original("pop_frost", "Effects", 0.5, { cooldown = 0.05, length = 0.25 }),
+	PopWeed = original("pop_weed", "Effects", 0.5, { cooldown = 0.05, length = 0.16 }),
+	PopWeedGrow = original("pop_weed_grow", "Effects", 0.45, { cooldown = 0.2, length = 0.3 }),
 	PopShuffle = original("pop_shuffle", "Effects", 0.5, { cooldown = 0.5, length = 0.47 }),
 	PopBooster = original("pop_booster", "Effects", 0.55, { cooldown = 0.1, length = 0.3 }),
 	PopMoreMoves = original("pop_more_moves", "Effects", 0.65, { cooldown = 0.5, length = 0.53 }),

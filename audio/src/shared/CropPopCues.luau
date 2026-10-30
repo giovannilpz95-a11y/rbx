@@ -25,6 +25,7 @@ local EFFECT_SOUNDS = {
 	Sun = "PopSun",
 	Everything = "PopSun",
 	Trowel = "PopBooster",
+	Grow = "PopWeedGrow", -- a weed spreading onto a tile
 }
 
 function CropPopCues.phase(phase: { [string]: any }, popIndex: number?): { Cue }
@@ -46,17 +47,29 @@ function CropPopCues.phase(phase: { [string]: any }, popIndex: number?): { Cue }
 				once(sound)
 			end
 		end
-		if #(phase.removed or {}) > 0 then
+		-- A tile swallowed by a spreading weed isn't a match.
+		local matched = false
+		for _, r in phase.removed or {} do
+			if r.cause ~= "weed" then
+				matched = true
+				break
+			end
+		end
+		if matched then
 			local step = math.max(0, (popIndex or 1) - 1)
 			once("PopMatch", { sound = "PopMatch", pitch = math.min(step * CASCADE_STEP, CASCADE_MAX) })
 		end
-		local balesHit = false
-		for _ in phase.bales or {} do
-			balesHit = true
-			break
+		-- Weeds come through `bales` with weed = true: hp 0 is a weed pulled, hp 1 one that
+		-- just spread there (that one has its "Grow" effect above).
+		for _, b in phase.bales or {} do
+			if not b.weed then
+				once("PopBale")
+			elseif (b.hp or 0) == 0 then
+				once("PopWeed")
+			end
 		end
-		if balesHit then
-			once("PopBale")
+		if #(phase.frost or {}) > 0 then
+			once("PopFrost")
 		end
 		if #(phase.mud or {}) > 0 then
 			once("PopMud")
@@ -75,6 +88,9 @@ local EVENTS: { [string]: { Cue } } = {
 	Win = { { sound = "PopWin" } },
 	Lose = { { sound = "PopLose" } },
 	MoreMoves = { { sound = "PopMoreMoves" } },
+	-- Also played from the board phases; these names are for screens that fire them directly.
+	FrostBreak = { { sound = "PopFrost" } },
+	WeedSpread = { { sound = "PopWeedGrow" } },
 }
 
 function CropPopCues.event(name: string): { Cue }

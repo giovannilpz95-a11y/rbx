@@ -119,6 +119,36 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		table.insert(cues, { sound = "Unlock" })
 	end
 
+	-- Decorations (shared/DecorRules): { id, x, z, r } each. More of them: one was placed;
+	-- fewer: one was sold; the same number: moved or turned.
+	local decorBefore, decor = prev.decor, nextState.decor
+	local decorSold = false
+	if type(decorBefore) == "table" and type(decor) == "table" then
+		if #decor > #decorBefore then
+			table.insert(cues, { sound = "DecorPlace" })
+		elseif #decor < #decorBefore then
+			decorSold = true
+		else
+			local moved, turned = false, false
+			for i, d in decor do
+				local was = decorBefore[i]
+				if was and was.id == d.id then
+					-- Turning re-snaps the spot too (DecorRules.snap), so check r first.
+					if was.r ~= d.r then
+						turned = true
+					elseif was.x ~= d.x or was.z ~= d.z then
+						moved = true
+					end
+				end
+			end
+			if turned then
+				table.insert(cues, { sound = "DecorRotate" })
+			elseif moved then
+				table.insert(cues, { sound = "DecorPlace" })
+			end
+		end
+	end
+
 	-- The tutorial moving to a new step (tutorial.step: 0 = off).
 	local stepBefore = amount(prev.tutorial, "step")
 	local step = amount(nextState.tutorial, "step")
@@ -137,7 +167,7 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 				break
 			end
 		end
-		if coinsUp and itemsDown and started == 0 then
+		if coinsUp and (decorSold or (itemsDown and started == 0)) then
 			table.insert(cues, { sound = "Sell" })
 		elseif coinsUp then
 			table.insert(cues, { sound = "Coin" })

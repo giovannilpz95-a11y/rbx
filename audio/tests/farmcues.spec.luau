@@ -159,3 +159,23 @@ test("missing blocks in a snapshot don't break it (newer farm builds add more)",
 	expect.eq(names(FarmCues.diff({}, {})), "")
 	expect.eq(names(FarmCues.diff({ fields = {} }, { factories = { Dairy = { built = true } } })), "")
 end)
+
+test("decorations: placing, turning, moving and selling", function()
+	local bench = { id = "Bench", x = 10, z = 4, r = 0 }
+	local before = state({ decor = { bench } })
+	-- Placing costs Coins, so only the place sound plays.
+	local placed = state({
+		decor = { bench, { id = "Lamp", x = 2, z = 2, r = 0 } },
+		currencies = { Coins = 450, Gems = 30, XP = 2 },
+	})
+	expect.eq(names(FarmCues.diff(before, placed)), "DecorPlace")
+	-- Turning re-snaps the spot, which is still a turn.
+	local turned = state({ decor = { { id = "Bench", x = 11, z = 3, r = 1 } } })
+	expect.eq(names(FarmCues.diff(before, turned)), "DecorRotate")
+	local moved = state({ decor = { { id = "Bench", x = 20, z = 4, r = 0 } } })
+	expect.eq(names(FarmCues.diff(before, moved)), "DecorPlace")
+	-- Selling gives Coins back: the sell sound, not a plain coin.
+	local sold = state({ decor = {}, currencies = { Coins = 520, Gems = 30, XP = 0 } })
+	expect.eq(names(FarmCues.diff(before, sold)), "Sell")
+	expect.eq(names(FarmCues.diff(state(), state({ decor = {} }))), "")
+end)

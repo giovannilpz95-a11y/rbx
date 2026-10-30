@@ -380,6 +380,47 @@ def pop_mud():
     return sequence([(0, squish), (0.02, blub)])
 
 
+def pop_frost():
+    # A thin ice layer cracking: a bright tick, a short crackle, then a little glassy ring.
+    s = 0.25
+    crack = bandpass(noise(0.03), 5200, 2) * decay(0.03, 120) * 3
+    crackle = sequence([(rng.uniform(0.01, 0.09), noise(0.004) * rng.uniform(0.3, 0.9)) for _ in range(10)])
+    ring = sum(bell(f, s, 14, ratio=2.9, index=0.6) for f in (3100, 4300)) * 0.35
+    return sequence([(0, crack), (0.005, bandpass(crackle, 6500, 2) * 1.5), (0.02, ring)])
+
+
+def pop_weed():
+    # Pulling a weed: a quick rip of roots and a soft "plup" as it comes free.
+    s = 0.14
+    rip = bandpass(noise(s), np.linspace(900, 2600, int(RATE * s)), 1.2) * attack_decay(s, 0.02, 20) * 2
+    plup = glide(320, 700, 0.07) * decay(0.07, 35) * 0.8
+    return sequence([(0, rip), (0.09, plup)])
+
+
+def pop_weed_grow():
+    # A weed creeping onto a tile: a low rustle that swells, then a soft downward boing.
+    s = 0.3
+    rustle = bandpass(noise(s), 1400, 1.5) * attack_decay(s, 0.18, 14) * 1.6
+    boing = glide(420, 230, 0.16, 0.7) * decay(0.16, 16) * 0.5
+    return sequence([(0, rustle), (0.16, boing)])
+
+
+def decor_place():
+    # Setting a decoration down: a wooden thunk and a small sparkle.
+    thunk = bandpass(noise(0.07), 600, 4) * decay(0.07, 45) * 3
+    thump = glide(160, 90, 0.08) * decay(0.08, 30) * 0.6
+    sparkle = bell(note("E7"), 0.35, 10) * 0.3
+    return sequence([(0, thunk), (0, thump), (0.06, sparkle)])
+
+
+def decor_rotate():
+    # Turning a decoration: a short swish and a click.
+    s = 0.12
+    swish = bandpass(noise(s), np.linspace(1500, 3500, int(RATE * s)), 2) * attack_decay(s, 0.05, 25) * 1.5
+    click = glide(1800, 1400, 0.02) * decay(0.02, 150) * 0.6
+    return sequence([(0, swish), (0.09, click)])
+
+
 def pop_shuffle():
     return sequence([(i * 0.09, pop_swap() * (1 - i * 0.12)) for i in range(5)])
 
@@ -434,6 +475,8 @@ SOUNDS = {
     "factory_start": factory_start,
     "factory_collect": factory_collect,
     "sell": sell,
+    "decor_place": decor_place,
+    "decor_rotate": decor_rotate,
     "pop_swap": pop_swap,
     "pop_bad": pop_bad,
     "pop_match": pop_match,
@@ -444,6 +487,9 @@ SOUNDS = {
     "pop_sun": pop_sun,
     "pop_bale": pop_bale,
     "pop_mud": pop_mud,
+    "pop_frost": pop_frost,
+    "pop_weed": pop_weed,
+    "pop_weed_grow": pop_weed_grow,
     "pop_shuffle": pop_shuffle,
     "pop_booster": pop_booster,
     "pop_more_moves": pop_more_moves,
