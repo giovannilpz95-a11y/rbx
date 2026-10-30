@@ -81,6 +81,50 @@ local function gems(n: number): string
 	return string.format("%d Gem%s", n, if n == 1 then "" else "s")
 end
 
+-- A button that acts on a confirming second tap (the first arms it and shows `armedText`).
+-- `once`: act on the first tap (nothing to confirm). Acts on the press itself, so a panel
+-- refresh between press and release can't swallow the tap.
+local function confirmButton(
+	key: string,
+	text: string,
+	armedText: string,
+	fire: () -> (),
+	props: { [string]: any },
+	enabled: boolean,
+	color: Color3,
+	once: boolean?
+): TextButton
+	local armedNow = isArmed(key)
+	local button: TextButton
+	local function tap()
+		-- Press and Activated can both arrive for one tap; take the first
+		if time() - lastGemTap < 0.35 or not button.Active then
+			return
+		end
+		lastGemTap = time()
+		if once or isArmed(key) then
+			armed[key] = nil
+			fire()
+		else
+			table.clear(armed) -- one armed button at a time
+			armed[key] = time()
+			Panels.refresh()
+			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
+		end
+	end
+	button = Ui.button(if armedNow then armedText else text, tap, props)
+	button.InputBegan:Connect(function(input)
+		if
+			input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch
+		then
+			tap()
+		end
+	end)
+	Ui.setEnabled(button, enabled, if armedNow then Ui.colors.accent else color)
+	return button
+end
+
 -- A button that spends Gems after a confirming second tap.
 -- `free`: a price of 0 is a gift (one tap, always on) rather than "nothing to speed up"
 local function gemButton(
@@ -92,44 +136,16 @@ local function gemButton(
 	free: boolean?
 )
 	local state = ClientStore.state
-	local armedNow = isArmed(key)
-	local button: TextButton
-	local function tap()
-		-- Press and Activated can both arrive for one tap; take the first
-		if time() - lastGemTap < 0.35 or not button.Active then
-			return
-		end
-		lastGemTap = time()
-		if free or isArmed(key) then
-			armed[key] = nil
-			fire()
-		else
-			table.clear(armed) -- one armed button at a time
-			armed[key] = time()
-			Panels.refresh()
-			task.delay(ARM_SECONDS + 0.1, Panels.refresh) -- back to normal if not confirmed
-		end
-	end
-	button = Ui.button(
-		if armedNow then string.format("Spend %s?", gems(price)) else string.format("%s  %s", text, gems(price)),
-		tap,
-		props
-	)
-	-- Act on the press itself, so a panel refresh between press and release can't swallow it
-	button.InputBegan:Connect(function(input)
-		if
-			input.UserInputType == Enum.UserInputType.MouseButton1
-			or input.UserInputType == Enum.UserInputType.Touch
-		then
-			tap()
-		end
-	end)
-	Ui.setEnabled(
-		button,
+	return confirmButton(
+		key,
+		string.format("%s  %s", text, gems(price)),
+		string.format("Spend %s?", gems(price)),
+		fire,
+		props,
 		free == true or (price > 0 and state ~= nil and state.currencies.Gems >= price),
-		if armedNow then Ui.colors.accent else Ui.colors.gems
+		Ui.colors.gems,
+		free
 	)
-	return button
 end
 
 -- Every key of a config table, in its `order`.
@@ -1043,29 +1059,23 @@ local function renderDecor(state: { [string]: any }, index: number)
 		Remotes.fire("Decor_Rotate", index)
 	end, { Size = UDim2.fromOffset(100, 30), Parent = line })
 	-- Two taps: the first arms it ("Sure?"), the second sells
-	local key = "sell:" .. index
 	local refund = DecorRules.refund(placed.id)
-	Ui.button(
-		if isArmed(key) then string.format("Sure? Sell for %d", refund) else string.format("Sell for %d Coins", refund),
+	confirmButton(
+		"sell:" .. index,
+		string.format("Sell for %d Coins", refund),
+		string.format("Sure? Sell for %d", refund),
 		function()
-			if isArmed(key) then
-				armed[key] = nil
-				Remotes.fire("Decor_Sell", index)
-				Panels.close()
-			else
-				table.clear(armed)
-				armed[key] = time()
-				Panels.refresh()
-				task.delay(ARM_SECONDS + 0.1, Panels.refresh)
-			end
+			Remotes.fire("Decor_Sell", index)
+			Panels.close()
 		end,
 		{
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.new(1, 0, 0, 0),
 			Size = UDim2.fromOffset(180, 30),
-			BackgroundColor3 = Ui.colors.danger,
 			Parent = line,
-		}
+		},
+		true,
+		Ui.colors.danger
 	)
 end
 
