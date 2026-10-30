@@ -43,6 +43,7 @@ local Houses: { [string]: HouseDef } = {
 	Townhouse = { id = "Townhouse", displayName = "Brick Townhouse", population = 35, coinCost = 105, buildSeconds = 2 * HOUR, xp = 35, copyLevels = { 12, 13, 16, 17 }, order = 7, color = { 170, 90, 70 } },
 	-- content bank (level 13+)
 	GardenVilla = { id = "GardenVilla", displayName = "Garden Villa", population = 40, coinCost = 160, buildSeconds = 3 * HOUR, xp = 40, copyLevels = { 14, 15, 16, 18 }, order = 8, color = { 215, 210, 195 } },
+	ThatchedLonghouse = { id = "ThatchedLonghouse", displayName = "Thatched Longhouse", population = 45, coinCost = 225, buildSeconds = 4 * HOUR, xp = 45, copyLevels = { 17, 18, 19, 19, 20 }, order = 9, color = { 205, 180, 130 } },
 }
 
 -- stylua: ignore
@@ -61,6 +62,7 @@ local Community: { [string]: CommunityDef } = {
 	Greenhouse = { id = "Greenhouse", displayName = "Greenhouse", unlockLevel = 14, capBonus = 65, coinCost = 250, materials = { Bricks = 1, Planks = 6, Panes = 4 }, buildSeconds = 4 * HOUR, xp = 130, order = 11, color = { 180, 220, 210 } },
 	Bathhouse = { id = "Bathhouse", displayName = "Bathhouse", unlockLevel = 15, capBonus = 70, coinCost = 300, materials = { Bricks = 5, Planks = 5, Panes = 2 }, buildSeconds = 4 * HOUR + 30 * MIN, xp = 140, order = 12, color = { 170, 210, 230 } },
 	ArtStudio = { id = "ArtStudio", displayName = "Art Studio", unlockLevel = 16, capBonus = 75, coinCost = 350, materials = { Bricks = 2, Planks = 7, Panes = 4 }, buildSeconds = 5 * HOUR, xp = 150, order = 13, color = { 235, 225, 205 } },
+	MusicHall = { id = "MusicHall", displayName = "Music Hall", unlockLevel = 17, capBonus = 80, coinCost = 400, materials = { Bricks = 5, Planks = 4, Panes = 5 }, buildSeconds = 5 * HOUR + 30 * MIN, xp = 160, order = 14, color = { 120, 70, 110 } },
 }
 
 for _, def in Houses do
