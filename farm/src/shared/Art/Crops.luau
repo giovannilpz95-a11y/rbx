@@ -346,4 +346,27 @@ function ArtCrops.prizeShimmer(crop: Model, tier: string, top: CFrame, size: num
 	return ring
 end
 
+-- A ready crop's sparkle (Model List: Ready sparkle): a few soft lime-and-cream glints
+-- drifting up off the crop, never more than about 6 at once. Prize Crops have their own
+-- shimmer instead. The client's CropMotion adds the gentle sway.
+function ArtCrops.readySparkle(crop: Model): ParticleEmitter?
+	local host = crop:FindFirstChildWhichIsA("BasePart")
+	if host == nil then
+		return nil
+	end
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Name = "ReadySparkles"
+	sparkles.Color = ColorSequence.new(Palette.lime, Palette.cream)
+	sparkles.LightEmission = 0.6
+	sparkles.Size = NumberSequence.new(0.3, 0)
+	sparkles.Transparency = NumberSequence.new(0.15, 1)
+	sparkles.Lifetime = NumberRange.new(1.2, 1.8)
+	sparkles.Rate = 3
+	sparkles.Speed = NumberRange.new(0.3, 0.6)
+	sparkles.Acceleration = Vector3.new(0, 1.2, 0)
+	sparkles.SpreadAngle = Vector2.new(180, 180)
+	sparkles.Parent = host
+	return sparkles
+end
+
 return ArtCrops

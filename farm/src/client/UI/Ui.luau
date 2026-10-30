@@ -34,6 +34,14 @@ Ui.colors = {
 	xp = Palette.xp,
 }
 
+-- The Text size setting (shared/Settings): panel text built with Ui.label and Ui.button is
+-- drawn this much bigger. Buttons grow less, so their text stays inside them.
+Ui.textScale = 1
+
+local function scaled(size: number, factor: number): number
+	return math.floor(size * factor + 0.5)
+end
+
 function Ui.new(className: string, props: { [string]: any }?, children: { Instance }?): any
 	return Kit.make(className, props, children)
 end
@@ -76,6 +84,9 @@ function Ui.label(text: string, props: { [string]: any }?): TextLabel
 			(label :: any)[key] = value
 		end
 	end
+	if Ui.textScale ~= 1 then
+		label.TextSize = scaled(label.TextSize, Ui.textScale)
+	end
 	return label
 end
 
@@ -98,6 +109,9 @@ function Ui.button(text: string, onClick: () -> (), props: { [string]: any }?): 
 				(button :: any)[key] = value
 			end
 		end
+	end
+	if Ui.textScale ~= 1 then
+		button.TextSize = scaled(button.TextSize, 1 + (Ui.textScale - 1) / 2)
 	end
 	Kit.skinButton(button, nil, 4)
 	button.Activated:Connect(function()

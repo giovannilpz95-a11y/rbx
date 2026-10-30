@@ -7,6 +7,7 @@ local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
 local Factories = require("./Config/Factories")
 local Levels = require("./Config/Levels")
+local Settings = require("./Settings")
 local Social = require("./Config/Social")
 local Town = require("./Config/Town")
 
@@ -119,9 +120,13 @@ function Profile.template(): { [string]: any }
 			seed = 0,
 			delivered = 0,
 		},
-		settings = {
-			lastSeed = "Wheat",
-		},
+		settings = (function()
+			-- lastSeed plus the player's options (shared/Settings); old saves get the
+			-- defaults through reconcile
+			local settings = Settings.defaults()
+			settings.lastSeed = "Wheat"
+			return settings
+		end)(),
 		daily = {
 			day = 0, -- days claimed in this round of the login calendar (shared/Daily)
 			lastDay = -1, -- UTC day number of the last claim

@@ -122,14 +122,30 @@ end
 
 local HALF = 6 -- pens are 12 x 12
 
--- Four fence sides with a 3-stud gate gap at the front. 23 parts.
+-- Four fence sides with a 3-stud gate gap at the front. The back and the front carry the
+-- corner posts, so the sides are just rails with one middle post. 19 parts.
 local function fenceRing(b: Kit.Builder, color: Color3)
 	local h = 2.4
 	Kit.fence(b, "Fence", Vector3.new(-HALF, 0, HALF), Vector3.new(HALF, 0, HALF), h, 3, color)
-	Kit.fence(b, "Fence", Vector3.new(-HALF, 0, -HALF), Vector3.new(-HALF, 0, HALF), h, 3, color)
-	Kit.fence(b, "Fence", Vector3.new(HALF, 0, -HALF), Vector3.new(HALF, 0, HALF), h, 3, color)
 	Kit.fence(b, "Fence", Vector3.new(-HALF, 0, -HALF), Vector3.new(-1.5, 0, -HALF), h, 2, color)
 	Kit.fence(b, "Fence", Vector3.new(1.5, 0, -HALF), Vector3.new(HALF, 0, -HALF), h, 2, color)
+	local post = color:Lerp(Color3.new(0, 0, 0), 0.12)
+	for _, x in { -HALF, HALF } do
+		for _, frac in { 0.45, 0.85 } do
+			b.block("Fence", Vector3.new(0.25, 0.35, HALF * 2), Vector3.new(x, h * frac, 0), color)
+		end
+		b.block("FencePost", Vector3.new(0.5, h + 0.2, 0.5), Vector3.new(x, (h + 0.2) / 2, 0), post)
+	end
+end
+
+-- A plank gate across the way in, hinged on its left post. It stays closed here; the
+-- client's AnimalMotion swings it open on its hinge (ArtMotion.gateCFrame) when someone
+-- walks up. 1 part.
+local function gate(b: Kit.Builder, z: number, width: number)
+	local g = b.block("Gate", Vector3.new(width - 0.3, 1.7, 0.2), Vector3.new(0, 1.15, z), Palette.woodLight)
+	g:SetAttribute("ClosedCFrame", g.CFrame)
+	g:SetAttribute("HingeCFrame", g.CFrame * CFrame.new(-(width - 0.3) / 2, 0, 0))
+	g:SetAttribute("Swing", -100) -- degrees about the hinge: inward, away from whoever walks up
 end
 
 -- A hollowed log trough on the ground: a dark hollow, and the feed heaped in it while the
@@ -181,6 +197,7 @@ local function cowBarn(b: Kit.Builder)
 	Kit.archRoof(b, "Roof", CFrame.new(0, 4.4, 4.2) * Kit.yaw(90), 5.4, 12.8, 1.6, 4, 0.5, Palette.roofTeal)
 	b.block("HayRack", Vector3.new(3.2, 1.2, 0.8), Vector3.new(-2.5, 2.6, HALF - 1.1), Palette.straw)
 	trough(b, Vector3.new(3.2, 0, -3.6), Palette.straw)
+	gate(b, -HALF, 3)
 	Kit.sproutTag(b, Vector3.new(0, 6.0, 4.2), 1.2, Palette.wood, Palette.lime)
 end
 
@@ -203,6 +220,7 @@ local function chickenCoop(b: Kit.Builder)
 	)
 	b.block("NestBoxes", Vector3.new(1.6, 1.2, 2), Vector3.new(hx + 2.7, 0.6, hz + 0.2), Palette.roofMustard)
 	trough(b, Vector3.new(3.2, 0, -3.6), Palette.straw)
+	gate(b, -HALF, 3)
 	Kit.sproutTag(b, Vector3.new(hx, 5.4, hz), 1.2, Palette.wood, Palette.lime)
 end
 
@@ -231,6 +249,7 @@ local function sheepFold(b: Kit.Builder)
 	Kit.gableRoof(b, "Roof", Vector3.new(0, 3.4, 3.65), 6.6, 3.4, 1.5, Palette.roofPlum)
 	b.block("Stool", Vector3.new(0.9, 0.9, 0.9), Vector3.new(3.4, 0.45, 1.2), Palette.wood)
 	trough(b, Vector3.new(-2.6, 0, -2.6), Palette.wheatGreen)
+	gate(b, -radius, side)
 	Kit.sproutTag(b, Vector3.new(0, 5, 3.65), 1.2, Palette.wood, Palette.lime)
 end
 
@@ -253,6 +272,117 @@ function ArtAnimals.pen(penId: string, cf: CFrame, parent: Instance)
 	local b = Kit.builder(parent, cf, false)
 	build(b)
 	collectCrate(b, ArtAnimals.CRATE_AT)
+	parent:SetAttribute("PenOrigin", cf) -- for setPenLevel's add-ons
+end
+
+---------------------------------------------------------------------------------------------
+-- Pen upgrade looks (Design/03 Animals, Pen Upgrades)
+---------------------------------------------------------------------------------------------
+
+ArtAnimals.PEN_LEVEL_MAX = 5
+ArtAnimals.UPGRADE_PARTS_MAX = 10 -- add-ons at level 5, on top of PEN_PARTS_MAX
+
+-- Each pen's accent, the same as its roof, for the painted trough, the picket fence and the
+-- shade roof.
+ArtAnimals.ACCENT = {
+	CowBarn = Palette.roofTeal,
+	ChickenCoop = Palette.roofMustard,
+	SheepFold = Palette.roofPlum,
+} :: { [string]: Color3 }
+
+local TROUGH_AT = {
+	CowBarn = Vector3.new(3.2, 0, -3.6),
+	ChickenCoop = Vector3.new(3.2, 0, -3.6),
+	SheepFold = Vector3.new(-2.6, 0, -2.6),
+} :: { [string]: Vector3 }
+
+-- Paints `p` (remembering its built color, so a lower level can put it back).
+local function paint(p: BasePart, color: Color3?)
+	local base = p:GetAttribute("BuiltColor")
+	if typeof(base) ~= "Color3" then
+		base = p.Color
+		p:SetAttribute("BuiltColor", base)
+	end
+	p.Color = color or base :: Color3
+end
+
+-- Level 4: a canvas shade over the trough on two poles. 3 parts.
+local function shade(b: Kit.Builder, trough: Vector3, accent: Color3)
+	for _, x in { -1.9, 1.9 } do
+		b.block("ShadePole", Vector3.new(0.3, 3.6, 0.3), trough + Vector3.new(x, 1.8, -0.9), Palette.woodDark)
+	end
+	b.block(
+		"Shade",
+		Vector3.new(4.4, 0.2, 2.6),
+		CFrame.new(trough + Vector3.new(0, 3.5, 0)) * CFrame.Angles(math.rad(-12), 0, 0),
+		accent
+	)
+end
+
+-- Level 5: flower boxes at the front corners, clear of the crate (4 parts) and, on fenced
+-- pens, stone footings under the front fence (2 parts).
+local function flowerBoxes(b: Kit.Builder, fenced: boolean)
+	for i, x in { -5.6, 5.6 } do
+		b.block("FlowerBox", Vector3.new(1.4, 0.6, 0.5), Vector3.new(x, 0.3, -HALF - 0.6), Palette.woodLight)
+		b.block(
+			"Flowers",
+			Vector3.new(1.2, 0.45, 0.35),
+			Vector3.new(x, 0.8, -HALF - 0.6),
+			if i == 1 then Palette.flowerPink else Palette.flowerYellow,
+			{ shadow = false }
+		)
+	end
+	if fenced then
+		for _, sign in { -1, 1 } do
+			b.block(
+				"Footing",
+				Vector3.new(HALF - 1.5 + 0.5, 0.5, 0.7),
+				Vector3.new(sign * (HALF + 1.5) / 2, 0.25, -HALF),
+				Palette.stoneLight
+			)
+		end
+	end
+end
+
+-- Dresses `pen` (built by ArtAnimals.pen) for upgrade `level` 1-5:
+--   2 painted trough, 3 picket fence in the pen's accent, 4 shade roof over the trough,
+--   5 stone-footed front fence, flower boxes and a gold Sprout Tag.
+-- Safe to call again with any level; it rebuilds the add-ons and repaints from scratch.
+function ArtAnimals.setPenLevel(pen: Instance, penId: string, level: number)
+	local accent = ArtAnimals.ACCENT[penId] or Palette.roofTeal
+	local old = pen:FindFirstChild("Upgrade")
+	if old then
+		old:Destroy()
+	end
+	for _, d in pen:GetDescendants() do
+		if not d:IsA("BasePart") or d:FindFirstAncestor("Upgrade") then
+			continue
+		end
+		local name = d.Name
+		if name == "Trough" then
+			paint(d, if level >= 2 then accent else nil)
+		elseif name == "Fence" then
+			-- Wooden rails go cream like pickets; the Sheep Fold's stone wall is whitewashed
+			paint(
+				d,
+				if level < 3 then nil elseif penId == "SheepFold" then Palette.cream:Lerp(accent, 0.2) else Palette.cream
+			)
+		elseif name == "FencePost" then
+			paint(d, if level >= 3 then accent else nil)
+		elseif name == "Leaf" and d.Parent and d.Parent.Name == "SproutTag" then
+			paint(d, if level >= 5 then Palette.coins else nil)
+		end
+	end
+	local origin = pen:GetAttribute("PenOrigin")
+	if level < 4 or typeof(origin) ~= "CFrame" then
+		return
+	end
+	local upgrade = Kit.model("Upgrade", pen)
+	local b = Kit.builder(upgrade, origin, false)
+	shade(b, TROUGH_AT[penId] or TROUGH_AT.CowBarn, accent)
+	if level >= 5 then
+		flowerBoxes(b, penId ~= "SheepFold")
+	end
 end
 
 return ArtAnimals
