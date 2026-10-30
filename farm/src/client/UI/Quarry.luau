@@ -33,9 +33,9 @@ local HIDDEN_COLOR = Color3.fromRGB(95, 80, 70)
 local SKY_COLOR = Color3.fromRGB(150, 205, 120)
 local ORE_COLORS = {
 	CopperOre = Color3.fromRGB(215, 120, 60),
-	IronOre = Color3.fromRGB(120, 130, 150),
 	SilverOre = Color3.fromRGB(225, 230, 240),
 	GoldOre = Color3.fromRGB(250, 205, 60),
+	PlatinumOre = Color3.fromRGB(185, 215, 235),
 }
 
 -- Acts on press: the panel re-renders every second, which can swap a cell out between press

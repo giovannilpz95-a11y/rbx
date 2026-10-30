@@ -68,7 +68,7 @@ function ClientStore.itemCount(item: string): number
 	if state == nil then
 		return 0
 	end
-	local n = state.inventory[item] or 0
+	local n = (state.inventory[item] or 0) + ((state.oreShed or {})[item] or 0) -- ore lives in the Ore Shed
 	for _, entry in state.prizes or {} do
 		if entry.crop == item then
 			n += 1

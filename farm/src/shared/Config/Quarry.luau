@@ -20,12 +20,12 @@ export type OreDef = {
 
 -- stylua: ignore
 local ores: { [string]: OreDef } = {
-	-- Township's copper / silver / gold / platinum ore, tier for tier. Copper's 8 Coins and
-	-- every XP value are the wiki's; the other prices are first-pass.
+	-- Township's own four ores (copper, silver, gold, platinum), kept as they are for continuity.
+	-- Copper's 8 Coins and every XP value are the wiki's; the other prices are first-pass.
 	CopperOre = { id = "CopperOre", displayName = "Copper Ore", fromDepth = 1, chance = 0.12, sellPrice = 8, xp = 3, order = 1 },
-	IronOre = { id = "IronOre", displayName = "Iron Ore", fromDepth = 25, chance = 0.06, sellPrice = 12, xp = 4, order = 2 },
-	SilverOre = { id = "SilverOre", displayName = "Silver Ore", fromDepth = 75, chance = 0.04, sellPrice = 17, xp = 5, order = 3 },
-	GoldOre = { id = "GoldOre", displayName = "Gold Ore", fromDepth = 150, chance = 0.025, sellPrice = 25, xp = 6, order = 4 },
+	SilverOre = { id = "SilverOre", displayName = "Silver Ore", fromDepth = 25, chance = 0.06, sellPrice = 12, xp = 4, order = 2 },
+	GoldOre = { id = "GoldOre", displayName = "Gold Ore", fromDepth = 75, chance = 0.04, sellPrice = 17, xp = 5, order = 3 },
+	PlatinumOre = { id = "PlatinumOre", displayName = "Platinum Ore", fromDepth = 150, chance = 0.025, sellPrice = 25, xp = 6, order = 4 },
 }
 for _, ore in ores do
 	table.freeze(ore)

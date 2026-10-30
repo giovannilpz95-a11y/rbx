@@ -31,7 +31,20 @@ local function sack(b: Kit.Builder, band: Color3)
 	b.block("Band", Vector3.new(1.55, 0.45, 1.15), at(0, 0.8, 0), band, QUIET)
 end
 
+-- A Bar from the Smelter: two cast bars on a third, crosswise
+local function bars(color: Color3): (Kit.Builder) -> ()
+	return function(b)
+		b.block("Bar", Vector3.new(1.8, 0.45, 0.8), at(0, 0.23, -0.45), color, QUIET)
+		b.block("Bar", Vector3.new(1.8, 0.45, 0.8), at(0, 0.23, 0.45), color, QUIET)
+		b.block("Bar", Vector3.new(0.8, 0.45, 1.8), at(0, 0.7, 0), color:Lerp(Palette.cream, 0.25), QUIET)
+	end
+end
+
 local BUILDERS: { [string]: (Kit.Builder) -> () } = {
+	CopperBar = bars(Palette.brick:Lerp(Palette.carrot, 0.5)),
+	SilverBar = bars(Palette.metal),
+	GoldBar = bars(Palette.coins),
+	PlatinumBar = bars(Palette.sky:Lerp(Palette.stoneLight, 0.5)),
 	-- Crops ---------------------------------------------------------------------------------
 	Wheat = function(b)
 		-- A sheaf: a stalk bundle tied with a band, ears fanned on top

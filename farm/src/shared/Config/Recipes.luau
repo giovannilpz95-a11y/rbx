@@ -14,6 +14,7 @@ export type RecipeDef = {
 	sellPrice: number, -- per unit
 	xp: number, -- XP per unit collected
 	isFeed: boolean?, -- animal feed never shows up on order cards
+	fromOreShed: boolean?, -- its inputs are Quarry ore, taken from the Ore Shed, not the Barn
 }
 
 local MIN = 60
@@ -67,6 +68,11 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Pastry Shop (content bank)
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
+	-- Smelter (Township's Foundry: 5 ore -> 1 ingot, all at level 21). Bars go to the Barn.
+	CopperBar = { id = "CopperBar", displayName = "Copper Bar", factory = "Smelter", unlockLevel = 21, inputs = { CopperOre = 5 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 96, xp = 41, fromOreShed = true },
+	SilverBar = { id = "SilverBar", displayName = "Silver Bar", factory = "Smelter", unlockLevel = 21, inputs = { SilverOre = 5 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 144, xp = 62, fromOreShed = true },
+	GoldBar = { id = "GoldBar", displayName = "Gold Bar", factory = "Smelter", unlockLevel = 21, inputs = { GoldOre = 5 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 204, xp = 87, fromOreShed = true },
+	PlatinumBar = { id = "PlatinumBar", displayName = "Platinum Bar", factory = "Smelter", unlockLevel = 21, inputs = { PlatinumOre = 5 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 300, xp = 129, fromOreShed = true },
 	-- Jam Kitchen (content bank)
 	StrawberryJam = { id = "StrawberryJam", displayName = "Strawberry Jam", factory = "JamKitchen", unlockLevel = 27, inputs = { Strawberries = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 41, xp = 18 },
 }

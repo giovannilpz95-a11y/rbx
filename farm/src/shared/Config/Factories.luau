@@ -1,8 +1,9 @@
 --!strict
 -- Factory buildings from Design/04 Factories & Recipes and Township Baseline Numbers §4
 -- (Township baseline): the five factories of the level-12 MVP, then the content bank's
--- (Config/Levels.built), which stand in the East Meadow. Only the Feed Mill gets a second copy
--- (level 19), as in Township; the copy has its own id and queue and makes the same recipes.
+-- (Config/Levels.built), which stand in the East Meadow. The Feed Mill gets a second copy
+-- (level 19) and the Smelter two at once (level 21), as in Township; a copy has its own id and
+-- queue and makes the same recipes.
 
 export type FactoryDef = {
 	id: string,
@@ -18,6 +19,7 @@ export type FactoryDef = {
 	color: { number }, -- greybox RGB
 	land: number?, -- the land expansion its spot is on, which must be cleared first
 	makes: string?, -- a second copy: the factory whose recipes it makes
+	fixedSlots: boolean?, -- no extra queue slots for Gems (Township's Foundry: one at a time)
 }
 
 local HOUR = 3600
@@ -36,6 +38,9 @@ local Factories: { [string]: FactoryDef } = {
 	FeedMill2 = { id = "FeedMill2", displayName = "Second Feed Mill", unlockLevel = 19, population = 655, buildCost = 2800, buildSeconds = 16 * HOUR, xp = 120, queueSlots = 3, trayCapacity = 6, order = 9, color = { 200, 150, 110 }, land = 2, makes = "FeedMill" },
 	IceCreamParlor = { id = "IceCreamParlor", displayName = "Ice Cream Parlor", unlockLevel = 20, population = 735, buildCost = 3600, buildSeconds = 24 * HOUR, xp = 174, queueSlots = 2, trayCapacity = 6, order = 10, color = { 245, 190, 210 }, land = 2 },
 	PastryShop = { id = "PastryShop", displayName = "Pastry Shop", unlockLevel = 24, population = 1100, buildCost = 5300, buildSeconds = 28 * HOUR, xp = 252, queueSlots = 2, trayCapacity = 6, order = 11, color = { 240, 215, 170 }, land = 2 },
+	-- Township's Foundries #1 and #2 (level 21): smelt Quarry ore into Bars, one at a time
+	Smelter = { id = "Smelter", displayName = "Smelter", unlockLevel = 21, population = 730, buildCost = 2000, buildSeconds = 36 * HOUR, xp = 87, queueSlots = 1, trayCapacity = 6, order = 13, color = { 170, 120, 95 }, land = 2, fixedSlots = true },
+	Smelter2 = { id = "Smelter2", displayName = "Second Smelter", unlockLevel = 21, population = 920, buildCost = 8000, buildSeconds = 36 * HOUR, xp = 335, queueSlots = 1, trayCapacity = 6, order = 14, color = { 150, 110, 100 }, land = 2, makes = "Smelter", fixedSlots = true },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 12, color = { 200, 60, 90 }, land = 2 },
 }
 

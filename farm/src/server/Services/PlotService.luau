@@ -127,6 +127,9 @@ local LAYOUT = {
 		PastryShop = Vector3.new(66, 0, 30),
 		-- A third column further east, its tables facing the second row's backs
 		JamKitchen = Vector3.new(88, 0, 30),
+		-- The Smelters, beside the Quarry at the column's north end
+		Smelter = Vector3.new(88, 0, -24),
+		Smelter2 = Vector3.new(88, 0, -10),
 	} :: { [string]: Vector3 },
 	factoryOutputOffset = Vector3.new(-10, 0, 0),
 	-- The Quarry's hill at the north end of the East Meadow's third column, its mine door
