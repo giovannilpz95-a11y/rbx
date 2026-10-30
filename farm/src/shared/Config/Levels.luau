@@ -49,8 +49,24 @@ for _, row in rows do
 	)
 end
 
+-- Free units handed over on reaching a level, so a new crop or pen can start at once
+-- (Township's unlock gifts, Wiki Data - Farming & Animals §1). Level 1's Cow Feed is
+-- Balance.starterCowFeed.
+local gifts: { [number]: { [string]: number } } = {
+	[3] = { Corn = 4 },
+	[4] = { Carrots = 4 },
+	[5] = { ChickenFeed = 3 },
+	[7] = { Sugarcane = 3 },
+	[13] = { Strawberries = 3 },
+	[15] = { Tomatoes = 3 },
+}
+for _, gift in gifts do
+	table.freeze(gift)
+end
+
 return table.freeze({
 	cap = CAP,
 	built = BUILT,
+	gifts = table.freeze(gifts),
 	list = table.freeze(list),
 })

@@ -23,7 +23,7 @@ export type Step = {
 Tutorial.cycleSeconds = 30
 Tutorial.wrapUpGems = 5 -- 11 UI & UX step 10
 Tutorial.skippableFrom = 3 -- "every step is skippable after step 3"
-Tutorial.firstOrder = table.freeze({ Wheat = 4 }) -- first-60-seconds script
+Tutorial.firstOrder = table.freeze({ Wheat = 3 }) -- first-60-seconds script: the 3 ripe fields fill it
 Tutorial.ripeFields = table.freeze({ "F1", "F2", "F3" })
 
 local function anyField(data: { [string]: any }, test: (field: { [string]: any }) -> boolean): boolean

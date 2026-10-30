@@ -15,7 +15,10 @@ function DailyRules.due(data: { [string]: any }, now: number): (Daily.Reward?, n
 	if data.level < Daily.unlockLevel or DailyRules.utcDay(now) <= data.daily.lastDay then
 		return nil, 0
 	end
-	local day = data.daily.day % #Daily.days + 1
+	-- A missed UTC day starts the round again from day 1 (Township; Wiki Data - Progression,
+	-- Town & Social C10)
+	local missed = data.daily.lastDay >= 0 and DailyRules.utcDay(now) > data.daily.lastDay + 1
+	local day = if missed then 1 else data.daily.day % #Daily.days + 1
 	local reward = Daily.days[day]
 	local mult = 1
 	for _, band in Daily.coinBands do
