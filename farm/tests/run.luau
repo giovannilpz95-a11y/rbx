@@ -245,7 +245,15 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 22, "levels 17 to 22 are banked")
+	eq(Levels.built, 23, "levels 17 to 23 are banked")
+	eq(Levels.list[23].xpToNext, 10338, "L23 row")
+	eq(Recipes.PaperTowel.inputs.PineTrees, 2, "Paper Towels")
+	eq(Recipes.FrozenYogurt.inputs.Yogurt, 1, "Frozen Yogurt")
+	eq(
+		Lots.community[TownRules.communityLot("BotanicalArch") :: number].land,
+		Lots.farCornersLand,
+		"Botanical Arch in the Far Corners"
+	)
 	eq(Levels.list[22].xpToNext, 9011, "L22 row")
 	ok(table.find(Balance.enabledCrops, "Potatoes") ~= nil and Crops.Potatoes.unlockLevel == 22, "Potatoes at 22")
 	eq(Levels.gifts[22].Potatoes, 3, "Potatoes to start with")

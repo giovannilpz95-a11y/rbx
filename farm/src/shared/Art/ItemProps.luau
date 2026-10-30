@@ -254,6 +254,17 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Patch", Vector3.new(0.6, 0.62, 0.6), at(0.5, 0.3, 0.35), Palette.roofTeal, QUIET)
 		b.block("Patch", Vector3.new(0.6, 0.62, 0.6), at(0.5, 0.3, -0.35), Palette.flowerYellow, QUIET)
 	end,
+	PaperTowel = function(b)
+		b.post("Roll", 1.6, 1.3, at(0, 0.8, 0), Palette.flowerWhite, QUIET)
+		b.post("Core", 1.62, 0.45, at(0, 0.8, 0), Palette.cork, QUIET)
+		b.block("Sheet", Vector3.new(0.8, 0.9, 0.08), at(0.3, 0.5, -0.66), Palette.flowerWhite, QUIET)
+	end,
+	FrozenYogurt = function(b)
+		b.post("Cup", 1, 1.1, at(0, 0.5, 0), Palette.sky, QUIET)
+		b.ball("Swirl", 1, at(0, 1.25, 0), Palette.flowerWhite, QUIET)
+		b.ball("Swirl", 0.7, at(0, 1.75, 0), Palette.flowerWhite, QUIET)
+		b.ball("Berry", 0.35, at(0.15, 2.1, 0), Palette.roofRed, QUIET)
+	end,
 	Yogurt = function(b)
 		b.post("Pot", 1.2, 1.2, at(0, 0.6, 0), Palette.cream, QUIET)
 		b.post("Lid", 0.2, 1.3, at(0, 1.3, 0), Palette.roofTeal, QUIET)

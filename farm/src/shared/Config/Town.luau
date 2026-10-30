@@ -71,6 +71,7 @@ local Community: { [string]: CommunityDef } = {
 	TownHallUpgrade = { id = "TownHallUpgrade", displayName = "Town Hall Upgrade", unlockLevel = 20, capBonus = 95, coinCost = 650, materials = { Bricks = 6, Planks = 6, Panes = 5 }, buildSeconds = 7 * HOUR, xp = 190, order = 17, color = { 235, 220, 190 }, townHallStorey = 2 },
 	SeedExchange = { id = "SeedExchange", displayName = "Seed Exchange", unlockLevel = 21, capBonus = 100, coinCost = 800, materials = { Bricks = 5, Planks = 7, Panes = 6 }, buildSeconds = 7 * HOUR + 30 * MIN, xp = 200, order = 18, color = { 160, 200, 110 } },
 	PuppetTheatre = { id = "PuppetTheatre", displayName = "Puppet Theatre", unlockLevel = 22, capBonus = 105, coinCost = 950, materials = { Bricks = 5, Planks = 6, Panes = 8 }, buildSeconds = 8 * HOUR, xp = 210, order = 19, color = { 180, 50, 60 } },
+	BotanicalArch = { id = "BotanicalArch", displayName = "Botanical Arch", unlockLevel = 23, capBonus = 110, coinCost = 1100, materials = { Bricks = 5, Planks = 10, Panes = 6 }, buildSeconds = 9 * HOUR, xp = 220, order = 20, color = { 120, 180, 120 } },
 }
 
 for _, def in Houses do

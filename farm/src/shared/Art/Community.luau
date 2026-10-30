@@ -678,6 +678,42 @@ TYPES.PuppetTheatre = function(b, s)
 	return body
 end
 
+-- Botanical Arch (content bank, level 23): a stone garden arch wound with vines and roses,
+-- flower beds either side, and a small glass dome of rare plants behind it.
+TYPES.BotanicalArch = function(b, s)
+	local w = s * 0.8
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grassLight, { collide = true })
+	local t = b.into(body, true)
+	t.block("Path", Vector3.new(2, 0.1, w), Vector3.new(0, 0.45, 0), Palette.path, { shadow = false })
+	-- Sign object: the arch, two stone piers and a curved top, wound with vines and roses
+	local front = -w / 4
+	for _, x in { -1.8, 1.8 } do
+		t.block("Pier", Vector3.new(1, 5.4, 1), Vector3.new(x, 3.1, front), Palette.stoneLight)
+	end
+	t.cyl("ArchTop", 1, 4.6, CFrame.new(0, 5.8, front) * CFrame.Angles(0, math.rad(90), 0), Palette.stoneLight)
+	t.block("Vine", Vector3.new(4.8, 0.6, 1.2), Vector3.new(0, 6.4, front), Palette.leaf, { shadow = false })
+	for i, x in { -1.4, 0, 1.4 } do
+		t.ball(
+			"Rose",
+			0.7,
+			Vector3.new(x, 6.8, front - 0.4),
+			if i == 2 then Palette.flowerYellow else Palette.flowerPink,
+			{ shadow = false }
+		)
+	end
+	-- The glass dome of rare plants behind the arch
+	local back = w / 4
+	t.post("DomeBase", 0.6, 4.4, Vector3.new(0, 0.7, back), Palette.stone)
+	t.ball("Dome", 4.4, Vector3.new(0, 1.4, back), Palette.glass)
+	t.ball("Palm", 2, Vector3.new(0, 2, back), Palette.treeTop, { shadow = false })
+	-- Flower beds either side of the path
+	for _, x in { -w / 2 + 1.2, w / 2 - 1.2 } do
+		Kit.bush(t, "FlowerBed", Vector3.new(x, 0.4, front), 0.9, Palette.leafLight, Palette.flowerYellow)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, w / 2 - 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)
