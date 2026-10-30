@@ -52,6 +52,10 @@ local raceOpen = false -- the Tractor Race rivals are showing on the Trail
 local progress = nil -- the latest hearts / boosters / unlocks from the server
 local progressAt = 0 -- os.clock() when it arrived, for the hearts countdown
 
+local PANEL_SCALE = 0.42 -- end panel height, as a share of the screen, for a short message
+local PANEL_MAX_SCALE = 0.9 -- and at most, for a long one
+local PANEL_MAX_HEIGHT = 320 -- pixels, for a short message
+
 local GEM_CONFIRM_OVER = 10 -- spends above this need a second tap (10 Monetization)
 
 -- Glyphs for the free Hot Streak power-ups, matching the start boosters.
@@ -296,7 +300,7 @@ local function buildUi()
 	corner(panel, 0.08)
 	Kit.skinPanel(panel)
 	local panelSize = Instance.new("UISizeConstraint")
-	panelSize.MaxSize = Vector2.new(460, 320)
+	panelSize.MaxSize = Vector2.new(460, PANEL_MAX_HEIGHT)
 	panelSize.Parent = panel
 	local panelTitle = label(panel, "Title", "", UDim2.fromScale(0.9, 0.26), UDim2.fromScale(0.05, 0.05))
 	local panelBody = label(panel, "Body", "", UDim2.fromScale(0.84, 0.3), UDim2.fromScale(0.08, 0.34))
@@ -435,6 +439,7 @@ local function buildUi()
 		panel = panel,
 		panelTitle = panelTitle,
 		panelBody = panelBody,
+		panelSize = panelSize,
 		primary = primary,
 		secondary = secondary,
 		panelActions = {},
@@ -577,9 +582,30 @@ end
 
 -- Panels -----------------------------------------------------------------------
 
+-- Grows the panel for a long body (a win with rewards, chests, cup and race
+-- lines) so the body text stays readable; the title and buttons keep their size.
+local function sizePanel(body: string)
+	local _, breaks = string.gsub(body, "\n", "")
+	local extra = math.clamp(breaks + 1 - 2, 0, 6)
+	local k = math.min(1 + 0.25 * extra, PANEL_MAX_SCALE / PANEL_SCALE)
+	ui.panel.Size = UDim2.fromScale(0.8, PANEL_SCALE * k)
+	ui.panelSize.MaxSize = Vector2.new(460, PANEL_MAX_HEIGHT * k)
+	ui.panelTitle.Size = UDim2.fromScale(0.9, 0.26 / k)
+	ui.panelTitle.Position = UDim2.fromScale(0.05, 0.05 / k)
+	local buttonsY = 1 - 0.26 / k
+	ui.primary.Size = UDim2.fromScale(0.42, 0.18 / k)
+	ui.primary.Position = UDim2.fromScale(0.05, buttonsY)
+	ui.secondary.Size = UDim2.fromScale(0.42, 0.18 / k)
+	ui.secondary.Position = UDim2.fromScale(0.53, buttonsY)
+	local bodyTop = 0.34 / k
+	ui.panelBody.Position = UDim2.fromScale(0.08, bodyTop)
+	ui.panelBody.Size = UDim2.fromScale(0.84, buttonsY - 0.04 / k - bodyTop)
+end
+
 local function showPanel(title: string, body: string, primaryText: string, onPrimary: () -> (), secondaryText: string, onSecondary: () -> ())
 	ui.panelTitle.Text = title
 	ui.panelBody.Text = body
+	sizePanel(body)
 	ui.primary.Text = primaryText
 	ui.secondary.Text = secondaryText
 	ui.panelActions.primary = onPrimary
@@ -963,7 +989,7 @@ local function trackResultText(result): string?
 	if not track or t.gained <= 0 then
 		return nil
 	end
-	local text = string.format("%s +%d %s points%s", track.glyph, t.gained, track.name, if t.doubled then " (x2)" else "")
+	local text = string.format("%s +%d %s point%s%s", track.glyph, t.gained, track.name, if t.gained == 1 then "" else "s", if t.doubled then " (x2)" else "")
 	for _, i in t.steps do
 		text ..= string.format("\n%s Step %d: %s", track.glyph, i, trackRewardText(track.steps[i].reward))
 	end
@@ -1039,7 +1065,7 @@ local function addCupRows()
 		text = string.format("%s %s: win a level to enter · ends in %s", Cup.GLYPH, Cup.NAME, left)
 	else
 		local place = if standings and standings.place then string.format(" · %s of %d", ordinal(standings.place), standings.players) else ""
-		text = string.format("%s %s  %d cups%s · ends in %s", Cup.GLYPH, Cup.NAME, cup.cups, place, left)
+		text = string.format("%s %s  %d %s%s · ends in %s", Cup.GLYPH, Cup.NAME, cup.cups, if cup.cups == 1 then "cup" else "cups", place, left)
 	end
 	text ..= string.format(
 		"\nWins score 1 / 3 / 5 cups. %d cups: %s %s",
@@ -1084,7 +1110,7 @@ local function cupResultText(result): string?
 	if not c then
 		return nil
 	end
-	local text = string.format("%s +%d cups (%d in the %s)", Cup.GLYPH, c.gained, c.cups, Cup.NAME)
+	local text = string.format("%s +%d %s (%d in the %s)", Cup.GLYPH, c.gained, if c.gained == 1 then "cup" else "cups", c.cups, Cup.NAME)
 	if c.goalReached then
 		text ..= string.format("\n%s %d cups reached: %s", Cup.GLYPH, Cup.PERSONAL_GOAL, trackRewardText(Cup.PersonalPrize))
 	end
@@ -1165,7 +1191,7 @@ local function raceResultText(result): string?
 		return nil
 	end
 	if not r.finished then
-		return string.format("%s %d/%d wins in the %s", Race.GLYPH, r.wins, r.target, Race.NAME)
+		return string.format("%s %d/%d %s in the %s", Race.GLYPH, r.wins, r.target, if r.target == 1 then "win" else "wins", Race.NAME)
 	end
 	if r.prize then
 		return string.format("%s You finished the %s %s! %s", Race.GLYPH, Race.NAME, ordinal(r.place), trackRewardText(r.prize))
@@ -1782,11 +1808,12 @@ local function ensureUi()
 				PuzzleScreen.debugEmptyHearts()
 			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.J and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugPlayMove()
-			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.K and PuzzleScreen.isOpen() then
+			-- 7, 8 and 9: the farm's own keys (K, E, T...) are taken.
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.Seven and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugCup("add")
-			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.E and PuzzleScreen.isOpen() then
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.Eight and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugCup("end")
-			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.T and PuzzleScreen.isOpen() then
+			elseif not gameProcessed and input.KeyCode == Enum.KeyCode.Nine and PuzzleScreen.isOpen() then
 				PuzzleScreen.debugRace()
 			end
 		end)
@@ -1966,7 +1993,7 @@ function PuzzleScreen.debugGiftHeart()
 	end
 end
 
--- Studio only: 5 Tractor Race wins without playing (the T key).
+-- Studio only: 5 Tractor Race wins without playing (the 9 key).
 function PuzzleScreen.debugRace()
 	if not RunService:IsStudio() or current then
 		return
@@ -1986,7 +2013,7 @@ function PuzzleScreen.debugRace()
 	end
 end
 
--- Studio only: "add" scores 10 cups (the K key), "end" ends your cup now (the E key).
+-- Studio only: "add" scores 10 cups (the 7 key), "end" ends your cup now (the 8 key).
 function PuzzleScreen.debugCup(action: string)
 	if not RunService:IsStudio() or current then
 		return
