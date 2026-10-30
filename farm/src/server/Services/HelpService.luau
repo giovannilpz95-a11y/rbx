@@ -54,7 +54,7 @@ local function prepare(
 	if type(ownerUserId) ~= "number" or ownerUserId ~= ownerUserId or not NetService.check.id(fieldId) then
 		return nil
 	end
-	local owner = Players:GetPlayerByUserId(ownerUserId)
+	local owner = SocialService.playerByUserId(ownerUserId)
 	local helperData = DataService.get(helper)
 	local data = owner and DataService.get(owner)
 	if owner == nil or owner == helper or data == nil or helperData == nil then

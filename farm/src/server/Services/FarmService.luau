@@ -8,6 +8,7 @@ local Balance = require(Shared.Config.Balance)
 local Crops = require(Shared.Config.Crops)
 local Net = require(Shared.Net)
 local Prize = require(Shared.Config.Prize)
+local SocialRules = require(Shared.Social)
 local PrizeRules = require(Shared.Prize)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
@@ -62,7 +63,9 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	local now = Clock.now()
 	field.crop = cropId
 	field.plantedAt = now
-	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, crop.growSeconds))
+	-- A Welcome Boost (friend joined) grows crops planted now a little faster
+	local seconds = SocialRules.growSeconds(crop.growSeconds, SocialRules.boostActive(data.social, now))
+	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, seconds))
 	field.prize = PrizeRules.roll(data, rng:NextNumber()) -- rolled now, so speed-ups can't buy it
 	field.watered = nil -- a helper may water each crop once (Helping Hands)
 	data.settings.lastSeed = cropId

@@ -99,6 +99,7 @@ local function onPlayerAdded(player: Player)
 		placeCharacter(player, player.Character)
 	end
 	NetService.pushState(player)
+	SocialService.welcome(player)
 end
 
 Players.PlayerAdded:Connect(onPlayerAdded)

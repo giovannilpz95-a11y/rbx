@@ -44,6 +44,8 @@ local column: Frame
 local homeButton: TextButton
 local visitorsLabel: TextLabel
 local helpLabel: TextLabel
+local boostLabel: TextLabel
+local neighborsChip: TextLabel
 local inviteButton: TextButton? = nil
 
 local function isFriend(other: Player): boolean
@@ -122,9 +124,13 @@ local function visitorsOnMyFarm(): { Player }
 	return list
 end
 
+-- Roblox's own invite prompt. LaunchData names us, so the friend who joins from it and we
+-- both get the Welcome Boost (14 G3).
 local function invite()
 	pcall(function()
-		SocialService:PromptGameInvite(player)
+		local options = Instance.new("ExperienceInviteOptions")
+		options.LaunchData = tostring(player.UserId)
+		SocialService:PromptGameInvite(player, options)
 	end)
 end
 
@@ -449,6 +455,23 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		end
 	end
 
+	if RunService:IsStudio() then
+		heading(body, "Studio test", nextOrder())
+		local line = card(body, 48, nextOrder())
+		Ui.label("A test neighbor's farm next to yours, to try visiting and Helping Hands alone.", {
+			TextSize = Type.size.small,
+			TextWrapped = true,
+			Position = UDim2.fromOffset(10, 0),
+			Size = UDim2.new(1, -150, 1, 0),
+			Parent = line,
+		})
+		smallButton("Test neighbor", function()
+			Panels.close()
+			Remotes.fire("Debug_TestNeighbor")
+		end, Ui.colors.selected, 136).Parent =
+			line
+	end
+
 	local travel = Ui.new("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, -8, 0, 40),
@@ -517,6 +540,24 @@ local function friendBadge(friend: Player, order: number): TextButton
 	return button
 end
 
+-- The labels that follow our own state: Home, helps left, Good Neighbors, visitors.
+local function refreshStatus()
+	local onPlot = player:GetAttribute("OnPlot")
+	homeButton.Visible = onPlot ~= player.UserId
+	helpLabel.Visible = type(onPlot) == "number" and onPlot ~= 0 and onPlot ~= player.UserId
+	helpLabel.Text = string.format("🤝 %d helps left", helpsLeft())
+	local neighbors = player:GetAttribute("GoodNeighbors")
+	neighborsChip.Visible = type(neighbors) == "number" and neighbors > 0
+	if neighborsChip.Visible then
+		neighborsChip.Text =
+			string.format("🏡 Good Neighbors +%d%%", math.floor(SocialRules.neighborBonus(neighbors) * 100 + 0.5))
+	end
+	local visitors = visitorsOnMyFarm()
+	visitorsLabel.Visible = #visitors > 0
+	visitorsLabel.Text = if #visitors == 1 then "1 visiting" else string.format("%d visiting", #visitors)
+end
+
+-- Someone joined, left or moved: rebuild the Friends Nearby column and the Neighbors panel.
 local function refreshHud()
 	if column == nil then
 		return
@@ -534,14 +575,8 @@ local function refreshHud()
 		shown += 1
 		friendBadge(other, 10 + shown).Parent = column
 	end
-	homeButton.Visible = player:GetAttribute("OnPlot") ~= player.UserId
-	local onPlot = player:GetAttribute("OnPlot")
-	helpLabel.Visible = type(onPlot) == "number" and onPlot ~= 0 and onPlot ~= player.UserId
-	helpLabel.Text = string.format("🤝 %d helps left", helpsLeft())
-	local visitors = visitorsOnMyFarm()
-	visitorsLabel.Visible = #visitors > 0
-	visitorsLabel.Text = if #visitors == 1 then "1 visiting" else string.format("%d visiting", #visitors)
-	if Panels.isOpen() then
+	refreshStatus()
+	if Panels.isShowing("Neighbors") then
 		Panels.refresh()
 	end
 end
@@ -558,6 +593,9 @@ end
 local function watchPlayer(other: Player)
 	other:GetAttributeChangedSignal("OnPlot"):Connect(refreshHud)
 	other:GetAttributeChangedSignal("FarmLevel"):Connect(refreshHud)
+	if other == player then
+		other:GetAttributeChangedSignal("GoodNeighbors"):Connect(refreshStatus)
+	end
 end
 
 function SocialUi.init()
@@ -652,6 +690,37 @@ function SocialUi.init()
 		Parent = column,
 	}, { Ui.corner(8), Ui.theme.Kit.stroke(Palette.cocoa, 2, 0.1, true) })
 
+	local function chip(order: number): TextLabel
+		return Ui.new("TextLabel", {
+			BackgroundColor3 = Ui.colors.ready,
+			Size = UDim2.fromOffset(84, 40),
+			Font = Type.display,
+			TextSize = Type.size.small,
+			TextColor3 = Palette.textOnColor,
+			TextWrapped = true,
+			LayoutOrder = order,
+			Visible = false,
+			Parent = column,
+		}, { Ui.corner(8), Ui.theme.Kit.stroke(Palette.cocoa, 2, 0.1, true) })
+	end
+	neighborsChip = chip(4)
+	Ui.theme.Kit.textOutline(neighborsChip, Palette.cocoa)
+	boostLabel = chip(5)
+	Ui.theme.Kit.textOutline(boostLabel, Palette.cocoa)
+	-- The Welcome Boost countdown
+	task.spawn(function()
+		while true do
+			local state = ClientStore.state
+			local ends = state and state.social and state.social.boostUntil or 0
+			local left = ends - ClientStore.now()
+			boostLabel.Visible = left > 0
+			if left > 0 then
+				boostLabel.Text = "🌱 Welcome Boost " .. Timer.format(left)
+			end
+			task.wait(1)
+		end
+	end)
+
 	-- Invite friends, where Roblox allows it for this player (14 G3: invites go through
 	-- Roblox's own flow only)
 	task.spawn(function()
@@ -684,7 +753,7 @@ function SocialUi.init()
 		friendCache[other.UserId] = nil
 		task.defer(refreshHud)
 	end)
-	ClientStore.changed.Event:Connect(refreshHud)
+	ClientStore.changed.Event:Connect(refreshStatus)
 	refreshHud()
 
 	task.spawn(function()
@@ -698,6 +767,18 @@ function SocialUi.init()
 	Remotes.get("Reward_Popup").OnClientEvent:Connect(function(payload)
 		if payload.kind == "Visitor" then
 			Hud.toast(string.format("%s is visiting your farm!", payload.name))
+		elseif payload.kind == "WelcomeBoost" then
+			Hud.toast(
+				string.format(
+					"Welcome Boost! You're farming with %s: crops you plant grow %d%% faster for %d minutes.",
+					payload.name,
+					math.floor(Social.welcomeGrowCut * 100 + 0.5),
+					Social.welcomeSeconds // 60
+				),
+				"celebrate"
+			)
+		elseif payload.kind == "Order" and (payload.neighbors or 0) > 0 then
+			Hud.toast(string.format("Good Neighbors: +%d Coins for farming with friends", payload.neighbors))
 		else
 			helpToast(payload)
 		end

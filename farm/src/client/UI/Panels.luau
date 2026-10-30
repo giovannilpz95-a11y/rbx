@@ -1556,6 +1556,10 @@ function Panels.isOpen(): boolean
 	return current ~= nil
 end
 
+function Panels.isShowing(name: string): boolean
+	return current == name
+end
+
 function Panels.init()
 	gui = Ui.new("ScreenGui", {
 		Name = "FarmPanels",
