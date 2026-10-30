@@ -24,6 +24,7 @@ local Pen = require(Shared.Pen)
 local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
+local HeldTools = require(script.Parent.HeldTools)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Hud = require(script.Parent.Parent.UI.Hud)
 local Panels = require(script.Parent.Parent.UI.Panels)
@@ -103,8 +104,15 @@ local function recentlySent(fieldId: string): boolean
 	return sentAt ~= nil and os.clock() - sentAt < 1.5
 end
 
+-- What the avatar holds while doing it (HeldTools)
+local HELD_FOR = { Farm_Harvest = "Tool_Scythe", Farm_Plant = "Tool_SeedBag" } :: { [string]: string }
+
 local function sendField(remote: string, key: string, ...: any)
 	pendingFields[key] = os.clock()
+	local tool = HELD_FOR[remote]
+	if tool then
+		HeldTools.flash(tool)
+	end
 	if key:sub(1, 4) == "pen:" then
 		Remotes.fire(remote, key:sub(5), ...)
 	else

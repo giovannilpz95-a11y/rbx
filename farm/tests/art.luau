@@ -267,6 +267,105 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: pen gates swing and upgrade looks stay within budget", function()
+		for _, id in PENS do
+			local pen = Instance.new("Model")
+			ArtAnimals.pen(id, CFrame.new(), pen)
+			local base = within(pen, ArtAnimals.PEN_PARTS_MAX, id .. " pen")
+			local gate = pen:FindFirstChild("Gate", true) :: BasePart
+			ok(gate ~= nil, id .. " has a gate")
+			local shut = ArtMotion.gateCFrame(gate, 0) :: CFrame
+			local open = ArtMotion.gateCFrame(gate, 1) :: CFrame
+			ok(shut.Position:FuzzyEq(gate.CFrame.Position, 1e-3), id .. " gate shut at 0")
+			ok(open.Position.Z > shut.Position.Z + 0.5, id .. " gate swings inward")
+			local trough = pen:FindFirstChild("Trough", true) :: BasePart
+			local built = trough.Color
+			for level = 1, ArtAnimals.PEN_LEVEL_MAX do
+				ArtAnimals.setPenLevel(pen, id, level)
+				local n = Kit.countParts(pen)
+				ok(
+					n - base <= ArtAnimals.UPGRADE_PARTS_MAX,
+					string.format("%s level %d adds %d parts", id, level, n - base)
+				)
+				paletteRules(pen, id .. " level " .. level)
+			end
+			eq(trough.Color, ArtAnimals.ACCENT[id], id .. " trough painted at level 5")
+			ok(pen:FindFirstChild("Upgrade") ~= nil, id .. " has its level 5 add-ons")
+			ArtAnimals.setPenLevel(pen, id, 1)
+			eq(trough.Color, built, id .. " trough back to bare wood")
+			eq(Kit.countParts(pen), base, id .. " level 1 has no add-ons")
+		end
+	end)
+
+	test("art: Barn looks, overflow, Tool Shed and held tools", function()
+		eq(ArtBuildings.barnLookFor(3), 1, "look 1 up to upgrade 3")
+		eq(ArtBuildings.barnLookFor(4), 2, "look 2 from upgrade 4")
+		local m = Instance.new("Model")
+		local barn = ArtBuildings.barn(m, CFrame.new(), 14, 16)
+		local base = Kit.countParts(m)
+		ArtBuildings.setBarnLook(barn, 2)
+		ArtBuildings.setBarnOverflow(barn, 1)
+		within(m, ArtBuildings.BARN_PARTS_MAX, "Barn look 2, full")
+		paletteRules(m, "Barn look 2")
+		ArtBuildings.setBarnOverflow(barn, 0.75)
+		eq(#(barn:FindFirstChild("Overflow") :: Instance):GetChildren(), 3, "three crates at 75%")
+		ArtBuildings.setBarnLook(barn, 1)
+		ArtBuildings.setBarnOverflow(barn, 0.5)
+		eq(Kit.countParts(m), base, "back to look 1 with no pile")
+
+		local shedModel = Instance.new("Model")
+		local shed = ArtBuildings.toolShed(shedModel, CFrame.new())
+		eq(shed.Name, "ToolShed", "shed tap target")
+		local bare = Kit.countParts(shedModel)
+		ArtBuildings.setToolShedTools(shed, { Shovel = 2, Axe = 1, Saw = 4 })
+		within(shedModel, ArtBuildings.TOOLSHED_PARTS_MAX, "Tool Shed with every tool")
+		paletteRules(shedModel, "Tool Shed")
+		ArtBuildings.setToolShedTools(shed, { Shovel = 1 })
+		eq(#shed:GetChildren() > 0 and Kit.countParts(shedModel) > bare, true, "a Shovel shows")
+		ArtBuildings.setToolShedTools(shed, {})
+		eq(Kit.countParts(shedModel), bare, "no tools, bare pegboard")
+
+		for _, id in { "Tool_Scythe", "Tool_SeedBag", "Tool_WateringCan" } do
+			ok(ArtItemProps.hasHeld(id), id .. " exists")
+			local tool = ArtItemProps.held(id) :: Model
+			within(tool, ArtItemProps.PARTS_MAX, id)
+			paletteRules(tool, id)
+		end
+		eq(ArtItemProps.held("Nope"), nil, "unknown held tool")
+	end)
+
+	test("art: wool regrows, ready crops sparkle and harvests fly to the Barn", function()
+		eq(ArtMotion.woolScale("hungry", 0.5), 0.6, "just shorn")
+		eq(ArtMotion.woolScale("ready", 0), 1, "full fleece when ready")
+		ok(math.abs(ArtMotion.woolScale("eating", 0.5) - 0.8) < 1e-6, "half grown")
+		eq(ArtMotion.woolScale("eating", 3), 1, "clamped")
+		local sheep = ArtAnimals.animal("SheepFold", CFrame.new())
+		local rig = ArtMotion.bindAnimal(sheep, 0) :: ArtMotion.AnimalRig
+		ok(#rig.wool >= 3, "sheep wool puffs found")
+		local full = rig.wool[1].Size
+		ArtMotion.setWool(rig, 0.6)
+		ok(rig.wool[1].Size:FuzzyEq(full * 0.6, 1e-4), "wool shrinks")
+		eq(
+			#(ArtMotion.bindAnimal(ArtAnimals.animal("CowBarn", CFrame.new()), 0) :: ArtMotion.AnimalRig).wool,
+			0,
+			"cows have no wool"
+		)
+
+		local crop = ArtCrops.build("Wheat", 4, CFrame.new(), nil)
+		ok(ArtCrops.readySparkle(crop) ~= nil, "ready sparkle added")
+		within(crop, ArtCrops.STAGE_PARTS_MAX, "ready Wheat with sparkle")
+
+		local from, to = Vector3.new(0, 1, 0), Vector3.new(20, 5, 10)
+		local p0 = ArtMotion.harvestPath(from, to, 0)
+		local p1, s1 = ArtMotion.harvestPath(from, to, 1)
+		ok(p0:FuzzyEq(from, 1e-4), "starts at the field")
+		ok(p1:FuzzyEq(to, 1e-4), "ends at the Barn")
+		ok(s1 < 0.5, "shrinks into the Barn")
+		local top = ArtMotion.harvestPath(from, to, 0.25)
+		ok(top.Y > from.Y + 2, "hops up first")
+		ok(ArtMotion.cropSway(1.3).Position:FuzzyEq(Vector3.zero, 1e-6), "sway only rotates")
+	end)
+
 	test("art: Barn, Order Board, truck and gate stay within budget", function()
 		local m = Instance.new("Model")
 		local barn = ArtBuildings.barn(m, CFrame.new(), 14, 16)
@@ -360,6 +459,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		for _, id in PENS do
 			local pen = Instance.new("Model")
 			ArtAnimals.pen(id, CFrame.new(), pen)
+			ArtAnimals.setPenLevel(pen, id, ArtAnimals.PEN_LEVEL_MAX)
 			add(pen, 1)
 			add(ArtAnimals.animal(id, CFrame.new()), 6)
 			add(ArtAnimals.product(id, CFrame.new()), 6)
@@ -377,6 +477,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 		-- Barn, board, dock, truck, gate, decoration: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25 + 40
+		total += ArtBuildings.TOOLSHED_PARTS_MAX
 		-- Every House a level-12 player can own, and every Community Building
 		for id, def in Town.houses do
 			local copies = 0

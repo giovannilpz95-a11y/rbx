@@ -6,6 +6,7 @@
 -- Board panel, the truck root), parenting the decoration under it so taps on any piece reach
 -- the target. Fronts face local -Z unless noted.
 
+local ArtItemProps = require("./ItemProps")
 local Kit = require("./Kit")
 local Palette = require("./Palette")
 
@@ -14,6 +15,7 @@ local ArtBuildings = {}
 ArtBuildings.BARN_PARTS_MAX = 40
 ArtBuildings.BOARD_PARTS_MAX = 20
 ArtBuildings.TRUCK_PARTS_MAX = 20
+ArtBuildings.TOOLSHED_PARTS_MAX = 24
 
 local TURN = CFrame.Angles(0, math.rad(90), 0) -- turns a cylinder's axis from X to Z
 
@@ -105,7 +107,139 @@ function ArtBuildings.barn(parent: Instance, cf: CFrame, width: number, depth: n
 		Palette.straw
 	)
 	Kit.sproutTag(d, Vector3.new(0, top + radius - 0.2, 0), 2.5, Palette.wood, Palette.lime)
+	-- For setBarnLook and setBarnOverflow
+	body:SetAttribute("BarnOrigin", cf)
+	body:SetAttribute("BarnSize", Vector3.new(width, top, depth))
 	return body
+end
+
+-- Which Barn look `upgrades` (Barn upgrades done) shows: 1 for 0-3, 2 from 4 on. Look 3
+-- (from 8) is a later content drop.
+function ArtBuildings.barnLookFor(upgrades: number): number
+	return if upgrades >= 4 then 2 else 1
+end
+
+local function barnFrame(body: BasePart): (CFrame?, Vector3)
+	local origin = body:GetAttribute("BarnOrigin")
+	local size = body:GetAttribute("BarnSize")
+	if typeof(origin) ~= "CFrame" or typeof(size) ~= "Vector3" then
+		return nil, Vector3.zero
+	end
+	return origin, size
+end
+
+-- Barn look 2 (upgrades 4-7): a side lean-to with its own door, a loading ramp up to the big
+-- door and a sign with two gold stars by it. 7 parts in a "Look2" model under `body`.
+function ArtBuildings.setBarnLook(body: BasePart, look: number)
+	local old = body:FindFirstChild("Look2")
+	if old then
+		old:Destroy()
+	end
+	local origin, size = barnFrame(body)
+	if origin == nil or look < 2 then
+		return
+	end
+	local w, d = size.X, size.Z
+	local front = -d / 2
+	local b = Kit.builder(Kit.model("Look2", body), origin, true)
+	-- Lean-to on the +X side, toward the back
+	local lx = w / 2 + 2
+	b.block("LeanTo", Vector3.new(4, 4.5, 10), Vector3.new(lx, 2.25, 1), Palette.barnRed, { collide = true })
+	b.block(
+		"LeanRoof",
+		Vector3.new(5.2, 0.4, 11),
+		CFrame.new(lx + 0.2, 4.9, 1) * CFrame.Angles(0, 0, math.rad(-16)),
+		Palette.roofRed
+	)
+	b.block("LeanDoor", Vector3.new(2, 3, 0.2), Vector3.new(lx, 1.5, -4.05), Palette.cocoa, { shadow = false })
+	-- Loading ramp up to the plinth, its high end against the door
+	b.wedge("Ramp", Vector3.new(6.4, 0.75, 2.4), Vector3.new(0, 0.375, front - 1.45), Palette.stone)
+	-- The sign: a plank with two gold stars, left of the door
+	local sign = Vector3.new(-w / 2 + 1.9, 5.6, front - 0.2)
+	b.block("Sign", Vector3.new(2.6, 1.2, 0.2), sign, Palette.woodLight, { shadow = false })
+	for _, x in { -0.55, 0.55 } do
+		b.ball("Star", 0.6, sign + Vector3.new(x, 0, -0.15), Palette.coins, { shadow = false })
+	end
+end
+
+-- Crates piled outside the Barn as it fills: none under 75%, three from 75% and five with a
+-- red ribbon when full. Up to 6 parts in an "Overflow" model under `body`.
+function ArtBuildings.setBarnOverflow(body: BasePart, fill: number)
+	local old = body:FindFirstChild("Overflow")
+	if old then
+		old:Destroy()
+	end
+	local origin, size = barnFrame(body)
+	if origin == nil or fill < 0.75 then
+		return
+	end
+	local front = -size.Z / 2
+	local x = -size.X / 2 + 1.6
+	local spots = {
+		CFrame.new(x, 0.8, front - 1.8) * Kit.yaw(8),
+		CFrame.new(x - 0.2, 0.8, front - 3.6) * Kit.yaw(-6),
+		CFrame.new(x - 0.1, 2.4, front - 2.7) * Kit.yaw(20),
+	}
+	if fill >= 1 then
+		table.insert(spots, CFrame.new(x - 1.8, 0.8, front - 2.6) * Kit.yaw(15))
+		table.insert(spots, CFrame.new(x - 1.7, 0.8, front - 4.4) * Kit.yaw(-12))
+	end
+	local b = Kit.builder(Kit.model("Overflow", body), origin, true)
+	for _, spot in spots do
+		b.block("Crate", Vector3.new(1.6, 1.6, 1.6), spot, Palette.crate)
+	end
+	if fill >= 1 then
+		b.block("Ribbon", Vector3.new(1.7, 0.3, 1.7), spots[3] * CFrame.new(0, 0.3, 0), Palette.roofRed, {
+			shadow = false,
+		})
+	end
+end
+
+-- The Tool Shed (Design/16 §2.5): a lean-to against the Barn with a pegboard back, a workbench
+-- and the tools the player owns leaning on it. `cf` is the bottom-centre with the open front
+-- at local -Z and the back against the Barn. 6 parts plus up to 15 for the tools. Returns the
+-- floor, which the caller makes a tap target (it opens the Barn's Tool Shed list).
+function ArtBuildings.toolShed(parent: Instance, cf: CFrame): Part
+	local b = Kit.builder(parent, cf, true)
+	local floor = b.block("ToolShed", Vector3.new(6, 0.3, 4), Vector3.new(0, 0.15, 0), Palette.woodDark)
+	local d = b.into(floor, true)
+	d.block("Pegboard", Vector3.new(5.6, 4, 0.25), Vector3.new(0, 2.3, 1.8), Palette.cork)
+	for _, x in { -2.8, 2.8 } do
+		d.block("Post", Vector3.new(0.4, 4.6, 0.4), Vector3.new(x, 2.3, -1.8), Palette.wood, { collide = true })
+	end
+	d.block(
+		"Roof",
+		Vector3.new(6.8, 0.35, 4.8),
+		CFrame.new(0, 4.85, 0) * CFrame.Angles(math.rad(-12), 0, 0),
+		Palette.roofRed
+	)
+	d.block("Bench", Vector3.new(2.4, 1.2, 1), Vector3.new(1.6, 0.9, 1.1), Palette.wood)
+	floor:SetAttribute("ShedOrigin", cf)
+	return floor
+end
+
+local TOOL_SPOTS = {
+	Shovel = CFrame.new(-1.9, 0.3, 1.2),
+	Axe = CFrame.new(-0.4, 0.3, 1.2),
+	Saw = CFrame.new(1.6, 1.5, 1.1),
+}
+
+-- Shows each tool the player owns at least one of. `owned` is tool id -> count.
+function ArtBuildings.setToolShedTools(shed: BasePart, owned: { [string]: number })
+	for _, child in shed:GetChildren() do
+		if child.Name == "Tool" then
+			child:Destroy()
+		end
+	end
+	local origin = shed:GetAttribute("ShedOrigin")
+	if typeof(origin) ~= "CFrame" then
+		return
+	end
+	for id, spot in TOOL_SPOTS do
+		if (owned[id] or 0) > 0 then
+			ArtItemProps.build(id, origin * spot, "Tool").Parent = shed
+		end
+	end
 end
 
 -- Order Board: a corkboard under a little teal gable roof on two chunky posts, with a brass

@@ -28,6 +28,7 @@ local Remotes = require(script.Parent.Parent.Remotes)
 local Hud = require(script.Parent.Hud)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
+local HeldTools = require(script.Parent.Parent.Controllers.HeldTools)
 local ReachController = require(script.Parent.Parent.Controllers.ReachController)
 
 local Palette = Ui.theme.Palette
@@ -195,12 +196,14 @@ local function helpAt(part: BasePart, owner: number)
 	end
 	local readyAt = part:GetAttribute("ReadyAt")
 	if type(readyAt) ~= "number" or Timer.isReady(readyAt, ClientStore.now()) then
+		HeldTools.flash("Tool_Scythe")
 		Remotes.fire("Help_Harvest", owner, fieldId)
 	elseif part:GetAttribute("Watered") then
 		Hud.toast(
 			string.format("Already watered. Ready in %s", Timer.format(Timer.remaining(readyAt, ClientStore.now())))
 		)
 	else
+		HeldTools.flash("Tool_WateringCan")
 		Remotes.fire("Help_Water", owner, fieldId)
 	end
 end

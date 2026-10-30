@@ -344,6 +344,51 @@ local function crate(b: Kit.Builder)
 	b.block("Band", Vector3.new(1.65, 0.35, 1.65), at(0, 0.7, 0), Palette.woodDark, QUIET)
 end
 
+-- Held tools (Model List - Farm & Animals: Scythe, Seed Bag, Watering Can): what the avatar
+-- holds while harvesting, planting or watering a friend's field. Built around the grip at
+-- the origin with local +Y up the arm, so the client can weld them straight to a hand.
+local HELD: { [string]: (Kit.Builder) -> () } = {
+	-- A tall snath carried upright like a staff, the curved blade at the top, a lime ribbon
+	Tool_Scythe = function(b)
+		b.post("Snath", 3.4, 0.2, at(0, 1.1, 0), Palette.wood, QUIET)
+		b.block("Peg", Vector3.new(0.5, 0.16, 0.16), at(0.25, 0.9, 0), Palette.woodDark, QUIET)
+		b.block("Blade", Vector3.new(1.5, 0.3, 0.08), tilt(-0.75, 2.75, 0, 0, 0, 12), Palette.metal, QUIET)
+		b.block("BladeTip", Vector3.new(0.7, 0.24, 0.07), tilt(-1.7, 2.45, 0, 0, 0, 40), Palette.metal, QUIET)
+		b.block("Ribbon", Vector3.new(0.3, 0.3, 0.3), at(0, 2.5, 0), Palette.lime, QUIET)
+	end,
+	-- A burlap pouch hanging from the fist by its tie, a seed peeking out of the top
+	Tool_SeedBag = function(b)
+		b.block("Bag", Vector3.new(1, 1.1, 0.7), at(0, -0.85, 0), Palette.sack, QUIET)
+		b.post("Rim", 0.25, 0.75, at(0, -0.25, 0), Palette.sack:Lerp(Palette.cocoa, 0.15), QUIET)
+		b.block("Tie", Vector3.new(0.3, 0.3, 0.3), at(0, -0.05, 0), Palette.lime, QUIET)
+		b.ball("Seed", 0.28, at(0.2, -0.2, -0.25), Palette.wheat, QUIET)
+		b.block("Leaf", Vector3.new(0.5, 0.08, 0.3), tilt(0, -0.85, -0.37, 90, 0, 20), Palette.leafLight, QUIET)
+	end,
+	-- A round teal can carried by its top handle, the spout out front
+	Tool_WateringCan = function(b)
+		b.block("Handle", Vector3.new(0.2, 0.2, 0.9), at(0, 0, 0), Palette.stoneDark, QUIET)
+		b.post("Can", 0.95, 1, at(0, -0.65, 0), Palette.roofTeal, QUIET)
+		b.post("Lid", 0.12, 0.8, at(0, -0.12, 0), Palette.roofTeal:Lerp(Palette.cream, 0.3), QUIET)
+		b.block("Spout", Vector3.new(0.18, 0.18, 1), tilt(0, -0.55, -0.85, 35, 0, 0), Palette.roofTeal, QUIET)
+		b.post("Rose", 0.15, 0.36, tilt(0, -0.25, -1.25, -55, 0, 0), Palette.metal, QUIET)
+	end,
+}
+
+function ArtItemProps.hasHeld(id: string): boolean
+	return HELD[id] ~= nil
+end
+
+-- Builds held tool `id` with its grip at `cf` (local +Y up the arm, front at -Z).
+function ArtItemProps.held(id: string, cf: CFrame?): Model?
+	local builder = HELD[id]
+	if builder == nil then
+		return nil
+	end
+	local model = Kit.model(id)
+	builder(Kit.builder(model, cf or CFrame.new(), false))
+	return model
+end
+
 function ArtItemProps.has(id: string): boolean
 	return BUILDERS[id] ~= nil
 end
