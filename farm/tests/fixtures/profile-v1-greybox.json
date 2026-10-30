@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "meta": { "createdAt": 1761700000, "lastSeenAt": 1761710000, "sessionCount": 3 },
+  "currencies": { "Coins": 412, "Gems": 21, "XP": 95 },
+  "level": 3,
+  "inventory": { "items": { "Wheat": 14, "Bread": 2, "Milk": 3, "CowFeed": 1 }, "barnCapacity": 50 },
+  "fields": {
+    "F1": { "crop": "Wheat", "plantedAt": 1761709000, "readyAt": 1761709120 },
+    "F2": { "crop": "Corn", "plantedAt": 1761709500, "readyAt": 1761709800 },
+    "F3": {}, "F4": {}, "F5": {}, "F6": {}
+  },
+  "factories": {
+    "Bakery": {
+      "built": true,
+      "slots": 3,
+      "queue": [ { "recipe": "Bread", "seconds": 300, "startedAt": 1761709900, "readyAt": 1761710200 } ],
+      "output": { "Bread": 1 }
+    },
+    "FeedMill": { "built": false, "slots": 3, "queue": [], "output": {} }
+  },
+  "pens": {
+    "CowBarn": { "built": true, "animals": [ { "readyAt": 1761710600 }, {}, {} ], "feedLeft": 0 }
+  },
+  "orders": {
+    "board": [
+      { "order": { "wants": { "Wheat": 3 }, "rewardCoins": 18, "rewardXP": 6 } },
+      { "refreshAt": 1761710300 }
+    ],
+    "seed": 77,
+    "delivered": 4
+  },
+  "settings": { "lastSeed": "Wheat" }
+}

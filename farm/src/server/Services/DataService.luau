@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
 local Profile = require(Shared.Profile)
+local SaveCheck = require(Shared.SaveCheck)
 local Tutorial = require(Shared.Tutorial)
 
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -210,6 +211,11 @@ local function write(player: Player, session: Session, release: boolean): boolea
 	local activeStore = store :: DataStore
 	session.data.meta.lastSeenAt = Clock.now()
 	local snapshot = Profile.deepCopy(session.data)
+	-- Name the bad field: the DataStore error alone doesn't say where it is
+	local storable, problem = SaveCheck.check(snapshot)
+	if not storable then
+		warn("[DataService] Profile for", player.UserId, "can't be stored as is:", problem)
+	end
 	local lostLock = false
 	local ok, err = pcall(function()
 		activeStore:UpdateAsync(keyFor(player), function(old)
