@@ -778,9 +778,11 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 			local progress = if span > 0 then math.clamp((now - (field.plantedAt or now)) / span, 0, 1) else 1
 			stage = ArtCrops.stageFor(progress, ready)
 		end
+		-- A Prize Crop only shows once it's ready, so the surprise stays for harvest time
+		local prize = if stage == 4 then field.prize else nil
 		local state = if field.crop == nil
 			then "empty"
-			else string.format("%s:%d:%s", field.crop, stage, tostring(field.watered == true))
+			else string.format("%s:%d:%s:%s", field.crop, stage, tostring(prize), tostring(field.watered == true))
 		if cache[id] == state then
 			continue
 		end
@@ -801,8 +803,11 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 			Kit.model("Crop", bed)
 		else
 			local def = Crops[field.crop]
-			local crop =
-				ArtCrops.build(field.crop, stage, bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0), def and def.color)
+			local top = bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0)
+			local crop = ArtCrops.build(field.crop, stage, top, def and def.color)
+			if prize then
+				ArtCrops.prizeShimmer(crop, prize, top, bed.Size.X)
+			end
 			crop.Parent = bed
 		end
 	end

@@ -203,6 +203,86 @@ local function helpAt(part: BasePart, owner: number)
 	end
 end
 
+-- Status bubbles over the fields of the farm we're visiting, so a helper can see what's ripe
+-- and what still wants water (our own farm's bubbles come from WorldLabels).
+local helpBubbles: { [BasePart]: TextLabel } = {}
+local visitedPlot: Model? = nil
+
+local function helpBubble(bed: BasePart): TextLabel
+	local gui = Ui.new("BillboardGui", {
+		Name = "HelpStatus",
+		Adornee = bed,
+		Size = UDim2.fromOffset(120, 34),
+		StudsOffset = Vector3.new(0, 4, 0),
+		MaxDistance = 90,
+		AlwaysOnTop = true,
+		Parent = bed,
+	})
+	local label = Ui.label("", {
+		Size = UDim2.fromScale(1, 1),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextScaled = true,
+		Parent = gui,
+	})
+	Ui.padding(4).Parent = label
+	Ui.theme.Kit.skinBubble(label)
+	return label
+end
+
+local function clearHelpBubbles()
+	for _, label in helpBubbles do
+		local gui = label.Parent
+		if gui then
+			gui:Destroy()
+		end
+	end
+	table.clear(helpBubbles)
+end
+
+local function renderHelpBubbles()
+	local onPlot = player:GetAttribute("OnPlot")
+	local target: Model? = nil
+	if type(onPlot) == "number" and onPlot ~= 0 and onPlot ~= player.UserId then
+		local plots = Workspace:FindFirstChild("Plots")
+		for _, model in if plots then plots:GetChildren() else {} do
+			if model:IsA("Model") and model:GetAttribute("OwnerUserId") == onPlot then
+				target = model
+			end
+		end
+	end
+	if target ~= visitedPlot then
+		clearHelpBubbles()
+		visitedPlot = target
+	end
+	local fields = target and target:FindFirstChild("Fields")
+	if fields == nil then
+		return
+	end
+	local now = ClientStore.now()
+	for _, bed in fields:GetChildren() do
+		if not bed:IsA("BasePart") or bed:GetAttribute("FieldId") == nil then
+			continue
+		end
+		local label = helpBubbles[bed] or helpBubble(bed)
+		helpBubbles[bed] = label
+		local gui = label.Parent :: BillboardGui
+		local crop = bed:GetAttribute("Crop")
+		local readyAt = bed:GetAttribute("ReadyAt")
+		if crop == nil or type(readyAt) ~= "number" then
+			gui.Enabled = false
+		elseif Timer.isReady(readyAt, now) then
+			gui.Enabled = true
+			label.Text = "Ready! Tap to harvest"
+			label.BackgroundColor3 = Ui.colors.ready
+		else
+			gui.Enabled = true
+			local left = Timer.format(Timer.remaining(readyAt, now))
+			label.Text = if bed:GetAttribute("Watered") then left else "💧 Water  " .. left
+			label.BackgroundColor3 = if bed:GetAttribute("Watered") then Ui.colors.bar else Ui.colors.selected
+		end
+	end
+end
+
 local function helpToast(payload: { [string]: any })
 	if payload.kind == "Helped" then
 		local reward = if payload.coins > 0
@@ -700,6 +780,13 @@ function SocialUi.init()
 	end)
 	ClientStore.changed.Event:Connect(refreshStatus)
 	refreshHud()
+
+	task.spawn(function()
+		while true do
+			renderHelpBubbles()
+			task.wait(0.5)
+		end
+	end)
 
 	-- Social news for this player (the HUD shows the farm's own pop-ups)
 	Remotes.get("Reward_Popup").OnClientEvent:Connect(function(payload)

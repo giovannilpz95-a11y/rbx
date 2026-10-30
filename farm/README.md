@@ -51,6 +51,7 @@ The plot is dressed with our own cartoon models in the spirit of Township's look
 | `Houses` / `Community` | The 7 House types and 9 Community Buildings |
 | `ItemProps` / `Icons` | A small prop for every Barn item, shown on factory output tables; `Icons.viewport(id, size)` puts one in a ViewportFrame as a UI icon |
 | `Motion` | The factories' moving parts (turned by the client's `FactoryMotion` while a factory is busy) |
+| `Decor` | The 12 decorations players place: paths, fences, hedges, flower beds, trees, hay, pond, lamp, bench, picnic table, fountain |
 | `Lighting` | Sunny afternoon lighting, color grade, bloom and haze |
 
 Part budgets (Design/15 §5) are checked by `tests/art.luau`: crop stage ≤ 12, bed ≤ 4, animal ≤ 12, pen ≤ 40, factory ≤ 80, House and Community Building ≤ 40, item prop ≤ 8, and a full level-12 plot under 2,500. To look at the models without Studio, see `tools/artpreview/README.md`.
