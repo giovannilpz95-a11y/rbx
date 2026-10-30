@@ -14,6 +14,7 @@ local TileStyle = require(script.Parent.TileStyle)
 local launcher = Instance.new("ScreenGui")
 launcher.Name = "CropPopLauncher"
 launcher.ResetOnSpawn = false
+launcher.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local openButton = Instance.new("TextButton")
 openButton.Name = "Open"
@@ -25,11 +26,16 @@ openButton.TextColor3 = Color3.new(1, 1, 1)
 openButton.Font = TileStyle.Font
 openButton.TextScaled = true
 openButton.Text = "🍅 Crop Pop"
-openButton.Parent = launcher
 
 local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0.3, 0)
 buttonCorner.Parent = openButton
+local buttonPadding = Instance.new("UIPadding")
+buttonPadding.PaddingTop = UDim.new(0.14, 0)
+buttonPadding.PaddingBottom = UDim.new(0.14, 0)
+buttonPadding.Parent = openButton
+TileStyle.Theme.Kit.skinButton(openButton, "attention")
+openButton.Parent = launcher
 
 openButton.Activated:Connect(function()
 	if PuzzleScreen.isOpen() then

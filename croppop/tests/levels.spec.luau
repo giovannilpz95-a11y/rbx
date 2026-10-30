@@ -10,7 +10,18 @@ test("every level validates", function()
 		truthy(not seen[level.id], "duplicate id " .. level.id)
 		seen[level.id] = true
 	end
-	eq(#Levels.List, 5)
+	eq(#Levels.List, 100)
+end)
+
+test("levels run 1 to 100 in order, with unique names and the difficulty pattern", function()
+	local names = {}
+	for i, level in Levels.List do
+		eq(level.id, i)
+		truthy(not names[level.name], "duplicate name " .. level.name)
+		names[level.name] = true
+		local expected = if i >= 20 and i % 10 == 0 then "Super Tough" elseif i % 5 == 0 then "Tough" else "Normal"
+		eq(level.difficulty, expected, "level " .. i)
+	end
 end)
 
 test("validate catches broken levels", function()
@@ -27,7 +38,7 @@ end)
 
 test("every level deals a settled, playable board", function()
 	for _, level in Levels.List do
-		for seed = 1, 50 do
+		for seed = 1, if level.id <= 5 then 50 else 10 do
 			local pop = Engine.new(level, seed)
 			eq(#Matcher.findGroups(pop.board, {}), 0, level.name)
 			truthy(Matcher.hasPossibleMove(pop.board), level.name)

@@ -598,6 +598,54 @@ test("a profile from a newer build is refused", function()
 end)
 
 ---------------------------------------------------------------------------------------------
+-- UI theme (uitheme/, Design/25 UI Style Guide): the pure parts, loaded with Lune's Color3
+---------------------------------------------------------------------------------------------
+
+local roblox = require("@lune/roblox")
+
+local function loadTheme(name: string): any
+	local path = "../uitheme/src/" .. name .. ".luau"
+	return luau.load(fs.readFile(path), { debugName = path, environment = { Color3 = roblox.Color3 } })()
+end
+
+local Format = loadTheme("Format")
+local Palette = loadTheme("Palette")
+
+test("theme numbers abbreviate like 11 UI & UX", function()
+	eq(Format.short(0), "0", "zero")
+	eq(Format.short(9999), "9999", "below 10K")
+	eq(Format.short(12400), "12.4K", "12.4K")
+	eq(Format.short(12499), "12.4K", "rounds down")
+	eq(Format.short(50000), "50K", "drops .0")
+	eq(Format.short(3200000), "3.2M", "millions")
+end)
+
+test("theme brand colours match the 3D palette hex values", function()
+	eq(Palette.coins:ToHex():upper(), "FFC93C", "Coins")
+	eq(Palette.gems:ToHex():upper(), "29C7AC", "Gems")
+	eq(Palette.xp:ToHex():upper(), "8BD346", "XP")
+	eq(Palette.cream:ToHex():upper(), "FFF6E5", "cream")
+	eq(Palette.cocoa:ToHex():upper(), "4A3426", "cocoa")
+end)
+
+test("theme buttons get their own lip, other colours a darker shade", function()
+	for name, colors in Palette.button do
+		eq(Palette.lipFor(colors.face), colors.lip, name .. " lip")
+		ok(Palette.luminance(colors.lip) < Palette.luminance(colors.face), name .. " lip is darker")
+	end
+	local odd = roblox.Color3.fromRGB(100, 200, 50)
+	ok(Palette.luminance(Palette.lipFor(odd)) < Palette.luminance(odd), "fallback lip is darker")
+end)
+
+test("theme text on coloured buttons stays readable", function()
+	-- White text with an outline on every coloured face; cocoa text on the light neutral face
+	for _, name in { "primary", "secondary", "premium", "attention", "danger" } do
+		ok(Palette.luminance(Palette.button[name].face) < 0.8, name .. " face is dark enough for white text")
+	end
+	ok(Palette.luminance(Palette.button.neutral.face) > 0.8, "neutral face takes dark text")
+end)
+
+---------------------------------------------------------------------------------------------
 -- Art models (tests/art.luau)
 ---------------------------------------------------------------------------------------------
 
@@ -618,8 +666,8 @@ local function eachLuau(dir: string, fn: (string) -> ())
 	end
 end
 
-for _, dir in { "src", "tools" } do
-	eachLuau(dir, function(path)
+for _, root in { "src", "tools", "../uitheme/src" } do
+	eachLuau(root, function(path)
 		test("compiles: " .. path, function()
 			luau.compile(fs.readFile(path))
 		end)
