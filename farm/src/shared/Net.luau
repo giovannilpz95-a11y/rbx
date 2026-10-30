@@ -52,6 +52,7 @@ return table.freeze({
 	Quest_Claim = "Quest_Claim", -- index: a finished Daily Quest's reward
 	Quest_Reroll = "Quest_Reroll", -- index: swap an unfinished quest (once a day, free)
 	Quest_Chest = "Quest_Chest", -- the bonus chest for all three
+	SeedCart_Buy = "SeedCart_Buy", -- slot: buy one of the Seed Cart's four slots
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)

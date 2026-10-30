@@ -6,6 +6,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Decor = require(Shared.Config.Decor)
 local DecorRules = require(Shared.DecorRules)
 local Net = require(Shared.Net)
+local SeedCartRules = require(Shared.SeedCart)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -57,7 +58,11 @@ function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (b
 	if not ok then
 		return false, reason
 	end
-	if not EconomyService.spend(player, "Coins", def.coinCost, "decor_" .. id) then
+	-- One prepaid at the Seed Cart is placed for free
+	if
+		not SeedCartRules.useCoupon(data, id)
+		and not EconomyService.spend(player, "Coins", def.coinCost, "decor_" .. id)
+	then
 		return false, string.format("The %s costs %d Coins", def.displayName, def.coinCost)
 	end
 	table.insert(data.decor, p)

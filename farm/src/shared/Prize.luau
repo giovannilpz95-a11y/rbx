@@ -8,7 +8,8 @@ local Prize = require("./Config/Prize")
 local PrizeRules = {}
 
 -- `roll` is uniform in [0, 1). Rarest tier first. None while the first-session guide runs.
-function PrizeRules.roll(data: { [string]: any }, roll: number): string?
+-- `boost` multiplies a tier's chance (an Heirloom Seed from the Seed Cart: { Heirloom = 10 }).
+function PrizeRules.roll(data: { [string]: any }, roll: number, boost: { [string]: number }?): string?
 	if data.tutorial.step ~= 0 then
 		return nil
 	end
@@ -20,7 +21,7 @@ function PrizeRules.roll(data: { [string]: any }, roll: number): string?
 		return Prize.tiers[a].chance < Prize.tiers[b].chance
 	end)
 	for _, id in ids do
-		roll -= Prize.tiers[id].chance
+		roll -= Prize.tiers[id].chance * (if boost and boost[id] then boost[id] else 1)
 		if roll < 0 then
 			return id
 		end

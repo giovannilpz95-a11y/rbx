@@ -19,6 +19,7 @@ local DecorPlacer = require(script.Parent.Controllers.DecorPlacer)
 local FactoryMotion = require(script.Parent.Controllers.FactoryMotion)
 local AnimalMotion = require(script.Parent.Controllers.AnimalMotion)
 local QuestsUi = require(script.Parent.UI.Quests)
+local SeedCartUi = require(script.Parent.UI.SeedCart)
 local SocialUi = require(script.Parent.UI.Social)
 
 local player = Players.LocalPlayer
@@ -36,6 +37,7 @@ task.spawn(FactoryMotion.init)
 task.spawn(AnimalMotion.init)
 SocialUi.init()
 QuestsUi.init()
+SeedCartUi.init()
 
 -- Keyboard shortcuts for the paperwork panels (Design/11 UI & UX bindings)
 local SHORTCUTS = {

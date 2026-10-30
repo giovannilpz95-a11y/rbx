@@ -136,6 +136,12 @@ function Profile.template(): { [string]: any }
 			rerolled = false,
 			chest = false, -- the all-three bonus chest taken
 		},
+		seedCart = { -- the Seed Cart in the Town Square (shared/SeedCart)
+			period = -1, -- restock window of `bought`
+			bought = {}, -- slot index (string) -> true
+		},
+		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
+		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
 		social = { -- visiting, Helping Hands and boosts (shared/Social)
 			privacy = Social.defaultPrivacy, -- who may visit: Open / Friends / Closed
 			helpers = Social.defaultHelpers, -- who may help: Nobody / Friends / Anyone
