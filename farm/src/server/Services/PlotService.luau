@@ -147,9 +147,10 @@ local LAYOUT = {
 	quarry = Vector3.new(89, 0, -40),
 	-- The Tinker's Guild, in the third column between the Smelters and the Jam Kitchen
 	guild = Vector3.new(88, 0, 2),
-	-- The Blimp Mast (Features/F04) in the West Meadow, between its fields and its pen row, its
-	-- freight office facing the fields; the docked blimp floats east over the strip
-	blimpMast = Vector3.new(-70, 0, -7),
+	-- The Blimp Mast (Features/F04) at the West Meadow's west end, between its fields and its pen
+	-- row, its freight office facing the fields. The docked blimp floats east over the strip and
+	-- ends just short of the Tailor (x -70).
+	blimpMast = Vector3.new(-88, 0, -8),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine
 	pens = {
 		CowBarn = Vector3.new(-12, 0, 6),
