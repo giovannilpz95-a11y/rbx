@@ -180,6 +180,24 @@ local function renderEditor(state: { [string]: any }, body: Instance)
 	end, { Size = UDim2.fromOffset(100, 34), LayoutOrder = 5, Parent = body })
 end
 
+-- The awning color picker under the slots
+local function colorRow(m: { [string]: any }, body: Instance)
+	local c = card(100, body, 56)
+	cardText(c, "Awning color", "Free to change any time", nil, 4 * 46 + 12)
+	local current = m.color or Config.defaultColor
+	for i, name in Config.colors do
+		local swatch = Ui.button(if name == current then "✓" else "", function()
+			Remotes.fire("Market_Color", name)
+		end, {
+			Size = UDim2.fromOffset(40, 36),
+			Position = UDim2.new(1, -(5 - i) * 46 - 4, 0, 10),
+			BackgroundColor3 = ArtMarket.COLORS[name],
+			Parent = c,
+		})
+		swatch:SetAttribute("Color", name)
+	end
+end
+
 local function renderOwn(state: { [string]: any }, body: Instance, title: TextLabel)
 	title.Text = "Your Market Stall"
 	local slots = Market.slotCount(state.level)
@@ -265,24 +283,6 @@ local function renderOwn(state: { [string]: any }, body: Instance, title: TextLa
 		})
 	end
 	colorRow(m, body)
-end
-
--- The awning color picker under the slots
-local function colorRow(m: { [string]: any }, body: Instance)
-	local c = card(100, body, 56)
-	cardText(c, "Awning color", "Free to change any time", nil, 4 * 46 + 12)
-	local current = m.color or Config.defaultColor
-	for i, name in Config.colors do
-		local swatch = Ui.button(if name == current then "✓" else "", function()
-			Remotes.fire("Market_Color", name)
-		end, {
-			Size = UDim2.fromOffset(40, 36),
-			Position = UDim2.new(1, -(5 - i) * 46 - 4, 0, 10),
-			BackgroundColor3 = ArtMarket.COLORS[name],
-			Parent = c,
-		})
-		swatch:SetAttribute("Color", name)
-	end
 end
 
 local function view(model: Instance?): StallView?
@@ -394,6 +394,15 @@ local function renderBoard(state: { [string]: any }, body: Instance, title: Text
 				Parent = c,
 			})
 		end
+	end
+	local listed = false
+	for _, entry in entries do
+		listed = listed or entry.userId == player.UserId
+	end
+	if Market.slotCount(state.level) > 0 and not listed then
+		Ui.button("My stall", function()
+			MarketUi.openOwn()
+		end, { Size = UDim2.fromOffset(120, 36), LayoutOrder = 100, Parent = body })
 	end
 	if Market.slotCount(state.level) == 0 then
 		line(string.format("Your own stall opens at level %d.", Config.unlockLevel), 100, body, nil, Ui.colors.warn)
