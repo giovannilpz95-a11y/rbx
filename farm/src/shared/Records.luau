@@ -136,6 +136,21 @@ function Records.debugFill(data: { [string]: any }, now: number): number
 	return ready
 end
 
+-- What other players see on this player's Farmer Card: stars and the card's six numbers.
+-- The server puts it on the Player as the FarmerCard attribute (JSON).
+export type PublicCard = { stars: number, stats: { [string]: number } }
+
+function Records.publicCard(data: { [string]: any }, now: number): PublicCard
+	local stats: { [string]: number } = {}
+	for _, id in Config.card do
+		local def = byId[id]
+		if def then
+			stats[id] = Records.value(data, def.stat, now)
+		end
+	end
+	return { stars = Records.stars(Records.view(data, now)), stats = stats }
+end
+
 function Records.title(stars: number): string
 	for _, t in Config.titles do
 		if stars >= t.stars then

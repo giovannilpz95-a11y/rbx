@@ -3,7 +3,10 @@
 -- Achievements, MVP-lite): the player's Roblox headshot, level, title and key stats, and a
 -- Records tab with each record's progress, its Bronze / Silver / Gold medals and Claim.
 -- Opens with P or the 🏆 edge icon; the icon gets a dot when a tier can be claimed.
+-- Other players' cards (from the Neighbors panel) show their headshot, level, title, stars and
+-- the same six numbers, read from the FarmerCard attribute the server keeps on each Player.
 
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
@@ -22,28 +25,45 @@ local Palette = Ui.theme.Palette
 local FarmerCard = {}
 
 local MEDAL = { Palette.hex("#C9864A"), Palette.hex("#B8C2CC"), Palette.hex("#F2C14E") }
-local CARD_STATS = { "Orders", "Harvest", "Goods", "Animals", "Population", "Helping" }
+-- Avatar pictures by UserId, each fetched once
+local headshots: { [number]: string } = {}
+local fetching: { [number]: boolean } = {}
 
-local headshot: string? = nil -- the avatar picture, fetched once
-
-local function fetchHeadshot()
-	task.spawn(function()
-		local player = Players.LocalPlayer
-		local ok, image = pcall(function()
-			return Players:GetUserThumbnailAsync(
-				player.UserId,
-				Enum.ThumbnailType.HeadShot,
-				Enum.ThumbnailSize.Size150x150
-			)
-		end)
-		if ok then
-			headshot = image
-			if Panels.isShowing("FarmerCard") then
-				Panels.refresh()
+local function headshotOf(userId: number): string
+	local image = headshots[userId]
+	if image then
+		return image
+	end
+	if not fetching[userId] then
+		fetching[userId] = true
+		task.spawn(function()
+			local ok, got = pcall(function()
+				return Players:GetUserThumbnailAsync(
+					userId,
+					Enum.ThumbnailType.HeadShot,
+					Enum.ThumbnailSize.Size150x150
+				)
+			end)
+			if ok then
+				headshots[userId] = got
+				if Panels.isShowing("FarmerCard") then
+					Panels.refresh()
+				end
 			end
-		end
-	end)
+		end)
+	end
+	return ""
 end
+
+-- What a card shows, for us (from our state) or another player (from their attribute)
+type CardInfo = {
+	userId: number,
+	displayName: string,
+	name: string,
+	level: number?,
+	stars: number,
+	values: { [string]: number },
+}
 
 local function views(state: { [string]: any }): { Records.View }
 	return state.records or {}
@@ -94,10 +114,56 @@ local function medals(claimed: number, props: { [string]: any }): Frame
 	return row
 end
 
-local function renderCard(state: { [string]: any }, body: ScrollingFrame)
+-- Another player's card from the FarmerCard attribute, or nil if they've left
+function FarmerCard.otherInfo(other: Player?): CardInfo?
+	if other == nil or other.Parent == nil then
+		return nil
+	end
+	local raw = other:GetAttribute("FarmerCard")
+	local card: any = {}
+	if type(raw) == "string" then
+		local ok, decoded = pcall(function()
+			return HttpService:JSONDecode(raw)
+		end)
+		if ok and type(decoded) == "table" then
+			card = decoded
+		end
+	end
+	local values: { [string]: number } = {}
+	for _, id in Config.card do
+		local v = if type(card.stats) == "table" then card.stats[id] else nil
+		values[id] = if type(v) == "number" then v else 0
+	end
+	local level = other:GetAttribute("FarmLevel")
+	return {
+		userId = other.UserId,
+		displayName = other.DisplayName,
+		name = other.Name,
+		level = if type(level) == "number" then level else nil,
+		stars = if type(card.stars) == "number" then card.stars else 0,
+		values = values,
+	}
+end
+
+local function ownInfo(state: { [string]: any }): CardInfo
 	local player = Players.LocalPlayer
-	local list = views(state)
-	local stars = Records.stars(list)
+	local values: { [string]: number } = {}
+	for _, id in Config.card do
+		local v = viewOf(state, id)
+		values[id] = if v then v.value else 0
+	end
+	return {
+		userId = player.UserId,
+		displayName = player.DisplayName,
+		name = player.Name,
+		level = state.level,
+		stars = Records.stars(views(state)),
+		values = values,
+	}
+end
+
+local function renderCard(info: CardInfo, body: ScrollingFrame, own: boolean)
+	local stars = info.stars
 
 	local head = Ui.card({ Name = "Header", Size = UDim2.new(1, -8, 0, 116), LayoutOrder = 2, Parent = body })
 	Ui.new("ImageLabel", {
@@ -105,10 +171,10 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 		BackgroundColor3 = Palette.hex("#E4F4FF"),
 		Position = UDim2.fromOffset(10, 10),
 		Size = UDim2.fromOffset(96, 96),
-		Image = headshot or "",
+		Image = headshotOf(info.userId),
 		Parent = head,
 	}, { Ui.corner(48), Kit.stroke(Palette.edge, 3, 0) })
-	Ui.label(player.DisplayName, {
+	Ui.label(info.displayName, {
 		Position = UDim2.fromOffset(118, 10),
 		Size = UDim2.new(1, -126, 0, 26),
 		Font = Ui.theme.Type.display,
@@ -116,7 +182,7 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = head,
 	})
-	Ui.label("@" .. player.Name, {
+	Ui.label("@" .. info.name, {
 		Position = UDim2.fromOffset(118, 36),
 		Size = UDim2.new(1, -126, 0, 18),
 		TextSize = 14,
@@ -124,7 +190,8 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = head,
 	})
-	Ui.label(string.format("Level %d  ·  %s", state.level, Records.title(stars)), {
+	local levelText = if info.level then string.format("Level %d  ·  ", info.level) else ""
+	Ui.label(levelText .. Records.title(stars), {
 		Position = UDim2.fromOffset(118, 58),
 		Size = UDim2.new(1, -126, 0, 22),
 		Font = Enum.Font.GothamBold,
@@ -153,9 +220,8 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
-	for i, id in CARD_STATS do
+	for i, id in Config.card do
 		local def = Records.def(id)
-		local v = viewOf(state, id)
 		if def then
 			local cell = Ui.card({ Name = id, LayoutOrder = i, Parent = grid })
 			Ui.label(def.glyph, {
@@ -164,7 +230,7 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 				TextSize = 24,
 				Parent = cell,
 			})
-			Ui.label(Ui.short(if v then v.value else 0), {
+			Ui.label(Ui.short(info.values[id] or 0), {
 				Position = UDim2.fromOffset(42, 6),
 				Size = UDim2.new(1, -48, 0, 24),
 				Font = Ui.theme.Type.display,
@@ -181,7 +247,7 @@ local function renderCard(state: { [string]: any }, body: ScrollingFrame)
 			})
 		end
 	end
-	Ui.label("Finish Town Records for stars and a new title.", {
+	Ui.label(if own then "Finish Town Records for stars and a new title." else "Press P for your own card.", {
 		Size = UDim2.new(1, -8, 0, 20),
 		TextSize = 14,
 		TextColor3 = Ui.colors.muted,
@@ -282,22 +348,41 @@ local function renderRecords(state: { [string]: any }, body: ScrollingFrame)
 	end
 end
 
-local function render(state: { [string]: any }, body: ScrollingFrame, title: TextLabel)
-	title.Text = "Farmer Card"
-	if headshot == nil then
-		fetchHeadshot()
+local function render(state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?)
+	-- Another player's card: no Records tab, just what the server shows of theirs
+	local otherId = if arg then tonumber(arg) else nil
+	if otherId and otherId ~= Players.LocalPlayer.UserId then
+		local info = FarmerCard.otherInfo(Players:GetPlayerByUserId(otherId))
+		title.Text = if info then info.displayName .. "'s Card" else "Farmer Card"
+		if info then
+			renderCard(info, body, false)
+		else
+			Ui.label("That farmer has left the server.", {
+				Size = UDim2.new(1, -8, 0, 40),
+				TextColor3 = Ui.colors.muted,
+				LayoutOrder = 2,
+				Parent = body,
+			})
+		end
+		return
 	end
+	title.Text = "Farmer Card"
 	local ready = FarmerCard.readyCount(state)
 	local tab = Panels.tabs({ "Card", "Records" }, 1, { Records = if ready > 0 then tostring(ready) else "" })
 	if tab == "Records" then
 		renderRecords(state, body)
 	else
-		renderCard(state, body)
+		renderCard(ownInfo(state), body, true)
 	end
 end
 
 function FarmerCard.show()
 	Panels.open("FarmerCard")
+end
+
+-- Another player's card (the Neighbors panel's 🏆 button)
+function FarmerCard.showOther(userId: number)
+	Panels.open("FarmerCard", tostring(userId))
 end
 
 function FarmerCard.init()

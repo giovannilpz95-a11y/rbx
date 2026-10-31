@@ -19,6 +19,7 @@ local Palette = require(Shared.Art.Palette)
 local Social = require(Shared.Config.Social)
 local SocialRules = require(Shared.Social)
 local Profile = require(Shared.Profile)
+local Records = require(Shared.Records)
 
 local DataService = require(script.Parent.DataService)
 local NetService = require(script.Parent.NetService)
@@ -462,12 +463,23 @@ local function renderNeighborsBoard()
 	end
 end
 
+local cardTicks = 0
+
 local function presenceTick()
 	renderNeighborsBoard()
+	cardTicks += 1
+	local cardTick = cardTicks % 5 == 1 -- Farmer Cards change slowly: every 5 s is plenty
 	for _, player in Players:GetPlayers() do
 		local data = DataService.get(player)
 		if data then
 			player:SetAttribute("FarmLevel", data.level)
+			-- Other players' Farmer Cards read this (client UI/FarmerCard)
+			if cardTick or player:GetAttribute("FarmerCard") == nil then
+				local card = HttpService:JSONEncode(Records.publicCard(data, Clock.now()))
+				if player:GetAttribute("FarmerCard") ~= card then
+					player:SetAttribute("FarmerCard", card)
+				end
+			end
 			local neighbors = math.min(SocialService.goodNeighbors(player), 2)
 			if player:GetAttribute("GoodNeighbors") ~= neighbors then
 				player:SetAttribute("GoodNeighbors", neighbors)

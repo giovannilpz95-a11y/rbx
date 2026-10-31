@@ -21,6 +21,8 @@ export type RecordDef = {
 
 return table.freeze({
 	tiers = table.freeze({ "Bronze", "Silver", "Gold" }),
+	-- The six records whose numbers show on the Farmer Card (and on other players' cards)
+	card = table.freeze({ "Orders", "Harvest", "Goods", "Animals", "Population", "Helping" }),
 	list = table.freeze({
 		table.freeze({
 			id = "Orders",
