@@ -371,6 +371,24 @@ READY.Peppers = function(b, color)
 	end
 end
 
+-- Mint (level 50): rows of small bright sprigs, then thick bushy clumps of pale-green
+-- leaves topped with little lilac flower spikes.
+GROWING.Mint = function(b)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.5, 0, 2.5 } do
+			b.ball("Sprig", 0.9, Vector3.new(x, 0.9, z), Palette.lime)
+		end
+	end
+end
+READY.Mint = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.2, 2.2 } do
+			b.ball("Clump", 1.7, Vector3.new(x, 1.2, z), color)
+		end
+		b.block("Spike", Vector3.new(0.35, 1, 0.35), Vector3.new(0, 1.6, z), Palette.plum:Lerp(Palette.cream, 0.4))
+	end
+end
+
 -- Silk (level 31): rows of low mulberry bushes, then the bushes hung with plump white cocoons.
 GROWING.Silk = function(b)
 	for _, z in ArtCrops.ROWS do

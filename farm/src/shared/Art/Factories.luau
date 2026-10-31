@@ -948,6 +948,51 @@ local function furnitureWorkshop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Cobbler (level 50, placed by the player): a brick shoemaker's shop with a giant red boot
+-- on the roof ridge, a hammer that taps away on a shoe last by the door while it works, and
+-- a pair of shoes in the window.
+local function cobbler(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.brick:Lerp(Palette.cream, 0.35), Palette.stoneDark)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 9.4, 2.4, Palette.roofMustard, Palette.cream)
+	local chimney = d.post("Chimney", 2.4, 1, Vector3.new(-4, TOP + 2.2, 2.6), Palette.stoneLight)
+	-- The boot on the ridge: a tall leg and a foot pointing forward
+	d.block("BootLeg", Vector3.new(1.6, 3, 1.8), Vector3.new(2, TOP + 3.6, 0.6), Palette.roofRed)
+	d.block("BootFoot", Vector3.new(1.6, 1.2, 2.6), Vector3.new(2, TOP + 2.7, -1), Palette.roofRed)
+	d.block("BootSole", Vector3.new(1.7, 0.3, 4.2), Vector3.new(2, TOP + 2, -0.2), Palette.woodDark)
+	-- The shoe last on its stump, and the hammer above it
+	local last = Vector3.new(-4.6, 0, FRONT - 1.6)
+	d.post("Stump", 1.4, 1.4, last + Vector3.new(0, 0.7, 0), Palette.trunk)
+	d.block("Last", Vector3.new(0.6, 0.5, 1.2), last + Vector3.new(0, 1.65, 0), Palette.wood)
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	local hammer = last + Vector3.new(0.6, 2.8, 0)
+	a.post("Hammer", 1.4, 0.25, hammer, Palette.wood)
+	a.block("HammerHead", Vector3.new(0.9, 0.4, 0.4), hammer - Vector3.new(0.3, 0.7, 0), Palette.stoneDark)
+	Kit.window(d, "Window", CFrame.new(-2.2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	d.block("Shoes", Vector3.new(1.6, 0.4, 0.6), Vector3.new(-2.2, PLINTH + 2.4, FRONT - 0.3), Palette.roofRed)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.woodDark, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block(
+			"BootIcon",
+			Vector3.new(0.6, 1, 0.2),
+			at + Vector3.new(-0.2, 0.15, 0),
+			Palette.roofRed,
+			{ shadow = false }
+		)
+		s.block(
+			"BootToe",
+			Vector3.new(0.6, 0.4, 0.2),
+			at + Vector3.new(0.3, -0.15, 0),
+			Palette.roofRed,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(-4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1081,6 +1126,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Cantina = cantina,
 	StationeryShop = stationeryShop,
 	FurnitureWorkshop = furnitureWorkshop,
+	Cobbler = cobbler,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

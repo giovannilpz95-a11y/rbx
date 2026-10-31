@@ -1805,6 +1805,77 @@ TYPES.FilmStudio = function(b, s)
 	return body
 end
 
+-- Courthouse (content bank, level 50): a pale stone hall with a columned portico under a
+-- triangular pediment, wide front steps and a golden pair of scales on the roof.
+TYPES.Courthouse = function(b, s)
+	local z0 = s * 0.12
+	local body = hall(b, s * 0.66, s * 0.4, 5, Palette.cream:Lerp(Palette.stoneLight, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Cornice", Vector3.new(s * 0.7, 0.5, s * 0.44), Vector3.new(0, PLINTH + 5.25, 0), Palette.cream)
+	t.wedge(
+		"Pediment",
+		Vector3.new(s * 0.66, 1.6, 1.2),
+		CFrame.new(0, PLINTH + 6.3, face - 0.4) * Kit.yaw(180),
+		Palette.cream
+	)
+	for i = -2, 2 do
+		t.post("Column", 4.6, 0.6, Vector3.new(i * s * 0.12, PLINTH + 2.6, face - 1.4), Palette.cream)
+	end
+	t.block("Portico", Vector3.new(s * 0.62, 0.4, 2), Vector3.new(0, PLINTH + 5.1, face - 1), Palette.cream)
+	t.block("Steps", Vector3.new(s * 0.6, 0.4, 1.4), Vector3.new(0, 0.2, face - 2.2), Palette.stoneLight)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3.2, Palette.woodDark, Palette.cream)
+	-- The scales on the roof: a post, a beam and two pans
+	t.post("ScalePost", 2, 0.25, Vector3.new(0, PLINTH + 6.4, z0), Palette.coins)
+	t.block("ScaleBeam", Vector3.new(3, 0.2, 0.2), Vector3.new(0, PLINTH + 7.4, z0), Palette.coins)
+	for _, x in { -1.4, 1.4 } do
+		t.cyl("Pan", 0.15, 0.9, CFrame.new(x, PLINTH + 6.8, z0) * CFrame.Angles(0, 0, math.rad(90)), Palette.coins)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.26, PLINTH + 5.9, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Kart Track (content bank, level 51): an oval of grey track round a grass infield, a little
+-- red kart on the straight, a small grandstand at the back and a chequered flag.
+TYPES.KartTrack = function(b, s)
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	b.cyl("Track", 0.3, s * 0.9, CFrame.new(0, 0.15, 0) * up, Palette.stoneDark)
+	b.cyl("Infield", 0.35, s * 0.55, CFrame.new(0, 0.18, 0) * up, Palette.grassLight)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.4, 2.4, 1.8),
+		Vector3.new(0, 1.2, s * 0.32),
+		Palette.roofRed,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block(
+		"Seats",
+		Vector3.new(s * 0.4, 0.6, 1.6),
+		CFrame.new(0, 2.4, s * 0.31) * CFrame.Angles(math.rad(-20), 0, 0),
+		Palette.flowerYellow
+	)
+	t.block("StandRoof", Vector3.new(s * 0.44, 0.3, 2.2), Vector3.new(0, 4, s * 0.33), Palette.cream)
+	for _, x in { -s * 0.2, s * 0.2 } do
+		t.post("StandPost", 1.6, 0.25, Vector3.new(x, 3.2, s * 0.4), Palette.metal)
+	end
+	-- The kart on the front straight
+	local kz = -s * 0.36
+	t.block("Kart", Vector3.new(2, 0.5, 1.1), Vector3.new(-1, 0.6, kz), Palette.roofRed)
+	t.ball("Driver", 0.7, Vector3.new(-1.2, 1.2, kz), Palette.flowerYellow)
+	for _, x in { -1.8, -0.2 } do
+		t.cyl("Wheel", 0.3, 0.6, CFrame.new(x, 0.45, kz) * Kit.yaw(90), Palette.stoneDark)
+	end
+	-- The chequered flag on its pole at the finish line
+	t.post("FlagPole", 4, 0.2, Vector3.new(2.6, 2, -s * 0.3), Palette.metal)
+	t.block("Flag", Vector3.new(1.6, 1, 0.1), Vector3.new(3.4, 3.4, -s * 0.3), Palette.cream)
+	t.block("FlagCheck", Vector3.new(0.8, 0.5, 0.12), Vector3.new(3, 3.65, -s * 0.3), Palette.stoneDark)
+	t.block("FlagCheck", Vector3.new(0.8, 0.5, 0.12), Vector3.new(3.8, 3.15, -s * 0.3), Palette.stoneDark)
+	t.block("FinishLine", Vector3.new(0.4, 0.05, s * 0.17), Vector3.new(1.6, 0.33, -s * 0.36), Palette.cream)
+	Kit.sproutTag(t, Vector3.new(s * 0.18, 4.8, s * 0.33), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

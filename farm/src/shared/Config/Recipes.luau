@@ -118,6 +118,14 @@ local Recipes: { [string]: RecipeDef } = {
 	Couch = { id = "Couch", displayName = "Couch", factory = "FurnitureWorkshop", unlockLevel = 48, inputs = { PineTrees = 2, CottonFabric = 1 }, outputQty = 1, seconds = 6 * HOUR, sellPrice = 100, xp = 43 },
 	Shuttlecock = { id = "Shuttlecock", displayName = "Shuttlecock", factory = "MoldingWorks", unlockLevel = 49, inputs = { DownFeather = 2, Plastic = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 117, xp = 50 },
 	FeatherDuster = { id = "FeatherDuster", displayName = "Feather Duster", factory = "HomewaresShop", unlockLevel = 49, inputs = { Sugarcane = 1, ColorfulFeather = 3 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 136, xp = 58 },
+	-- Cobbler (content bank)
+	FlipFlops = { id = "FlipFlops", displayName = "Flip Flops", factory = "Cobbler", unlockLevel = 50, inputs = { Rubber = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 44, xp = 19 },
+	Sandals = { id = "Sandals", displayName = "Sandals", factory = "Cobbler", unlockLevel = 51, inputs = { CorkOak = 3, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 238, xp = 102 },
+	-- Level 50-51 goods at older factories
+	FeatherHat = { id = "FeatherHat", displayName = "Feather Hat", factory = "Tailor", unlockLevel = 50, inputs = { CottonFabric = 1, SilkFabric = 1, ColorfulFeather = 1 }, outputQty = 1, seconds = 2 * HOUR + 45 * MIN, sellPrice = 274, xp = 117 },
+	MintChocIceCream = { id = "MintChocIceCream", displayName = "Mint Choc Ice Cream", factory = "IceCreamParlor", unlockLevel = 50, inputs = { Milk = 1, Mint = 2, Chocolate = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 214, xp = 92 },
+	PineappleSorbet = { id = "PineappleSorbet", displayName = "Pineapple Sorbet", factory = "IceCreamParlor", unlockLevel = 51, inputs = { CaneSyrup = 1, Pineapples = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 343, xp = 147 },
+	HoneyMarshmallow = { id = "HoneyMarshmallow", displayName = "Honey Marshmallow", factory = "CandyFactory", unlockLevel = 51, inputs = { HoneyCaramel = 1, Eggs = 2 }, outputQty = 1, seconds = 4 * HOUR + 30 * MIN, sellPrice = 211, xp = 90 },
 	BulletinBoard = { id = "BulletinBoard", displayName = "Bulletin Board", factory = "StationeryShop", unlockLevel = 48, inputs = { CorkOak = 3, Paper = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 124, xp = 53 },
 	Taco = { id = "Taco", displayName = "Taco", factory = "Cantina", unlockLevel = 49, inputs = { Corn = 3, Cream = 1, Tomatoes = 2, Peppers = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 109, xp = 47 },
 	-- Homewares Shop (content bank)
