@@ -70,6 +70,15 @@ return table.freeze({
 	Blimp_Flag = "Blimp_Flag", -- row, slot: ask for help with a crate (one per row; again to take it off)
 	Blimp_Send = "Blimp_Send", -- (send the Cargo Blimp off with the rows loaded so far)
 	Blimp_Skip = "Blimp_Skip", -- (call the next blimp now, Gems)
+	Harbor_Repair = "Harbor_Repair", -- (start repairing the Harbor, shared/Harbor)
+	Harbor_SpeedUp = "Harbor_SpeedUp", -- (finish the repair now, Gems)
+	Harbor_BuyBoat = "Harbor_BuyBoat", -- (buy the next Sailboat, Coins)
+	Harbor_UnlockIsle = "Harbor_UnlockIsle", -- isleId: start opening the next Far Isle (Coins and tools)
+	Harbor_FinishIsle = "Harbor_FinishIsle", -- isleId: finish opening it now (Gems)
+	Harbor_Send = "Harbor_Send", -- boat, isleId, bar?: sail to an isle, with a Ballast Bar from the Barn or false
+	Harbor_Unload = "Harbor_Unload", -- boat: unload a boat that's back into the Barn
+	Harbor_Skip = "Harbor_Skip", -- boat: bring it home now (Gems)
+	Harbor_Drift = "Harbor_Drift", -- (open today's Driftwood Crate)
 	Layout_Move = "Layout_Move", -- key, x, z, r: move one of your buildings (shared/Layout)
 	Express_Load = "Express_Load", -- index: load a Town Express crate from the Barn (at the hub station)
 	Market_List = "Market_List", -- slot, item, qty, price: put Barn goods on your stall
@@ -84,6 +93,7 @@ return table.freeze({
 	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Debug_Blimp = "Debug_Blimp", -- the Blimp Mast repaired and the Cargo Blimp docked now (Studio only)
+	Debug_Harbor = "Debug_Harbor", -- the Harbor repaired, isles open to your level, Bars, boats home now (Studio only)
 	Debug_Quarry = "Debug_Quarry", -- Bars, ore, Pickaxes, an open Quarry and Population (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
 	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)

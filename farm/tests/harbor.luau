@@ -2,7 +2,12 @@
 -- voyages rolled at departure, Ballast Bar odds, the Driftwood Crate and the isle goods in the
 -- Order Board pool. Called from tests/run.luau.
 
+local roblox = require("@lune/roblox")
+
+local ArtHarbor = require("../src/shared/Art/Harbor")
 local Config = require("../src/shared/Config/Isles")
+local Kit = require("../src/shared/Art/Kit")
+local Layout = require("../src/shared/Layout")
 local Harbor = require("../src/shared/Harbor")
 local Items = require("../src/shared/Items")
 local OrderGen = require("../src/shared/OrderGen")
@@ -284,5 +289,58 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(feature(29, "Harbor"), "Harbor on the level-29 list")
 		ok(feature(35, "VineyardKey"), "Vineyard Key on the level-35 list")
 		ok(not feature(29, "BlossomCay"), "Blossom Cay comes with the Harbor")
+	end)
+
+	test("harbor: the Harbor model, its states and its footprint", function()
+		local _ = roblox
+		local root = Instance.new("Model")
+		local origin = CFrame.new(30, 0, -20) * Kit.yaw(90)
+		local parts = ArtHarbor.build(root, origin)
+		local n = Kit.countParts(root)
+		ok(n <= ArtHarbor.PARTS_MAX, string.format("Harbor has %d parts, budget %d", n, ArtHarbor.PARTS_MAX))
+		eq(parts.body:GetAttribute("Interact"), "Harbor", "the boathouse opens the panel")
+		ok(parts.body.CanQuery and parts.body.CanCollide, "a solid tap target")
+		eq(#parts.boats, Config and #Config.boats, "a berth per Sailboat")
+		local fp = Layout.KINDS.harbor
+		eq(fp.w, ArtHarbor.WIDTH, "Layout footprint width")
+		eq(fp.d, ArtHarbor.DEPTH, "Layout footprint depth")
+		Kit.eachPart(root, function(p)
+			local c = origin:PointToObjectSpace(p.CFrame.Position)
+			ok(
+				math.abs(c.X) <= ArtHarbor.WIDTH / 2 and math.abs(c.Z) <= ArtHarbor.DEPTH / 2,
+				p.Name .. " inside the footprint"
+			)
+			local col = p.Color
+			ok(not (col.R > 0.98 and col.G > 0.98 and col.B > 0.98), p.Name .. " not pure white")
+			ok(p.CanTouch == false, p.Name .. " CanTouch off")
+		end)
+		local deck = root:FindFirstChild("Deck", true) :: BasePart
+		ArtHarbor.setState(root, "Broken")
+		eq(deck.Transparency, 1, "no deck while broken")
+		eq((parts.boats[1]:FindFirstChild("Hull") :: BasePart).Transparency, 1, "no boats while broken")
+		ArtHarbor.setState(root, "Repaired")
+		eq(deck.Transparency, 0, "deck once repaired")
+		ArtHarbor.setBoats(root, { "home", "away", "back" })
+		local function seen(i: number, partName: string): boolean
+			return (parts.boats[i]:FindFirstChild(partName) :: BasePart).Transparency < 1
+		end
+		ok(seen(1, "Hull") and not seen(1, "Cargo"), "boat 1 home, no cargo")
+		ok(not seen(2, "Hull"), "boat 2 away")
+		ok(seen(3, "Hull") and seen(3, "Cargo"), "boat 3 back with cargo")
+		ok(not seen(4, "Hull"), "boat 4 not owned")
+		eq((parts.boats[3]:FindFirstChild("Cargo") :: BasePart):GetAttribute("Interact"), "HarborBoat", "tap a boat")
+		ArtHarbor.setDrift(root, true)
+		ok((parts.drift:FindFirstChild("Crate") :: BasePart).Transparency < 1, "Driftwood Crate shows")
+		ArtHarbor.setDrift(root, false)
+		eq((parts.drift:FindFirstChild("Crate") :: BasePart).Transparency, 1, "and hides")
+	end)
+
+	test("harbor: Move mode knows the Harbor from its level", function()
+		local data = farm(28)
+		ok(not Layout.exists(data, "harbor", "Harbor"), "no Harbor before 29")
+		data.level = 29
+		ok(Layout.exists(data, "harbor", "Harbor"), "the old Harbor from 29")
+		ok(not Layout.exists(data, "harbor", "Other"), "only one")
+		eq(Layout.parse("harbor:Harbor"), "harbor", "its key parses")
 	end)
 end
