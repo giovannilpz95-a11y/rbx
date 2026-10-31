@@ -195,8 +195,15 @@ function MovePlacer.offer(payload: { [string]: any })
 			if found and active == nil then
 				editing = true
 				offered = true
-				pickUp(key, found)
-				trace("picked up:", key)
+				local ok, err = pcall(pickUp, key, found)
+				if ok then
+					trace("picked up:", key)
+				else
+					-- Say why in the Output (a silent stop left Studio guessing), and put the
+					-- bar back as it was
+					warn("[MovePlacer] pick-up failed:", key, err)
+					stopMoving()
+				end
 				return
 			end
 			task.wait(0.1)
@@ -286,9 +293,14 @@ function MovePlacer.init()
 	ghost.Transparency = 0.45
 	ghost.Material = Enum.Material.Neon
 
+	local warned = false
 	RunService.RenderStepped:Connect(function()
 		if active then
-			update()
+			local ok, err = pcall(update)
+			if not ok and not warned then
+				warned = true -- once, so a broken ghost can't flood the Output
+				warn("[MovePlacer] ghost update failed:", active, err)
+			end
 		end
 	end)
 end

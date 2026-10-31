@@ -78,7 +78,14 @@ local function step()
 	for model, e in entries do
 		-- The server rebuilt its moving part (a finished build swaps the scaffold for the
 		-- factory): bind the new one
-		if not e.rig.pivot:IsDescendantOf(model) then
+		local stale = false
+		for _, part in e.rig.parts do
+			if not part:IsDescendantOf(model) then
+				stale = true
+				break
+			end
+		end
+		if stale then
 			entries[model] = nil
 			task.defer(track, model)
 			continue

@@ -76,6 +76,7 @@ return table.freeze({
 	Market_Unlist = "Market_Unlist", -- slot: take a listing down (goods back to the Barn)
 	Market_Feature = "Market_Feature", -- slot: show it on the Town Square's Market board
 	Market_Buy = "Market_Buy", -- sellerUserId, slot: buy from another farm's stall
+	Market_Color = "Market_Color", -- color: repaint your stall's awning (Config/Market colors)
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)

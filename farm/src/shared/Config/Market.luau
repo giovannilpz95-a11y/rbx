@@ -35,6 +35,11 @@ return table.freeze({
 
 	-- One listing can be featured on the Town Square's Market board, changed every 5 minutes
 	featureCooldown = 5 * MIN,
+	boardLines = 6, -- featured listings the board shows (newest first)
+
+	-- The stall's awning colors (Art/Market COLORS); the owner picks one any time, free
+	colors = table.freeze({ "Red", "Teal", "Mustard", "Plum" }),
+	defaultColor = "Red",
 
 	-- What can be sold: crops, animal goods and factory goods with a Barn price. Never Gems,
 	-- tools, materials, decorations or anything bought with Robux.

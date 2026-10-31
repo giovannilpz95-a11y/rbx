@@ -1666,6 +1666,7 @@ local function refreshMarket(player: Player, model: Model, data: { [string]: any
 	local json = HttpService:JSONEncode({
 		listings = published,
 		featured = m.featured,
+		color = m.color,
 		open = Market.slotCount(data.level) > 0,
 		traderOnly = player:GetAttribute("MarketTraderOnly") == true,
 	})
@@ -1674,6 +1675,9 @@ local function refreshMarket(player: Player, model: Model, data: { [string]: any
 	end
 	marketVisualState[player] = json
 	stall:SetAttribute("Stall", json)
+	if stall:GetAttribute("Color") ~= m.color then
+		ArtMarket.setStallColor(stall, m.color)
+	end
 	ArtMarket.setListings(stall, shown, m.featured, hidden)
 end
 

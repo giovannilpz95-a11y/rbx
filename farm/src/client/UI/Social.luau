@@ -769,10 +769,6 @@ function SocialUi.init()
 			end
 		elseif kind == "PuzzlePorch" then
 			return ReachController.openCropPop, true
-		elseif kind == "Market" then
-			return function()
-				Hud.toast("Market stalls open in a later update. Check back soon!")
-			end, false
 		end
 		return previous(part)
 	end

@@ -3,11 +3,14 @@
 -- gate runs it: list Barn goods in its slots (pick the goods, how many, and a price inside the
 -- band), take listings down, feature one. Tapping a neighbor's stall shows what's on it to buy;
 -- the server publishes each stall's listings on the stall model ("Stall" attribute, JSON).
+-- The Town Square's Market board lists every farm's featured listing ("Board" attribute,
+-- JSON) with a Visit to each stall.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local ArtMarket = require(Shared.Art.Market)
 local Config = require(Shared.Config.Market)
 local Items = require(Shared.Items)
 local Market = require(Shared.Market)
@@ -26,6 +29,7 @@ type StallView = { listings: { Published }, featured: number, open: boolean, tra
 
 local player = Players.LocalPlayer
 local stall: Instance? = nil -- the neighbor's stall being looked at
+local board: Instance? = nil -- the Town Square's Market board, once tapped
 -- Listing editor state (your own stall)
 local pickSlot: number? = nil
 local pickItem: string? = nil
@@ -260,6 +264,25 @@ local function renderOwn(state: { [string]: any }, body: Instance, title: TextLa
 			Parent = c,
 		})
 	end
+	colorRow(m, body)
+end
+
+-- The awning color picker under the slots
+local function colorRow(m: { [string]: any }, body: Instance)
+	local c = card(100, body, 56)
+	cardText(c, "Awning color", "Free to change any time", nil, 4 * 46 + 12)
+	local current = m.color or Config.defaultColor
+	for i, name in Config.colors do
+		local swatch = Ui.button(if name == current then "✓" else "", function()
+			Remotes.fire("Market_Color", name)
+		end, {
+			Size = UDim2.fromOffset(40, 36),
+			Position = UDim2.new(1, -(5 - i) * 46 - 4, 0, 10),
+			BackgroundColor3 = ArtMarket.COLORS[name],
+			Parent = c,
+		})
+		swatch:SetAttribute("Color", name)
+	end
 end
 
 local function view(model: Instance?): StallView?
@@ -319,6 +342,64 @@ local function renderShop(state: { [string]: any }, body: Instance, title: TextL
 	end
 end
 
+type BoardEntry = { userId: number, name: string, slot: number, item: string, qty: number, price: number }
+
+local function boardEntries(): { BoardEntry }
+	local raw = board and board:GetAttribute("Board")
+	if type(raw) ~= "string" then
+		return {}
+	end
+	local ok, decoded = pcall(HttpService.JSONDecode, HttpService, raw)
+	return if ok and type(decoded) == "table" then decoded :: { BoardEntry } else {}
+end
+
+-- The Town Square's Market board: each farm's featured listing and a Visit to its stall
+local function renderBoard(state: { [string]: any }, body: Instance, title: TextLabel)
+	title.Text = "Market Board"
+	line(
+		"Featured goods from the farms on this server. Visit a stall to buy, or feature your own listing at your stall.",
+		1,
+		body,
+		38,
+		Ui.colors.muted
+	)
+	local entries = boardEntries()
+	if #entries == 0 then
+		line("Nothing featured right now. Check back soon!", 2, body)
+	end
+	for i, entry in entries do
+		local c = card(2 + i, body)
+		local def = Items[entry.item]
+		cardText(
+			c,
+			string.format("%s · %d Coins", goods(entry.qty, entry.item), entry.price),
+			string.format(
+				"%s's stall%s",
+				entry.name,
+				if def then string.format(" · Barn value %d", Market.basePrice(entry.item, entry.qty)) else ""
+			)
+		)
+		if entry.userId == player.UserId then
+			Ui.button("My stall", function()
+				MarketUi.openOwn()
+			end, { Size = UDim2.fromOffset(100, 36), Position = UDim2.new(1, -106, 0, 10), Parent = c })
+		else
+			Ui.button("Visit", function()
+				Panels.close()
+				Remotes.fire("Visit_Go", entry.userId)
+			end, {
+				Size = UDim2.fromOffset(100, 36),
+				Position = UDim2.new(1, -106, 0, 10),
+				BackgroundColor3 = Ui.colors.accent,
+				Parent = c,
+			})
+		end
+	end
+	if Market.slotCount(state.level) == 0 then
+		line(string.format("Your own stall opens at level %d.", Config.unlockLevel), 100, body, nil, Ui.colors.warn)
+	end
+end
+
 local function render(state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?)
 	local ownerId = tonumber(arg or "")
 	if ownerId == nil or ownerId == player.UserId then
@@ -336,10 +417,27 @@ end
 
 function MarketUi.init()
 	Panels.register("Market", render)
+	Panels.register("MarketBoard", function(state, body, title)
+		renderBoard(state, body, title)
+	end)
 	ReachController.openMarket = MarketUi.openOwn
 	-- A neighbor's stall is off our plot: open its goods once the avatar has walked up
 	local previous = ReachController.otherTarget
 	ReachController.otherTarget = function(part: BasePart)
+		if part:GetAttribute("Interact") == "MarketBoard" then
+			return function()
+				if board ~= part then
+					board = part
+					part:GetAttributeChangedSignal("Board"):Connect(function()
+						if Panels.isShowing("MarketBoard") then
+							Panels.refresh()
+						end
+					end)
+				end
+				Panels.open("MarketBoard")
+			end,
+				false
+		end
 		if part:GetAttribute("Interact") == "Market" then
 			local model = part:FindFirstAncestor("MarketStall")
 			local ownerId = model and model:GetAttribute("Owner")

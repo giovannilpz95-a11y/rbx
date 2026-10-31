@@ -848,6 +848,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(board ~= nil, "price board for the hidden-slot count")
 		ArtMarket.setListings(stall, {}, 0, 0)
 		eq(Kit.countParts(stall), bare, "an empty stall shows no goods")
+		-- Every color the owner can pick (Config/Market) has an awning color
+		for _, name in require("../src/shared/Config/Market").colors do
+			ok(ArtMarket.COLORS[name] ~= nil, name .. " has an awning color")
+		end
 	end)
 
 	test("art: Blimp Mast, Cargo Blimp and its crates", function()

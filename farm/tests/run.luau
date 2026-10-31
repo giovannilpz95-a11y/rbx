@@ -931,6 +931,46 @@ test("Market stall: slots by level, price band, tax, buy caps, the passing trade
 	eq(seller.market.featured, 0, "taking the listing down clears the feature")
 end)
 
+test("Market board and stall colors: newest featured first, capped, colors from the list", function()
+	local function farm(level: number): any
+		local data = Profile.migrate(nil) :: any
+		data.level = level
+		return data
+	end
+	local a, b, c = farm(13), farm(13), farm(13)
+	eq(a.market.color, MarketConfig.defaultColor, "stalls start in the default color")
+	ok(Market.setColor(a, "Teal"), "pick a listed color")
+	eq(a.market.color, "Teal", "color saved")
+	ok(not Market.setColor(a, "Teal"), "same color is no change")
+	ok(not Market.setColor(a, "Gold"), "only listed colors")
+	ok(not Market.setColor(farm(12), "Plum"), "no stall, no color")
+
+	eq(Market.featuredListing(a), nil, "nothing featured yet")
+	Market.list(a, 1, "Wheat", 5, select(3, Market.priceRange("Wheat", 5)), 0)
+	Market.list(b, 2, "Corn", 3, select(3, Market.priceRange("Corn", 3)), 0)
+	Market.list(c, 1, "Milk", 2, select(3, Market.priceRange("Milk", 2)), 0)
+	ok(Market.feature(a, 1, 100) and Market.feature(b, 2, 300), "two farms feature")
+	eq(Market.featuredListing(b).item, "Corn", "featured listing found")
+	local entries = Market.boardEntries({
+		{ userId = 1, name = "A", data = a },
+		{ userId = 2, name = "B", data = b },
+		{ userId = 3, name = "C", data = c },
+	})
+	eq(#entries, 2, "only featured listings show")
+	eq(entries[1].name, "B", "newest featured first")
+	eq(entries[2].item, "Wheat", "then the older one")
+	Market.remove(b, 2)
+	eq(#Market.boardEntries({ { userId = 2, name = "B", data = b } }), 0, "taken down leaves the board")
+	local many = {}
+	for i = 1, MarketConfig.boardLines + 3 do
+		local f = farm(13)
+		Market.list(f, 1, "Wheat", 1, select(3, Market.priceRange("Wheat", 1)), 0)
+		Market.feature(f, 1, i)
+		table.insert(many, { userId = i, name = tostring(i), data = f })
+	end
+	eq(#Market.boardEntries(many), MarketConfig.boardLines, "the board has room for a few")
+end)
+
 test("Town Express: the 2-hour clock, crates scaled to players, NPC help and reward tiers", function()
 	local H = 3600
 	local at, open = Express.window(4 * H + 5 * 60)

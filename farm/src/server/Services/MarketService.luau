@@ -10,6 +10,7 @@
 -- new farms can't overpay, and accounts whose policy doesn't allow trading paid items neither
 -- buy from other farms nor sell to them (their stalls sell to the trader only).
 
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
 local RunService = game:GetService("RunService")
@@ -54,6 +55,12 @@ function MarketService.canTrade(player: Player): boolean
 	return yes
 end
 
+-- After a stall changes: redraw it and the Town Square board
+local function changed(player: Player)
+	PlotService.refresh(player)
+	MarketService.refreshBoard()
+end
+
 local function plural(qty: number, item: string): string
 	return string.format("%d %s", qty, Items[item].displayName)
 end
@@ -70,7 +77,7 @@ function MarketService.list(player: Player, slot: any, item: any, qty: any, pric
 	end
 	Market.list(data, slot, item, qty, price, Clock.now())
 	TelemetryService.custom(player, "MarketListed", price, item)
-	PlotService.refresh(player)
+	changed(player)
 	return true
 end
 
@@ -85,7 +92,7 @@ function MarketService.unlist(player: Player, slot: any): (boolean, string?)
 	end
 	Market.remove(data, slot)
 	InventoryService.add(player, { [listing.item] = listing.qty })
-	PlotService.refresh(player)
+	changed(player)
 	return true
 end
 
@@ -95,8 +102,62 @@ function MarketService.feature(player: Player, slot: any): (boolean, string?)
 	if not ok then
 		return false, reason
 	end
-	PlotService.refresh(player)
+	changed(player)
 	return true
+end
+
+function MarketService.color(player: Player, color: any): (boolean, string?)
+	local data = DataService.get(player) :: { [string]: any }
+	local ok, reason = Market.setColor(data, color)
+	if not ok then
+		return false, reason
+	end
+	changed(player)
+	return true
+end
+
+-- The Town Square's Market board: every farm's featured listing, newest first. The lines go
+-- on the board's face; the entries (JSON) go on its "Board" attribute for the client's panel,
+-- which offers a Visit to each stall.
+local boardState = ""
+function MarketService.refreshBoard()
+	local label = SocialService.marketBoardText
+	if label == nil then
+		return
+	end
+	local farms = {}
+	local everyone = Players:GetPlayers()
+	local neighbor = SocialService.testNeighbor()
+	if neighbor then
+		table.insert(everyone, neighbor)
+	end
+	for _, player in everyone do
+		local data = DataService.get(player)
+		if data and data.market and MarketService.canTrade(player) then
+			table.insert(farms, { userId = player.UserId, name = player.DisplayName, data = data })
+		end
+	end
+	local entries = Market.boardEntries(farms)
+	local json = HttpService:JSONEncode(entries)
+	if json == boardState then
+		return
+	end
+	boardState = json
+	local lines = {}
+	for _, entry in entries do
+		table.insert(
+			lines,
+			string.format("%s: %s for %d Coins", entry.name, plural(entry.qty, entry.item), entry.price)
+		)
+	end
+	if #lines == 0 then
+		table.insert(lines, "Nothing featured yet.\n\nFeature a listing at your stall to show it here.")
+	end
+	label.Text = table.concat(lines, "\n")
+	local face = label.Parent and label.Parent.Parent
+	if face then
+		face:SetAttribute("Board", json)
+	end
 end
 
 -- Pay a seller for a sale (to a player or the trader) and tell them
@@ -107,7 +168,7 @@ local function paySeller(seller: Player, amount: number, reason: string, message
 	DataService.markDirty(seller, true)
 	NetService.pushState(seller)
 	NetService.toast(seller, message)
-	PlotService.refresh(seller)
+	changed(seller)
 end
 
 function MarketService.buy(player: Player, sellerId: any, slot: any): (boolean, string?)
@@ -186,6 +247,7 @@ function MarketService.init()
 	NetService.on(Net.Market_Unlist, 2, 4, MarketService.unlist)
 	NetService.on(Net.Market_Feature, 1, 2, MarketService.feature)
 	NetService.on(Net.Market_Buy, 2, 4, MarketService.buy)
+	NetService.on(Net.Market_Color, 1, 3, MarketService.color)
 	Players.PlayerAdded:Connect(function(player)
 		task.spawn(MarketService.canTrade, player)
 	end)
@@ -194,7 +256,9 @@ function MarketService.init()
 	end
 	Players.PlayerRemoving:Connect(function(player)
 		allowed[player] = nil
+		task.defer(MarketService.refreshBoard)
 	end)
+	MarketService.refreshBoard()
 	task.spawn(function()
 		while true do
 			task.wait(MarketService.TICK)
@@ -202,6 +266,7 @@ function MarketService.init()
 			if not ok then
 				warn("[MarketService] trader tick failed:", err)
 			end
+			MarketService.refreshBoard()
 		end
 	end)
 end
