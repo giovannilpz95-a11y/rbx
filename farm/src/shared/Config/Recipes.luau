@@ -28,6 +28,7 @@ local Recipes: { [string]: RecipeDef } = {
 	Bagel = { id = "Bagel", displayName = "Bagel", factory = "Bakery", unlockLevel = 8, inputs = { Wheat = 2, Eggs = 3, Sugar = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 55, xp = 24 },
 	GardenPizza = { id = "GardenPizza", displayName = "Garden Pizza", factory = "Bakery", unlockLevel = 22, inputs = { Wheat = 2, Tomatoes = 2, Cheese = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 68, xp = 29 }, -- content bank
 	PotatoBread = { id = "PotatoBread", displayName = "Potato Bread", factory = "Bakery", unlockLevel = 26, inputs = { Wheat = 2, Eggs = 4, Potatoes = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 158, xp = 68 }, -- content bank
+	BananaBread = { id = "BananaBread", displayName = "Banana Bread", factory = "Bakery", unlockLevel = 41, inputs = { Wheat = 2, Eggs = 2, Butter = 1, Bananas = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 294, xp = 126 }, -- content bank, Coconut Atoll
 	-- Feed Mill
 	CowFeed = { id = "CowFeed", displayName = "Cow Feed", factory = "FeedMill", unlockLevel = 3, inputs = { Wheat = 2, Corn = 1 }, outputQty = 3, seconds = 5 * MIN, sellPrice = 3, xp = 1, isFeed = true },
 	ChickenFeed = { id = "ChickenFeed", displayName = "Chicken Feed", factory = "FeedMill", unlockLevel = 5, inputs = { Wheat = 2, Carrots = 1 }, outputQty = 3, seconds = 10 * MIN, sellPrice = 4, xp = 2, isFeed = true },
@@ -114,6 +115,11 @@ local Recipes: { [string]: RecipeDef } = {
 	PlatinumBar = { id = "PlatinumBar", displayName = "Platinum Bar", factory = "Smelter", unlockLevel = 21, inputs = { PlatinumOre = 5 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 300, xp = 129, fromOreShed = true },
 	-- Jam Kitchen (content bank)
 	StrawberryJam = { id = "StrawberryJam", displayName = "Strawberry Jam", factory = "JamKitchen", unlockLevel = 27, inputs = { Strawberries = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 41, xp = 18 },
+	-- From the Far Isles (Config/Isles): Township's Jam Factory recipes for isle fruit
+	PeachMarmalade = { id = "PeachMarmalade", displayName = "Peach Marmalade", factory = "JamKitchen", unlockLevel = 29, inputs = { Peaches = 3 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 133, xp = 57 },
+	WatermelonJam = { id = "WatermelonJam", displayName = "Watermelon Jam", factory = "JamKitchen", unlockLevel = 30, inputs = { Watermelons = 3 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 196, xp = 84 },
+	PlumJam = { id = "PlumJam", displayName = "Plum Jam", factory = "JamKitchen", unlockLevel = 32, inputs = { Plums = 3 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 299, xp = 128 },
+	GrapeJelly = { id = "GrapeJelly", displayName = "Grape Jelly", factory = "JamKitchen", unlockLevel = 38, inputs = { Grapes = 3 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 196, xp = 84 },
 }
 
 return table.freeze(Recipes)

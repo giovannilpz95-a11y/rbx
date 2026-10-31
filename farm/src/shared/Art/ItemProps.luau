@@ -719,6 +719,11 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 	end,
 }
 
+-- Far Isle goods and what's made from them (Art/IsleProps)
+for id, builder in require("./IsleProps") :: { [string]: (Kit.Builder) -> () } do
+	BUILDERS[id] = builder
+end
+
 local function crate(b: Kit.Builder)
 	b.block("Crate", Vector3.new(1.6, 1.4, 1.6), at(0, 0.7, 0), Palette.crate, QUIET)
 	b.block("Band", Vector3.new(1.65, 0.35, 1.65), at(0, 0.7, 0), Palette.woodDark, QUIET)

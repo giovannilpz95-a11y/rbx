@@ -171,6 +171,14 @@ function Profile.template(): { [string]: any }
 			fullHolds = 0,
 			skyMiles = 0,
 		},
+		harbor = { -- Harbor & Far Isles (shared/Harbor); readyAt is set when the repair starts
+			seed = 0,
+			boats = {}, -- one per Sailboat: {} idle, or { isle, departAt, returnAt, bar?, cargo, chest? }
+			isles = {}, -- isle id -> { readyAt }
+			trips = {}, -- isle id -> voyages unloaded
+			driftDay = -1, -- UTC day of the last Driftwood Crate
+			chests = 0,
+		},
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart

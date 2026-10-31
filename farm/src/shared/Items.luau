@@ -4,13 +4,14 @@
 local Animals = require("./Config/Animals")
 local Barn = require("./Config/Barn")
 local Crops = require("./Config/Crops")
+local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
 local Town = require("./Config/Town")
 
 export type ItemDef = {
 	id: string,
 	displayName: string,
-	kind: "Crop" | "Animal" | "Product" | "Material",
+	kind: "Crop" | "Animal" | "Product" | "Material" | "Isle",
 	unlockLevel: number,
 	sellPrice: number, -- 0 = can't be sold
 	xpPerUnit: number, -- XP for producing one unit (order rewards use it)
@@ -47,8 +48,11 @@ local function unitSeconds(id: string, depth: number): number
 	end
 	assert(depth < 10, "recipe loop at " .. id)
 	local seconds = 0
-	local crop, pen, recipe = Crops[id], penByProduct[id], Recipes[id]
-	if crop then
+	local crop, pen, recipe, good = Crops[id], penByProduct[id], Recipes[id], Isles.goods[id]
+	if good then
+		-- A boat's trip shared over the common good's 3, with rarer goods worth 2 and 3 shares
+		seconds = Isles.byId[good.isle].tripSeconds / Isles.commonQty * good.tier
+	elseif crop then
 		seconds = crop.growSeconds / crop.yield
 	elseif pen then
 		seconds = pen.produceSeconds + unitSeconds(pen.feed, depth + 1) / Animals.feedPerBag
@@ -72,6 +76,20 @@ for _, pen in Animals.pens do
 		sellPrice = pen.sellPrice,
 		xpPerUnit = pen.productXP,
 		unitSeconds = unitSeconds(pen.product, 0),
+		isFeed = false,
+	}
+end
+
+-- Far Isle goods (Config/Isles): only Sailboats bring them back
+for id, good in Isles.goods do
+	Items[id] = {
+		id = id,
+		displayName = good.displayName,
+		kind = "Isle",
+		unlockLevel = Isles.byId[good.isle].unlockLevel,
+		sellPrice = good.sellPrice,
+		xpPerUnit = good.xp,
+		unitSeconds = unitSeconds(id, 0),
 		isFeed = false,
 	}
 end

@@ -33,6 +33,7 @@ local Prize = require("../src/shared/Config/Prize")
 local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
+local IslesConfig = require("../src/shared/Config/Isles")
 local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
 local Lots = require("../src/shared/Lots")
@@ -139,6 +140,9 @@ test("every recipe of an enabled factory can be made in the MVP", function()
 	end
 	for id in QuarryConfig.ores do
 		enabled[id] = QuarryConfig.unlockLevel <= Levels.built -- dug in the Quarry
+	end
+	for id, good in IslesConfig.goods do
+		enabled[id] = IslesConfig.byId[good.isle].unlockLevel <= Levels.built -- brought by Sailboats
 	end
 	for id, recipe in Recipes do
 		enabled[id] = table.find(Balance.enabledFactories, recipe.factory) ~= nil
@@ -732,7 +736,7 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 		ok(range[1] >= 1 and range[2] >= range[1], id .. " range")
 	end
 	for id, def in Items do
-		if def.sellPrice > 0 and not def.isFeed and def.kind ~= "Material" and not skip[id] then
+		if def.sellPrice > 0 and not def.isFeed and def.kind ~= "Material" and def.kind ~= "Isle" and not skip[id] then
 			ok(BlimpConfig.crates[id] ~= nil, id .. " can go on a blimp")
 		end
 	end
@@ -2190,6 +2194,7 @@ require("./datasafety")(test, eq, ok)
 
 require("./quests")(test, eq, ok)
 require("./seedcart")(test, eq, ok)
+require("./harbor")(test, eq, ok)
 
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles
