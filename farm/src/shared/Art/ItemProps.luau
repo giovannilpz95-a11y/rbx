@@ -166,6 +166,20 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.cyl("Icing", 0.12, 1.35, at(0, 0.53, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerPink, QUIET)
 		b.cyl("Hole", 0.14, 0.45, at(0, 0.56, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cocoa, QUIET)
 	end,
+	PlasticBottle = function(b)
+		-- A clear blue bottle with a white cap and a label band
+		b.post("Bottle", 1.3, 0.7, at(0, 0.65, 0), Palette.sky:Lerp(Palette.glass, 0.4), QUIET)
+		b.post("Neck", 0.35, 0.35, at(0, 1.45, 0), Palette.sky:Lerp(Palette.glass, 0.4), QUIET)
+		b.post("Cap", 0.2, 0.4, at(0, 1.72, 0), Palette.cream, QUIET)
+		b.post("Label", 0.4, 0.74, at(0, 0.65, 0), Palette.lime, QUIET)
+	end,
+	FrozenVegetables = function(b)
+		-- A frosty bag of peas, carrot and corn: a pale blue pouch with a picture window
+		b.block("Bag", Vector3.new(1.2, 1.5, 0.4), at(0, 0.75, 0), Palette.sky:Lerp(Palette.cream, 0.5), QUIET)
+		b.block("Seal", Vector3.new(1.25, 0.15, 0.45), at(0, 1.5, 0), Palette.sky, QUIET)
+		b.ball("Pea", 0.35, at(-0.25, 0.7, -0.2), Palette.lime, QUIET)
+		b.ball("Carrot", 0.35, at(0.25, 0.7, -0.2), Palette.carrot, QUIET)
+	end,
 	Dough = function(b)
 		b.post("Bowl", 0.6, 1.5, at(0, 0.3, 0), Palette.sky, QUIET)
 		b.ball("Dough", 1.1, at(0, 0.75, 0), Palette.bread:Lerp(Palette.cream, 0.5), QUIET)

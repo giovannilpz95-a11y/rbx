@@ -76,6 +76,9 @@ local Recipes: { [string]: RecipeDef } = {
 	Donut = { id = "Donut", displayName = "Donut", factory = "PastryShop", unlockLevel = 33, inputs = { Bagel = 1, Caramel = 1, Cocoa = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 149, xp = 64 },
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
 	-- Prep Kitchen (content bank)
+	FrozenVegetables = { id = "FrozenVegetables", displayName = "Frozen Vegetables", factory = "PrepKitchen", unlockLevel = 34, inputs = { Tomatoes = 1, Corn = 1, Carrots = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 26, xp = 11 },
+	-- Molding Works (content bank)
+	PlasticBottle = { id = "PlasticBottle", displayName = "Plastic Bottle", factory = "MoldingWorks", unlockLevel = 34, inputs = { Plastic = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 91, xp = 39 },
 	Dough = { id = "Dough", displayName = "Dough", factory = "PrepKitchen", unlockLevel = 31, inputs = { Wheat = 3 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 4, xp = 2 },
 	-- Rubber Works (content bank)
 	Plastic = { id = "Plastic", displayName = "Plastic", factory = "RubberWorks", unlockLevel = 32, inputs = { RubberTrees = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 73, xp = 31 },

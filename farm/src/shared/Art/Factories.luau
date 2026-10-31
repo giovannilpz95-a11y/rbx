@@ -704,6 +704,52 @@ local function prepKitchen(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Molding Works (content bank, level 34): a sky-blue works shed under a flat roof with a
+-- sawtooth skylight. A press on the roof stamps down onto a mould while it works, a hopper
+-- of pellets feeds it, and a crate of fresh bottles waits by the door.
+local function moldingWorks(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.sky:Lerp(Palette.cream, 0.35), Palette.stoneDark)
+	local d = b.into(body, true)
+	d.block("Roof", Vector3.new(11.4, 0.5, 9.4), Vector3.new(0, TOP + 0.25, 0), Palette.stoneDark)
+	d.wedge("Skylight", Vector3.new(10.4, 1.6, 2.4), CFrame.new(0, TOP + 1.3, 2.6), Palette.glass)
+	local chimney = d.post("Chimney", 2.6, 1, Vector3.new(-4, TOP + 1.8, 3.4), Palette.metal)
+	-- The press: a frame on the roof, the mould block under it and the hopper beside it
+	local press = Vector3.new(1.4, TOP + 0.5, -1.2)
+	for _, x in { -1.8, 1.8 } do
+		d.block("PressPost", Vector3.new(0.5, 4.2, 0.6), press + Vector3.new(x, 2.1, 0), Palette.metal)
+	end
+	d.block("PressBeam", Vector3.new(4.1, 0.6, 0.8), press + Vector3.new(0, 4.4, 0), Palette.metal)
+	d.block("Mould", Vector3.new(2.6, 0.9, 1.6), press + Vector3.new(0, 0.45, 0), Palette.roofTeal)
+	d.wedge(
+		"Hopper",
+		Vector3.new(1.6, 1.8, 1.6),
+		CFrame.new(press + Vector3.new(-3.4, 1.4, 0)) * Kit.yaw(180),
+		Palette.roofMustard
+	)
+	local anim = animFolder(model)
+	b.into(anim, false).post("Press", 1, 1.8, press + Vector3.new(0, 2.6, 0), Palette.stoneDark)
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofTeal, Palette.cream)
+	-- A crate of bottles by the door
+	d.block("Crate", Vector3.new(1.6, 0.8, 1.2), Vector3.new(4.8, 0.4, FRONT - 1.6), Palette.wood)
+	for i, x in { -0.4, 0.4 } do
+		d.post(
+			"Bottle",
+			0.9,
+			0.4,
+			Vector3.new(4.8 + x, 1.25, FRONT - 1.6),
+			if i == 1 then Palette.sky else Palette.lime,
+			{ shadow = false }
+		)
+	end
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.post("BottleIcon", 1.2, 0.6, at, Palette.sky, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -831,6 +877,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	JamKitchen = jamKitchen,
 	RubberWorks = rubberWorks,
 	PrepKitchen = prepKitchen,
+	MoldingWorks = moldingWorks,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
