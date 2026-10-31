@@ -47,6 +47,7 @@ TileStyle.Pumpkin = { color = Color3.fromRGB(196, 120, 52), glyph = "🎃", exit
 TileStyle.PortalGlyph = "🌀"
 TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
+TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.PortalColors = {
 	Color3.fromRGB(150, 110, 220),
 	Color3.fromRGB(70, 170, 200),
@@ -92,6 +93,7 @@ TileStyle.Board = {
 	fence = Color3.fromRGB(122, 84, 46),
 	goo = Color3.fromRGB(120, 200, 80),
 	hen = Color3.fromRGB(196, 90, 70),
+	crate = Color3.fromRGB(150, 110, 200),
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

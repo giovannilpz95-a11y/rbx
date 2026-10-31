@@ -48,6 +48,7 @@ export type Cell = {
 	bale: number, -- hay bale layers left (0 = no bale); a bale cell holds no piece
 	weed: boolean, -- the "bale" is a weed (always 1 layer; weeds spread)
 	stone: boolean, -- the "bale" is a stone wall (only blasts break it, not matches next to it)
+	crate: boolean?, -- the "bale" is a surprise crate (opens like a 1-layer bale and reveals something)
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
@@ -163,6 +164,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.clover = true
 				elseif ch == "g" then
 					cell.goo = true
+				elseif ch == "x" then
+					cell.bale = 1
+					cell.crate = true
 				elseif ch == "s" or ch == "S" then
 					cell.bale = if ch == "S" then 2 else 1
 					cell.stone = true
@@ -596,6 +600,8 @@ function Board.hash(self): string
 				table.insert(row, "D" .. basket.waiting)
 			elseif not cell then
 				table.insert(row, "#")
+			elseif cell.crate then
+				table.insert(row, "X" .. clover)
 			elseif cell.weed then
 				table.insert(row, "W" .. clover)
 			elseif cell.bale > 0 then
@@ -642,6 +648,7 @@ function Board.snapshot(self)
 			bale = cell.bale,
 			weed = cell.weed,
 			stone = cell.stone,
+			crate = cell.crate,
 			mud = cell.mud,
 			frost = cell.frost,
 			clover = cell.clover,

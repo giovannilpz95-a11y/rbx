@@ -39,7 +39,9 @@ function Goals.new(defs: { any }, board)
 		end
 		mudLayers += cell.mud
 		frost += cell.frost
-		if cell.stone then
+		if cell.crate then
+			-- Surprise crates aren't bales for the HayBale goal.
+		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
 			weeds += 1

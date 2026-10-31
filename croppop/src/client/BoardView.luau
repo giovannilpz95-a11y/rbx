@@ -212,9 +212,12 @@ end
 
 -- Board setup ------------------------------------------------------------------
 
-local function styleBale(label: TextLabel, hp: number, weed: boolean?, stone: boolean?)
+local function styleBale(label: TextLabel, hp: number, weed: boolean?, stone: boolean?, crate: boolean?)
 	label.Visible = hp > 0
-	if weed then
+	if crate then
+		label.BackgroundColor3 = TileStyle.Board.crate
+		label.Text = TileStyle.CrateGlyph
+	elseif weed then
 		label.BackgroundColor3 = TileStyle.Board.weed
 		label.Text = TileStyle.GoalGlyphs.Weeds
 	elseif stone then
@@ -241,7 +244,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
-	styleBale(guis.bale, cell.bale, cell.weed, cell.stone)
+	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate)
 	styleFrost(guis, cell.frost or 0)
 end
 
@@ -588,6 +591,9 @@ function BoardView._effect(self, effect): number
 			tween(label, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.toX, effect.toY), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Pumpkin.color, true)
+		return FX_TIME
+	elseif effect.type == "Crate" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), Color3.fromRGB(255, 220, 120), true)
 		return FX_TIME
 	elseif effect.type == "Ooze" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.goo, true)
