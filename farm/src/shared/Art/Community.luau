@@ -1315,6 +1315,45 @@ for id in TYPES do
 end
 table.sort(ArtCommunity.TYPES)
 
+-- Weather Station (content bank, level 39): a white hut with a lattice mast beside it, the
+-- mast topped by a radar dome, a wind vane and a spinning-cup anemometer, and a striped
+-- windsock on a pole out front.
+TYPES.WeatherStation = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.42, 4, s * 0.34),
+		Vector3.new(-s * 0.12, PLINTH + 2, z0 + s * 0.06),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local bx, face = -s * 0.12, z0 + s * 0.06 - s * 0.17
+	t.block("Roof", Vector3.new(s * 0.46, 0.5, s * 0.38), Vector3.new(bx, PLINTH + 4.25, z0 + s * 0.06), Palette.sky)
+	Kit.door(t, "Door", CFrame.new(bx + s * 0.08, PLINTH, face), 1.4, 2.8, Palette.sky, Palette.cream)
+	Kit.window(t, "Window", CFrame.new(bx - s * 0.09, PLINTH + 2.2, face), 1.8, 1.4, Palette.cream, Palette.glass)
+	-- The mast: a tall post, a radar dome on top, a vane and the anemometer's cups
+	local mx, mz = s * 0.22, z0 + s * 0.1
+	t.post("Mast", 9, 0.6, Vector3.new(mx, PLINTH + 4.5, mz), Palette.stoneLight)
+	t.ball("Radar", 2.2, Vector3.new(mx, PLINTH + 9.6, mz), Palette.cream)
+	t.block("Vane", Vector3.new(2.4, 0.2, 0.2), Vector3.new(mx, PLINTH + 7.6, mz), Palette.roofRed)
+	t.block("CupArm", Vector3.new(0.15, 0.15, 2.2), Vector3.new(mx, PLINTH + 8.3, mz), Palette.stoneDark)
+	for _, dz in { -1.1, 1.1 } do
+		t.ball("Cup", 0.6, Vector3.new(mx, PLINTH + 8.3, mz + dz), Palette.sky)
+	end
+	-- The windsock out front
+	t.post("SockPole", 3, 0.25, Vector3.new(s * 0.3, PLINTH + 1.5, z0 - s * 0.22), Palette.stoneLight)
+	t.block(
+		"Windsock",
+		Vector3.new(1.6, 0.5, 0.5),
+		Vector3.new(s * 0.3 - 0.9, PLINTH + 2.8, z0 - s * 0.22),
+		Palette.carrot
+	)
+	Kit.sproutTag(t, Vector3.new(bx - s * 0.12, PLINTH + 5.2, z0 + s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

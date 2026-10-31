@@ -240,6 +240,23 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Bristles", Vector3.new(1.3, 0.35, 0.6), at(0, 0.2, 0), Palette.cream, QUIET)
 		b.block("Handle", Vector3.new(0.8, 0.2, 0.2), at(0, 0.85, 0), Palette.woodDark, QUIET)
 	end,
+	Clothesline = function(b)
+		-- A line of cord between two posts with a towel and two pegs
+		b.post("Post", 1.4, 0.15, at(-0.75, 0.7, 0), Palette.wood, QUIET)
+		b.post("Post", 1.4, 0.15, at(0.75, 0.7, 0), Palette.wood, QUIET)
+		b.block("Line", Vector3.new(1.5, 0.06, 0.06), at(0, 1.3, 0), Palette.cream, QUIET)
+		b.block("Towel", Vector3.new(0.7, 0.6, 0.06), at(0, 0.98, 0), Palette.sky, QUIET)
+		b.block("Peg", Vector3.new(0.1, 0.25, 0.12), at(-0.25, 1.3, 0), Palette.roofRed, QUIET)
+		b.block("Peg", Vector3.new(0.1, 0.25, 0.12), at(0.25, 1.3, 0), Palette.roofRed, QUIET)
+	end,
+	JellyBeans = function(b)
+		-- A little glass jar heaped with coloured beans
+		b.post("Jar", 0.9, 0.9, at(0, 0.45, 0), Palette.glass, QUIET)
+		b.ball("Bean", 0.4, at(-0.2, 0.95, 0), Palette.roofRed, QUIET)
+		b.ball("Bean", 0.4, at(0.2, 0.95, 0.1), Palette.lime, QUIET)
+		b.ball("Bean", 0.4, at(0, 1.05, -0.15), Palette.flowerYellow, QUIET)
+		b.ball("Bean", 0.4, at(0.05, 1.2, 0.1), Palette.flowerPink, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)

@@ -794,6 +794,47 @@ local function homewaresShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Candy Factory (level 39, placed by the player): a pink-and-cream striped sweet shop under a
+-- cream roof, a giant lollipop on the ridge whose swirl turns while it works, a jar of jelly
+-- beans by the door and a striped candy cane post.
+local function candyFactory(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.flowerPink:Lerp(Palette.cream, 0.35), Palette.cream)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 9.4, 2.4, Palette.cream, Palette.flowerPink)
+	local chimney = d.post("Chimney", 2.4, 1, Vector3.new(4, TOP + 2.2, 2.6), Palette.flowerPink)
+	-- The lollipop: a stick up from the ridge and a disc facing the front, its swirl turning
+	local pop = CFrame.new(-1, TOP + 5.2, -0.6) * CFrame.Angles(0, math.rad(90), 0)
+	d.post("Stick", 2.6, 0.4, Vector3.new(-1, TOP + 2.8, -0.6), Palette.cream)
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.cyl("Swirl", 0.6, 3.8, pop, Palette.flowerPink)
+	for i = 0, 2 do
+		a.block("SwirlStripe", Vector3.new(0.7, 3.4, 0.45), pop * CFrame.Angles(i * math.pi / 3, 0, 0), Palette.cream)
+	end
+	-- Striped awning over the window
+	for i = 0, 3 do
+		d.block(
+			"Awning",
+			Vector3.new(1, 0.2, 1.4),
+			CFrame.new(-3.5 + i, PLINTH + 5, FRONT - 0.6) * CFrame.Angles(math.rad(-18), 0, 0),
+			if i % 2 == 0 then Palette.flowerPink else Palette.cream,
+			{ shadow = false }
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofTeal, Palette.cream)
+	-- A big jar of jelly beans and a candy cane post by the door
+	d.post("Jar", 1.6, 1.2, Vector3.new(4.9, 0.8, FRONT - 1.4), Palette.glass)
+	d.ball("Beans", 1, Vector3.new(4.9, 0.7, FRONT - 1.4), Palette.flowerYellow, { shadow = false })
+	d.post("CandyCane", 2.6, 0.4, Vector3.new(-5, 1.3, FRONT - 1.2), Palette.roofRed)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("CandyIcon", 0.7, at, Palette.flowerPink, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -923,6 +964,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	PrepKitchen = prepKitchen,
 	MoldingWorks = moldingWorks,
 	HomewaresShop = homewaresShop,
+	CandyFactory = candyFactory,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

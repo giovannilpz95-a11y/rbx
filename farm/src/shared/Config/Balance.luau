@@ -41,6 +41,7 @@ return table.freeze({
 		"PrepKitchen",
 		"MoldingWorks",
 		"HomewaresShop",
+		"CandyFactory",
 	}),
 	enabledPens = table.freeze({
 		"CowBarn",
@@ -51,6 +52,7 @@ return table.freeze({
 		"ChickenCoop2",
 		"SheepFold2",
 		"BeeYard",
+		"ChickenCoop3",
 	}),
 
 	-- Cow Feed a new farm starts with, so the given Cows work before the Feed Mill opens at
