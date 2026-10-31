@@ -10,7 +10,7 @@
 	  { kind = "Swap", from = {x, y}, to = {x, y}, ok = boolean, combo = boolean? }
 	  { kind = "Pop", removed = {{id, x, y, cause}}, created = {{piece, x, y}},
 	    transformed = {{id, power}}, bales = {{x, y, hp, weed?}}, mud = {{x, y, layers}},
-	    frost = {{x, y, layers}}, clover = {{x, y}},
+	    frost = {{x, y, layers}}, clover = {{x, y}}, fences = {{x, y, side}},
 	    effects = {{type = "Spray" | "Bomb" | "Bee" | "Sun" | "Everything" | "Grow", ...}} }
 	  { kind = "Drop", moves = {Board.Move}, spawns = {Board.Spawn} }
 	  { kind = "Shuffle", moves = {Board.Move} }
@@ -29,6 +29,9 @@
 	(a Pop phase with a "Pumpkin" effect, removed with cause "pumpkin"). Refills
 	drop new ones until the Pumpkins goal has enough on the way. Matches and
 	blasts never break a pumpkin.
+
+	Fences: no swap crosses one. A blast on either cell next to a fence breaks
+	it (matches don't), for the Fences goal.
 
 	Pumpkin baskets: a match next to a basket, or a blast reaching it, shakes
 	a pumpkin loose (once per basket per wave, while the goal still needs
@@ -68,7 +71,7 @@ export type Options = {
 }
 
 function Engine.new(level, seed: number, options: Options?)
-	local board = Board.fromLayout(level.layout, level.portals)
+	local board = Board.fromLayout(level.layout, level.portals, level.fences)
 	local colors = {}
 	for _, name in level.colors do
 		table.insert(colors, Tiles.ByName[name])
@@ -149,6 +152,7 @@ local function newWave()
 		mud = {},
 		frost = {},
 		clover = {},
+		fences = {},
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
 		spread = false, -- the power-up going off started on clover
@@ -287,6 +291,12 @@ function Engine._hit(self, wave, x: number, y: number)
 		end
 		return
 	end
+	for _, fence in self.board:fencesAround(x, y) do
+		if self.board:breakFence(fence) then
+			table.insert(wave.fences, { x = fence.x, y = fence.y, side = fence.side })
+			self.goals:onFence()
+		end
+	end
 	if wave.spread then
 		self:_plantClover(wave, cell)
 	end
@@ -361,8 +371,11 @@ end
 function Engine._chooseBeeTarget(self)
 	local goals = self.goals
 	local tiers = { {}, {}, {}, {} }
+	local wantsFences = self.board.fenceCount > 0 and goals:wants("Fences")
 	self.board:eachCell(function(cell)
-		if cell.bale > 0 then
+		if wantsFences and #self.board:fencesAround(cell.x, cell.y) > 0 then
+			table.insert(tiers[1], cell)
+		elseif cell.bale > 0 then
 			local wanted = if cell.weed
 				then goals:wants("Weeds")
 				elseif cell.stone then goals:wants("Stones")
@@ -589,6 +602,7 @@ function Engine._finishWave(self, wave, phases)
 		mud = wave.mud,
 		frost = wave.frost,
 		clover = wave.clover,
+		fences = wave.fences,
 		effects = wave.effects,
 	})
 end
@@ -773,7 +787,7 @@ function Engine.canSwap(self, x1: number, y1: number, x2: number, y2: number): b
 	if self.status ~= "Playing" or math.abs(x1 - x2) + math.abs(y1 - y2) ~= 1 then
 		return false
 	end
-	return Board.isMovable(self.board:get(x1, y1)) and Board.isMovable(self.board:get(x2, y2))
+	return Board.isMovable(self.board:get(x1, y1)) and Board.isMovable(self.board:get(x2, y2)) and not self.board:fenceBetween(x1, y1, x2, y2)
 end
 
 --[[
@@ -873,7 +887,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 		for x = 1, board.width do
 			self:_hit(wave, x, y)
 		end
-		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 then
+		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 and #wave.fences == 0 then
 			return false, {} -- an empty row
 		end
 		self:_finishWave(wave, phases)

@@ -61,6 +61,7 @@ TileStyle.GoalGlyphs = {
 	Pumpkins = "🎃",
 	Clover = "🍀",
 	Stones = "🧱", -- the rock emoji (Unicode 13) does not render in Roblox
+	Fences = "🚧", -- the wood emoji (Unicode 13) does not render in Roblox
 }
 
 TileStyle.BoosterGlyphs = {
@@ -86,6 +87,7 @@ TileStyle.Board = {
 	clover = Color3.fromRGB(72, 170, 92),
 	stone = Color3.fromRGB(150, 146, 140),
 	basket = Color3.fromRGB(176, 128, 78),
+	fence = Color3.fromRGB(122, 84, 46),
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

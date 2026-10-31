@@ -400,6 +400,33 @@ function BoardView.load(self, game)
 		corner.Parent = label
 		self.basketGuis[basket.y * 100 + basket.x] = label
 	end
+
+	-- Fences: a wooden bar on the edge right of or below their cell.
+	self.fenceGuis = {}
+	for _, fence in board.fences do
+		local bar = Instance.new("Frame")
+		bar.Name = "Fence"
+		bar.BackgroundColor3 = TileStyle.Board.fence
+		bar.BorderSizePixel = 0
+		local w, h = board.width, board.height
+		if fence.side == "r" then
+			bar.AnchorPoint = Vector2.new(0.5, 0.5)
+			bar.Position = UDim2.fromScale(fence.x / w, (fence.y - 0.5) / h)
+			bar.Size = UDim2.fromScale(0.14 / w, 0.92 / h)
+		else
+			bar.AnchorPoint = Vector2.new(0.5, 0.5)
+			bar.Position = UDim2.fromScale((fence.x - 0.5) / w, fence.y / h)
+			bar.Size = UDim2.fromScale(0.92 / w, 0.14 / h)
+		end
+		bar.Parent = self.baleLayer
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = bar
+		local stroke = Instance.new("UIStroke")
+		stroke.Color = Color3.fromRGB(70, 46, 22)
+		stroke.Parent = bar
+		self.fenceGuis[fence.x .. "," .. fence.y .. fence.side] = bar
+	end
 end
 
 -- Numbers portal entrances 1, 2, ... in board order, so each pair gets its own colour.
@@ -607,6 +634,16 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[c.y] and self.cellGuis[c.y][c.x]
 		if guis then
 			guis.clover.Visible = true
+		end
+	end
+	for _, f in phase.fences or {} do
+		local bar = self.fenceGuis and self.fenceGuis[f.x .. "," .. f.y .. f.side]
+		if bar then
+			self.fenceGuis[f.x .. "," .. f.y .. f.side] = nil
+			tween(bar, POP_TIME, { BackgroundTransparency = 1, Size = UDim2.fromScale(0, 0) })
+			task.delay(POP_TIME, function()
+				bar:Destroy()
+			end)
 		end
 	end
 

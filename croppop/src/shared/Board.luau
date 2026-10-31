@@ -15,6 +15,8 @@
 	entrance fall into the exit instead of the cell below. An exit is fed only
 	by its portal (nothing falls into it from above, and no tile spawns there),
 	and the cell under an entrance gets pieces only by sliding in diagonally.
+	Fences sit on the edge between two cells: nothing swaps across one, but
+	matches and falling pieces pass it. Only blasts break them.
 	Pumpkin baskets ("d") are not cells: pieces fall past them like a hole.
 	The engine counts hits on them and drops pumpkins out of them.
 
@@ -65,6 +67,8 @@ function Board.new(width: number, height: number)
 		-- waiting = pumpkins hit loose that haven't found a cell yet.
 		baskets = {},
 		basketAt = {}, -- y * 100 + x -> basket
+		fences = {}, -- edge key -> { x, y, side = "r" | "d" } (the edge right of / below (x, y))
+		fenceCount = 0,
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -74,7 +78,48 @@ end
 
 -- Builds an empty board from level layout rows (see Levels.luau for the
 -- characters) and the level's portals ({ from = { x, y }, to = { x, y } }).
-function Board.fromLayout(layout: { string }, portals: { any }?)
+local function edgeKey(x1: number, y1: number, x2: number, y2: number): number
+	if x2 < x1 or y2 < y1 then
+		x1, y1, x2, y2 = x2, y2, x1, y1
+	end
+	return (y1 * 100 + x1) * 2 + (if y2 > y1 then 1 else 0)
+end
+
+-- The fence between two neighbouring cells, if there is one.
+function Board.fenceBetween(self, x1: number, y1: number, x2: number, y2: number)
+	if self.fenceCount == 0 then
+		return nil
+	end
+	return self.fences[edgeKey(x1, y1, x2, y2)]
+end
+
+-- Removes a fence; returns true if it was there.
+function Board.breakFence(self, fence): boolean
+	local key = edgeKey(fence.x, fence.y, fence.x + (if fence.side == "r" then 1 else 0), fence.y + (if fence.side == "d" then 1 else 0))
+	if self.fences[key] then
+		self.fences[key] = nil
+		self.fenceCount -= 1
+		return true
+	end
+	return false
+end
+
+-- Fences on the four edges of (x, y), in a fixed order.
+function Board.fencesAround(self, x: number, y: number)
+	local out = {}
+	if self.fenceCount == 0 then
+		return out
+	end
+	for _, d in { { 0, -1 }, { -1, 0 }, { 1, 0 }, { 0, 1 } } do
+		local fence = self.fences[edgeKey(x, y, x + d[1], y + d[2])]
+		if fence then
+			table.insert(out, fence)
+		end
+	end
+	return out
+end
+
+function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }?)
 	local height = #layout
 	local width = #layout[1]
 	local self = Board.new(width, height)
@@ -118,6 +163,14 @@ function Board.fromLayout(layout: { string }, portals: { any }?)
 		if from and to then
 			from.portalOut = to
 			to.portalIn = from
+		end
+	end
+	for _, f in fences or {} do
+		local x, y, side = f[1], f[2], f[3]
+		local key = edgeKey(x, y, x + (if side == "r" then 1 else 0), y + (if side == "d" then 1 else 0))
+		if not self.fences[key] then
+			self.fences[key] = { x = x, y = y, side = side }
+			self.fenceCount += 1
 		end
 	end
 	return self
@@ -504,6 +557,14 @@ function Board.hash(self): string
 			end
 		end
 		parts[y] = table.concat(row, ",")
+	end
+	if self.fenceCount > 0 then
+		local keys = {}
+		for key in self.fences do
+			table.insert(keys, key)
+		end
+		table.sort(keys)
+		table.insert(parts, "F" .. table.concat(keys, ","))
 	end
 	return table.concat(parts, "/")
 end

@@ -53,10 +53,13 @@ local BRUSH_ROWS = {
 		{ char = "d", label = TileStyle.BasketGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
+		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
+		{ char = "|", label = "🚧" },
 	},
 }
 local PORTAL = "o" -- the portal brush
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones" }
+local FENCE = "|" -- the fence brush
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -66,6 +69,7 @@ local GOAL_BUTTONS = {
 	Pumpkins = "+ 🎃",
 	Clover = "+ 🍀",
 	Stones = "+ 🧱",
+	Fences = "+ 🚧",
 }
 
 local ui = nil
@@ -90,6 +94,7 @@ local function blankLevel()
 		grid = grid,
 		goals = { { kind = "Collect", tile = "Tomato", count = 15 } },
 		portals = {},
+		fences = {},
 		brush = ".",
 		loadId = 1,
 	}
@@ -111,6 +116,10 @@ local function fromLevel(level)
 	for _, portal in level.portals or {} do
 		table.insert(portals, { from = table.clone(portal.from), to = table.clone(portal.to) })
 	end
+	local fences = {}
+	for _, f in level.fences or {} do
+		table.insert(fences, table.clone(f))
+	end
 	return {
 		id = level.id,
 		name = level.name,
@@ -120,6 +129,7 @@ local function fromLevel(level)
 		grid = grid,
 		goals = goals,
 		portals = portals,
+		fences = fences,
 		brush = ".",
 		loadId = level.id,
 	}
@@ -148,6 +158,13 @@ local function toLevel()
 			table.insert(portals, { from = table.clone(portal.from), to = table.clone(portal.to) })
 		end
 	end
+	local fences = nil
+	if #state.fences > 0 then
+		fences = {}
+		for _, f in state.fences do
+			table.insert(fences, table.clone(f))
+		end
+	end
 	return {
 		id = state.id,
 		name = state.name,
@@ -156,6 +173,7 @@ local function toLevel()
 		colors = colors,
 		layout = layout,
 		portals = portals,
+		fences = fences,
 		goals = goals,
 		rewards = table.clone(REWARDS[state.difficulty]),
 	}
@@ -188,6 +206,13 @@ local function resize(dw: number, dh: number)
 		end
 	end
 	state.portalStart = nil
+	for i = #state.fences, 1, -1 do
+		local f = state.fences[i]
+		if f[1] + (if f[3] == "r" then 1 else 0) > w or f[2] + (if f[3] == "d" then 1 else 0) > h then
+			table.remove(state.fences, i)
+		end
+	end
+	state.fenceStart = nil
 end
 
 -- Small UI helpers ---------------------------------------------------------------
@@ -313,13 +338,56 @@ local function tapPortal(x: number, y: number)
 	end
 end
 
--- A hole or basket can't hold a portal end.
+-- The fence brush: tap a cell, then a neighbour, to add or remove the fence between them.
+local function tapFence(x: number, y: number)
+	local start = state.fenceStart
+	if not start or math.abs(start[1] - x) + math.abs(start[2] - y) ~= 1 then
+		state.fenceStart = if state.grid[y][x] == "#" or state.grid[y][x] == "d" then nil else { x, y }
+		return
+	end
+	state.fenceStart = nil
+	if state.grid[y][x] == "#" or state.grid[y][x] == "d" then
+		return
+	end
+	local fx, fy = math.min(x, start[1]), math.min(y, start[2])
+	local side = if start[2] == y then "r" else "d"
+	for i, f in state.fences do
+		if f[1] == fx and f[2] == fy and f[3] == side then
+			table.remove(state.fences, i)
+			return
+		end
+	end
+	table.insert(state.fences, { fx, fy, side })
+end
+
+-- A hole or basket can't hold a portal end or a fence.
 local function dropPortalsAt(x: number, y: number)
 	local i = portalAt(x, y)
 	while i do
 		table.remove(state.portals, i)
 		i = portalAt(x, y)
 	end
+	for j = #state.fences, 1, -1 do
+		local f = state.fences[j]
+		local ox, oy = f[1] + (if f[3] == "r" then 1 else 0), f[2] + (if f[3] == "d" then 1 else 0)
+		if (f[1] == x and f[2] == y) or (ox == x and oy == y) then
+			table.remove(state.fences, j)
+		end
+	end
+end
+
+-- Fence marks for a cell's own right and bottom edges, and a ? on a fence's first tap.
+local function fenceText(x: number, y: number): string
+	local text = ""
+	for _, f in state.fences do
+		if f[1] == x and f[2] == y then
+			text ..= if f[3] == "r" then " |" else " _"
+		end
+	end
+	if state.fenceStart and state.fenceStart[1] == x and state.fenceStart[2] == y then
+		text ..= "🚧?"
+	end
+	return text
 end
 
 local function renderGrid()
@@ -339,6 +407,7 @@ local function renderGrid()
 			elseif state.portalStart and state.portalStart[1] == x and state.portalStart[2] == y then
 				text ..= "🌀?"
 			end
+			text ..= fenceText(x, y)
 			local cell = textItem("TextButton", ui.grid, string.format("Cell%d_%d", x, y), text, UDim2.fromScale(1 / w, 1 / h))
 			cell.Position = UDim2.fromScale((x - 1) / w, (y - 1) / h)
 			cell.BackgroundTransparency = 0
@@ -350,6 +419,8 @@ local function renderGrid()
 			cell.Activated:Connect(function()
 				if state.brush == PORTAL then
 					tapPortal(x, y)
+				elseif state.brush == FENCE then
+					tapFence(x, y)
 				else
 					state.grid[y][x] = state.brush
 					if state.brush == "#" or state.brush == "d" then
@@ -377,6 +448,8 @@ local function goalLabel(goal): string
 		return "🍀 cover it"
 	elseif goal.kind == "Stones" then
 		return "🧱 all stone"
+	elseif goal.kind == "Fences" then
+		return "🚧 all fences"
 	end
 	return "🌾 all bales"
 end
@@ -704,11 +777,13 @@ function LevelEditor.export(): string?
 	return text
 end
 
--- For tests: paint one cell with a brush character ("o" taps the portal brush).
+-- For tests: paint one cell with a brush character ("o" taps the portal brush, "|" the fence brush).
 function LevelEditor.paint(x: number, y: number, char: string)
 	state.brush = char
 	if char == PORTAL then
 		tapPortal(x, y)
+	elseif char == FENCE then
+		tapFence(x, y)
 	else
 		state.grid[y][x] = char
 		if char == "#" or char == "d" then
