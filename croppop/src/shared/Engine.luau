@@ -11,6 +11,7 @@
 	  { kind = "Pop", removed = {{id, x, y, cause}}, created = {{piece, x, y}},
 	    transformed = {{id, power}}, bales = {{x, y, hp, weed?}}, mud = {{x, y, layers}},
 	    frost = {{x, y, layers}}, clover = {{x, y}}, fences = {{x, y, side}}, goo = {{x, y, on}},
+	    statues = {{x, y}} (cells dug up),
 	    effects = {{type = "Spray" | "Bomb" | "Bee" | "Sun" | "Everything" | "Grow", ...}} }
 	  { kind = "Drop", moves = {Board.Move}, spawns = {Board.Spawn} }
 	  { kind = "Shuffle", moves = {Board.Move} }
@@ -38,6 +39,10 @@
 	Surprise crates: open like a 1-layer bale (a match next to one, or a
 	blast). An opened crate leaves a random power-up in its cell (a "Crate"
 	effect), or one time in four a 1-layer hay bale.
+
+	Buried statues: only a blast (a power-up or booster) on a buried cell digs
+	it up; matches don't. When the last cell of a statue is dug up, the statue
+	is found (a "Statue" effect with its cells) for the Statues goal.
 
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
 	it (matches don't), for the Fences goal.
@@ -166,6 +171,7 @@ local function newWave()
 		clover = {},
 		fences = {},
 		goo = {},
+		statues = {},
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
 		spread = false, -- the power-up going off started on clover
@@ -317,6 +323,22 @@ function Engine._emptyBaskets(self, wave)
 	end
 end
 
+-- A blast on a buried cell digs it up; the last one finds the statue.
+function Engine._digUp(self, wave, cell)
+	cell.buried = false
+	table.insert(wave.statues, { x = cell.x, y = cell.y })
+	local statue = cell.statue
+	statue.left -= 1
+	if statue.left == 0 then
+		local cells = {}
+		for _, c in statue.cells do
+			table.insert(cells, { x = c.x, y = c.y })
+		end
+		table.insert(wave.effects, { type = "Statue", cells = cells })
+		self.goals:onStatue()
+	end
+end
+
 -- A power-up blast reaching (x, y).
 function Engine._hit(self, wave, x: number, y: number)
 	local cell = self.board:get(x, y)
@@ -335,6 +357,9 @@ function Engine._hit(self, wave, x: number, y: number)
 	end
 	if wave.spread then
 		self:_plantClover(wave, cell)
+	end
+	if cell.buried then
+		self:_digUp(wave, cell)
 	end
 	if cell.bale > 0 then
 		self:_damageBale(wave, cell)
@@ -423,6 +448,8 @@ function Engine._chooseBeeTarget(self)
 			elseif cell.mud > 0 and goals:wants("Mud") then
 				table.insert(tiers[2], cell)
 			elseif cell.goo and goals:wants("Goo") then
+				table.insert(tiers[2], cell)
+			elseif cell.buried and goals:wants("Statues") then
 				table.insert(tiers[2], cell)
 			elseif goals:wants("Collect", cell.piece.color) then
 				table.insert(tiers[3], cell)
@@ -642,6 +669,7 @@ function Engine._finishWave(self, wave, phases)
 		clover = wave.clover,
 		fences = wave.fences,
 		goo = wave.goo,
+		statues = wave.statues,
 		effects = wave.effects,
 	})
 end
@@ -983,7 +1011,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 		for x = 1, board.width do
 			self:_hit(wave, x, y)
 		end
-		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 and #wave.fences == 0 then
+		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 and #wave.fences == 0 and #wave.statues == 0 then
 			return false, {} -- an empty row
 		end
 		self:_finishWave(wave, phases)
@@ -1056,7 +1084,7 @@ function Engine.continue(self): (boolean, { any })
 	local phases = {}
 	if step.power then
 		local placed, shuffle = self:_placePowerUps({ step.power })
-		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, fences = {}, goo = {}, effects = {} })
+		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, fences = {}, goo = {}, statues = {}, effects = {} })
 		if shuffle then
 			table.insert(phases, shuffle)
 		end

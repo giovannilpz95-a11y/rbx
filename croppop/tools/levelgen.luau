@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 325
+local LAST = tonumber(ARGS[2]) or 350
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -93,6 +93,11 @@ local NAMES = {
 	"Bran Tub", "Wrapped Bales", "Prize Pumpkin", "Raffle Day", "Secret Seeds",
 	"Market Crates", "Packing Shed", "Delivery Day", "Lucky Crate", "Jumble Sale",
 	"Toy Box Barn", "Crate Maze", "Box Social", "Surprise Party", "Grand Prize Fair",
+	"Buried Statue", "Old Relic", "Dig Site", "Sundial Square", "Garden Bust",
+	"Village Green Monument", "Sandy Dig", "Stone Lion", "Founders' Plinth", "Fossil Field",
+	"Moss Statue", "Bell Tower Dig", "Relic Row", "Market Cross", "Weathered Bust",
+	"Statue Garden", "Lost Monument", "Old Well", "Treasure Dig", "Hidden Relic",
+	"Spade Day", "Ancient Arch", "Statue Walk", "Digger's Delight", "Grand Unveiling",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -109,7 +114,8 @@ local FENCE_INTRO = 226 -- first level with fences
 local GOO_INTRO = 251 -- first level with goo
 local HEN_INTRO = 276 -- first level with hen houses
 local CRATE_INTRO = 301 -- first level with surprise crates
-local INTROS = { [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local STATUE_INTRO = 326 -- first level with buried statues
+local INTROS = { [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -434,6 +440,7 @@ local function mechanics(id)
 		goo = id >= GOO_INTRO, -- "g"
 		hens = id >= HEN_INTRO, -- "h"
 		crates = id >= CRATE_INTRO, -- "x"
+		statues = id >= STATUE_INTRO, -- "b"
 	}
 end
 
@@ -441,6 +448,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_STATUES = { "Statues", "Crates", "Goo", "Collect", "Statues", "Hens", "Fences", "Baskets", "Statues", "Stones", "Mud", "Mix" }
 local FOCUS_CRATES = { "Crates", "Hens", "Goo", "Collect", "Crates", "Fences", "Baskets", "Stones", "Crates", "Mud", "Clover", "Mix" }
 local FOCUS_HENS = { "Hens", "Goo", "Collect", "Fences", "Hens", "Baskets", "Stones", "Mud", "Hens", "Clover", "Weeds", "Mix" }
 local FOCUS_GOO = { "Goo", "Fences", "Collect", "Baskets", "Goo", "Stones", "Clover", "Mud", "Goo", "Weeds", "HayBale", "Mix" }
@@ -461,6 +469,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Statue", "Relic", "Monument", "Bust", "Dig", "Plinth", "Fossil", "Unveiling" }, focus = "Statues", needs = "statues" },
 	{ words = { "Crate", "Box", "Surprise", "Mystery", "Parcel", "Gift", "Prize" }, focus = "Crates", needs = "crates" },
 	{ words = { "Hen", "Coop", "Egg", "Roost", "Chick", "Poultry", "Bantam" }, focus = "Hens", needs = "hens" },
 	{ words = { "Goo", "Ooze", "Slim", "Sticky", "Sludge", "Bog", "Muck" }, focus = "Goo", needs = "goo" },
@@ -490,6 +499,8 @@ local function focusOf(id, name)
 		return "Hens"
 	elseif id == CRATE_INTRO then
 		return "Crates"
+	elseif id == STATUE_INTRO then
+		return "Statues"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -501,7 +512,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -554,6 +565,43 @@ local function placeCrates(g, rng, id)
 			want -= 1
 		end
 	end
+end
+
+-- Buried statues: mirrored pairs of 2x2, 1x2 or 2x1 blocks on plain cells,
+-- never touching another statue (touching ones would join up). The first
+-- statue level has one pair of small ones.
+local STATUE_SHAPES = { { 2, 2 }, { 1, 2 }, { 2, 1 }, { 2, 2 } }
+local function placeStatues(g, rng, id)
+	local pairsWanted = if id == STATUE_INTRO then 1 else rng:int(1, 2)
+	local placed = 0
+	for _ = 1, 40 do
+		if placed >= pairsWanted then
+			break
+		end
+		local shape = if id == STATUE_INTRO then { 1, 2 } else rng:pick(STATUE_SHAPES)
+		local sw, sh = shape[1], shape[2]
+		local x, y = rng:int(1, g.w // 2 - sw), rng:int(2, g.h - sh)
+		local ok = x + sw - 1 < g.w - (x + sw - 1) -- a gap between the pair
+		for yy = y - 1, y + sh do
+			for xx = x - 1, x + sw do
+				local row = g[yy]
+				local c = row and row[xx]
+				local inside = xx >= x and xx < x + sw and yy >= y and yy < y + sh
+				if c == "b" or (inside and c ~= ".") then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			for yy = y, y + sh - 1 do
+				for xx = x, x + sw - 1 do
+					setSym(g, xx, yy, "b")
+				end
+			end
+			placed += 1
+		end
+	end
+	return placed
 end
 
 -- Goo on plain cells; the first goo level starts with a small patch in the middle.
@@ -785,7 +833,7 @@ local function keepRowsOpen(g)
 		local open = false
 		for x = 1, g.w do
 			local c = g[y][x]
-			open = open or c == "." or c == "m" or c == "M" or c == "g"
+			open = open or c == "." or c == "m" or c == "M" or c == "g" or c == "b"
 		end
 		if not open then
 			setSym(g, math.ceil(g.w / 2), y, ".")
@@ -859,6 +907,11 @@ local function draft(id, variant)
 	if focus == "Crates" or (focus == "Mix" and mech.crates and rng:int(1, 3) == 1) then
 		placeCrates(g, rng, id)
 	end
+	if focus == "Statues" or (focus == "Mix" and mech.statues and rng:int(1, 3) == 1) then
+		if placeStatues(g, rng, id) == 0 and focus == "Statues" then
+			return nil
+		end
+	end
 	local pumpkins = 0
 	if focus == "Pumpkins" or (focus == "Mix" and mech.pumpkins and rng:int(1, 3) == 1) then
 		pumpkins = placePumpkins(g, rng, id)
@@ -898,7 +951,7 @@ local function draft(id, variant)
 		for y = 1, g.h do
 			local open = false
 			for x = 1, g.w do
-				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g"
+				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g" or g[y][x] == "b"
 			end
 			if not open then
 				return nil
@@ -947,6 +1000,9 @@ local function draft(id, variant)
 	end
 	if has(g, "g") > 0 then
 		table.insert(goals, { kind = "Goo" })
+	end
+	if has(g, "b") > 0 then
+		table.insert(goals, { kind = "Statues" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most

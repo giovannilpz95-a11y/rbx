@@ -11,6 +11,7 @@
 	  { kind = "Stones" }                                -- break every stone wall (blasts only)
 	  { kind = "Fences" }                                -- break every fence (blasts only)
 	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread
+	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -73,6 +74,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Stones", target = def.count or stones, progress = 0 })
 		elseif def.kind == "Goo" then
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
+		elseif def.kind == "Statues" then
+			table.insert(list, { kind = "Statues", target = def.count or #board.statues, progress = 0 })
 		elseif def.kind == "Fences" then
 			table.insert(list, { kind = "Fences", target = def.count or board.fenceCount, progress = 0 })
 		elseif def.kind == "Clover" then
@@ -133,6 +136,10 @@ function Goals.onGooGrown(self)
 			goal.target += 1
 		end
 	end
+end
+
+function Goals.onStatue(self)
+	bump(self, "Statues", nil)
 end
 
 function Goals.onFence(self)

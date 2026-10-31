@@ -53,6 +53,8 @@ export type Cell = {
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
 	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
+	buried: boolean?, -- part of a buried statue lies under this cell (only blasts dig it up)
+	statue: any?, -- the statue this cell is (or was) part of: { cells, left }
 	portalOut: Cell?, -- a portal entrance: pieces falling out of here land in this cell
 	portalIn: Cell?, -- a portal exit: the entrance that feeds it
 }
@@ -78,6 +80,9 @@ function Board.new(width: number, height: number)
 		henAt = {}, -- y * 100 + x -> hen house
 		fences = {}, -- edge key -> { x, y, side = "r" | "d" } (the edge right of / below (x, y))
 		fenceCount = 0,
+		-- Buried statues ("b" in the layout; touching "b" cells make one statue):
+		-- { cells = { Cell }, left = cells still buried } in reading order.
+		statues = {},
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -164,6 +169,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.clover = true
 				elseif ch == "g" then
 					cell.goo = true
+				elseif ch == "b" then
+					cell.buried = true
 				elseif ch == "x" then
 					cell.bale = 1
 					cell.crate = true
@@ -175,6 +182,30 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 			end
 		end
 	end
+	-- Touching buried cells (up, down, left, right) make up one statue.
+	self:eachCell(function(cell)
+		if cell.buried and not cell.statue then
+			local statue = { cells = {}, left = 0 }
+			local stack = { cell }
+			cell.statue = statue
+			while #stack > 0 do
+				local c = table.remove(stack)
+				table.insert(statue.cells, c)
+				statue.left += 1
+				for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+					local n = self:get(c.x + d[1], c.y + d[2])
+					if n and n.buried and not n.statue then
+						n.statue = statue
+						table.insert(stack, n)
+					end
+				end
+			end
+			table.sort(statue.cells, function(a, b)
+				return a.y * 100 + a.x < b.y * 100 + b.x
+			end)
+			table.insert(self.statues, statue)
+		end
+	end)
 	for _, portal in portals or {} do
 		local from = self:get(portal.from[1], portal.from[2])
 		local to = self:get(portal.to[1], portal.to[2])
@@ -593,6 +624,9 @@ function Board.hash(self): string
 		for x = 1, self.width do
 			local cell = self.cells[y][x]
 			local clover = if cell and cell.clover then "+" else "" -- not "c": that is the column sprayer
+			if cell and cell.buried then
+				clover ..= "^"
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -653,6 +687,7 @@ function Board.snapshot(self)
 			frost = cell.frost,
 			clover = cell.clover,
 			goo = cell.goo,
+			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})
 	end)
