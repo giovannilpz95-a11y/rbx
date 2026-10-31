@@ -106,6 +106,7 @@ local function snapshot(data: { [string]: any })
 		oreShed = data.oreShed,
 		guild = data.guild,
 		buildingLevels = data.buildingLevels,
+		layout = data.layout, -- buildings the player moved (shared/Layout), for the move ghost
 		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,

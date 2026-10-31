@@ -70,6 +70,7 @@ return table.freeze({
 	Blimp_Flag = "Blimp_Flag", -- row, slot: ask for help with a crate (one per row; again to take it off)
 	Blimp_Send = "Blimp_Send", -- (send the Cargo Blimp off with the rows loaded so far)
 	Blimp_Skip = "Blimp_Skip", -- (call the next blimp now, Gems)
+	Layout_Move = "Layout_Move", -- key, x, z, r: move one of your buildings (shared/Layout)
 	Express_Load = "Express_Load", -- index: load a Town Express crate from the Barn (at the hub station)
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)

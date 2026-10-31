@@ -145,6 +145,7 @@ function Profile.template(): { [string]: any }
 			stats = {}, -- counters the save doesn't keep elsewhere: harvest, goods, animal, coins, decor, help
 			claimed = {}, -- record id -> tiers claimed (1-3)
 		},
+		layout = {}, -- buildings the player moved: key -> { x, z, r } (shared/Layout)
 		market = { -- the Market stall at the farm's gate (shared/Market)
 			listings = {}, -- { slot, item, qty, price, listedAt }
 			featured = 0, -- the slot on the Town Square's Market board
