@@ -53,7 +53,7 @@ local Recipes = require("../src/shared/Config/Recipes")
 local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
-local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
+local PENS = { "CowBarn", "ChickenCoop", "SheepFold", "BeeYard" }
 -- Every factory up to the highest built level, in unlock order
 local FACTORIES = {}
 for id, def in Factories do

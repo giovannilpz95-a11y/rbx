@@ -1,5 +1,6 @@
 --!strict
--- The MVP animals and their pens: Cows / Cow Barn, Chickens / Chicken Coop, Sheep / Sheep Fold.
+-- The animals and their pens: Cows / Cow Barn, Chickens / Chicken Coop, Sheep / Sheep Fold,
+-- and (level 35) Bee Hives / Bee Yard.
 -- Design/16 Model Catalog §2.2 and Design/03 Animals.
 --
 -- Animals are chunky and cute with big heads, so they read from the Overview camera. Built
@@ -77,14 +78,36 @@ local function sheep(b: Kit.Builder)
 	end
 end
 
+-- A bee hive: a stack of two honey-coloured boxes on a little stand with a plump striped bee
+-- hovering over its roof. 9 parts. About 1.6 x 3 x 1.6 studs.
+local function beeHive(b: Kit.Builder)
+	b.block("Stand", Vector3.new(1.4, 0.3, 1.4), Vector3.new(0, 0.15, 0), Palette.woodDark)
+	b.block("Box", Vector3.new(1.5, 0.7, 1.5), Vector3.new(0, 0.65, 0), Palette.roofMustard)
+	b.block("Box", Vector3.new(1.5, 0.7, 1.5), Vector3.new(0, 1.37, 0), Palette.wheatHead)
+	b.block("Lid", Vector3.new(1.7, 0.2, 1.7), Vector3.new(0, 1.82, 0), Palette.woodLight)
+	b.block("Entrance", Vector3.new(0.6, 0.15, 0.1), Vector3.new(0, 0.45, -0.76), Palette.cocoa, { shadow = false })
+	b.ball("Bee", 0.7, Vector3.new(0.2, 2.5, -0.2), Palette.flowerYellow)
+	b.block("Stripe", Vector3.new(0.72, 0.18, 0.4), Vector3.new(0.2, 2.5, -0.2), Palette.cocoa, { shadow = false })
+	for _, x in { -0.25, 0.25 } do
+		b.block(
+			"Wing",
+			Vector3.new(0.45, 0.08, 0.3),
+			CFrame.new(0.2 + x, 2.85, -0.1) * CFrame.Angles(0, 0, math.rad(x * 80)),
+			Palette.flowerWhite,
+			{ shadow = false }
+		)
+	end
+end
+
 local ANIMALS: { [string]: AnimalBuild } = {
 	CowBarn = cow,
 	ChickenCoop = chicken,
 	SheepFold = sheep,
+	BeeYard = beeHive,
 }
 
 -- Height of each animal, so products can float just above it.
-ArtAnimals.HEIGHT = { CowBarn = 2.8, ChickenCoop = 2.3, SheepFold = 2.7 } :: { [string]: number }
+ArtAnimals.HEIGHT = { CowBarn = 2.8, ChickenCoop = 2.3, SheepFold = 2.7, BeeYard = 3 } :: { [string]: number }
 
 -- One animal of the pen `penId` standing at `cf` (its feet), facing local -Z.
 function ArtAnimals.animal(penId: string, cf: CFrame, name: string?): Model
@@ -106,6 +129,9 @@ function ArtAnimals.product(penId: string, cf: CFrame, name: string?): Model
 	if penId == "ChickenCoop" then
 		b.ball("Egg", 0.75, Vector3.new(-0.25, 0.4, 0), Palette.egg, glow)
 		b.ball("Egg", 0.65, Vector3.new(0.3, 0.35, 0.1), Palette.egg, glow)
+	elseif penId == "BeeYard" then
+		b.block("Comb", Vector3.new(1.1, 0.9, 0.3), Vector3.new(0, 0.45, 0), Palette.roofMustard, glow)
+		b.block("Drip", Vector3.new(0.3, 0.35, 0.32), Vector3.new(0.25, -0.05, 0), Palette.coins, glow)
 	elseif penId == "SheepFold" then
 		b.ball("Wool", 1, Vector3.new(0, 0.5, 0), Palette.wool, glow)
 		b.block("Ribbon", Vector3.new(1.05, 0.25, 0.3), Vector3.new(0, 0.55, 0), Palette.plum, glow)
@@ -253,16 +279,46 @@ local function sheepFold(b: Kit.Builder)
 	Kit.sproutTag(b, Vector3.new(0, 5, 3.65), 1.2, Palette.wood, Palette.lime)
 end
 
+-- Bee Yard: a flower meadow inside a low hedge, with rows of pink and yellow blooms down
+-- each side, a little honey house with a mustard roof at the back and a trough of feed.
+local function beeYard(b: Kit.Builder)
+	local h = 1.3
+	b.block("Hedge", Vector3.new(HALF * 2, h, 0.9), Vector3.new(0, h / 2, HALF - 0.45), Palette.leaf)
+	for _, x in { -HALF + 0.45, HALF - 0.45 } do
+		b.block("Hedge", Vector3.new(0.9, h, HALF * 2 - 0.9), Vector3.new(x, h / 2, -0.45), Palette.leaf)
+	end
+	for _, x in { -(HALF + 1.5) / 2, (HALF + 1.5) / 2 } do
+		b.block("Hedge", Vector3.new(HALF - 1.5, h, 0.9), Vector3.new(x, h / 2, -HALF + 0.45), Palette.leaf)
+	end
+	for i, x in { -3.8, 3.8 } do
+		b.block(
+			"Blooms",
+			Vector3.new(1.2, 0.5, 6),
+			Vector3.new(x, 0.25, -0.6),
+			if i == 1 then Palette.flowerPink else Palette.flowerYellow,
+			{ shadow = false }
+		)
+	end
+	b.block("HoneyHouse", Vector3.new(3.4, 2.2, 2.2), Vector3.new(2.6, 1.1, 4), Palette.cream, { collide = true })
+	Kit.gableRoof(b, "Roof", Vector3.new(2.6, 2.2, 4), 4, 2.8, 1.4, Palette.roofMustard)
+	b.block("HoneyDoor", Vector3.new(1, 1.5, 0.1), Vector3.new(2.6, 0.75, 2.86), Palette.wood)
+	trough(b, Vector3.new(-2.2, 0, 3.6), Palette.wheatHead)
+	gate(b, -HALF, 3)
+	Kit.sproutTag(b, Vector3.new(2.6, 4.2, 4), 1.2, Palette.wood, Palette.lime)
+end
+
 local PENS: { [string]: (Kit.Builder) -> () } = {
 	CowBarn = cowBarn,
 	ChickenCoop = chickenCoop,
 	SheepFold = sheepFold,
+	BeeYard = beeYard,
 }
 
 ArtAnimals.FLOOR_COLOR = {
 	CowBarn = Palette.grassLight,
 	ChickenCoop = Palette.straw,
 	SheepFold = Palette.grassLight,
+	BeeYard = Palette.grassLight,
 } :: { [string]: Color3 }
 
 -- Build a pen's fences and buildings into `parent`. `cf` is the pen's bottom-centre with the
@@ -297,12 +353,14 @@ ArtAnimals.ACCENT = {
 	CowBarn = Palette.roofTeal,
 	ChickenCoop = Palette.roofMustard,
 	SheepFold = Palette.roofPlum,
+	BeeYard = Palette.roofMustard,
 } :: { [string]: Color3 }
 
 local TROUGH_AT = {
 	CowBarn = Vector3.new(3.2, 0, -3.6),
 	ChickenCoop = Vector3.new(3.2, 0, -3.6),
 	SheepFold = Vector3.new(-2.6, 0, -2.6),
+	BeeYard = Vector3.new(-2.2, 0, 3.6),
 } :: { [string]: Vector3 }
 
 -- Paints `p` (remembering its built color, so a lower level can put it back).
@@ -390,7 +448,7 @@ function ArtAnimals.setPenLevel(pen: Instance, penId: string, level: number)
 	local b = Kit.builder(upgrade, origin, false)
 	shade(b, TROUGH_AT[penId] or TROUGH_AT.CowBarn, accent)
 	if level >= 5 then
-		flowerBoxes(b, penId ~= "SheepFold")
+		flowerBoxes(b, penId ~= "SheepFold" and penId ~= "BeeYard")
 	end
 end
 

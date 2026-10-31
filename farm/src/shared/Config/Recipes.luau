@@ -31,6 +31,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Feed Mill
 	CowFeed = { id = "CowFeed", displayName = "Cow Feed", factory = "FeedMill", unlockLevel = 3, inputs = { Wheat = 2, Corn = 1 }, outputQty = 3, seconds = 5 * MIN, sellPrice = 3, xp = 1, isFeed = true },
 	ChickenFeed = { id = "ChickenFeed", displayName = "Chicken Feed", factory = "FeedMill", unlockLevel = 5, inputs = { Wheat = 2, Carrots = 1 }, outputQty = 3, seconds = 10 * MIN, sellPrice = 4, xp = 2, isFeed = true },
+	BeeFeed = { id = "BeeFeed", displayName = "Bee Feed", factory = "FeedMill", unlockLevel = 35, inputs = { Wheat = 3, Sugarcane = 1 }, outputQty = 3, seconds = 30 * MIN, sellPrice = 7, xp = 3, isFeed = true },
 	SheepFeed = { id = "SheepFeed", displayName = "Sheep Feed", factory = "FeedMill", unlockLevel = 10, inputs = { Corn = 2, Carrots = 2 }, outputQty = 3, seconds = 20 * MIN, sellPrice = 5, xp = 2, isFeed = true },
 	-- Dairy
 	Cream = { id = "Cream", displayName = "Cream", factory = "Dairy", unlockLevel = 4, inputs = { Milk = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 12, xp = 5 },
@@ -78,6 +79,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Prep Kitchen (content bank)
 	FrozenVegetables = { id = "FrozenVegetables", displayName = "Frozen Vegetables", factory = "PrepKitchen", unlockLevel = 34, inputs = { Tomatoes = 1, Corn = 1, Carrots = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 26, xp = 11 },
 	-- Molding Works (content bank)
+	Toys = { id = "Toys", displayName = "Toys", factory = "MoldingWorks", unlockLevel = 35, inputs = { Plastic = 1, Rubber = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 131, xp = 56 },
 	PlasticBottle = { id = "PlasticBottle", displayName = "Plastic Bottle", factory = "MoldingWorks", unlockLevel = 34, inputs = { Plastic = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 91, xp = 39 },
 	Dough = { id = "Dough", displayName = "Dough", factory = "PrepKitchen", unlockLevel = 31, inputs = { Wheat = 3 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 4, xp = 2 },
 	-- Rubber Works (content bank)

@@ -166,6 +166,14 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.cyl("Icing", 0.12, 1.35, at(0, 0.53, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerPink, QUIET)
 		b.cyl("Hole", 0.14, 0.45, at(0, 0.56, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cocoa, QUIET)
 	end,
+	Toys = function(b)
+		-- A rubber duck beside a stack of building blocks
+		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)
+		b.ball("DuckHead", 0.55, at(-0.4, 1.05, -0.15), Palette.flowerYellow, QUIET)
+		b.block("Beak", Vector3.new(0.25, 0.12, 0.25), at(-0.4, 1.0, -0.45), Palette.carrot, QUIET)
+		b.block("Block", Vector3.new(0.6, 0.6, 0.6), at(0.5, 0.3, 0), Palette.roofRed, QUIET)
+		b.block("Block", Vector3.new(0.6, 0.6, 0.6), at(0.5, 0.9, 0), Palette.sky, QUIET)
+	end,
 	PlasticBottle = function(b)
 		-- A clear blue bottle with a white cap and a label band
 		b.post("Bottle", 1.3, 0.7, at(0, 0.65, 0), Palette.sky:Lerp(Palette.glass, 0.4), QUIET)
@@ -233,6 +241,13 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Cap", 0.25, 0.68, at(0, 1.95, 0), Palette.gems:Lerp(Palette.roofTeal, 0.5), QUIET)
 		b.block("Label", Vector3.new(0.6, 0.5, 0.1), at(0, 0.8, -0.45), Palette.sky, QUIET)
 	end,
+	Honeycomb = function(b)
+		-- A slab of comb in its wooden frame, honey dripping from one corner
+		b.block("Frame", Vector3.new(1.8, 1.5, 0.3), at(0, 0.75, 0), Palette.woodLight, QUIET)
+		b.block("Comb", Vector3.new(1.5, 1.2, 0.34), at(0, 0.75, 0), Palette.roofMustard, QUIET)
+		b.ball("Cell", 0.4, at(-0.35, 0.95, -0.12), Palette.coins, QUIET)
+		b.ball("Cell", 0.4, at(0.35, 0.55, -0.12), Palette.coins, QUIET)
+	end,
 	Wool = function(b)
 		b.ball("Wool", 1.4, at(-0.25, 0.7, 0), Palette.wool, QUIET)
 		b.ball("Wool", 1.1, at(0.45, 0.55, 0.1), Palette.wool, QUIET)
@@ -276,6 +291,9 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 	end,
 	SheepFeed = function(b)
 		sack(b, Palette.sky)
+	end,
+	BeeFeed = function(b)
+		sack(b, Palette.flowerYellow)
 	end,
 	Cookies = function(b)
 		for i = 0, 2 do

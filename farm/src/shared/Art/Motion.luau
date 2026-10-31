@@ -204,6 +204,9 @@ function ArtMotion.animalOffset(penId: string, mood: string?, t: number): CFrame
 	elseif penId == "SheepFold" then
 		local bounce = math.max(0, math.sin(t * 3)) ^ 2 * 0.3
 		return CFrame.new(0, bounce, 0)
+	elseif penId == "BeeYard" then
+		-- The hive hums: a fast small shiver
+		return CFrame.Angles(0, 0, math.rad(math.sin(t * 14) * 1.5))
 	end
 	-- Cows chew: a slow sway and a small nod
 	return CFrame.Angles(math.rad(math.sin(t * 4) * 2.5), 0, math.rad(math.sin(t * 1.1) * 2))
