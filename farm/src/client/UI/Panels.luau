@@ -2419,6 +2419,12 @@ local function layout()
 	end
 end
 
+-- Set by the client's main script: true while a building or decoration is being placed, so
+-- pop-up windows (the daily gift) wait instead of covering the Place bar
+Panels.busy = function(): boolean
+	return false
+end
+
 function Panels.open(name: string, arg: string?)
 	if name == "Debug" and not RunService:IsStudio() then
 		return

@@ -150,15 +150,63 @@ end
 function Layout.canMove(data: { [string]: any }, key: any, x: any, z: any, r: any, now: number): (boolean, string?)
 	local kind, id = Layout.parse(key)
 	if kind == nil or id == nil or not Layout.exists(data, kind, id) then
-		return false
-	elseif type(x) ~= "number" or type(z) ~= "number" or x ~= x or z ~= z then
-		return false
-	elseif x % Layout.GRID ~= 0 or z % Layout.GRID ~= 0 or not Layout.validTurn(r) then
-		return false
+		return false, "That can't be moved"
+	elseif type(x) ~= "number" or type(z) ~= "number" or x ~= x or z ~= z or math.abs(x) == math.huge then
+		return false, "That's not a spot on your farm"
+	elseif x % Layout.GRID ~= 0 or z % Layout.GRID ~= 0 then
+		return false, string.format("Spots snap to a %d-stud grid", Layout.GRID)
+	elseif not Layout.validTurn(r) then
+		return false, "Buildings turn a quarter at a time"
 	elseif not Layout.onOwnLand(data, kind, x, z, r, now) then
 		return false, "That's not on your land. Clear more land to build there"
 	end
 	return true
+end
+
+-- Is anything standing in the footprint of a `kind` building at (x, z) turned by r, on the plot
+-- `plot` whose plot-local space is `origin`? The one physical check, shared by the server and the
+-- client's ghost so they always agree. Skips `except` (the building being moved), locked land
+-- (the land check's job) and a finished scaffold on its way out. With `buildingsOnly`, only
+-- other buildings and placed decorations count (not trees, guides or props).
+-- Roblox only (it queries the workspace).
+function Layout.blocked(
+	plot: Instance,
+	origin: CFrame,
+	kind: string,
+	x: number,
+	z: number,
+	r: number,
+	except: Instance?,
+	buildingsOnly: boolean?
+): boolean
+	local cx, cz, w, d = Layout.box(kind, x, z, r)
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { plot }
+	-- From just above flat ground (paths, floors) to head height
+	local box = origin * CFrame.new(cx, 3.3, cz)
+	local workspace = game:GetService("Workspace")
+	for _, hit in workspace:GetPartBoundsInBox(box, Vector3.new(w - 0.4, 5.4, d - 0.4), params) do
+		if except and (hit == except or hit:IsDescendantOf(except)) then
+			continue
+		end
+		if hit:FindFirstAncestor("Land") or hit:FindFirstAncestor("ScaffoldPop") then
+			continue
+		end
+		if buildingsOnly then
+			local node: Instance? = hit
+			local counts = hit:FindFirstAncestor("Placed") ~= nil
+			while node and node ~= plot and not counts do
+				counts = node:GetAttribute("LayoutKey") ~= nil
+				node = node.Parent
+			end
+			if not counts then
+				continue
+			end
+		end
+		return true
+	end
+	return false
 end
 
 function Layout.spot(data: { [string]: any }, key: string): Spot?

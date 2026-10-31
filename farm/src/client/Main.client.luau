@@ -50,6 +50,9 @@ MovementController.init()
 DecorPlacer.init()
 MovePlacer.init()
 Hud.onMove = MovePlacer.toggle
+Panels.busy = function()
+	return MovePlacer.isMoving() or DecorPlacer.isActive()
+end
 Hud.handlers.Place = function(payload) -- place a building you just started
 	Panels.close()
 	MovePlacer.offer(payload)

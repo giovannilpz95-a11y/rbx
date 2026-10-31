@@ -1736,33 +1736,7 @@ function PlotService.footprintBlocked(
 	if model == nil or slot == nil then
 		return true
 	end
-	local cx, cz, w, d = Layout.box(kind, x, z, r)
-	local params = OverlapParams.new()
-	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = { model }
-	-- From just above flat ground (paths, floors) to head height
-	local box = slot.cframe * CFrame.new(cx, 3.3, cz)
-	for _, hit in Workspace:GetPartBoundsInBox(box, Vector3.new(w - 0.4, 5.4, d - 0.4), params) do
-		if except and hit:IsDescendantOf(except) then
-			continue
-		end
-		if hit:FindFirstAncestor("Land") or hit:FindFirstAncestor("ScaffoldPop") then
-			continue -- locked land is the land check's job; a finished scaffold is going away
-		end
-		if buildingsOnly then
-			local owner: Instance? = hit
-			local counts = hit:FindFirstAncestor("Placed") ~= nil
-			while owner and owner ~= model and not counts do
-				counts = owner:GetAttribute("LayoutKey") ~= nil
-				owner = owner.Parent
-			end
-			if not counts then
-				continue
-			end
-		end
-		return true
-	end
-	return false
+	return Layout.blocked(model, slot.cframe, kind, x, z, r, except, buildingsOnly)
 end
 
 -- A building's model on the plot (a field's bed, a town building's holder)
