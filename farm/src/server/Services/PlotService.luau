@@ -16,6 +16,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
 local Blimp = require(Shared.Blimp)
+local Items = require(Shared.Items)
 local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
 local Guild = require(Shared.Guild)
@@ -1291,6 +1292,22 @@ local function refreshBlimp(player: Player, model: Model, data: { [string]: any 
 				if p:IsA("BasePart") and p.Name == "Crate" then
 					p:SetAttribute("Interact", "BlimpCrate")
 					p.CanQuery = true -- Kit leaves non-colliding parts out of taps
+					-- What it asks for, so a visiting helper's client can say so; a flagged
+					-- crate shows it to everyone walking by
+					local crate = blimp.load.rows[p:GetAttribute("Row")][p:GetAttribute("Slot")]
+					p:SetAttribute("Item", crate.item)
+					p:SetAttribute("Qty", crate.qty)
+					p:SetAttribute("Flagged", crate.flagged == true and crate.filledBy == nil)
+					p:SetAttribute("Filled", crate.filledBy ~= nil)
+					if crate.flagged and crate.filledBy == nil then
+						label(
+							p,
+							string.format("Help: %d %s", crate.qty, Items[crate.item].displayName),
+							3.2,
+							UDim2.fromOffset(150, 26),
+							120
+						)
+					end
 				end
 			end
 		end
@@ -1705,6 +1722,12 @@ end
 function PlotService.factoryOutputPosition(player: Player, factoryId: string): Vector3?
 	local pos = LAYOUT.factories[factoryId]
 	return if pos then PlotService.worldPosition(player, pos + LAYOUT.factoryOutputOffset) else nil
+end
+
+-- Where a crate hangs under a docked Cargo Blimp (Art/Blimp), for the reach check on helpers
+function PlotService.blimpCratePosition(player: Player, row: number, slot: number): Vector3?
+	local local_ = (CFrame.new(LAYOUT.blimpMast) * ArtBlimp.DOCK * ArtBlimp.crateOffset(row, slot)).Position
+	return PlotService.worldPosition(player, local_)
 end
 
 function PlotService.penPosition(player: Player, penId: string): Vector3?

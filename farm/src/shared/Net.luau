@@ -43,6 +43,7 @@ return table.freeze({
 	Visit_SendHome = "Visit_SendHome", -- visitorUserId: send a visitor off your plot
 	Help_Water = "Help_Water", -- ownerUserId, fieldId: water a growing field on a neighbor's plot
 	Help_Harvest = "Help_Harvest", -- ownerUserId, fieldId: harvest a ready field into the owner's Barn
+	Help_Blimp = "Help_Blimp", -- ownerUserId, row, slot: load a neighbor's flagged blimp crate from your Barn
 	Social_SetPrivacy = "Social_SetPrivacy", -- "Open" | "Friends" | "Closed"
 	Social_SetHelpers = "Social_SetHelpers", -- "Nobody" | "Friends" | "Anyone"
 	Social_GiftHeart = "Social_GiftHeart", -- toUserId: send a friend a Crop Pop heart (Crop Pop's daily limit)

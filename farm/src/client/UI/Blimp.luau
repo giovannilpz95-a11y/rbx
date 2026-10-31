@@ -5,6 +5,8 @@
 -- adds the Full Hold chest shown here up front. While it's away, Next Flight shows the goods
 -- the next blimp will ask for.
 
+local Players = game:GetService("Players")
+
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Blimp = require(Shared.Blimp)
 local Config = require(Shared.Config.Blimp)
@@ -23,7 +25,7 @@ local Ui = require(script.Parent.Ui)
 
 local BlimpUi = {}
 
-local CRATE_HEIGHT = 58
+local CRATE_HEIGHT = 88
 local sendArmedAt = 0 -- a send that leaves a row unpaid takes a second tap within 3 s
 
 local function line(text: string, order: number, body: Instance, height: number?, color: Color3?)
@@ -102,7 +104,10 @@ local function crateCard(row: number, slot: number, crate: Blimp.Crate, body: In
 		Parent = card,
 	})
 	local done = crate.filledBy ~= nil
-	Ui.label(if done then "Loaded" else string.format("You have %d   ·   +%d Coins  +%d XP", have, coins, xp), {
+	local loadedText = if crate.filledBy == Players.LocalPlayer.UserId
+		then "Loaded"
+		else "Loaded by a neighbor. Thank you!"
+	Ui.label(if done then loadedText else string.format("You have %d   ·   +%d Coins  +%d XP", have, coins, xp), {
 		TextSize = 13,
 		TextColor3 = if done then Ui.colors.ready elseif have >= crate.qty then Ui.colors.muted else Ui.colors.danger,
 		Size = UDim2.new(1, -140, 0, 18),
@@ -112,7 +117,14 @@ local function crateCard(row: number, slot: number, crate: Blimp.Crate, body: In
 	if done then
 		return
 	end
-	local props = { Size = UDim2.fromOffset(124, 36), Position = UDim2.new(1, -130, 0, 11), Parent = card }
+	local props = { Size = UDim2.fromOffset(124, 36), Position = UDim2.new(1, -130, 0, 6), Parent = card }
+	-- Help flag: neighbors on this server can load a flagged crate from their own Barn (one a row)
+	local flag = Ui.button(if crate.flagged then "Help asked ✓" else "Ask for help", function()
+		Remotes.fire("Blimp_Flag", row, slot)
+	end, { Size = UDim2.fromOffset(124, 34), Position = UDim2.new(1, -130, 0, 48), Parent = card })
+	if crate.flagged then
+		Ui.setEnabled(flag, true, Ui.colors.selected)
+	end
 	if have >= crate.qty then
 		Ui.button("Load", function()
 			Remotes.fire("Blimp_Fill", row, slot)
@@ -144,10 +156,11 @@ local function docked(state: { [string]: any }, body: ScrollingFrame, now: numbe
 	)
 	line(
 		"Load its crates from your Barn. Each full row pays a bonus when it leaves; if time runs "
-			.. "out, it leaves with no row bonus.",
+			.. "out, it leaves with no row bonus. Ask for help with one crate a row and neighbors on "
+			.. "this server can load it from their own Barns.",
 		2,
 		body,
-		38,
+		72,
 		Ui.colors.muted
 	)
 	local order = 3
