@@ -242,6 +242,14 @@ function SocialService.playerByUserId(userId: any): Player?
 end
 local playerByUserId = SocialService.playerByUserId
 
+-- The Town Square Market board's text (made in init; MarketService writes it)
+SocialService.marketBoardText = nil :: TextLabel?
+
+-- Studio: the test neighbor stand-in, once made (Debug_TestNeighbor), else nil
+function SocialService.testNeighbor(): Player?
+	return testNeighbor
+end
+
 ---------------------------------------------------------------------------------------------
 -- Remotes
 ---------------------------------------------------------------------------------------------
@@ -287,6 +295,21 @@ local function sendHome(player: Player, visitorUserId: any): (boolean, string?)
 	return false, string.format("%s was sent to the Town Square", visitor.DisplayName)
 end
 
+-- Studio: fill the test neighbor's empty stall slots (each run restocks what was bought) and
+-- feature its Corn on the Town Square's Market board
+local function stockTestStall(data: { [string]: any }, now: number)
+	for slot, entry in { { "Wheat", 10 }, { "Corn", 6 }, { "Milk", 4 } } do
+		if Market.listing(data, slot) == nil then
+			local _, _, price = Market.priceRange(entry[1], entry[2])
+			Market.list(data, slot, entry[1], entry[2], price, now)
+		end
+	end
+	if data.market.featured == 0 then
+		data.market.featuredAt = 0 -- no cooldown for the stand-in
+		Market.feature(data, 2, now)
+	end
+end
+
 -- Studio: make the test neighbor's farm next to yours (3 ripe Wheat fields, 3 growing Corn),
 -- or go back to it.
 local function testNeighborFarm(player: Player): (boolean, string?)
@@ -315,15 +338,19 @@ local function testNeighborFarm(player: Player): (boolean, string?)
 		end
 		-- A stocked Market stall, for trying a purchase
 		data.level = math.max(data.level, MarketConfig.unlockLevel)
-		for slot, entry in { { "Wheat", 10 }, { "Corn", 6 }, { "Milk", 4 } } do
-			local _, _, price = Market.priceRange(entry[1], entry[2])
-			Market.list(data, slot, entry[1], entry[2], price, now)
-		end
+		data.market.color = "Teal"
+		stockTestStall(data, now)
 		DataService.addDummy(stand, data)
 		if PlotService.assign(stand :: any, { player }) == nil then
 			return false, "No free plot for a test neighbor"
 		end
 		testNeighbor = stand
+	else
+		local data = DataService.get(testNeighbor)
+		if data then
+			stockTestStall(data, Clock.now())
+			PlotService.refresh(testNeighbor)
+		end
 	end
 	moveTo(player, PlotService.gateCFrame(testNeighbor))
 	return false, "Test Neighbor's farm: 3 ripe Wheat fields to harvest and 3 Corn fields to water"
@@ -562,12 +589,8 @@ function SocialService.init()
 
 	local boards = PlotService.square.boards
 	neighborsText = boardText(boards.Neighbors, "Neighbors", "Neighbors", "")
-	boardText(
-		boards.Market,
-		"Market",
-		"Market",
-		"Farm stalls open here soon.\n\nSell your goods to your neighbors for Coins."
-	)
+	-- MarketService fills this one with every farm's featured listing
+	SocialService.marketBoardText = boardText(boards.Market, "MarketBoard", "Market", "")
 
 	-- The Puzzle Porch opens Crop Pop (the client does the opening). Every part of it takes
 	-- taps: the screen, buttons and roof cover most of the cabinet's body.
