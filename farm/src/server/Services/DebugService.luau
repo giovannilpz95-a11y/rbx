@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
+local Factories = require(Shared.Config.Factories)
 local BarnRules = require(Shared.BarnRules)
 local Blimp = require(Shared.Blimp)
 local Levels = require(Shared.Config.Levels)
@@ -87,9 +88,21 @@ function DebugService.fillLots(player: Player): (boolean, string?)
 	return true
 end
 
--- Population for testing late content (the Molding Works needs 2,375): the farm's smallest
--- Houses become the biggest House type, finished, until Population reaches the target.
+-- Population for testing late content: the farm's smallest Houses become the biggest House
+-- type, finished, until Population reaches the target. The target is at least POPULATION and
+-- always clears the biggest factory requirement in the content bank (the Homewares Shop needs
+-- 3,130), rounded up to the next 500.
 DebugService.POPULATION = 3000
+
+function DebugService.populationTarget(): number
+	local need = DebugService.POPULATION
+	for _, def in Factories do
+		if def.unlockLevel <= Levels.built then
+			need = math.max(need, math.ceil((def.population + 1) / 500) * 500)
+		end
+	end
+	return need
+end
 
 function DebugService.population(player: Player): (boolean, string?)
 	local data = DataService.get(player)
@@ -97,6 +110,7 @@ function DebugService.population(player: Player): (boolean, string?)
 		return false
 	end
 	local now = Clock.now()
+	local target = DebugService.populationTarget()
 	local best, bestPop = nil, 0
 	for id, def in Town.houses do
 		if def.population > bestPop then
@@ -111,7 +125,7 @@ function DebugService.population(player: Player): (boolean, string?)
 	end)
 	local changed = {}
 	for _, house in houses do
-		if TownRules.population(data, now) >= DebugService.POPULATION then
+		if TownRules.population(data, now) >= target then
 			break
 		end
 		if house.type ~= best or house.readyAt ~= nil then
@@ -122,7 +136,7 @@ function DebugService.population(player: Player): (boolean, string?)
 	end
 	-- Still short (too few Houses to swap): new ones of the biggest type at open spots
 	local added = 0
-	while TownRules.population(data, now) < DebugService.POPULATION and added < 40 do
+	while TownRules.population(data, now) < target and added < 40 do
 		local spot = PlotService.findOpenSpot(player, data, "house", PlotService.nearPlayer(player))
 		if spot == nil then
 			break
