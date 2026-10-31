@@ -390,7 +390,8 @@ local function nearestHands(root: BasePart): (BasePart?, number)
 	local best, bestDistance = nil, math.huge
 	for _, part in interactives do
 		local d = distanceToPart(part, root.Position)
-		if d <= reach() and d < bestDistance and part:GetAttribute("Interact") ~= "Field" then
+		-- Hidden parts (a Sailboat at sea, a Driftwood Crate already opened) aren't there to use
+		if d <= reach() and d < bestDistance and part:GetAttribute("Interact") ~= "Field" and part.Transparency < 1 then
 			best, bestDistance = part, d
 		end
 	end
@@ -425,7 +426,11 @@ local HANDS_BONUS_STUDS = 3.5
 
 local function handsFirst(root: BasePart): BasePart?
 	local hands, handsDistance = nearestHands(root)
-	if hands and handsDistance <= HANDS_FIRST_STUDS and handsDistance - HANDS_BONUS_STUDS < nearestBedWork(root) then
+	if hands == nil or handsDistance > HANDS_FIRST_STUDS then
+		return nil
+	end
+	-- Buildings marked HandsFirst (the Harbor) win a fresh press even with beds nearer
+	if hands:GetAttribute("HandsFirst") or handsDistance - HANDS_BONUS_STUDS < nearestBedWork(root) then
 		return hands
 	end
 	return nil

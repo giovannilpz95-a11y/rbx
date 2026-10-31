@@ -76,6 +76,7 @@ local function boat(b: Kit.Builder, parent: Instance, index: number): Model
 		if d:IsA("BasePart") then
 			d:SetAttribute("Interact", "HarborBoat")
 			d:SetAttribute("Boat", index)
+			d:SetAttribute("HandsFirst", true)
 		end
 	end
 	m.PrimaryPart = hull
@@ -117,6 +118,7 @@ function ArtHarbor.build(parent: Instance, cf: CFrame): Parts
 		{ collide = true, query = true }
 	)
 	body:SetAttribute("Interact", "Harbor")
+	body:SetAttribute("HandsFirst", true) -- a fresh press here opens the Harbor, beds or not
 	b.wedge("Roof", Vector3.new(7.6, 1.6, 2.6), CFrame.new(houseAt + Vector3.new(0, 5, -1.15)), Palette.roofTeal)
 	b.wedge(
 		"Roof",
@@ -140,6 +142,7 @@ function ArtHarbor.build(parent: Instance, cf: CFrame): Parts
 	local board =
 		b.block("Board", Vector3.new(3.6, 1.8, 0.25), boardAt + Vector3.new(0, 2.6, 0), Palette.cream, { query = true })
 	board:SetAttribute("Interact", "Harbor")
+	board:SetAttribute("HandsFirst", true)
 
 	-- The pier from the quay out across the water, between the berths
 	local deck = b.block(
