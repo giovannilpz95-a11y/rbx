@@ -489,6 +489,34 @@ TYPES.CanalHouse = {
 	end,
 }
 
+-- Brick Townhouse (content bank, level 29): a tall red-brick house with a cream-trimmed bay
+-- window pushed out at the front, a steep gable roof and a door up two steps.
+TYPES.BrickTownhouse = {
+	roof = Palette.roofPlum,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.66, STORY * 2
+		local body = walls(b, w, d, h, Palette.brick:Lerp(Palette.roofRed, 0.25), 0, 0.3)
+		local t = b.into(body, true)
+		Kit.gableRoof(t, "Roof", CFrame.new(0, PLINTH + h, 0.3) * Kit.yaw(90), d + 1, w + 0.8, 3.4, roof)
+		local face = 0.3 + front(d)
+		-- The bay: a cream box pushed out from the left of the front, with a window and a lid
+		local bayX = -w / 4
+		t.block(
+			"Bay",
+			Vector3.new(w / 2, STORY - 0.4, 1),
+			Vector3.new(bayX, PLINTH + STORY / 2, face - 0.5),
+			Palette.cream
+		)
+		t.block("BayLid", Vector3.new(w / 2 + 0.4, 0.4, 1.4), Vector3.new(bayX, PLINTH + STORY, face - 0.5), roof)
+		Kit.window(t, "Window", CFrame.new(bayX, PLINTH + STORY / 2, face - 1), 1.6, 1.6, Palette.cream, Palette.glass)
+		Kit.window(t, "Window", CFrame.new(0, PLINTH + STORY * 1.5, face), 1.6, 1.8, Palette.cream, Palette.glass)
+		t.block("Steps", Vector3.new(1.8, 0.6, 1), Vector3.new(w / 4, PLINTH + 0.3, face - 0.5), Palette.stone)
+		Kit.door(t, "Door", CFrame.new(w / 4, PLINTH + 0.6, face), 1.5, 3.4, roof, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)

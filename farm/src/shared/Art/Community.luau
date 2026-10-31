@@ -914,6 +914,54 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Cab Stand (content bank, level 29): a little dispatch booth under a striped awning, a
+-- yellow cab with a roof light waiting at the kerb, and a tall checkered sign.
+TYPES.CabStand = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.road, { collide = true })
+	local t = b.into(body, true)
+	-- The booth at the back
+	local bz = w / 2 - 2.2
+	t.block("Booth", Vector3.new(4, 3.6, 3.2), Vector3.new(-w / 4, 2.2, bz), Palette.cream)
+	t.block("BoothRoof", Vector3.new(4.6, 0.5, 3.8), Vector3.new(-w / 4, 4.25, bz), Palette.roofTeal)
+	t.block(
+		"Awning",
+		Vector3.new(4.2, 0.3, 1.4),
+		CFrame.new(-w / 4, 3.4, bz - 2.2) * CFrame.Angles(math.rad(18), 0, 0),
+		Palette.roofMustard,
+		{ shadow = false }
+	)
+	Kit.window(t, "Window", CFrame.new(-w / 4, 2.4, bz - 1.6), 2.4, 1.4, Palette.cream, Palette.glass)
+	-- Sign object: the cab, yellow with a dark window band, a roof light and four wheels
+	local cab = Vector3.new(w / 8, 0, -0.8)
+	t.block("Cab", Vector3.new(4.2, 1.4, 2), cab + Vector3.new(0, 1.2, 0), Palette.roofMustard)
+	t.block("CabTop", Vector3.new(2.4, 0.9, 1.9), cab + Vector3.new(-0.2, 2.35, 0), Palette.roofMustard)
+	t.block(
+		"CabWindows",
+		Vector3.new(2.2, 0.6, 1.95),
+		cab + Vector3.new(-0.2, 2.35, 0),
+		Palette.glassDeep,
+		{ shadow = false }
+	)
+	t.block(
+		"RoofLight",
+		Vector3.new(0.8, 0.35, 0.5),
+		cab + Vector3.new(-0.2, 2.95, 0),
+		Palette.cream,
+		{ shadow = false }
+	)
+	for _, x in { -1.3, 1.3 } do
+		t.cyl("Wheel", 2.1, 0.8, CFrame.new(cab + Vector3.new(x, 0.4, 0)) * TURN, Palette.tire, { shadow = false })
+	end
+	-- The checkered sign on its pole
+	local pole = Vector3.new(w / 2 - 0.8, 0, -w / 2 + 0.8)
+	t.post("SignPole", 4.6, 0.3, pole + Vector3.new(0, 2.7, 0), Palette.metal)
+	t.block("Sign", Vector3.new(1.8, 1, 0.2), pole + Vector3.new(0, 5.3, 0), Palette.roofMustard, { shadow = false })
+	t.block("Checks", Vector3.new(1.85, 0.3, 0.22), pole + Vector3.new(0, 5.3, 0), Palette.tire, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)

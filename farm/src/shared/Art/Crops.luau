@@ -313,6 +313,26 @@ READY.Cocoa = function(b, color)
 	end
 end
 
+-- Rubber Trees (level 29): slim saplings, then four tall smooth-barked trees, each tapped:
+-- a pale cut down the trunk and a little cup catching the sap.
+GROWING.RubberTrees = function(b)
+	for _, x in { -2, 2 } do
+		for _, z in { -2, 2 } do
+			b.post("Trunk", 1.6, 0.3, Vector3.new(x, 1.2, z), Palette.trunk:Lerp(Palette.stoneLight, 0.3))
+			b.ball("Leaves", 1.3, Vector3.new(x, 2.2, z), Palette.leafLight)
+		end
+	end
+end
+READY.RubberTrees = function(b, color)
+	for _, x in { -2, 2 } do
+		for _, z in { -2, 2 } do
+			b.post("Trunk", 3.4, 0.5, Vector3.new(x, 2.1, z), Palette.trunk:Lerp(Palette.stoneLight, 0.3))
+			b.ball("Canopy", 2.4, Vector3.new(x, 4.1, z), color)
+			b.post("Cup", 0.4, 0.45, Vector3.new(x, 1.1, z - 0.4), Palette.cream, { shadow = false })
+		end
+	end
+end
+
 -- Crops past the content bank: green rows, then rows of fruit in the crop's own color.
 local function genericGrowing(b: Kit.Builder, _color: Color3)
 	for _, z in ArtCrops.ROWS do

@@ -30,6 +30,7 @@ local Crops: { [string]: CropDef } = {
 	Tomatoes = { id = "Tomatoes", displayName = "Tomatoes", unlockLevel = 15, growSeconds = 2 * HOUR, seedCost = 6, sellPrice = 13, xp = 6, yield = 1, order = 7, color = { 230, 60, 40 } },
 	PineTrees = { id = "PineTrees", displayName = "Pine Trees", unlockLevel = 18, growSeconds = 3 * HOUR, seedCost = 7, sellPrice = 15, xp = 7, yield = 1, order = 8, color = { 60, 130, 70 } },
 	Potatoes = { id = "Potatoes", displayName = "Potatoes", unlockLevel = 22, growSeconds = 4 * HOUR, seedCost = 8, sellPrice = 17, xp = 8, yield = 1, order = 9, color = { 190, 150, 100 } },
+	RubberTrees = { id = "RubberTrees", displayName = "Rubber Trees", unlockLevel = 29, growSeconds = 12 * HOUR, seedCost = 15, sellPrice = 29, xp = 24, yield = 1, order = 11, color = { 110, 140, 80 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }
 

@@ -129,6 +129,16 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Pine", 1.6, at(0, 1.1, 0), Palette.treeTopDark, QUIET)
 		b.ball("Pine", 1, at(0, 1.85, 0), Palette.leaf, QUIET)
 	end,
+	RubberTrees = function(b)
+		b.post("Trunk", 1.2, 0.4, at(0, 0.6, 0), Palette.trunk:Lerp(Palette.stoneLight, 0.3), QUIET)
+		b.ball("Canopy", 1.3, at(0, 1.55, 0), Palette.leaf, QUIET)
+		b.post("Cup", 0.3, 0.35, at(0, 0.5, -0.3), Palette.cream, QUIET)
+	end,
+	Rubber = function(b)
+		-- A rolled sheet of rubber with a cream paper band
+		b.cyl("Roll", 1.6, 1, at(0, 0.5, 0), Palette.tire:Lerp(Palette.cream, 0.15), QUIET)
+		b.cyl("Band", 0.4, 1.05, at(0, 0.5, 0), Palette.cream, QUIET)
+	end,
 	Cocoa = function(b)
 		local pod = tilt(0, 0.75, 0, 0, 25, 20)
 		b.cyl("Pod", 1, 1, pod, Palette.bread, QUIET)

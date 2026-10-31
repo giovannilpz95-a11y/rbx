@@ -68,6 +68,8 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Pastry Shop (content bank)
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
+	-- Rubber Works (content bank)
+	Rubber = { id = "Rubber", displayName = "Rubber", factory = "RubberWorks", unlockLevel = 29, inputs = { RubberTrees = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 35, xp = 15 },
 	-- Smelter (Township's Foundry: 5 ore -> 1 ingot, all at level 21). Bars go to the Barn.
 	CopperBar = { id = "CopperBar", displayName = "Copper Bar", factory = "Smelter", unlockLevel = 21, inputs = { CopperOre = 5 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 96, xp = 41, fromOreShed = true },
 	SilverBar = { id = "SilverBar", displayName = "Silver Bar", factory = "Smelter", unlockLevel = 21, inputs = { SilverOre = 5 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 144, xp = 62, fromOreShed = true },
