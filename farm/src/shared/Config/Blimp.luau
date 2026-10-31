@@ -54,9 +54,9 @@ local crates: { [string]: Range } = {
 	-- Homewares Shop
 	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 }, Clothesline = { 1, 2 }, Plunger = { 1, 2 },
 	-- Cantina, Snack Factory
-	ChiliSauce = { 1, 3 }, GlazedBacon = { 1, 2 },
+	ChiliSauce = { 1, 3 }, GlazedBacon = { 1, 2 }, Burrito = { 1, 2 },
 	-- Candy Factory
-	JellyBeans = { 1, 3 }, Toffee = { 1, 3 }, CandyCane = { 1, 2 }, Dumplings = { 1, 2 },
+	JellyBeans = { 1, 3 }, Toffee = { 1, 3 }, CandyCane = { 1, 2 }, Chocolate = { 1, 2 }, Dumplings = { 1, 2 },
 }
 
 return table.freeze({

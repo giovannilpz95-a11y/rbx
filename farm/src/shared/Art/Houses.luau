@@ -630,6 +630,36 @@ TYPES.SkylineFlats = {
 	end,
 }
 
+-- Attic Tower (content bank, level 44): a tall pale-blue block of flats crowned by a steep
+-- gabled attic storey with a round window, and a canopy over the door.
+TYPES.AtticTower = {
+	roof = Palette.roofPlum,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.54, STORY * 3
+		local body = walls(b, w, d, h, Palette.sky:Lerp(Palette.cream, 0.6), 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block("Cornice", Vector3.new(w + 0.4, 0.4, d + 0.4), Vector3.new(0, PLINTH + h + 0.2, 0.3), Palette.cream)
+		Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h + 0.4, 0.3), w + 0.4, d + 0.4, 3.6, roof, Palette.cream)
+		t.cyl("AtticWindow", 0.2, 1.2, CFrame.new(0, PLINTH + h + 1.6, face - 0.1) * Kit.yaw(90), Palette.glass)
+		for i = 1, 2 do
+			local x = if i == 1 then -w / 4 else w / 4
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x, PLINTH + STORY * i + 1.8, face),
+				1.4,
+				1.8,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		Kit.door(t, "Door", CFrame.new(w / 4, PLINTH, face), 1.8, 3.4, roof, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 0.6, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

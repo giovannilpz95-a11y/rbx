@@ -92,7 +92,7 @@ return table.freeze({
 	bars = table.freeze(BARS),
 	costs = table.freeze(costs),
 	-- Copies upgrade on their original's table
-	tableOf = table.freeze({ FeedMill2 = "FeedMill" }),
+	tableOf = table.freeze({ FeedMill2 = "FeedMill", FeedMill3 = "FeedMill" }),
 	step = 0.05, -- every upgrade adds 5%
 	timeLevels = table.freeze({ 2, 4, 6, 8, 11, 14, 17, 20, 23, 26 }),
 	shelfLevels = table.freeze({ 5, 10 }),

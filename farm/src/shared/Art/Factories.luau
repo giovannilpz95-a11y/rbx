@@ -1008,6 +1008,13 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
 	end,
+	-- The third Feed Mill (level 44) and third Smelter (level 45) wear plum roofs
+	FeedMill3 = function(model: Model, b: Kit.Builder): Parts
+		return feedMill(model, b, Palette.roofPlum)
+	end,
+	Smelter3 = function(model: Model, b: Kit.Builder): Parts
+		return smelter(model, b, Palette.roofPlum)
+	end,
 }
 
 function ArtFactories.has(id: string): boolean
