@@ -382,6 +382,24 @@ function BoardView.load(self, game)
 			self.grid[y][x] = cell.piece.id
 		end
 	end)
+
+	-- Pumpkin baskets sit in the gaps of the board, in the bale layer.
+	self.basketGuis = {}
+	for _, basket in board.baskets do
+		local label = Instance.new("TextLabel")
+		label.Name = "Basket"
+		label.Size = self:_cellSize()
+		label.Position = self:_cellPosition(basket.x, basket.y)
+		label.BackgroundColor3 = TileStyle.Board.basket
+		label.Text = TileStyle.BasketGlyph
+		label.TextScaled = true
+		label.BorderSizePixel = 0
+		label.Parent = self.baleLayer
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.2, 0)
+		corner.Parent = label
+		self.basketGuis[basket.y * 100 + basket.x] = label
+	end
 end
 
 -- Numbers portal entrances 1, 2, ... in board order, so each pair gets its own colour.
@@ -504,6 +522,14 @@ function BoardView._effect(self, effect): number
 		return FX_TIME
 	elseif effect.type == "Pumpkin" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Pumpkin.color, true)
+		return FX_TIME
+	elseif effect.type == "Basket" then
+		local label = self.basketGuis and self.basketGuis[effect.fromY * 100 + effect.fromX]
+		if label then
+			label.Rotation = -12
+			tween(label, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		self:_flash(self:_centerOf(effect.toX, effect.toY), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Pumpkin.color, true)
 		return FX_TIME
 	elseif effect.type == "Grow" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.weed, true)

@@ -50,6 +50,7 @@ local BRUSH_ROWS = {
 		{ char = "c", label = "🍀" },
 		{ char = "s", label = "🧱1" },
 		{ char = "S", label = "🧱2" },
+		{ char = "d", label = TileStyle.BasketGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 	},
@@ -278,6 +279,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.clover, TileStyle.GoalGlyphs.Clover
 	elseif char == "s" or char == "S" then
 		return TileStyle.Board.stone, TileStyle.GoalGlyphs.Stones .. (if char == "S" then "2" else "")
+	elseif char == "d" then
+		return TileStyle.Board.basket, TileStyle.BasketGlyph
 	end
 	return Colors.cellLight, ""
 end
@@ -300,7 +303,7 @@ local function tapPortal(x: number, y: number)
 	if i then
 		table.remove(state.portals, i)
 		state.portalStart = nil
-	elseif state.grid[y][x] == "#" then
+	elseif state.grid[y][x] == "#" or state.grid[y][x] == "d" then
 		return
 	elseif not state.portalStart then
 		state.portalStart = { x, y }
@@ -310,7 +313,7 @@ local function tapPortal(x: number, y: number)
 	end
 end
 
--- A hole can't hold a portal end.
+-- A hole or basket can't hold a portal end.
 local function dropPortalsAt(x: number, y: number)
 	local i = portalAt(x, y)
 	while i do
@@ -349,7 +352,7 @@ local function renderGrid()
 					tapPortal(x, y)
 				else
 					state.grid[y][x] = state.brush
-					if state.brush == "#" then
+					if state.brush == "#" or state.brush == "d" then
 						dropPortalsAt(x, y)
 					end
 				end
@@ -708,7 +711,7 @@ function LevelEditor.paint(x: number, y: number, char: string)
 		tapPortal(x, y)
 	else
 		state.grid[y][x] = char
-		if char == "#" then
+		if char == "#" or char == "d" then
 			dropPortalsAt(x, y)
 		end
 	end

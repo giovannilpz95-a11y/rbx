@@ -30,6 +30,13 @@
 	drop new ones until the Pumpkins goal has enough on the way. Matches and
 	blasts never break a pumpkin.
 
+	Pumpkin baskets: a match next to a basket, or a blast reaching it, shakes
+	a pumpkin loose (once per basket per wave, while the goal still needs
+	more). It lands in the cell below the basket at the end of the wave
+	(a "Basket" effect; a plain tile there is removed with cause "basket"),
+	or waits for a later wave if that cell is busy. On levels with baskets,
+	refills drop no pumpkins.
+
 	The same level, seed, options and swaps always give the same result, which is
 	what lets the server replay a client's run (see Replay.luau).
 ]]
@@ -147,6 +154,7 @@ local function newWave()
 		spread = false, -- the power-up going off started on clover
 		pendingCreates = {},
 		balesTouched = {}, -- bales already hit by a neighbouring match this wave
+		basketsHit = {}, -- baskets already shaken this wave
 	}
 end
 
@@ -209,10 +217,74 @@ function Engine._plantClover(self, wave, cell)
 	end
 end
 
+-- Pumpkins the goal still needs beyond those on the board or waiting in baskets.
+function Engine._pumpkinsOwed(self): number
+	local goal = self.goals:find("Pumpkins")
+	if not goal then
+		return 0
+	end
+	local owed = goal.target - goal.progress
+	self.board:eachCell(function(cell)
+		if cell.piece and cell.piece.pumpkin then
+			owed -= 1
+		end
+	end)
+	for _, basket in self.board.baskets do
+		owed -= basket.waiting
+	end
+	return owed
+end
+
+-- A match next to a basket or a blast on it: shake a pumpkin loose if one is needed.
+function Engine._shakeBasket(self, wave, basket)
+	if wave.basketsHit[basket] then
+		return
+	end
+	wave.basketsHit[basket] = true
+	if self:_pumpkinsOwed() > 0 then
+		basket.waiting += 1
+	end
+end
+
+-- The cell a basket drops into: the next board cell below it.
+function Engine._basketTarget(self, basket)
+	local board = self.board
+	for y = basket.y + 1, board.height do
+		local cell = board:get(basket.x, y)
+		if cell then
+			return cell
+		end
+	end
+	return nil
+end
+
+-- Drops each basket's waiting pumpkin into the cell below, if that cell is
+-- empty or holds a plain unfrozen tile.
+function Engine._emptyBaskets(self, wave)
+	for _, basket in self.board.baskets do
+		local cell = basket.waiting > 0 and self:_basketTarget(basket)
+		if cell and (Board.isEmptySlot(cell) or (Board.isPlainTile(cell) and cell.frost == 0)) then
+			if cell.piece then
+				table.insert(wave.removed, { id = cell.piece.id, x = cell.x, y = cell.y, cause = "basket" })
+				cell.piece = nil
+			end
+			basket.waiting -= 1
+			local piece = self.board:newPumpkin()
+			cell.piece = piece
+			table.insert(wave.created, { piece = { id = piece.id, color = piece.color, pumpkin = true }, x = cell.x, y = cell.y })
+			table.insert(wave.effects, { type = "Basket", fromX = basket.x, fromY = basket.y, toX = cell.x, toY = cell.y })
+		end
+	end
+end
+
 -- A power-up blast reaching (x, y).
 function Engine._hit(self, wave, x: number, y: number)
 	local cell = self.board:get(x, y)
 	if not cell then
+		local basket = self.board:basket(x, y)
+		if basket then
+			self:_shakeBasket(wave, basket)
+		end
 		return
 	end
 	if wave.spread then
@@ -246,6 +318,11 @@ function Engine._popGroups(self, wave, groups)
 				if n and n.bale > 0 and not n.stone and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					self:_damageBale(wave, n)
+				elseif not n then
+					local basket = board:basket(cell.x + d[1], cell.y + d[2])
+					if basket then
+						self:_shakeBasket(wave, basket)
+					end
 				end
 			end
 		end
@@ -500,6 +577,9 @@ function Engine._finishWave(self, wave, phases)
 			})
 		end
 	end
+	if #self.board.baskets > 0 then
+		self:_emptyBaskets(wave)
+	end
 	table.insert(phases, {
 		kind = "Pop",
 		removed = wave.removed,
@@ -567,8 +647,8 @@ end
 -- How many more pumpkins refills should drop: enough for the goal, a few at a time.
 function Engine._pumpkinsWanted(self): number
 	local goal = self.goals:find("Pumpkins")
-	if not goal then
-		return 0
+	if not goal or #self.board.baskets > 0 then
+		return 0 -- with baskets, pumpkins come only from them
 	end
 	local onBoard = 0
 	self.board:eachCell(function(cell)

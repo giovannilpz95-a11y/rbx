@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..200 from original shape and
+	Crop Pop level generator. Builds levels 6..225 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 200 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 225 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 200
+local LAST = tonumber(ARGS[2]) or 225
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -68,6 +68,11 @@ local NAMES = {
 	"Twisting Furrows", "Hollow Log", "Mill Race", "Cellar Steps", "Topsy Turvy Barn",
 	"Spring Thaw", "Lambing Season", "Seedling Trays", "April Showers", "Daffodil Dell",
 	"Nesting Box", "Blossom Orchard", "Spring Fair", "Hop Garden", "Maypole Meadow",
+	"Pumpkin Basket", "Wicker Lane", "Harvest Hamper", "Strawberry Rows", "Bean Poles",
+	"Sheaf Corner", "Midsummer Hay", "Basket Weaver", "Beehive Hill", "Market Baskets",
+	"Pea Shoots", "Cherry Ladder", "Lazy River", "Haymakers", "Sunny Hamper",
+	"Picking Season", "Watering Can", "Gooseberry Fool", "Cart Track", "Long Meadow",
+	"Garden Party", "Cucumber Frame", "Lark Rise", "Hamper Hill", "Summer Show",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -79,7 +84,8 @@ local PUMPKIN_INTRO = 101 -- first level with pumpkins
 local CLOVER_INTRO = 126 -- first level with clover
 local STONE_INTRO = 151 -- first level with stone walls
 local PORTAL_INTRO = 176 -- first level with portals
-local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local BASKET_INTRO = 201 -- first level with pumpkin baskets
+local INTROS = { [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -399,6 +405,7 @@ local function mechanics(id)
 		stones = id >= STONE_INTRO, -- "s"
 		thickStones = id >= 160, -- "S"
 		portals = id >= PORTAL_INTRO, -- level.portals
+		baskets = id >= BASKET_INTRO, -- "d"
 	}
 end
 
@@ -406,6 +413,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_BASKETS = { "Baskets", "Stones", "Collect", "Clover", "Baskets", "Weeds", "Mud", "Frost", "Baskets", "HayBale", "Mix", "Pumpkins" }
 local FOCUS_STONES = { "Stones", "Clover", "Collect", "Pumpkins", "Stones", "Weeds", "Mud", "Frost", "Stones", "HayBale", "Mix", "Clover" }
 local FOCUS_CLOVER = { "Clover", "Pumpkins", "Collect", "Weeds", "Clover", "Mud", "Frost", "HayBale", "Clover", "Mix", "Pumpkins", "Collect" }
 local FOCUS_PUMPKINS = { "Pumpkins", "Collect", "Weeds", "Mud", "Pumpkins", "Frost", "HayBale", "Mix", "Pumpkins", "Weeds", "Collect", "Mix" }
@@ -419,6 +427,7 @@ local NAME_HINTS = {
 	{ words = { "Pumpkin", "Gourd", "Squash" }, focus = "Pumpkins", needs = "pumpkins" },
 	{ words = { "Clover", "Shamrock", "Green" }, focus = "Clover", needs = "clover" },
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
+	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 }
 
 local function focusOf(id, name)
@@ -435,6 +444,8 @@ local function focusOf(id, name)
 		return "Stones"
 	elseif id == PORTAL_INTRO then
 		return "Collect" -- portals have no goal of their own
+	elseif id == BASKET_INTRO then
+		return "Baskets"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -446,7 +457,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -581,6 +592,39 @@ local function placePortals(g, rng, id)
 	return portals
 end
 
+-- Pumpkin baskets near the top (one, or a mirrored pair), each over a plain
+-- cell. Returns how many pumpkins the goal asks for (0 if none fit).
+local function placeBaskets(g, rng, id, portals)
+	local portalEnd = {}
+	for _, portal in portals do
+		portalEnd[portal.from[2] * 100 + portal.from[1]] = true
+		portalEnd[portal.to[2] * 100 + portal.to[1]] = true
+	end
+	local function free(x, y)
+		return isCell(g, x, y) and g[y][x] == "." and not portalEnd[y * 100 + x]
+	end
+	local spots = {}
+	for y = 1, 3 do
+		for x = 1, (g.w + 1) // 2 do
+			local mx = g.w - x + 1
+			if free(x, y) and free(mx, y) and free(x, y + 1) and free(mx, y + 1) then
+				table.insert(spots, { x, y })
+			end
+		end
+	end
+	if #spots == 0 then
+		return 0
+	end
+	local spot = rng:pick(spots)
+	local pair = id ~= BASKET_INTRO and spot[1] * 2 <= g.w and rng:int(1, 2) == 1
+	if pair then
+		setSym(g, spot[1], spot[2], "d")
+	else
+		g[spot[2]][spot[1]] = "d"
+	end
+	return if id == BASKET_INTRO then 3 else rng:int(3, 4 + id // 60) + (if pair then 1 else 0)
+end
+
 -- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
 -- tiles all stop falling tiles.
 local function keepRowsOpen(g)
@@ -657,11 +701,22 @@ local function draft(id, variant)
 	end
 	keepRowsOpen(g)
 	local portals = {}
-	if mech.portals and (id == PORTAL_INTRO or rng:int(1, 3) <= 2) then
+	if mech.portals and (id == PORTAL_INTRO or (not INTROS[id] and rng:int(1, 3) <= 2)) then
 		portals = placePortals(g, rng, id)
 		if #portals == 0 and id == PORTAL_INTRO then
 			return nil
 		end
+	end
+	if focus == "Baskets" or (focus == "Mix" and mech.baskets and rng:int(1, 3) == 1) then
+		if pumpkins > 0 then
+			return nil -- basket levels get their pumpkins from the baskets
+		end
+		pumpkins = placeBaskets(g, rng, id, portals)
+		if pumpkins == 0 then
+			return nil
+		end
+	end
+	if #portals > 0 or pumpkins > 0 then
 		for y = 1, g.h do
 			local open = false
 			for x = 1, g.w do

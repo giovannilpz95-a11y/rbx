@@ -15,6 +15,8 @@
 	entrance fall into the exit instead of the cell below. An exit is fed only
 	by its portal (nothing falls into it from above, and no tile spawns there),
 	and the cell under an entrance gets pieces only by sliding in diagonally.
+	Pumpkin baskets ("d") are not cells: pieces fall past them like a hole.
+	The engine counts hits on them and drops pumpkins out of them.
 
 	Everything here is deterministic: loops run in row/column order and all
 	randomness comes from the Rng passed in.
@@ -59,6 +61,10 @@ function Board.new(width: number, height: number)
 		nextId = 1,
 		startPumpkins = {}, -- cells that start with a pumpkin ("p" in the layout)
 		pumpkinsToSpawn = 0, -- set by the engine before each refill
+		-- Pumpkin baskets ("d" in the layout): { x, y, waiting } in row order;
+		-- waiting = pumpkins hit loose that haven't found a cell yet.
+		baskets = {},
+		basketAt = {}, -- y * 100 + x -> basket
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -75,7 +81,11 @@ function Board.fromLayout(layout: { string }, portals: { any }?)
 	for y, row in layout do
 		for x = 1, width do
 			local ch = string.sub(row, x, x)
-			if ch ~= "#" then
+			if ch == "d" then
+				local basket = { x = x, y = y, waiting = 0 }
+				table.insert(self.baskets, basket)
+				self.basketAt[y * 100 + x] = basket
+			elseif ch ~= "#" then
 				local cell: Cell = { x = x, y = y, piece = nil, bale = 0, weed = false, stone = false, mud = 0, frost = 0, clover = false }
 				if ch == "m" then
 					cell.mud = 1
@@ -111,6 +121,11 @@ function Board.fromLayout(layout: { string }, portals: { any }?)
 		end
 	end
 	return self
+end
+
+-- The pumpkin basket at (x, y), if there is one.
+function Board.basket(self, x: number, y: number)
+	return self.basketAt[y * 100 + x]
 end
 
 function Board.get(self, x: number, y: number): Cell?
@@ -464,7 +479,10 @@ function Board.hash(self): string
 		for x = 1, self.width do
 			local cell = self.cells[y][x]
 			local clover = if cell and cell.clover then "+" else "" -- not "c": that is the column sprayer
-			if not cell then
+			local basket = self.basketAt[y * 100 + x]
+			if basket then
+				table.insert(row, "D" .. basket.waiting)
+			elseif not cell then
 				table.insert(row, "#")
 			elseif cell.weed then
 				table.insert(row, "W" .. clover)

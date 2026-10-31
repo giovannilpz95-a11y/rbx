@@ -10,6 +10,9 @@
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
 	  s  stone wall, 1 layer   S  stone wall, 2 layers (only blasts break stone)
+	  d  pumpkin basket: not a cell (pieces fall past it); a match next to it or
+	     a blast on it drops a pumpkin into the cell below. Needs a Pumpkins goal,
+	     and then pumpkins come only from baskets, not from refills.
 	  1 2 3  hay bale with that many layers
 
 	Portals sit outside the layout, as `portals = { { from = { x, y }, to = { x, y } } }`:
@@ -25,7 +28,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -50,9 +53,13 @@ function Levels.get(id: number)
 	return Levels.ById[id]
 end
 
+-- Layout characters that aren't cells.
+local HOLES = { ["#"] = true, d = true }
+
 local VALID_CHARS = {
 	["."] = true,
 	["#"] = true,
+	d = true,
 	m = true,
 	M = true,
 	f = true,
@@ -85,7 +92,7 @@ function Levels.checkPortals(level): string?
 	local layout = level.layout
 	local function isCell(x, y)
 		local row = layout[y]
-		return row ~= nil and type(x) == "number" and x >= 1 and x <= #row and x == math.floor(x) and string.sub(row, x, x) ~= "#"
+		return row ~= nil and type(x) == "number" and x >= 1 and x <= #row and x == math.floor(x) and not HOLES[string.sub(row, x, x)]
 	end
 	local outOf, into = {}, {}
 	for i, portal in portals do
@@ -167,7 +174,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones = 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets = 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -189,11 +196,20 @@ function Levels.validate(level): string?
 				clover += 1
 			elseif ch == "s" or ch == "S" then
 				stones += 1
+			elseif ch == "d" then
+				baskets += 1
+				local below = false
+				for yy = y + 1, height do
+					below = below or not HOLES[string.sub(level.layout[yy], x, x)]
+				end
+				if not below then
+					return string.format("basket at %d,%d has no cell below it", x, y)
+				end
 			elseif ch == "p" then
 				pumpkins += 1
 				local below = false
 				for yy = y + 1, height do
-					below = below or string.sub(level.layout[yy], x, x) ~= "#"
+					below = below or not HOLES[string.sub(level.layout[yy], x, x)]
 				end
 				if not below then
 					return string.format("pumpkin at %d,%d is already at the bottom", x, y)
@@ -208,13 +224,13 @@ function Levels.validate(level): string?
 	if #level.goals == 0 then
 		return "level needs at least one goal"
 	end
-	if pumpkins > 0 then
+	if pumpkins > 0 or baskets > 0 then
 		local wanted = false
 		for _, goal in level.goals do
 			wanted = wanted or goal.kind == "Pumpkins"
 		end
 		if not wanted then
-			return "pumpkins in the layout but no pumpkins goal"
+			return "pumpkins or baskets in the layout but no pumpkins goal"
 		end
 	end
 	for _, goal in level.goals do
