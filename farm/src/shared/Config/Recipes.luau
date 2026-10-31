@@ -59,6 +59,7 @@ local Recipes: { [string]: RecipeDef } = {
 	WoolScarf = { id = "WoolScarf", displayName = "Wool Scarf", factory = "Tailor", unlockLevel = 14, inputs = { Yarn = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 76, xp = 33 }, -- content bank
 	-- Snack Factory (content bank)
 	GlazedBacon = { id = "GlazedBacon", displayName = "Glazed Bacon", factory = "SnackFactory", unlockLevel = 43, inputs = { Bacon = 2, CaneSyrup = 1 }, outputQty = 1, seconds = 1 * HOUR + 20 * MIN, sellPrice = 115, xp = 49 },
+	Canape = { id = "Canape", displayName = "Canapé", factory = "SnackFactory", unlockLevel = 42, inputs = { Olives = 2, Grapes = 2, Cheese = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 307, xp = 132 },
 	Popcorn = { id = "Popcorn", displayName = "Popcorn", factory = "SnackFactory", unlockLevel = 14, inputs = { Corn = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 12, xp = 5 },
 	BerryGranola = { id = "BerryGranola", displayName = "Berry Granola", factory = "SnackFactory", unlockLevel = 19, inputs = { Wheat = 2, Strawberries = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 29, xp = 12 },
 	PotatoChips = { id = "PotatoChips", displayName = "Potato Chips", factory = "SnackFactory", unlockLevel = 22, inputs = { Potatoes = 2 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 69, xp = 30 },
@@ -78,6 +79,7 @@ local Recipes: { [string]: RecipeDef } = {
 	FrozenYogurt = { id = "FrozenYogurt", displayName = "Frozen Yogurt", factory = "IceCreamParlor", unlockLevel = 23, inputs = { Yogurt = 1, Cream = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 87, xp = 37 },
 	IceCreamBar = { id = "IceCreamBar", displayName = "Ice Cream Bar", factory = "IceCreamParlor", unlockLevel = 25, inputs = { CaneSyrup = 1, Cocoa = 1, PineTrees = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 148, xp = 63 },
 	-- Pastry Shop (content bank)
+	KeyLimePie = { id = "KeyLimePie", displayName = "Key Lime Pie", factory = "PastryShop", unlockLevel = 44, inputs = { Wheat = 3, KeyLimes = 2, Sugar = 1, Cream = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 285, xp = 122 },
 	HoneyGingerbread = { id = "HoneyGingerbread", displayName = "Honey Gingerbread", factory = "PastryShop", unlockLevel = 37, inputs = { Wheat = 3, Honeycomb = 2, Eggs = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 119, xp = 51 },
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
 	Cupcake = { id = "Cupcake", displayName = "Cupcake", factory = "PastryShop", unlockLevel = 30, inputs = { Sugar = 1, Eggs = 5, Cream = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 93, xp = 40 },
