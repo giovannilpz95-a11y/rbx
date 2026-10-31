@@ -32,6 +32,13 @@ local offered = false -- Move mode came on to place a building the player just s
 local hint: TextLabel
 local spot: { x: number, z: number, ok: boolean, reason: string? } = { x = 0, z = 0, ok = false, reason = nil }
 
+-- Studio: say what happened to each Place offer, for the test passes
+local function trace(...: any)
+	if RunService:IsStudio() then
+		print("[MovePlacer]", ...)
+	end
+end
+
 local function fade(model: Instance?, amount: number)
 	if model == nil then
 		return
@@ -167,11 +174,15 @@ end
 -- soon as it stands on the plot (Cancel leaves it where it went up)
 function MovePlacer.offer(payload: { [string]: any })
 	local key = payload.key
-	if type(key) ~= "string" or active ~= nil then
+	if type(key) ~= "string" then
+		return
+	elseif active ~= nil then
+		trace("not offered:", key, "(already moving", active, ")")
 		return
 	end
+	trace("offered:", key)
 	task.spawn(function()
-		for _ = 1, 50 do
+		for _ = 1, 100 do
 			local found: Instance? = nil
 			if plot then
 				for _, d in (plot :: Model):GetDescendants() do
@@ -184,11 +195,20 @@ function MovePlacer.offer(payload: { [string]: any })
 			if found and active == nil then
 				editing = true
 				offered = true
-				pickUp(key, found)
+				local ok, err = pcall(pickUp, key, found)
+				if ok then
+					trace("picked up:", key)
+				else
+					-- Say why in the Output (a silent stop left Studio guessing), and put the
+					-- bar back as it was
+					warn("[MovePlacer] pick-up failed:", key, err)
+					stopMoving()
+				end
 				return
 			end
 			task.wait(0.1)
 		end
+		trace("gave up:", key, "never appeared on the plot", plot and plot:GetFullName() or "(no plot)")
 	end)
 end
 
@@ -273,9 +293,14 @@ function MovePlacer.init()
 	ghost.Transparency = 0.45
 	ghost.Material = Enum.Material.Neon
 
+	local warned = false
 	RunService.RenderStepped:Connect(function()
 		if active then
-			update()
+			local ok, err = pcall(update)
+			if not ok and not warned then
+				warned = true -- once, so a broken ghost can't flood the Output
+				warn("[MovePlacer] ghost update failed:", active, err)
+			end
 		end
 	end)
 end

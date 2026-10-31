@@ -9,6 +9,7 @@
 
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -27,6 +28,7 @@ local Shop = require(Shared.Shop)
 local Timer = require(Shared.Timer)
 local Land = require(Shared.Config.Land)
 local Lots = require(Shared.Lots)
+local Market = require(Shared.Market)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local ArtAnimals = require(Shared.Art.Animals)
@@ -37,6 +39,7 @@ local ArtCrops = require(Shared.Art.Crops)
 local ArtFactories = require(Shared.Art.Factories)
 local ArtHouses = require(Shared.Art.Houses)
 local ArtMerge = require(Shared.Art.Merge)
+local ArtMarket = require(Shared.Art.Market)
 local ArtItemProps = require(Shared.Art.ItemProps)
 local ArtFolk = require(Shared.Art.Folk)
 local ArtGuild = require(Shared.Art.Guild)
@@ -171,6 +174,9 @@ local LAYOUT = {
 	penYaw = { SheepFold2 = 90 } :: { [string]: number }, -- default 180: the gate faces south
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
+	-- The Market stall (shared/Market) just inside the gate, west of where visitors arrive,
+	-- its counter facing the spine path (east)
+	marketStall = Vector3.new(-13, 0, 40),
 	prizeShelf = Vector3.new(-28, 0, 43), -- south of the Barn, clear of its door
 	truck = Vector3.new(26, 0, 36),
 	spawn = Vector3.new(0, 0, 16), -- far enough inside that the camera behind you clears the gate
@@ -217,7 +223,7 @@ local DECOR_BUSHES = {
 	Vector3.new(-6, 0, 36),
 	Vector3.new(-6, 0, 26),
 	Vector3.new(6, 0, 26),
-	Vector3.new(-16, 0, 44),
+	Vector3.new(-20, 0, 47),
 	Vector3.new(16, 0, 44),
 }
 
@@ -804,6 +810,16 @@ local function buildPlot(player: Player, slot: Slot): Model
 	label(shelf, "Prize Shelf", 3.5, UDim2.fromOffset(140, 28), 60)
 	ArtBuildings.orderBoard(board, 6)
 	ArtBuildings.dock(model, at(LAYOUT.truck, 0))
+
+	-- The Market stall: every part opens the stall (yours to run, a neighbor's to buy from)
+	local stall = ArtMarket.stall(model, at(LAYOUT.marketStall, 0) * Kit.yaw(-90))
+	stall:SetAttribute("Owner", player.UserId)
+	for _, p in stall:GetDescendants() do
+		if p:IsA("BasePart") then
+			p:SetAttribute("Interact", "Market")
+		end
+	end
+	label(stall.PrimaryPart or stall:FindFirstChild("Bed") :: BasePart, "Market", 7, UDim2.fromOffset(140, 28), 50)
 
 	-- The truck's root is an invisible box the drive tween moves; the model is welded to it.
 	local truck = part({
@@ -1607,6 +1623,69 @@ local function refreshShelf(player: Player, model: Model, data: { [string]: any 
 	end
 end
 
+-- The Market stall's goods (shared/Market): crates on the cart for the listings, and the
+-- listings published on the stall for visitors' panels (client/UI/Market)
+local marketVisualState: { [Player]: string } = {}
+local function refreshMarket(player: Player, model: Model, data: { [string]: any }, now: number)
+	local stall = model:FindFirstChild("MarketStall") :: Model?
+	if stall == nil then
+		return
+	end
+	local m = data.market
+	local scale = Clock.getTimeScale()
+	local published = {}
+	local shown = {}
+	local hidden = 0
+	for _, listing in m.listings do
+		local item = Items[listing.item]
+		table.insert(published, {
+			slot = listing.slot,
+			item = listing.item,
+			qty = listing.qty,
+			price = listing.price,
+			botAt = Market.botAt(listing, scale),
+		})
+		if listing.slot <= ArtMarket.SLOTS then
+			table.insert(shown, {
+				slot = listing.slot,
+				kind = if item then item.kind else "Product",
+				text = string.format(
+					"%d %s\n%d Coins",
+					listing.qty,
+					if item then item.displayName else listing.item,
+					listing.price
+				),
+			})
+		else
+			hidden += 1
+		end
+	end
+	table.sort(published, function(a, b)
+		return a.slot < b.slot
+	end)
+	local json = HttpService:JSONEncode({
+		listings = published,
+		featured = m.featured,
+		color = m.color,
+		open = Market.slotCount(data.level) > 0,
+		traderOnly = player:GetAttribute("MarketTraderOnly") == true,
+	})
+	if marketVisualState[player] == json then
+		return
+	end
+	marketVisualState[player] = json
+	stall:SetAttribute("Stall", json)
+	if stall:GetAttribute("Color") ~= m.color then
+		ArtMarket.setStallColor(stall, m.color)
+	end
+	ArtMarket.setListings(stall, shown, m.featured, hidden)
+end
+
+-- Where a farm's Market stall stands (world), for the server's reach check on buyers
+function PlotService.marketPosition(player: Player): Vector3?
+	return PlotService.worldPosition(player, LAYOUT.marketStall)
+end
+
 -- A building that's built (or going up) with nowhere proper to stand: on its usual spot while
 -- that spot's land is still locked, or with no usual spot at all (level 34+ content) and no
 -- saved one. That happens with a save from before free placement or a Studio shortcut that
@@ -1686,6 +1765,7 @@ function PlotService.refresh(player: Player)
 	refreshDecor(player, model, data)
 	refreshShelf(player, model, data)
 	refreshBarn(player, model, data)
+	refreshMarket(player, model, data, now)
 end
 
 ---------------------------------------------------------------------------------------------

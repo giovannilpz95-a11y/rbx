@@ -125,4 +125,73 @@ function ArtMarket.slot(stall: Model, i: number): CFrame?
 	return if typeof(cf) == "CFrame" then cf else nil
 end
 
+-- The goods on the stall (shared/Market listings): a small crate on each display slot with
+-- its goods and price floating over it, and the Featured pennant on the front post. Slots
+-- past the cart's six (a level-29 stall has nine) don't show on the cart; the price board
+-- says how many more there are. Rebuilt each call into a "Goods" model under `stall`.
+export type Shown = { slot: number, kind: string, text: string }
+ArtMarket.GOODS_PARTS_MAX = ArtMarket.SLOTS + ArtMarket.PENNANT_PARTS_MAX
+
+local KIND_COLOR = {
+	Crop = Palette.wheat,
+	Animal = Palette.cream,
+	Product = Palette.roofTeal,
+} :: { [string]: Color3 }
+
+local function floating(parent: Instance, text: string, offsetY: number, width: number, height: number)
+	if (UDim2 :: any) == nil then
+		return -- the Lune tests have no GUI types
+	end
+	local size = UDim2.fromOffset(width, height)
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "Label"
+	gui.Size = size
+	gui.StudsOffset = Vector3.new(0, offsetY, 0)
+	gui.MaxDistance = 40
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextStrokeTransparency = 0.4
+	label.Text = text
+	label.Parent = gui
+	gui.Parent = parent
+end
+
+function ArtMarket.setListings(stall: Model, listings: { Shown }, featured: number, hidden: number)
+	local old = stall:FindFirstChild("Goods")
+	if old then
+		old:Destroy()
+	end
+	local goods = Kit.model("Goods", stall)
+	for _, shown in listings do
+		local at = ArtMarket.slot(stall, shown.slot)
+		if at == nil then
+			continue
+		end
+		local crate =
+			Kit.builder(goods, at, true)
+				.block("Crate", Vector3.new(0.9, 0.9, 0.9), Vector3.new(0, 0.45, 0), KIND_COLOR[shown.kind] or Palette.crate)
+		crate:SetAttribute("Slot", shown.slot)
+		floating(crate, shown.text, 1.3, 80, 36)
+		if shown.slot == featured then
+			-- The pennant hangs off the front post nearest this end of the cart
+			local post = ArtMarket.slot(stall, 1) :: CFrame
+			ArtMarket.pennant(goods, post * CFrame.new(-1.4, 2.6, -2.5))
+		end
+	end
+	local board = stall:FindFirstChild("PriceBoard", true)
+	if board then
+		local label = board:FindFirstChild("Label")
+		if label then
+			label:Destroy()
+		end
+		if hidden > 0 then
+			floating(board, string.format("+%d more", hidden), 0.9, 90, 26)
+		end
+	end
+end
+
 return ArtMarket

@@ -98,6 +98,7 @@ local PREFIX_SKU: { [string]: string } = {
 	quest = "DailyQuest",
 	questchest = "QuestChest",
 	cart = "SeedCart",
+	market = "Market", -- stall buys and sales, and the passing trader
 	debug = "DevGrant", -- Studio only; never reaches live analytics
 }
 

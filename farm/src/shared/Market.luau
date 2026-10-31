@@ -4,6 +4,7 @@
 --   market.listings   { { slot, item, qty, price, listedAt } }, at most one per slot
 --   market.featured   the slot shown on the Town Square's Market board (0 = none)
 --   market.featuredAt when the featured slot last changed
+--   market.color      the awning color (Config.colors)
 --   market.buys       seller UserId (string) -> { at, n }: this farm's buys from that seller
 --                     in the hour that started at `at`
 -- Goods leave the Barn when listed and come back when a listing is taken down. A sale pays the
@@ -234,6 +235,61 @@ function Market.feature(data: { [string]: any }, slot: any, now: number): (boole
 	m.featured = slot
 	m.featuredAt = now
 	return true
+end
+
+-- The listing on the Town Square's Market board, if any
+function Market.featuredListing(data: { [string]: any }): Listing?
+	local m = market(data)
+	if m.featured == 0 then
+		return nil
+	end
+	return (Market.listing(data, m.featured))
+end
+
+-- Repaint the stall's awning in one of Config.colors
+function Market.setColor(data: { [string]: any }, color: any): (boolean, string?)
+	if Market.slotCount(data.level) == 0 then
+		return false, string.format("Your Market stall opens at level %d", Config.unlockLevel)
+	elseif table.find(Config.colors, color) == nil then
+		return false
+	elseif market(data).color == color then
+		return false
+	end
+	market(data).color = color
+	return true
+end
+
+-- The board's lines: every farm's featured listing, newest first. `farms` holds
+-- { userId, name, data } for each farm that may sell to players.
+export type BoardEntry = { userId: number, name: string, slot: number, item: string, qty: number, price: number }
+function Market.boardEntries(farms: { { userId: number, name: string, data: { [string]: any } } }): { BoardEntry }
+	local entries = {}
+	local at = {}
+	for _, farm in farms do
+		local listing = Market.featuredListing(farm.data)
+		if listing then
+			local entry = {
+				userId = farm.userId,
+				name = farm.name,
+				slot = listing.slot,
+				item = listing.item,
+				qty = listing.qty,
+				price = listing.price,
+			}
+			at[entry] = market(farm.data).featuredAt
+			table.insert(entries, entry)
+		end
+	end
+	table.sort(entries, function(a, b)
+		if at[a] ~= at[b] then
+			return at[a] > at[b]
+		end
+		return a.userId < b.userId
+	end)
+	while #entries > Config.boardLines do
+		table.remove(entries)
+	end
+	return entries
 end
 
 return Market

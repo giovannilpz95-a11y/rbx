@@ -827,6 +827,31 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ArtMarket.pennant(p, CFrame.new())
 		within(p, ArtMarket.PENNANT_PARTS_MAX, "pennant")
 		hinged(p, "Pennant")
+
+		-- Listings: a crate per shown slot, the pennant on the featured one, and the board's
+		-- count of slots past the cart's six
+		local bare = Kit.countParts(stall)
+		local shown = {}
+		for i = 1, ArtMarket.SLOTS do
+			table.insert(
+				shown,
+				{ slot = i, kind = if i % 2 == 0 then "Crop" else "Product", text = "5 Bread\n60 Coins" }
+			)
+		end
+		ArtMarket.setListings(stall, shown, 2, 3)
+		local goods = stall:FindFirstChild("Goods") :: Model
+		ok(goods ~= nil, "stall goods model")
+		within(goods, ArtMarket.GOODS_PARTS_MAX, "stall goods")
+		paletteRules(goods, "stall goods")
+		ok(goods:FindFirstChild("FeaturedPennant") ~= nil, "featured pennant")
+		local board = stall:FindFirstChild("PriceBoard", true) :: BasePart
+		ok(board ~= nil, "price board for the hidden-slot count")
+		ArtMarket.setListings(stall, {}, 0, 0)
+		eq(Kit.countParts(stall), bare, "an empty stall shows no goods")
+		-- Every color the owner can pick (Config/Market) has an awning color
+		for _, name in require("../src/shared/Config/Market").colors do
+			ok(ArtMarket.COLORS[name] ~= nil, name .. " has an awning color")
+		end
 	end)
 
 	test("art: Blimp Mast, Cargo Blimp and its crates", function()
@@ -1129,6 +1154,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
 		total += ArtQuarry.PARTS_MAX
+		-- The Market stall at the gate with every display slot full and a listing featured
+		total += ArtMarket.STALL_PARTS_MAX + ArtMarket.GOODS_PARTS_MAX
 		-- The Blimp Mast with the Cargo Blimp docked and a full load of crates
 		total += ArtBlimp.PARTS_MAX
 		-- The Tinker's Guild, merged like a town building once it's built

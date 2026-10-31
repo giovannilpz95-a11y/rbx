@@ -150,6 +150,7 @@ function Profile.template(): { [string]: any }
 			listings = {}, -- { slot, item, qty, price, listedAt }
 			featured = 0, -- the slot on the Town Square's Market board
 			featuredAt = 0,
+			color = "Red", -- the awning color (Config/Market colors)
 			buys = {}, -- seller UserId (string) -> { at, n }: buys from them this hour
 		},
 		seedCart = { -- the Seed Cart in the Town Square (shared/SeedCart)

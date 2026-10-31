@@ -18,8 +18,10 @@ local NEAR = 220 -- studs from the camera; a plot is about 100 across
 type Entry = { rig: ArtMotion.Rig, model: Model, started: number, moving: boolean }
 
 local entries: { [Model]: Entry } = {}
+local pending: { [Model]: RBXScriptConnection } = {}
 
-local function track(model: Instance)
+local track: (model: Instance) -> ()
+function track(model: Instance)
 	if
 		not model:IsA("Model")
 		or entries[model]
@@ -30,12 +32,31 @@ local function track(model: Instance)
 	end
 	local rig = ArtMotion.bind(model.Name, model)
 	if rig == nil then
+		-- Its moving part hasn't replicated yet (a factory built or moved while we watch can
+		-- arrive in pieces): try again as its parts come in
+		if not pending[model] then
+			pending[model] = model.DescendantAdded:Connect(function()
+				task.defer(function()
+					local waiting = pending[model]
+					if waiting and ArtMotion.bind(model.Name, model) ~= nil then
+						waiting:Disconnect()
+						pending[model] = nil
+						track(model)
+					end
+				end)
+			end)
+		end
 		return
 	end
 	entries[model] = { rig = rig, model = model, started = 0, moving = false }
 	model.AncestryChanged:Connect(function()
 		if not model:IsDescendantOf(Workspace) then
 			entries[model] = nil
+			local waiting = pending[model]
+			if waiting then
+				waiting:Disconnect()
+				pending[model] = nil
+			end
 		end
 	end)
 end
@@ -55,6 +76,20 @@ local function step()
 	local eye = if camera then camera.CFrame.Position else Vector3.zero
 	local now = os.clock()
 	for model, e in entries do
+		-- The server rebuilt its moving part (a finished build swaps the scaffold for the
+		-- factory): bind the new one
+		local stale = false
+		for _, part in e.rig.parts do
+			if not part:IsDescendantOf(model) then
+				stale = true
+				break
+			end
+		end
+		if stale then
+			entries[model] = nil
+			task.defer(track, model)
+			continue
+		end
 		local busy = model:GetAttribute("Busy") == true
 		local near = (e.rig.pivot.Position - eye).Magnitude < NEAR
 		if busy and near then
