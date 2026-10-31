@@ -130,6 +130,11 @@ local Recipes: { [string]: RecipeDef } = {
 	Book = { id = "Book", displayName = "Book", factory = "PaperMill", unlockLevel = 52, inputs = { Paper = 4, CottonFabric = 1, Glue = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 304, xp = 130 },
 	HighlighterPen = { id = "HighlighterPen", displayName = "Highlighter Pen", factory = "StationeryShop", unlockLevel = 52, inputs = { NylonThread = 1, Cotton = 3, Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 283, xp = 121 },
 	FishBurger = { id = "FishBurger", displayName = "Fish Burger", factory = "Diner", unlockLevel = 53, inputs = { Bread = 2, Fish = 2, Peppers = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 184, xp = 79 },
+	-- Level 54-55 goods
+	Bed = { id = "Bed", displayName = "Bed", factory = "FurnitureWorkshop", unlockLevel = 54, inputs = { SilkFabric = 1, CottonFabric = 1, PineTrees = 2 }, outputQty = 1, seconds = 4 * HOUR + 30 * MIN, sellPrice = 292, xp = 125 },
+	MintCandy = { id = "MintCandy", displayName = "Mint Candy", factory = "CandyFactory", unlockLevel = 54, inputs = { Mint = 2, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 114, xp = 49 },
+	SeafoodPizza = { id = "SeafoodPizza", displayName = "Seafood Pizza", factory = "Bakery", unlockLevel = 55, inputs = { Wheat = 2, Fish = 1, Shrimp = 1, Cheese = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 241, xp = 103 },
+	Sneakers = { id = "Sneakers", displayName = "Sneakers", factory = "Cobbler", unlockLevel = 55, inputs = { Rubber = 1, CottonFabric = 1, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 234, xp = 100 },
 	-- Jeweler (Township's Jewelry Store): Quarry ore from the Ore Shed, like the Smelter
 	Pendant = { id = "Pendant", displayName = "Pendant", factory = "Jeweler", unlockLevel = 53, inputs = { SilverOre = 9 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 345, xp = 148, fromOreShed = true },
 	BulletinBoard = { id = "BulletinBoard", displayName = "Bulletin Board", factory = "StationeryShop", unlockLevel = 48, inputs = { CorkOak = 3, Paper = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 124, xp = 53 },

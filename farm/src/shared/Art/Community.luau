@@ -1928,6 +1928,72 @@ TYPES.DaySpa = function(b, s)
 	return body
 end
 
+-- Golf Club (content bank, level 54): a putting green with a flag in the hole, a sand bunker,
+-- a little clubhouse with a striped awning and a giant golf ball on a tee as its sign.
+TYPES.GolfClub = function(b, s)
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	b.cyl("Green", 0.3, s * 0.8, CFrame.new(0, 0.15, -s * 0.05) * up, Palette.grassLight)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.36, 3.4, s * 0.24),
+		Vector3.new(-s * 0.18, PLINTH + 1.7, s * 0.26),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block(
+		"Plinth",
+		Vector3.new(s * 0.4, PLINTH, s * 0.28),
+		Vector3.new(-s * 0.18, PLINTH / 2, s * 0.26),
+		Palette.stone
+	)
+	t.block(
+		"Roof",
+		Vector3.new(s * 0.4, 0.4, s * 0.28),
+		Vector3.new(-s * 0.18, PLINTH + 3.6, s * 0.26),
+		Palette.treeTopDark
+	)
+	t.block(
+		"Awning",
+		Vector3.new(s * 0.36, 0.25, 1.2),
+		CFrame.new(-s * 0.18, PLINTH + 2.6, s * 0.14 - 0.6) * CFrame.Angles(math.rad(-15), 0, 0),
+		Palette.roofRed
+	)
+	Kit.door(t, "Door", CFrame.new(-s * 0.18, PLINTH, s * 0.14), 1.4, 2.4, Palette.treeTopDark, Palette.cream)
+	-- The hole with its flag, a bunker and the ball on its tee
+	t.cyl("Hole", 0.32, 0.6, CFrame.new(s * 0.1, 0.16, -s * 0.12) * up, Palette.stoneDark)
+	t.post("FlagPole", 3.6, 0.15, Vector3.new(s * 0.1, 1.8, -s * 0.12), Palette.cream)
+	t.wedge("Flag", Vector3.new(0.1, 0.9, 1.4), CFrame.new(s * 0.1, 3.1, -s * 0.12 - 0.7), Palette.roofRed)
+	t.cyl("Bunker", 0.32, 2.6, CFrame.new(-s * 0.2, 0.17, -s * 0.24) * up, Palette.wheat)
+	t.post("Tee", 1.6, 0.4, Vector3.new(s * 0.26, 0.8, s * 0.22), Palette.wood)
+	t.ball("Ball", 2.2, Vector3.new(s * 0.26, 2.6, s * 0.22), Palette.cream:Lerp(Palette.stoneLight, 0.2))
+	Kit.sproutTag(t, Vector3.new(-s * 0.3, PLINTH + 4.4, s * 0.32), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Organ Hall (content bank, level 55): a tall warm-stone concert hall with a rose window and
+-- a row of golden organ pipes rising behind a gable front.
+TYPES.OrganHall = function(b, s)
+	local body = hall(b, s * 0.56, s * 0.5, 6.4, Palette.wheat:Lerp(Palette.cream, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.25
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + 6.4, 0), s * 0.6, s * 0.54, 2.6, Palette.roofPlum, Palette.cream)
+	-- The organ pipes behind the gable, tallest in the middle
+	for i, hgt in { 3, 4.4, 5.6, 4.4, 3 } do
+		local x = (i - 3) * 1
+		t.post("Pipe", hgt, 0.7, Vector3.new(x, PLINTH + 6.4 + hgt / 2, s * 0.16), Palette.coins)
+	end
+	t.cyl("RoseWindow", 0.2, 2.2, CFrame.new(0, PLINTH + 4.6, face - 0.1) * Kit.yaw(90), Palette.glassDeep)
+	t.cyl("RoseRim", 0.18, 2.6, CFrame.new(0, PLINTH + 4.6, face - 0.05) * Kit.yaw(90), Palette.cream)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 3.2, Palette.woodDark, Palette.cream)
+	t.block("Steps", Vector3.new(s * 0.4, 0.4, 1.2), Vector3.new(0, 0.2, face - 0.9), Palette.stoneLight)
+	for _, x in { -s * 0.2, s * 0.2 } do
+		t.block("Banner", Vector3.new(1, 2.6, 0.15), Vector3.new(x, PLINTH + 3.4, face - 0.1), Palette.roofPlum)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.22, PLINTH + 7, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

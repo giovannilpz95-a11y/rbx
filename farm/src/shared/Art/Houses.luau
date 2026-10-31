@@ -741,6 +741,43 @@ TYPES.TiledTower = {
 	end,
 }
 
+-- Courtyard Block (content bank, level 54): a wide stone-coloured block of flats in two
+-- wings round a little front courtyard with a tree, under a teal parapet.
+TYPES.CourtyardBlock = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.76, s * 0.5, STORY * 2.5
+		local body = walls(b, w, d, h, Palette.stoneLight:Lerp(Palette.cream, 0.5), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.6), roof)
+		-- The two wings stepping forward either side of the courtyard
+		for _, x in { -w * 0.36, w * 0.36 } do
+			t.block(
+				"Wing",
+				Vector3.new(w * 0.28, STORY * 2, 2),
+				Vector3.new(x, PLINTH + STORY, face - 1),
+				Palette.cream
+			)
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x, PLINTH + STORY + 1.4, face - 2),
+				1.4,
+				1.6,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		Kit.window(t, "Window", CFrame.new(0, PLINTH + STORY * 1.6, face), 2.4, 1.6, Palette.cream, Palette.glass)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 3.2, roof, Palette.cream)
+		t.post("Trunk", 1.4, 0.35, Vector3.new(-1.6, PLINTH + 0.7, face - 1.4), Palette.trunk)
+		t.ball("Tree", 1.8, Vector3.new(-1.6, PLINTH + 2, face - 1.4), Palette.leaf)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 0.8, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

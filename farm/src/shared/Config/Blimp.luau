@@ -60,6 +60,7 @@ local crates: { [string]: Range } = {
 	-- Cobbler and the level 50-51 goods
 	FlipFlops = { 2, 4 }, Sandals = { 2, 2 }, FeatherHat = { 1, 2 }, MintChocIceCream = { 2, 2 }, PineappleSorbet = { 1, 2 },
 	HoneyMarshmallow = { 1, 2 }, Book = { 1, 2 }, HighlighterPen = { 1, 2 }, FishBurger = { 1, 3 },
+	Bed = { 1, 2 }, MintCandy = { 2, 2 }, SeafoodPizza = { 1, 2 }, Sneakers = { 1, 2 },
 	-- Stationery Shop, Furniture Workshop
 	Eraser = { 1, 3 }, StickyNotes = { 2, 2 }, Table = { 1, 2 }, Chair = { 1, 2 },
 	-- Level 46-47 goods at older factories

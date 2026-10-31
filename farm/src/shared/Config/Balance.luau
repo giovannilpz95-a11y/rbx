@@ -63,6 +63,7 @@ return table.freeze({
 		"BeeYard",
 		"ChickenCoop3",
 		"BeeYard2",
+		"PigPen2",
 		"PigPen",
 	}),
 
