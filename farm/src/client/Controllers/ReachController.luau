@@ -570,6 +570,16 @@ function ReachController.setPlot(model: Model)
 			table.insert(interactives, descendant)
 		end
 	end)
+	-- Rebuilt models (crates under the Cargo Blimp, a finished building) leave their old parts
+	-- behind: drop them, or a press could pick one that isn't there any more
+	model.DescendantRemoving:Connect(function(descendant)
+		if descendant:IsA("BasePart") then
+			local index = table.find(interactives, descendant)
+			if index then
+				table.remove(interactives, index)
+			end
+		end
+	end)
 end
 
 function ReachController.init()
