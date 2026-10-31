@@ -52,6 +52,7 @@ local BRUSH_ROWS = {
 		{ char = "S", label = "🧱2" },
 		{ char = "d", label = TileStyle.BasketGlyph },
 		{ char = "g", label = TileStyle.GoalGlyphs.Goo },
+		{ char = "h", label = TileStyle.HenGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -60,6 +61,8 @@ local BRUSH_ROWS = {
 }
 local PORTAL = "o" -- the portal brush
 local FENCE = "|" -- the fence brush
+-- Layout characters that aren't board cells (no portal end or fence there).
+local NOT_CELL = { ["#"] = true, d = true, h = true }
 local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
@@ -310,6 +313,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.basket, TileStyle.BasketGlyph
 	elseif char == "g" then
 		return TileStyle.Board.goo, TileStyle.GoalGlyphs.Goo
+	elseif char == "h" then
+		return TileStyle.Board.hen, TileStyle.HenGlyph
 	end
 	return Colors.cellLight, ""
 end
@@ -332,7 +337,7 @@ local function tapPortal(x: number, y: number)
 	if i then
 		table.remove(state.portals, i)
 		state.portalStart = nil
-	elseif state.grid[y][x] == "#" or state.grid[y][x] == "d" then
+	elseif NOT_CELL[state.grid[y][x]] then
 		return
 	elseif not state.portalStart then
 		state.portalStart = { x, y }
@@ -346,11 +351,11 @@ end
 local function tapFence(x: number, y: number)
 	local start = state.fenceStart
 	if not start or math.abs(start[1] - x) + math.abs(start[2] - y) ~= 1 then
-		state.fenceStart = if state.grid[y][x] == "#" or state.grid[y][x] == "d" then nil else { x, y }
+		state.fenceStart = if NOT_CELL[state.grid[y][x]] then nil else { x, y }
 		return
 	end
 	state.fenceStart = nil
-	if state.grid[y][x] == "#" or state.grid[y][x] == "d" then
+	if NOT_CELL[state.grid[y][x]] then
 		return
 	end
 	local fx, fy = math.min(x, start[1]), math.min(y, start[2])
@@ -427,7 +432,7 @@ local function renderGrid()
 					tapFence(x, y)
 				else
 					state.grid[y][x] = state.brush
-					if state.brush == "#" or state.brush == "d" then
+					if NOT_CELL[state.brush] then
 						dropPortalsAt(x, y)
 					end
 				end
@@ -792,7 +797,7 @@ function LevelEditor.paint(x: number, y: number, char: string)
 		tapFence(x, y)
 	else
 		state.grid[y][x] = char
-		if char == "#" or char == "d" then
+		if NOT_CELL[char] then
 			dropPortalsAt(x, y)
 		end
 	end

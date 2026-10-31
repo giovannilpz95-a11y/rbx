@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..275 from original shape and
+	Crop Pop level generator. Builds levels 6..300 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 275 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 300 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 275
+local LAST = tonumber(ARGS[2]) or 300
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -83,6 +83,11 @@ local NAMES = {
 	"Wetland Walk", "Peat Moss", "Slime Pond", "Mire Farm", "Newt Corner",
 	"Soggy Bottom", "Cattail Creek", "Bullfrog Bend", "Muck Spreader", "Ooze Ridge",
 	"Willow Marsh", "Dragonfly Dell", "Heron Wade", "Sludge Pump", "Great Bog Fair",
+	"Hen House", "Speckled Hen", "Nest Egg", "Coop Corner", "Clucking Lane",
+	"Roost Row", "Egg Basket Hill", "Bantam Yard", "Morning Lay", "Henhouse Hollow",
+	"Brown Eggs", "Feather Field", "Chick Run", "Perch Point", "Egg Market",
+	"Rooster Ridge", "Hatching Day", "Scratch Yard", "Free Range", "Golden Egg",
+	"Dovecote", "Poultry Show", "Corn Feed", "Broody Hen", "Grand Coop Fair",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -97,7 +102,8 @@ local PORTAL_INTRO = 176 -- first level with portals
 local BASKET_INTRO = 201 -- first level with pumpkin baskets
 local FENCE_INTRO = 226 -- first level with fences
 local GOO_INTRO = 251 -- first level with goo
-local INTROS = { [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local HEN_INTRO = 276 -- first level with hen houses
+local INTROS = { [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -420,6 +426,7 @@ local function mechanics(id)
 		baskets = id >= BASKET_INTRO, -- "d"
 		fences = id >= FENCE_INTRO, -- level.fences
 		goo = id >= GOO_INTRO, -- "g"
+		hens = id >= HEN_INTRO, -- "h"
 	}
 end
 
@@ -427,6 +434,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_HENS = { "Hens", "Goo", "Collect", "Fences", "Hens", "Baskets", "Stones", "Mud", "Hens", "Clover", "Weeds", "Mix" }
 local FOCUS_GOO = { "Goo", "Fences", "Collect", "Baskets", "Goo", "Stones", "Clover", "Mud", "Goo", "Weeds", "HayBale", "Mix" }
 local FOCUS_FENCES = { "Fences", "Baskets", "Collect", "Stones", "Fences", "Clover", "Weeds", "Mud", "Fences", "Frost", "HayBale", "Mix" }
 local FOCUS_BASKETS = { "Baskets", "Stones", "Collect", "Clover", "Baskets", "Weeds", "Mud", "Frost", "Baskets", "HayBale", "Mix", "Pumpkins" }
@@ -445,6 +453,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Hen", "Coop", "Egg", "Roost", "Chick", "Poultry", "Bantam" }, focus = "Hens", needs = "hens" },
 	{ words = { "Goo", "Ooze", "Slim", "Sticky", "Sludge", "Bog", "Muck" }, focus = "Goo", needs = "goo" },
 }
 
@@ -468,6 +477,8 @@ local function focusOf(id, name)
 		return "Fences"
 	elseif id == GOO_INTRO then
 		return "Goo"
+	elseif id == HEN_INTRO then
+		return "Hens"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -479,7 +490,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -664,7 +675,7 @@ local FENCE_PATTERNS = { "wall", "pen", "rails" }
 local function placeFences(g, rng, id)
 	local fences, seen = {}, {}
 	local function plain(x, y)
-		return isCell(g, x, y) and g[y][x] ~= "d"
+		return isCell(g, x, y) and g[y][x] ~= "d" and g[y][x] ~= "h"
 	end
 	local function add(x, y, side)
 		local ox, oy = if side == "r" then x + 1 else x, if side == "d" then y + 1 else y
@@ -710,6 +721,37 @@ local function placeFences(g, rng, id)
 	return fences
 end
 
+-- Hen houses in the upper half (one, or a mirrored pair), each over a plain cell.
+local function placeHens(g, rng, id, portals)
+	local portalEnd = {}
+	for _, portal in portals do
+		portalEnd[portal.from[2] * 100 + portal.from[1]] = true
+		portalEnd[portal.to[2] * 100 + portal.to[1]] = true
+	end
+	local function free(x, y)
+		return isCell(g, x, y) and g[y][x] == "." and not portalEnd[y * 100 + x]
+	end
+	local spots = {}
+	for y = 2, g.h // 2 do
+		for x = 1, (g.w + 1) // 2 do
+			local mx = g.w - x + 1
+			if free(x, y) and free(mx, y) and free(x, y + 1) and free(mx, y + 1) then
+				table.insert(spots, { x, y })
+			end
+		end
+	end
+	if #spots == 0 then
+		return 0
+	end
+	local spot = rng:pick(spots)
+	if id ~= HEN_INTRO and spot[1] * 2 <= g.w and rng:int(1, 2) == 1 then
+		setSym(g, spot[1], spot[2], "h")
+		return 2
+	end
+	g[spot[2]][spot[1]] = "h"
+	return 1
+end
+
 -- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
 -- tiles all stop falling tiles.
 local function keepRowsOpen(g)
@@ -745,6 +787,11 @@ local function draft(id, variant)
 	local difficulty = difficultyOf(id)
 	local name = NAMES[id - 5] or ("Level " .. id)
 	local focus = focusOf(id, name)
+	-- Hen levels after the intro add one other obstacle: eggs alone are too easy.
+	local henFocus = focus == "Hens"
+	if henFocus and id ~= HEN_INTRO then
+		focus = ({ "Mud", "HayBale", "Frost", "Weeds" })[id % 4 + 1]
+	end
 	local w = rng:int(7, if id < 15 then 8 else 9)
 	local h = rng:int(7, if id < 15 then 8 else 9)
 	local g
@@ -804,6 +851,13 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	local hens = 0
+	if henFocus or (focus == "Mix" and mech.hens and rng:int(1, 3) == 1) then
+		hens = placeHens(g, rng, id, portals)
+		if hens == 0 then
+			return nil
+		end
+	end
 	local fences = {}
 	if focus == "Fences" or (focus == "Mix" and mech.fences and rng:int(1, 3) == 1) then
 		fences = placeFences(g, rng, id)
@@ -830,6 +884,9 @@ local function draft(id, variant)
 	local colors = table.clone(Tiles.Names)
 	rng:shuffle(colors)
 	colors = table.move(colors, 1, colorCount, 1, {})
+	if hens > 0 and not table.find(colors, "Egg") then
+		colors[#colors] = "Egg" -- hen houses lay eggs
+	end
 	table.sort(colors, function(a, b)
 		return Tiles.ByName[a] < Tiles.ByName[b]
 	end)
@@ -881,6 +938,15 @@ local function draft(id, variant)
 	end
 	local picks = table.clone(colors)
 	rng:shuffle(picks)
+	if hens > 0 then
+		-- Hen levels always ask for eggs; other collect goals pick other tiles.
+		if #goals >= 3 then
+			return nil -- no room in the goal bar for the eggs
+		end
+		table.remove(picks, table.find(picks, "Egg"))
+		table.insert(goals, { kind = "Collect", tile = "Egg", count = math.min(MAX_COLLECT, 12 + id // 20 + hens * 4) })
+		collects = math.min(collects, 2 - #goals + 1)
+	end
 	for i = 1, collects do
 		local count = 10 + math.floor(id / 4) + rng:int(0, 6)
 		if collects == 1 and #goals == 0 then
