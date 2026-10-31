@@ -10,6 +10,7 @@
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
@@ -506,7 +507,7 @@ local function buildPenAt(plot: Model, id: string, facing: CFrame)
 	local height = ArtAnimals.HEIGHT[kind] or 2.5
 	for i, spot in ANIMAL_SPOTS do
 		local stand = facing * CFrame.new(spot) * Kit.yaw(ANIMAL_TURNS[i])
-		local animal = ArtAnimals.animal(kind, stand, "Animal_" .. i)
+		local animal = ArtAnimals.placed(kind, stand, "Animal_" .. i)
 		Kit.fade(animal, 1)
 		animal.Parent = pen
 		local product =
@@ -1606,6 +1607,62 @@ local function refreshShelf(player: Player, model: Model, data: { [string]: any 
 	end
 end
 
+-- A building that's built (or going up) with nowhere proper to stand: on its usual spot while
+-- that spot's land is still locked, or with no usual spot at all (level 34+ content) and no
+-- saved one. That happens with a save from before free placement or a Studio shortcut that
+-- skipped the build checks (Debug "Build everything"). Move it to the nearest open spot to the
+-- player on the farm's land and remember it there.
+local rehoming: { [Player]: boolean } = {}
+local function rehome(player: Player, data: { [string]: any }, now: number)
+	if rehoming[player] then
+		return
+	end
+	local moves = {}
+	local function check(kind: string, id: string, land: number?)
+		local key = Layout.key(kind, id)
+		if Layout.spot(data, key) then
+			return
+		end
+		local usual = PlotService.usualSpot(kind, id)
+		if usual and (land == nil or land == 0 or TownRules.landDone(data, land, now)) then
+			return
+		end
+		table.insert(moves, { kind = kind, key = key })
+	end
+	for id, factory in data.factories do
+		if factory.built and Factories[id] then
+			check("factory", id, Factories[id].land)
+		end
+	end
+	for id, pen in data.pens do
+		if pen.built and Animals.pens[id] then
+			check("pen", id, Animals.pens[id].land)
+		end
+	end
+	for id in data.town.community do
+		local lot = Town.community[id] and TownRules.communityLot(id)
+		if lot then -- not a Town Hall storey
+			local def = Lots.community[lot]
+			check("community", id, if def then def.land else nil)
+		end
+	end
+	if #moves == 0 then
+		return
+	end
+	rehoming[player] = true
+	for _, move in moves do
+		local spot = PlotService.findOpenSpot(player, data, move.kind, PlotService.nearPlayer(player))
+		if spot then
+			data.layout[move.key] = spot
+			DataService.markDirty(player, true)
+			PlotService.relocate(player, move.key)
+		else
+			warn("[PlotService] no open spot for", move.key, "on locked land")
+		end
+	end
+	rehoming[player] = nil
+end
+
 function PlotService.refresh(player: Player)
 	local model = plotsByPlayer[player]
 	local data = DataService.get(player)
@@ -1613,6 +1670,7 @@ function PlotService.refresh(player: Player)
 		return
 	end
 	local now = Clock.now()
+	rehome(player, data, now)
 	refreshFields(player, model, data, now)
 	for id, factory in data.factories do
 		refreshFactory(player, model, data, id, factory, now)
@@ -1787,6 +1845,8 @@ end
 function PlotService.offerPlace(player: Player, data: { [string]: any }, key: string)
 	if (data.tutorial and data.tutorial.step or 0) == 0 then
 		NetService.popup(player, { kind = "Place", key = key })
+	elseif RunService:IsStudio() then
+		print("[Layout] no Place bar for", key, "while the first-session guide runs (step", data.tutorial.step, ")")
 	end
 end
 
@@ -1809,6 +1869,7 @@ end
 -- is (moved there, or its usual spot on land the farm owns), a new spot to save when it has no
 -- usual spot or that spot's land (`land`) isn't cleared yet (the nearest open spot to the
 -- player), or an error when there's no room.
+local buildTrace = 0
 function PlotService.prepareBuild(
 	player: Player,
 	data: { [string]: any },
@@ -1822,7 +1883,23 @@ function PlotService.prepareBuild(
 		return nil, nil
 	end
 	local usual = PlotService.usualSpot(kind, id)
-	if usual and (land == nil or land == 0 or TownRules.landDone(data, land, now)) then
+	local landOk = land == nil or land == 0 or TownRules.landDone(data, land, now)
+	if RunService:IsStudio() then
+		-- Numbered, so a line shown twice by the log can't be mistaken for two build calls
+		buildTrace += 1
+		print(
+			string.format(
+				"[Layout] #%d build %s:%s usual=%s land=%s cleared=%s",
+				buildTrace,
+				kind,
+				id,
+				tostring(usual),
+				tostring(land),
+				tostring(landOk)
+			)
+		)
+	end
+	if usual and landOk then
 		return nil, nil
 	end
 	local spot = PlotService.findOpenSpot(player, data, kind, PlotService.nearPlayer(player))
@@ -2022,6 +2099,15 @@ function PlotService.driveTruck(player: Player, returnSeconds: number)
 end
 
 function PlotService.init()
+	-- One merged look per animal kind, cloned into every pen built after it's ready (Art/Merge)
+	local kinds = {}
+	for id, def in Animals.pens do
+		if def.copyOf == nil then
+			table.insert(kinds, id)
+		end
+	end
+	table.sort(kinds)
+	task.spawn(ArtAnimals.mergeLooks, kinds, game:GetService("ServerStorage"))
 	buildWorld()
 
 	-- Visuals that change with time alone (crops ripening, factories finishing goods,

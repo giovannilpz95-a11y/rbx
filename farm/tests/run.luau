@@ -280,7 +280,27 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 33, "levels 17 to 33 are banked")
+	eq(Levels.built, 36, "levels 17 to 36 are banked")
+	eq(Levels.list[36].xpToNext, 43455, "L36 row")
+	eq(Recipes.Cheesecake.inputs.Strawberries, 2, "Cheesecake (Township's inputs)")
+	eq(Recipes.HoneyCaramel.inputs.Honeycomb, 1, "Honey Caramel from Honeycomb")
+	eq(Recipes.Suit.inputs.SilkFabric, 1, "Suit from Yarn, Cotton Fabric and Silk Fabric")
+	eq(Recipes.NylonThread.inputs.RubberTrees, 3, "Nylon Thread from 3 Rubber Trees")
+	eq(Town.community.LoopCoaster.capBonus, 175, "Loop Coaster")
+	eq(Levels.list[35].xpToNext, 39606, "L35 row")
+	eq(Animals.pens.BeeYard.buildCost, 9000, "Bee Yard (Township's Apiary)")
+	eq(Animals.pens.BeeYard.extraAnimalCosts[3], 1500, "Bee Hives 4 to 6")
+	eq(Recipes.BeeFeed.outputQty, 3, "Bee Feed comes in threes")
+	eq(Recipes.Toys.inputs.Rubber, 1, "Toys from Plastic and Rubber")
+	eq(Town.community.SkyWheel.capBonus, 170, "Sky Wheel")
+	eq(Levels.list[34].xpToNext, 36013, "L34 row")
+	eq(Factories.MoldingWorks.buildCost, 15000, "Molding Works (Township's Plastics Factory)")
+	eq(Factories.MoldingWorks.population, 2375, "Molding Works Population")
+	eq(Recipes.PlasticBottle.inputs.Plastic, 1, "Plastic Bottle from Plastic")
+	eq(Recipes.FrozenVegetables.inputs.Tomatoes, 1, "Frozen Vegetables from Tomatoes, Corn and Carrots")
+	eq(Town.houses.CourtyardFlats.population, 90, "Courtyard Flats")
+	eq(Town.community.SignalTower.capBonus, 165, "Signal Tower")
+	eq(Guild.maxLevel("MoldingWorks"), 53, "the Molding Works has its own Guild table")
 	eq(Levels.list[33].xpToNext, 32663, "L33 row")
 	eq(Recipes.Dress.inputs.SilkFabric, 1, "Dress from Yarn and Silk Fabric")
 	eq(Recipes.Donut.inputs.Cocoa, 1, "Donut from Bagel, Caramel and Cocoa")
@@ -1271,9 +1291,17 @@ test("every lot sits on the plot, on its land, clear of the streets and the othe
 			ok(not overlaps(a, boxes[j]), a[5] .. " is clear of " .. boxes[j][5])
 		end
 	end
+	-- From level 34 the lots have run out: new Community Buildings go up wherever the player
+	-- places them (the free-placement sandbox, shared/Layout)
 	for id, def in Town.community do
 		local lot = TownRules.communityLot(id)
-		ok(if def.townHallStorey then lot == nil else Lots.community[lot :: number] ~= nil, id .. " has a lot")
+		if def.townHallStorey then
+			eq(lot, nil, id .. " is a Town Hall storey")
+		elseif def.unlockLevel < 34 then
+			ok(Lots.community[lot :: number] ~= nil, id .. " has a lot")
+		else
+			ok(lot ~= nil and Lots.community[lot :: number] == nil, id .. " is placed by the player")
+		end
 	end
 end)
 

@@ -25,7 +25,15 @@ local ArtMarket = require("../src/shared/Art/Market")
 local ArtMerge = require("../src/shared/Art/Merge")
 -- What Merge offers as soon as it loads, before any test calls into it (a function defined
 -- inside another one would only show up after that one ran)
-local MERGE_AT_LOAD = { ArtMerge.leader, ArtMerge.mergeShell, ArtMerge.countShell, ArtMerge.parts }
+local MERGE_AT_LOAD = {
+	ArtMerge.leader,
+	ArtMerge.mergeShell,
+	ArtMerge.countShell,
+	ArtMerge.parts,
+	ArtMerge.template,
+	ArtMerge.place,
+	ArtMerge.countTemplate,
+}
 local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
 local Records = require("../src/shared/Config/Records")
@@ -53,7 +61,7 @@ local Recipes = require("../src/shared/Config/Recipes")
 local Tools = require("../src/shared/Config/Tools")
 local Town = require("../src/shared/Config/Town")
 
-local PENS = { "CowBarn", "ChickenCoop", "SheepFold" }
+local PENS = { "CowBarn", "ChickenCoop", "SheepFold", "BeeYard" }
 -- Every factory up to the highest built level, in unlock order
 local FACTORIES = {}
 for id, def in Factories do
@@ -597,6 +605,46 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: pen animals merge once per kind and every copy is a union", function()
+		local stub = {
+			UnionAsync = function(_self, primary: BasePart, _parts: { BasePart }, _options)
+				local u = Instance.new("Part")
+				u.CFrame = primary.CFrame
+				u.Size = primary.Size
+				return { u }
+			end,
+		}
+		local kinds = {}
+		for id, def in Animals.pens do
+			if def.copyOf == nil then
+				table.insert(kinds, id)
+			end
+		end
+		table.sort(kinds)
+		local store = Instance.new("Folder")
+		ArtAnimals.mergeLooks(kinds, store, stub)
+		for _, id in kinds do
+			local built = ArtAnimals.animal(id, CFrame.new())
+			local expected = ArtMerge.countTemplate(built, ArtAnimals.MERGE_SKIP)
+			ok(expected < Kit.countParts(built) - 4, id .. " animal merge saves parts")
+			local at = CFrame.new(10, 0, 5) * Kit.yaw(90)
+			local copy = ArtAnimals.placed(id, at, "Animal_3")
+			eq(copy.Name, "Animal_3", id .. " copy named")
+			eq(Kit.countParts(copy), expected, id .. " copy matches the estimate")
+			local feet = copy:GetAttribute("BaseCFrame")
+			ok(typeof(feet) == "CFrame" and feet.Position:FuzzyEq(at.Position, 1e-4), id .. " feet move")
+			eq(copy:GetAttribute("PenId"), id, id .. " keeps its PenId for Art/Motion")
+			Kit.eachPart(copy, function(p)
+				ok(not p.CanCollide and not p.CanQuery, id .. " " .. p.Name .. " lets taps and avatars through")
+				ok((p.CFrame.Position - at.Position).Magnitude < 6, id .. " " .. p.Name .. " stands at the copy")
+			end)
+			if id == "SheepFold" then
+				ok(copy:FindFirstChild("Wool", true) ~= nil, "sheep keep their wool puffs for the regrow")
+				ok(copy:FindFirstChild("Fringe", true) ~= nil, "sheep keep their fringe")
+			end
+		end
+	end)
+
 	test("art: train set and Market stall build within budget", function()
 		local function hinged(root: Instance, name: string)
 			local found = 0
@@ -1055,7 +1103,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			total += shell
 			pensMerged += shell
 			pensBuilt += Kit.countParts(pen)
-			add(ArtAnimals.animal(kind, CFrame.new()), 6)
+			-- Each animal is a copy of its kind's merged look (ArtAnimals.mergeLooks)
+			total += ArtMerge.countTemplate(ArtAnimals.animal(kind, CFrame.new()), ArtAnimals.MERGE_SKIP) * 6
 			add(ArtAnimals.product(kind, CFrame.new()), 6)
 		end
 		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest

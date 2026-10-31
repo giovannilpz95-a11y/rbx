@@ -914,6 +914,122 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Loop Coaster (content bank, level 36): a sky-blue track climbing to a red loop over a
+-- station shed, with a little train of cars waiting at the platform.
+TYPES.LoopCoaster = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(3.4, 2.4, 2.2),
+		Vector3.new(-s * 0.25, PLINTH + 1.2, z0 - s * 0.12),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local sx, sz = -s * 0.25, z0 - s * 0.12
+	t.block("StationRoof", Vector3.new(3.8, 0.3, 2.6), Vector3.new(sx, PLINTH + 2.55, sz), Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(sx, PLINTH, sz - 1.1), 1.2, 1.8, Palette.roofTeal, Palette.cream)
+	-- The lift hill: a sloped track on a trestle, then the loop
+	t.block(
+		"Track",
+		Vector3.new(0.6, 0.3, s * 0.6),
+		CFrame.new(s * 0.05, PLINTH + 3.2, z0) * CFrame.Angles(math.rad(25), 0, 0),
+		Palette.sky
+	)
+	t.block("Trestle", Vector3.new(0.4, 4, 0.4), Vector3.new(s * 0.05, PLINTH + 2, z0 + s * 0.15), Palette.metal)
+	local loop = Vector3.new(s * 0.28, PLINTH + 4.2, z0)
+	t.cyl("Loop", 0.5, 6, CFrame.new(loop) * Kit.yaw(0), Palette.roofRed)
+	t.cyl("LoopHole", 0.6, 4.8, CFrame.new(loop) * Kit.yaw(0), Palette.grassLight)
+	t.block("LoopLeg", Vector3.new(0.5, 1.4, 0.5), loop - Vector3.new(0, 3.5, 0), Palette.metal)
+	for i = 0, 2 do
+		t.block(
+			"Car",
+			Vector3.new(0.9, 0.6, 0.9),
+			Vector3.new(sx - 1 + i * 1, PLINTH + 0.3, sz - 2),
+			if i % 2 == 0 then Palette.roofMustard else Palette.roofTeal
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(sx + 1.4, PLINTH + 3.2, sz), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Sky Wheel (content bank, level 35): a big wheel on two splayed legs over a ticket booth,
+-- its rim ringed with coloured gondolas.
+TYPES.SkyWheel = function(b, s)
+	local z0 = s * 0.15
+	local r = s * 0.36
+	local hub = PLINTH + r + 1.4
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.4), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(2.6, 2.2, 1.8),
+		Vector3.new(0, PLINTH + 1.1, z0 - 1.6),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, z0 - 2.5), 1.2, 1.8, Palette.flowerPink, Palette.cream)
+	for _, x in { -1, 1 } do
+		t.block(
+			"Leg",
+			Vector3.new(0.5, hub - PLINTH, 0.5),
+			CFrame.new(x * r * 0.35, PLINTH + (hub - PLINTH) / 2, z0 + 0.6) * CFrame.Angles(0, 0, math.rad(x * 14)),
+			Palette.metal
+		)
+	end
+	-- The rim and the hub (a thin wheel facing the street)
+	t.cyl("Rim", 0.4, r * 2, CFrame.new(0, hub, z0) * Kit.yaw(90), Palette.flowerPink)
+	t.cyl("Spokes", 0.5, r * 1.6, CFrame.new(0, hub, z0) * Kit.yaw(90), Palette.cream)
+	t.cyl("Hub", 0.8, 1, CFrame.new(0, hub, z0) * Kit.yaw(90), Palette.metal)
+	local colors =
+		{ Palette.roofTeal, Palette.roofMustard, Palette.sky, Palette.roofRed, Palette.lime, Palette.roofPlum }
+	for i = 0, 5 do
+		local a = math.rad(i * 60 + 30)
+		t.block(
+			"Gondola",
+			Vector3.new(1, 0.9, 1),
+			Vector3.new(math.cos(a) * r, hub + math.sin(a) * r - 0.5, z0 - 0.4),
+			colors[i + 1]
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(1.6, PLINTH + 2.8, z0 - 1.6), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Signal Tower (content bank, level 34): a tall red and white lattice mast on a concrete
+-- equipment hut, a dish halfway up and a light at the top.
+TYPES.SignalTower = function(b, s)
+	local w, d, h = s * 0.45, s * 0.4, 4
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.7, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(w, h, d),
+		Vector3.new(0, PLINTH + h / 2, z0 + d / 4),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + d / 4 - d / 2
+	t.block("Roof", Vector3.new(w + 0.4, 0.4, d + 0.4), Vector3.new(0, PLINTH + h + 0.2, z0 + d / 4), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 2.6, Palette.roofRed, Palette.metal)
+	-- The mast in bands of red and white, narrowing as it climbs
+	local base = PLINTH + h + 0.4
+	for i = 0, 3 do
+		t.block(
+			"Mast",
+			Vector3.new(1.4 - i * 0.25, 3, 1.4 - i * 0.25),
+			Vector3.new(0, base + 1.5 + i * 3, z0 + d / 4),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream
+		)
+	end
+	t.cyl("Dish", 0.3, 1.8, CFrame.new(0.9, base + 5, z0 + d / 4) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream)
+	t.ball("Beacon", 0.7, Vector3.new(0, base + 12.4, z0 + d / 4), Palette.roofRed, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(w / 2 - 0.6, PLINTH + h + 0.6, z0), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Broadcast Studio (content bank, level 33): a two-storey studio block with a red "on air"
 -- lamp over the door, a satellite dish on the roof and a lattice aerial with a red tip.
 TYPES.BroadcastStudio = function(b, s)

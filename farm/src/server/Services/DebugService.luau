@@ -17,6 +17,7 @@ local Records = require(Shared.Records)
 local Shop = require(Shared.Shop)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
+local Layout = require(Shared.Layout)
 local TownRules = require(Shared.TownRules)
 
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -59,6 +60,78 @@ function DebugService.buildAll(player: Player): (boolean, string?)
 	end
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
+	return true
+end
+
+-- Every open House lot filled with a finished Cottage, ignoring copy limits and Coins (for
+-- testing what happens once the lots run out: the next House goes up at an open spot).
+function DebugService.fillLots(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local open = TownRules.houseLotCount(data, Clock.now())
+	local added = 0
+	while true do
+		local lot = TownRules.freeLot(data, open)
+		if lot == nil then
+			break
+		end
+		table.insert(data.town.houses, { type = "Cottage", lot = lot })
+		added += 1
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.toast(player, string.format("Dev: added %d Cottages. All %d open House lots are taken now", added, open))
+	return true
+end
+
+-- Population for testing late content (the Molding Works needs 2,375): the farm's smallest
+-- Houses become the biggest House type, finished, until Population reaches the target.
+DebugService.POPULATION = 3000
+
+function DebugService.population(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	local best, bestPop = nil, 0
+	for id, def in Town.houses do
+		if def.population > bestPop then
+			best, bestPop = id, def.population
+		end
+	end
+	local houses = table.clone(data.town.houses)
+	table.sort(houses, function(a, b)
+		local pa = Town.houses[a.type] and Town.houses[a.type].population or 0
+		local pb = Town.houses[b.type] and Town.houses[b.type].population or 0
+		return pa < pb
+	end)
+	local changed = {}
+	for _, house in houses do
+		if TownRules.population(data, now) >= DebugService.POPULATION then
+			break
+		end
+		if house.type ~= best or house.readyAt ~= nil then
+			house.type = best
+			house.readyAt = nil
+			table.insert(changed, house.lot)
+		end
+	end
+	DataService.markDirty(player, true)
+	for _, lot in changed do
+		PlotService.relocate(player, Layout.key("house", lot))
+	end
+	NetService.toast(
+		player,
+		string.format(
+			"Dev: %d Houses became %s. Population %d",
+			#changed,
+			Town.houses[best].displayName,
+			TownRules.population(data, now)
+		)
+	)
 	return true
 end
 
@@ -331,6 +404,8 @@ function DebugService.init()
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)
+	NetService.on(Net.Debug_FillLots, 1, 2, DebugService.fillLots)
+	NetService.on(Net.Debug_Population, 1, 2, DebugService.population)
 end
 
 return DebugService

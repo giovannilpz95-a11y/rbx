@@ -44,6 +44,8 @@ local Factories: { [string]: FactoryDef } = {
 	Smelter2 = { id = "Smelter2", displayName = "Second Smelter", unlockLevel = 21, population = 920, buildCost = 8000, buildSeconds = 36 * HOUR, xp = 335, queueSlots = 1, trayCapacity = 6, order = 15, color = { 150, 110, 100 }, land = 2, makes = "Smelter", fixedSlots = true },
 	RubberWorks = { id = "RubberWorks", displayName = "Rubber Works", unlockLevel = 29, population = 1670, buildCost = 9000, buildSeconds = 32 * HOUR, xp = 376, queueSlots = 2, trayCapacity = 6, order = 16, color = { 90, 95, 105 }, land = 2 },
 	PrepKitchen = { id = "PrepKitchen", displayName = "Prep Kitchen", unlockLevel = 31, population = 1980, buildCost = 12000, buildSeconds = 34 * HOUR, xp = 500, queueSlots = 2, trayCapacity = 6, order = 17, color = { 235, 225, 200 }, land = 2 },
+	-- Township's Plastics Factory (level 34): no usual spot, the player places it once it's built
+	MoldingWorks = { id = "MoldingWorks", displayName = "Molding Works", unlockLevel = 34, population = 2375, buildCost = 15000, buildSeconds = 36 * HOUR, xp = 623, queueSlots = 2, trayCapacity = 6, order = 18, color = { 110, 170, 210 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

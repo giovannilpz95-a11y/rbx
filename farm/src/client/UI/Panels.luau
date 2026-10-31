@@ -2304,6 +2304,8 @@ local function renderDebug(state: { [string]: any })
 	devButton("Town Express: a train in the station now", "Debug_Express", 340, 14)
 	devButton("Town Express: goods for 3 crates", "Debug_ExpressGoods", 300, 15)
 	devButton("Town Express: leave now", "Debug_ExpressLeave", 240, 16)
+	devButton("Fill every open House lot with a Cottage", "Debug_FillLots", 340, 17)
+	devButton("Population 3,000 (Houses become the biggest type)", "Debug_Population", 380, 18)
 end
 
 ---------------------------------------------------------------------------------------------

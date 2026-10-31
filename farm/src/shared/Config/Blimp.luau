@@ -25,16 +25,17 @@ local crates: { [string]: Range } = {
 	Cotton = { 8, 20 }, Strawberries = { 5, 14 }, Tomatoes = { 6, 15 }, PineTrees = { 6, 11 },
 	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, Silk = { 1, 5 },
 	-- Animal goods
-	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 },
+	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 }, Honeycomb = { 1, 7 },
 	-- Bakery
 	Bread = { 5, 14 }, Cookies = { 4, 9 }, Bagel = { 2, 6 }, GardenPizza = { 1, 3 }, PotatoBread = { 2, 4 },
 	-- Dairy
 	Cream = { 4, 11 }, Cheese = { 3, 10 }, Butter = { 2, 6 }, Yogurt = { 1, 4 },
 	-- Sugar Mill
-	Sugar = { 5, 10 }, CaneSyrup = { 3, 7 }, Caramel = { 2, 4 },
+	Sugar = { 5, 10 }, CaneSyrup = { 3, 7 }, Caramel = { 2, 4 }, HoneyCaramel = { 1, 2 },
 	-- Textile Mill
 	CottonFabric = { 4, 10 }, Yarn = { 1, 5 }, SilkFabric = { 2, 4 }, Shirt = { 2, 5 },
-	WoolScarf = { 1, 4 }, PatchworkQuilt = { 1, 3 }, SunHat = { 1, 2 }, Dress = { 1, 2 },
+	WoolScarf = { 1, 4 }, PatchworkQuilt = { 1, 3 }, SunHat = { 1, 2 }, Dress = { 1, 2 }, Suit = { 1, 2 },
+	NylonThread = { 1, 3 },
 	-- Snack Factory
 	Popcorn = { 3, 9 }, CornChips = { 2, 5 }, BerryGranola = { 2, 7 }, PotatoChips = { 1, 3 },
 	-- Diner
@@ -44,7 +45,9 @@ local crates: { [string]: Range } = {
 	-- Paper Mill
 	Paper = { 1, 4 }, PaperTowel = { 1, 4 }, Wallpaper = { 1, 2 },
 	-- Pastry Shop
-	Muffin = { 2, 7 }, Brownie = { 2, 5 }, Cupcake = { 2, 3 }, Donut = { 2, 3 },
+	Muffin = { 2, 7 }, Brownie = { 2, 5 }, Cupcake = { 2, 3 }, Donut = { 2, 3 }, Cheesecake = { 1, 2 },
+	-- Prep Kitchen, Molding Works
+	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 },
 	-- Jam Kitchen, Rubber Works
 	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 },
 }

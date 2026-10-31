@@ -489,6 +489,39 @@ TYPES.CanalHouse = {
 	end,
 }
 
+-- Courtyard Flats (content bank, level 34): a three-storey block of warm sandstone in two
+-- wings around a little front courtyard with a tree, balconies on the upper floors and a flat
+-- roof with a water tank.
+TYPES.CourtyardFlats = {
+	roof = Palette.roofRed,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.84, s * 0.62, STORY * 2.6
+		local body = walls(b, w, d, h, Palette.wheat:Lerp(Palette.brick, 0.2), 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.3), roof)
+		t.post("Tank", 1.4, 1.4, Vector3.new(w / 4, PLINTH + h + 1.2, 0.3 + d / 6), Palette.metal)
+		-- The courtyard: a low wall either side of the gap and a tree in the middle
+		for _, x in { -w / 3, w / 3 } do
+			t.block("CourtWall", Vector3.new(w / 4, 0.8, 0.3), Vector3.new(x, PLINTH + 0.4, face - 1.6), Palette.cream)
+		end
+		t.ball("Tree", 1.8, Vector3.new(-w / 5, PLINTH + 2.2, face - 0.9), Palette.leaf)
+		Kit.door(t, "Door", CFrame.new(w / 8, PLINTH, face), 1.8, 3.4, roof, Palette.cream)
+		-- Balconies on the upper floors
+		for i, y in { STORY * 1.2, STORY * 2 } do
+			t.block(
+				"Balcony",
+				Vector3.new(w * 0.7, 0.3, 0.9),
+				Vector3.new(0, PLINTH + y, face - 0.45),
+				if i == 1 then Palette.cream else roof
+			)
+			Kit.window(t, "Window", CFrame.new(-w / 4, PLINTH + y + 1.1, face), 1.4, 1.6, Palette.cream, Palette.glass)
+		end
+		Kit.sproutTag(t, Vector3.new(-w / 4, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

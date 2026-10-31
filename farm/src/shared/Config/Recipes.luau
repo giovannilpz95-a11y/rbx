@@ -31,6 +31,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Feed Mill
 	CowFeed = { id = "CowFeed", displayName = "Cow Feed", factory = "FeedMill", unlockLevel = 3, inputs = { Wheat = 2, Corn = 1 }, outputQty = 3, seconds = 5 * MIN, sellPrice = 3, xp = 1, isFeed = true },
 	ChickenFeed = { id = "ChickenFeed", displayName = "Chicken Feed", factory = "FeedMill", unlockLevel = 5, inputs = { Wheat = 2, Carrots = 1 }, outputQty = 3, seconds = 10 * MIN, sellPrice = 4, xp = 2, isFeed = true },
+	BeeFeed = { id = "BeeFeed", displayName = "Bee Feed", factory = "FeedMill", unlockLevel = 35, inputs = { Wheat = 3, Sugarcane = 1 }, outputQty = 3, seconds = 30 * MIN, sellPrice = 7, xp = 3, isFeed = true },
 	SheepFeed = { id = "SheepFeed", displayName = "Sheep Feed", factory = "FeedMill", unlockLevel = 10, inputs = { Corn = 2, Carrots = 2 }, outputQty = 3, seconds = 20 * MIN, sellPrice = 5, xp = 2, isFeed = true },
 	-- Dairy
 	Cream = { id = "Cream", displayName = "Cream", factory = "Dairy", unlockLevel = 4, inputs = { Milk = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 12, xp = 5 },
@@ -41,15 +42,18 @@ local Recipes: { [string]: RecipeDef } = {
 	Sugar = { id = "Sugar", displayName = "Sugar", factory = "SugarMill", unlockLevel = 7, inputs = { Sugarcane = 1 }, outputQty = 1, seconds = 20 * MIN, sellPrice = 14, xp = 6 },
 	CaneSyrup = { id = "CaneSyrup", displayName = "Cane Syrup", factory = "SugarMill", unlockLevel = 17, inputs = { Sugarcane = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 29, xp = 12 }, -- content bank
 	Caramel = { id = "Caramel", displayName = "Caramel", factory = "SugarMill", unlockLevel = 24, inputs = { Sugarcane = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 45, xp = 19 }, -- content bank
+	HoneyCaramel = { id = "HoneyCaramel", displayName = "Honey Caramel", factory = "SugarMill", unlockLevel = 36, inputs = { Honeycomb = 1, Sugarcane = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 68, xp = 29 }, -- content bank
 	-- Textile Mill
 	CottonFabric = { id = "CottonFabric", displayName = "Cotton Fabric", factory = "TextileMill", unlockLevel = 9, inputs = { Cotton = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 37, xp = 16 },
 	Yarn = { id = "Yarn", displayName = "Yarn", factory = "TextileMill", unlockLevel = 10, inputs = { Wool = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 61, xp = 26 },
 	SilkFabric = { id = "SilkFabric", displayName = "Silk Fabric", factory = "TextileMill", unlockLevel = 31, inputs = { Silk = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 140, xp = 60 }, -- content bank
+	NylonThread = { id = "NylonThread", displayName = "Nylon Thread", factory = "TextileMill", unlockLevel = 36, inputs = { RubberTrees = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 111, xp = 48 }, -- content bank
 	-- Tailor (Township's Tailor Shop)
 	Shirt = { id = "Shirt", displayName = "Shirt", factory = "Tailor", unlockLevel = 12, inputs = { CottonFabric = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 45, xp = 19 },
 	SunHat = { id = "SunHat", displayName = "Sun Hat", factory = "Tailor", unlockLevel = 31, inputs = { CottonFabric = 1, SilkFabric = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 231, xp = 99 }, -- content bank
 	PatchworkQuilt = { id = "PatchworkQuilt", displayName = "Patchwork Quilt", factory = "Tailor", unlockLevel = 20, inputs = { CottonFabric = 1, Yarn = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 125, xp = 54 }, -- content bank
 	Dress = { id = "Dress", displayName = "Dress", factory = "Tailor", unlockLevel = 33, inputs = { Yarn = 1, SilkFabric = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 268, xp = 115 }, -- content bank
+	Suit = { id = "Suit", displayName = "Suit", factory = "Tailor", unlockLevel = 36, inputs = { Yarn = 1, CottonFabric = 1, SilkFabric = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 330, xp = 141 }, -- content bank
 	WoolScarf = { id = "WoolScarf", displayName = "Wool Scarf", factory = "Tailor", unlockLevel = 14, inputs = { Yarn = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 76, xp = 33 }, -- content bank
 	-- Snack Factory (content bank)
 	Popcorn = { id = "Popcorn", displayName = "Popcorn", factory = "SnackFactory", unlockLevel = 14, inputs = { Corn = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 12, xp = 5 },
@@ -74,8 +78,13 @@ local Recipes: { [string]: RecipeDef } = {
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
 	Cupcake = { id = "Cupcake", displayName = "Cupcake", factory = "PastryShop", unlockLevel = 30, inputs = { Sugar = 1, Eggs = 5, Cream = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 93, xp = 40 },
 	Donut = { id = "Donut", displayName = "Donut", factory = "PastryShop", unlockLevel = 33, inputs = { Bagel = 1, Caramel = 1, Cocoa = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 149, xp = 64 },
+	Cheesecake = { id = "Cheesecake", displayName = "Cheesecake", factory = "PastryShop", unlockLevel = 36, inputs = { Cookies = 1, Cheese = 1, CaneSyrup = 1, Strawberries = 2 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 160, xp = 69 },
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
 	-- Prep Kitchen (content bank)
+	FrozenVegetables = { id = "FrozenVegetables", displayName = "Frozen Vegetables", factory = "PrepKitchen", unlockLevel = 34, inputs = { Tomatoes = 1, Corn = 1, Carrots = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 26, xp = 11 },
+	-- Molding Works (content bank)
+	Toys = { id = "Toys", displayName = "Toys", factory = "MoldingWorks", unlockLevel = 35, inputs = { Plastic = 1, Rubber = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 131, xp = 56 },
+	PlasticBottle = { id = "PlasticBottle", displayName = "Plastic Bottle", factory = "MoldingWorks", unlockLevel = 34, inputs = { Plastic = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 91, xp = 39 },
 	Dough = { id = "Dough", displayName = "Dough", factory = "PrepKitchen", unlockLevel = 31, inputs = { Wheat = 3 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 4, xp = 2 },
 	-- Rubber Works (content bank)
 	Plastic = { id = "Plastic", displayName = "Plastic", factory = "RubberWorks", unlockLevel = 32, inputs = { RubberTrees = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 73, xp = 31 },
