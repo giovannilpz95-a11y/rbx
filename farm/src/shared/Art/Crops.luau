@@ -353,6 +353,24 @@ READY.CorkOak = function(b, color)
 	end
 end
 
+-- Peppers (level 43): rows of small leafy plants, then bushy plants hung with glossy red
+-- pods.
+GROWING.Peppers = function(b)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.5, 0, 2.5 } do
+			b.ball("Plant", 1, Vector3.new(x, 1, z), Palette.leaf)
+		end
+	end
+end
+READY.Peppers = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.5, 2.5 } do
+			b.ball("Bush", 1.6, Vector3.new(x, 1.3, z), Palette.leaf)
+		end
+		b.block("Pod", Vector3.new(0.4, 0.9, 0.4), Vector3.new(0, 1.1, z - 0.3), color)
+	end
+end
+
 -- Silk (level 31): rows of low mulberry bushes, then the bushes hung with plump white cocoons.
 GROWING.Silk = function(b)
 	for _, z in ArtCrops.ROWS do

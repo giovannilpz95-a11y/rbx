@@ -835,6 +835,44 @@ local function candyFactory(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Cantina (level 43, placed by the player): a terracotta adobe restaurant with a flat roof
+-- and rounded beams poking out under it, a cactus by the door, a string of pepper lanterns and
+-- a pepper-shaped sign on the roof that glows while it cooks.
+local function cantina(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.carrot:Lerp(Palette.cream, 0.55), Palette.brick)
+	local d = b.into(body, true)
+	d.block("Roof", Vector3.new(11.6, 0.8, 9.6), Vector3.new(0, TOP + 0.4, 0), Palette.brick)
+	d.block("Parapet", Vector3.new(11.6, 0.8, 0.5), Vector3.new(0, TOP + 1.2, FRONT + 0.25), Palette.brick)
+	local chimney = d.post("Chimney", 2, 1, Vector3.new(4, TOP + 1.8, 2.6), Palette.cream)
+	for i = 0, 3 do
+		d.post("Beam", 0.9, 0.4, CFrame.new(-4 + i * 2.6, TOP - 0.6, FRONT - 0.2) * Kit.yaw(90), Palette.woodDark)
+	end
+	-- The pepper sign on the roof: a red pod with a green stalk, glowing while it works
+	d.block("SignPost", Vector3.new(0.4, 1.4, 0.4), Vector3.new(-2.4, TOP + 1.5, FRONT + 1), Palette.woodDark)
+	d.block("NeonSign", Vector3.new(3.6, 1.2, 0.4), Vector3.new(-2.4, TOP + 2.8, FRONT + 1), Palette.roofRed)
+	d.block("Stalk", Vector3.new(0.5, 0.6, 0.3), Vector3.new(-0.4, TOP + 3.2, FRONT + 1), Palette.leaf)
+	-- Lantern string over the door and window
+	d.block("Lanterns", Vector3.new(8, 0.1, 0.1), Vector3.new(0, PLINTH + 5.2, FRONT - 0.4), Palette.woodDark)
+	for i = 0, 3 do
+		d.ball(
+			"Lantern",
+			0.5,
+			Vector3.new(-3 + i * 2, PLINTH + 4.9, FRONT - 0.4),
+			if i % 2 == 0 then Palette.roofRed else Palette.flowerYellow,
+			{ shadow = false }
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.2, FRONT), 3, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.2, Palette.woodDark, Palette.cream)
+	-- A cactus in a pot by the door
+	d.post("Pot", 0.8, 1.1, Vector3.new(4.9, 0.4, FRONT - 1.4), Palette.brick)
+	d.post("Cactus", 2, 0.7, Vector3.new(4.9, 1.8, FRONT - 1.4), Palette.leaf)
+	d.post("CactusArm", 0.8, 0.4, Vector3.new(5.3, 2.1, FRONT - 1.4), Palette.leaf)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.4, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -965,6 +1003,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	MoldingWorks = moldingWorks,
 	HomewaresShop = homewaresShop,
 	CandyFactory = candyFactory,
+	Cantina = cantina,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
