@@ -173,6 +173,12 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Frosting", 1, at(0, 0.85, 0), Palette.cream, QUIET)
 		b.ball("Cherry", 0.35, at(0, 1.35, 0), Palette.roofRed, QUIET)
 	end,
+	Plastic = function(b)
+		-- A stack of coloured plastic pellets' sacks: a clear tub of bright beads
+		b.post("Tub", 0.9, 1.3, at(0, 0.45, 0), Palette.glass, QUIET)
+		b.ball("Beads", 1, at(0, 0.7, 0), Palette.roofTeal, QUIET)
+		b.post("Lid", 0.15, 1.35, at(0, 0.98, 0), Palette.flowerPink, QUIET)
+	end,
 	Rubber = function(b)
 		-- A rolled sheet of rubber with a cream paper band
 		b.cyl("Roll", 1.6, 1, at(0, 0.5, 0), Palette.tire:Lerp(Palette.cream, 0.15), QUIET)

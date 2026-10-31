@@ -914,6 +914,42 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Grand Hotel (content bank, level 32): a wide four-storey hotel in cream and red, a gold-
+-- trimmed entrance canopy over the steps, and a tall roof sign.
+TYPES.GrandHotel = function(b, s)
+	local w, d, h = s * 0.8, s * 0.5, 10
+	local z0 = s * 0.12
+	b.block("Plinth", Vector3.new(w + 0.6, PLINTH, d + 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body =
+		b.block("Body", Vector3.new(w, h, d), Vector3.new(0, PLINTH + h / 2, z0), Palette.cream, { collide = true })
+	local t = b.into(body, true)
+	local face = z0 - d / 2
+	-- Red floor bands
+	for _, y in { 3.4, 6.6 } do
+		t.block("Band", Vector3.new(w + 0.2, 0.5, d + 0.2), Vector3.new(0, PLINTH + y, z0), Palette.roofRed)
+	end
+	t.block("Roof", Vector3.new(w + 0.6, 0.6, d + 0.6), Vector3.new(0, PLINTH + h + 0.3, z0), Palette.roofRed)
+	-- The entrance canopy and steps
+	t.block("Canopy", Vector3.new(4, 0.4, 2.4), Vector3.new(0, PLINTH + 3, face - 1.2), Palette.coins)
+	t.block("Steps", Vector3.new(3.4, 0.5, 1.4), Vector3.new(0, PLINTH + 0.25, face - 0.7), Palette.stoneLight)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 2.2, 2.8, Palette.roofRed, Palette.coins)
+	Kit.window(t, "Window", CFrame.new(-w / 3, PLINTH + 5, face), 2.2, 1.6, Palette.cream, Palette.glass)
+	Kit.window(t, "Window", CFrame.new(w / 3, PLINTH + 5, face), 2.2, 1.6, Palette.cream, Palette.glass)
+	-- Sign object: the roof sign on two legs
+	for _, x in { -1.6, 1.6 } do
+		t.block("SignLeg", Vector3.new(0.3, 1.4, 0.3), Vector3.new(x, PLINTH + h + 1.3, face + 0.6), Palette.metal)
+	end
+	t.block(
+		"RoofSign",
+		Vector3.new(4.4, 1.2, 0.3),
+		Vector3.new(0, PLINTH + h + 2.4, face + 0.6),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1, PLINTH + h + 0.6, z0 + d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Office Block (content bank, level 31): a tall glass-banded tower on a stone base, a flat
 -- roof with a water tank, and a revolving-door porch with a flagpole.
 TYPES.OfficeBlock = function(b, s)
