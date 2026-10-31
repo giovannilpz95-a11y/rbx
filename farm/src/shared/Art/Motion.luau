@@ -36,6 +36,7 @@ ArtMotion.SPECS = {
 	JamKitchen = { kind = "bob", pivot = "Lid", speed = 4, amplitude = 0.6 },
 	RubberWorks = { kind = "spin", pivot = "Roller", speed = 1.8 },
 	PrepKitchen = { kind = "spin", pivot = "Paddle", speed = 2.2 },
+	MoldingWorks = { kind = "bob", pivot = "Press", speed = 4, amplitude = 0.7 },
 	Smelter = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 	Smelter2 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 } :: { [string]: Spec }

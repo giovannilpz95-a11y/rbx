@@ -914,6 +914,39 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Signal Tower (content bank, level 34): a tall red and white lattice mast on a concrete
+-- equipment hut, a dish halfway up and a light at the top.
+TYPES.SignalTower = function(b, s)
+	local w, d, h = s * 0.45, s * 0.4, 4
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.7, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(w, h, d),
+		Vector3.new(0, PLINTH + h / 2, z0 + d / 4),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + d / 4 - d / 2
+	t.block("Roof", Vector3.new(w + 0.4, 0.4, d + 0.4), Vector3.new(0, PLINTH + h + 0.2, z0 + d / 4), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 2.6, Palette.roofRed, Palette.metal)
+	-- The mast in bands of red and white, narrowing as it climbs
+	local base = PLINTH + h + 0.4
+	for i = 0, 3 do
+		t.block(
+			"Mast",
+			Vector3.new(1.4 - i * 0.25, 3, 1.4 - i * 0.25),
+			Vector3.new(0, base + 1.5 + i * 3, z0 + d / 4),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream
+		)
+	end
+	t.cyl("Dish", 0.3, 1.8, CFrame.new(0.9, base + 5, z0 + d / 4) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream)
+	t.ball("Beacon", 0.7, Vector3.new(0, base + 12.4, z0 + d / 4), Palette.roofRed, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(w / 2 - 0.6, PLINTH + h + 0.6, z0), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Broadcast Studio (content bank, level 33): a two-storey studio block with a red "on air"
 -- lamp over the door, a satellite dish on the roof and a lattice aerial with a red tip.
 TYPES.BroadcastStudio = function(b, s)
