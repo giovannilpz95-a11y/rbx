@@ -688,17 +688,34 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		end
 	end,
 	-- Level 33-36 set: Township's level and price slots, our own pieces
-	Birdbath = function(b)
-		b.post("Base", 0.4, 1.6, at(0, 0.2, 0), Palette.stone, SOLID)
-		b.post("Pedestal", 2.2, 0.6, at(0, 1.5, 0), Palette.stoneLight)
-		b.post("Bowl", 0.5, 2.6, at(0, 2.85, 0), Palette.stoneLight)
-		b.post("Water", 0.1, 2.2, at(0, 3.1, 0), Palette.water, QUIET)
-		for _, bird in { { -0.8, -0.3, Palette.sky }, { 0.85, 0.35, Palette.flowerYellow } } do
-			b.ball("Bird", 0.55, at(bird[1], 3.4, bird[2]), bird[3], QUIET)
-			b.ball("BirdHead", 0.38, at(bird[1] * 0.75, 3.75, bird[2] - 0.1), bird[3], QUIET)
-		end
-		b.ball("Bush", 1.2, at(-1.3, 0.5, 1.2), Palette.leaf, QUIET)
-		b.ball("Bush", 1, at(1.3, 0.45, -1.2), Palette.leafLight, QUIET)
+	BirdhousePost = function(b)
+		b.post("Pole", 3.4, 0.35, at(0, 1.7, 0), Palette.wood, SOLID)
+		b.block("House", Vector3.new(1.5, 1.4, 1.3), at(0, 4.1, 0), Palette.roofTeal:Lerp(Palette.cream, 0.35))
+		b.block(
+			"Roof",
+			Vector3.new(1.15, 0.2, 1.7),
+			CFrame.new(-0.42, 5.05, 0) * CFrame.Angles(0, 0, math.rad(40)),
+			Palette.roofRed
+		)
+		b.block(
+			"Roof",
+			Vector3.new(1.15, 0.2, 1.7),
+			CFrame.new(0.42, 5.05, 0) * CFrame.Angles(0, 0, math.rad(-40)),
+			Palette.roofRed
+		)
+		b.post(
+			"Hole",
+			0.12,
+			0.5,
+			CFrame.new(0, 4.25, -0.66) * CFrame.Angles(math.rad(90), 0, 0),
+			Palette.woodDark,
+			QUIET
+		)
+		b.block("Perch", Vector3.new(0.1, 0.1, 0.5), at(0, 3.85, -0.85), Palette.woodDark, QUIET)
+		b.ball("Bird", 0.5, at(0.45, 5.45, 0.2), Palette.flowerYellow, QUIET)
+		b.ball("Bird", 0.4, at(0, 3.95, -1.05), Palette.sky, QUIET)
+		b.ball("Bush", 1.3, at(-0.9, 0.55, 0.9), Palette.leaf, QUIET)
+		b.ball("Bush", 1, at(0.9, 0.45, 0.6), Palette.leafLight, QUIET)
 	end,
 	GardenWindmill = function(b)
 		b.post("Base", 0.5, 2.8, at(0, 0.25, 0), Palette.stone, SOLID)
@@ -842,18 +859,20 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Pedestal", 1, 0.8, at(0.6, 0.7, 0), Palette.stoneLight, QUIET)
 		b.ball("Topiary", 1.2, at(0.6, 1.7, 0), Palette.leafLight, QUIET)
 	end,
-	ScarecrowPatch = function(b)
-		b.block("Soil", Vector3.new(7.6, 0.3, 7.6), at(0, 0.15, 0), Palette.soil, QUIET)
-		b.post("Pole", 4.4, 0.3, at(0, 2.2, 0.5), Palette.woodDark, SOLID)
-		b.block("Arms", Vector3.new(3.2, 0.25, 0.25), at(0, 3.3, 0.5), Palette.woodDark, QUIET)
-		b.block("Shirt", Vector3.new(1.3, 1.5, 0.6), at(0, 3, 0.5), Palette.roofTeal)
-		b.ball("Head", 0.9, at(0, 4.2, 0.5), Palette.sack)
-		b.post("Brim", 0.1, 1.5, at(0, 4.55, 0.5), Palette.straw, QUIET)
-		b.post("Hat", 0.6, 0.8, at(0, 4.85, 0.5), Palette.straw, QUIET)
-		b.ball("Pumpkin", 1.2, at(-2.4, 0.8, -2.3), Palette.carrot)
-		b.ball("Pumpkin", 0.9, at(-1.3, 0.7, -2.8), Palette.carrot:Lerp(Palette.flowerYellow, 0.3), QUIET)
-		b.block("HayBale", Vector3.new(1.8, 1.1, 1.2), at(2.4, 0.85, -2.2), Palette.straw, SOLID)
-		b.ball("Crow", 0.5, at(1.4, 3.6, 0.5), Palette.stoneDark, QUIET)
+	GardenCarousel = function(b)
+		b.post("Base", 0.5, 7.4, at(0, 0.25, 0), Palette.stoneLight, SOLID)
+		b.post("Deck", 0.3, 6.6, at(0, 0.65, 0), Palette.woodLight, QUIET)
+		b.post("Centre", 4.6, 0.8, at(0, 3.1, 0), Palette.cream, SOLID)
+		b.post("Canopy", 0.6, 7, at(0, 5.6, 0), Palette.roofRed)
+		b.ball("Dome", 2.4, at(0, 6.1, 0), Palette.flowerYellow)
+		b.ball("Finial", 0.6, at(0, 7.4, 0), Palette.coins, QUIET)
+		local coats = { Palette.flowerWhite, Palette.cocoa, Palette.roofTeal:Lerp(Palette.cream, 0.4) }
+		for i = 0, 2 do
+			local a = math.rad(i * 120 + 30)
+			local x, z = math.cos(a) * 2.5, math.sin(a) * 2.5
+			b.post("Pole", 4.5, 0.15, at(x, 3.05, z), Palette.coins, QUIET)
+			b.block("Pony", Vector3.new(0.6, 0.9, 1.6), CFrame.new(x, 2, z) * Kit.yaw(-i * 120 - 30), coats[i + 1])
+		end
 	end,
 	Lighthouse = function(b)
 		b.ball("Rocks", 3.6, at(0, -0.6, 0), Palette.stone, SOLID)

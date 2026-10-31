@@ -454,7 +454,7 @@ end
 SCENES.decor5 = function(root)
 	ground(root, 70)
 	local row = {
-		{ "Birdbath", -15, -10 },
+		{ "BirdhousePost", -15, -10 },
 		{ "GardenWindmill", -9, -10 },
 		{ "KoiPond", -3, -10 },
 		{ "BeehiveStand", 3, -10 },
@@ -465,7 +465,7 @@ SCENES.decor5 = function(root)
 		{ "HotAirBalloon", -3, 0 },
 		{ "FairyLightTree", 3, 0 },
 		{ "HedgeMaze", -10, 12 },
-		{ "ScarecrowPatch", 0, 12 },
+		{ "GardenCarousel", 0, 12 },
 		{ "Bandstand", 10, 12 },
 	}
 	for _, d in row do
