@@ -269,6 +269,23 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Cup", 0.5, 0.9, at(0, 0.25, 0), Palette.roofRed, QUIET)
 		b.post("Handle", 1.4, 0.2, at(0, 1.2, 0), Palette.wood, QUIET)
 	end,
+	CandyCane = function(b)
+		-- A red-and-white striped cane with its hooked top
+		b.post("Cane", 1.6, 0.3, at(0, 0.8, 0), Palette.cream, QUIET)
+		for _, y in { 0.4, 0.9, 1.4 } do
+			b.post("Stripe", 0.18, 0.32, at(0, y, 0), Palette.roofRed, QUIET)
+		end
+		b.block("Hook", Vector3.new(0.6, 0.3, 0.3), at(0.2, 1.65, 0), Palette.roofRed, QUIET)
+		b.post("HookEnd", 0.35, 0.3, at(0.45, 1.45, 0), Palette.cream, QUIET)
+	end,
+	Dumplings = function(b)
+		-- Three pleated dumplings in a bamboo steamer
+		b.cyl("Steamer", 1.8, 0.5, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheatHead, QUIET)
+		for _, x in { -0.45, 0.45 } do
+			b.ball("Dumpling", 0.6, at(x, 0.65, 0.1), Palette.cream, QUIET)
+		end
+		b.ball("Dumpling", 0.6, at(0, 0.7, -0.35), Palette.cream, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)
@@ -351,6 +368,13 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Cell", 0.4, at(-0.35, 0.95, -0.12), Palette.coins, QUIET)
 		b.ball("Cell", 0.4, at(0.35, 0.55, -0.12), Palette.coins, QUIET)
 	end,
+	Bacon = function(b)
+		-- Two wavy rashers, pink with red streaks, one leaning on the other
+		b.block("Rasher", Vector3.new(1.8, 0.15, 0.6), tilt(0, 0.2, -0.2, 0, 0, 0), Palette.cowMuzzle, QUIET)
+		b.block("Streak", Vector3.new(1.8, 0.17, 0.2), tilt(0, 0.2, -0.2, 0, 0, 0), Palette.roofRed, QUIET)
+		b.block("Rasher", Vector3.new(1.8, 0.15, 0.6), tilt(0.1, 0.45, 0.35, 0, 0, 12), Palette.cowMuzzle, QUIET)
+		b.block("Streak", Vector3.new(1.8, 0.17, 0.2), tilt(0.1, 0.45, 0.35, 0, 0, 12), Palette.roofRed, QUIET)
+	end,
 	Wool = function(b)
 		b.ball("Wool", 1.4, at(-0.25, 0.7, 0), Palette.wool, QUIET)
 		b.ball("Wool", 1.1, at(0.45, 0.55, 0.1), Palette.wool, QUIET)
@@ -397,6 +421,9 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 	end,
 	BeeFeed = function(b)
 		sack(b, Palette.flowerYellow)
+	end,
+	PigFeed = function(b)
+		sack(b, Palette.cowMuzzle)
 	end,
 	Cookies = function(b)
 		for i = 0, 2 do

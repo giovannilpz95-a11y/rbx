@@ -206,6 +206,9 @@ function ArtMotion.animalOffset(penId: string, mood: string?, t: number): CFrame
 	elseif penId == "SheepFold" then
 		local bounce = math.max(0, math.sin(t * 3)) ^ 2 * 0.3
 		return CFrame.new(0, bounce, 0)
+	elseif penId == "PigPen" then
+		-- Pigs waddle: a side-to-side roll
+		return CFrame.Angles(0, 0, math.rad(math.sin(t * 6) * 4))
 	elseif penId == "BeeYard" then
 		-- The hive hums: a fast small shiver
 		return CFrame.Angles(0, 0, math.rad(math.sin(t * 14) * 1.5))

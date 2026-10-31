@@ -1444,6 +1444,52 @@ TYPES.ComicShop = function(b, s)
 	return body
 end
 
+-- Lifeboat Station (content bank, level 42): a white boathouse with a red roof, a lookout
+-- tower with a lamp room, an orange lifeboat on its launch ramp and a life ring on the wall.
+TYPES.LifeboatStation = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.44, 4, s * 0.34),
+		Vector3.new(-s * 0.1, PLINTH + 2, z0 + s * 0.08),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local bx, face = -s * 0.1, z0 + s * 0.08 - s * 0.17
+	Kit.gableRoof(
+		t,
+		"Roof",
+		Vector3.new(bx, PLINTH + 4, z0 + s * 0.08),
+		s * 0.48,
+		s * 0.38,
+		1.8,
+		Palette.roofRed,
+		Palette.cream
+	)
+	-- The big boat doors and the life ring beside them
+	t.block("BoatDoor", Vector3.new(3, 3, 0.2), Vector3.new(bx - s * 0.05, PLINTH + 1.5, face - 0.05), Palette.sky)
+	t.cyl("LifeRing", 0.3, 1.2, CFrame.new(bx + s * 0.14, PLINTH + 2.6, face - 0.15) * Kit.yaw(90), Palette.carrot)
+	-- The lookout tower: a stone column, a glass lamp room and a little cap
+	local tx, tz = s * 0.22, z0 + s * 0.12
+	t.block("Tower", Vector3.new(2, 7, 2), Vector3.new(tx, PLINTH + 3.5, tz), Palette.cream)
+	t.block("TowerBand", Vector3.new(2.1, 0.8, 2.1), Vector3.new(tx, PLINTH + 5, tz), Palette.roofRed)
+	t.block("LampRoom", Vector3.new(1.6, 1.4, 1.6), Vector3.new(tx, PLINTH + 7.7, tz), Palette.glass)
+	t.wedge("TowerCap", Vector3.new(2, 0.9, 2), CFrame.new(tx, PLINTH + 8.85, tz), Palette.roofRed)
+	-- The lifeboat on its ramp in front of the doors
+	t.block("Ramp", Vector3.new(2.6, 0.2, 3), Vector3.new(bx - s * 0.05, PLINTH + 0.1, face - 1.6), Palette.wood)
+	t.block("Lifeboat", Vector3.new(1.8, 1, 2.6), Vector3.new(bx - s * 0.05, PLINTH + 0.7, face - 1.6), Palette.carrot)
+	t.block(
+		"Gunwale",
+		Vector3.new(1.9, 0.25, 2.7),
+		Vector3.new(bx - s * 0.05, PLINTH + 1.25, face - 1.6),
+		Palette.cream
+	)
+	Kit.sproutTag(t, Vector3.new(bx - s * 0.14, PLINTH + 5.6, z0 + s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end
