@@ -212,9 +212,13 @@ end
 
 -- Board setup ------------------------------------------------------------------
 
-local function styleBale(label: TextLabel, hp: number, weed: boolean?, stone: boolean?, crate: boolean?)
+local function styleBale(label: TextLabel, hp: number, weed: boolean?, stone: boolean?, crate: boolean?, tarp: boolean?)
 	label.Visible = hp > 0
-	if crate then
+	label.TextColor3 = if tarp then TileStyle.Board.tarpText else TileStyle.Board.baleText
+	if tarp then
+		label.BackgroundColor3 = TileStyle.Board.tarp
+		label.Text = "≋" -- canvas stripes
+	elseif crate then
 		label.BackgroundColor3 = TileStyle.Board.crate
 		label.Text = TileStyle.CrateGlyph
 	elseif weed then
@@ -246,7 +250,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.goo.Visible = cell.goo == true
 	guis.buried.Visible = cell.buried == true
 	guis.statueMark.Visible = cell.buried == true
-	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate)
+	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate, cell.tarp ~= nil and cell.tarp ~= false)
 	styleFrost(guis, cell.frost or 0)
 end
 
@@ -634,6 +638,9 @@ function BoardView._effect(self, effect): number
 		return FX_TIME
 	elseif effect.type == "Crate" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), Color3.fromRGB(255, 220, 120), true)
+		return FX_TIME
+	elseif effect.type == "Roll" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.tarp, true)
 		return FX_TIME
 	elseif effect.type == "Statue" then
 		for _, c in effect.cells do

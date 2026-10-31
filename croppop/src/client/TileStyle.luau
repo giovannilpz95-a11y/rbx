@@ -67,6 +67,7 @@ TileStyle.GoalGlyphs = {
 	Fences = "🚧", -- the wood emoji (Unicode 13) does not render in Roblox
 	Goo = "🟢",
 	Statues = "🗿", -- a buried statue
+	Tarps = "🎪", -- a canvas tarp
 }
 
 TileStyle.BoosterGlyphs = {
@@ -97,6 +98,8 @@ TileStyle.Board = {
 	hen = Color3.fromRGB(196, 90, 70),
 	crate = Color3.fromRGB(150, 110, 200),
 	spring = Color3.fromRGB(70, 140, 60), -- a goo spring's basin
+	tarp = Color3.fromRGB(196, 72, 64), -- red-and-cream canvas
+	tarpText = Color3.fromRGB(255, 240, 214),
 	buried = Color3.fromRGB(206, 170, 112), -- sandy soil over a buried statue
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
