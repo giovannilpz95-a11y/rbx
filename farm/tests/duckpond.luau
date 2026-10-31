@@ -2,6 +2,7 @@
 -- drawn per visit, the feathers they leave, the Order Board pool and the model. Called from
 -- tests/run.luau.
 
+local fs = require("@lune/fs")
 local roblox = require("@lune/roblox")
 
 local ArtDuckPond = require("../src/shared/Art/DuckPond")
@@ -137,6 +138,19 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		pool = OrderGen.makeablePool(data)
 		ok(has(pool, "DownFeather"), "Down Feathers once dug, with Bread makeable")
 		ok(has(pool, "ColorfulFeather"), "Colorful Feathers with Bagels makeable")
+	end)
+
+	test("duck pond: the client gets the pond in its state", function()
+		local net = fs.readFile("src/server/Services/NetService.luau")
+		ok(
+			string.find(net, "duckPond = data.duckPond", 1, true) ~= nil,
+			"the snapshot carries duckPond (the panel reads it)"
+		)
+		local labels = fs.readFile("src/client/UI/WorldLabels.luau")
+		ok(
+			string.find(labels, "WaitForChild(id)", 1, true) == nil,
+			"labels never wait on a building that isn't placed yet"
+		)
 	end)
 
 	test("duck pond: the model, its states and its footprint", function()
