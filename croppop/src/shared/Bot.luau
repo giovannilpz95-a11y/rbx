@@ -1,7 +1,8 @@
 --[[
 	A simple test player for tuning levels. It plays a level on many seeds
 	and reports how often it wins. Its moves are random, but it prefers
-	setting off power-ups, matching under a pumpkin and matching on clover
+	setting off power-ups, matching under a pumpkin or next to a pumpkin
+	basket, and matching on clover
 	that still has bare cells to spread to, so its win rate is a
 	rough lower bound on a person's. Use it to compare levels, not as the
 	final word on difficulty.
@@ -46,6 +47,38 @@ local function underPumpkins(board, moves)
 		local underA = lowest[m[1]] and m[2] > lowest[m[1]]
 		local underB = lowest[m[3]] and m[4] > lowest[m[3]]
 		if underA or underB then
+			table.insert(out, m)
+		end
+	end
+	return out
+end
+
+-- Moves whose match takes in a cell next to a pumpkin basket (while the goal needs more).
+local function shakesBaskets(pop, moves)
+	local board = pop.board
+	if #board.baskets == 0 or pop:_pumpkinsOwed() <= 0 then
+		return nil
+	end
+	local function nextToBasket(cell)
+		for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+			if board:basket(cell.x + d[1], cell.y + d[2]) then
+				return true
+			end
+		end
+		return false
+	end
+	local out = {}
+	for _, m in moves do
+		local a, b = board:get(m[1], m[2]), board:get(m[3], m[4])
+		a.piece, b.piece = b.piece, a.piece
+		local shakes = false
+		for _, group in Matcher.findGroups(board, { a, b }) do
+			for _, cell in group.cells do
+				shakes = shakes or nextToBasket(cell)
+			end
+		end
+		a.piece, b.piece = b.piece, a.piece
+		if shakes then
 			table.insert(out, m)
 		end
 	end
@@ -102,6 +135,10 @@ local function chooseMove(pop, rng)
 	local pumpkinMoves = underPumpkins(board, moves)
 	if pumpkinMoves and #pumpkinMoves > 0 and rng:int(1, 3) > 1 then
 		return rng:pick(pumpkinMoves)
+	end
+	local basketMoves = shakesBaskets(pop, moves)
+	if basketMoves and #basketMoves > 0 and rng:int(1, 3) > 1 then
+		return rng:pick(basketMoves)
 	end
 	local cloverMoves = spreadsClover(board, moves)
 	if cloverMoves and #cloverMoves > 0 and rng:int(1, 3) > 1 then

@@ -45,6 +45,7 @@ TileStyle.Sunflower = { color = Color3.fromRGB(255, 196, 30), glyph = "🌻" }
 TileStyle.Pumpkin = { color = Color3.fromRGB(196, 120, 52), glyph = "🎃", exit = "⬇️" }
 -- Portal ends: a swirl on a coloured disc, one colour per entrance/exit pair.
 TileStyle.PortalGlyph = "🌀"
+TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.PortalColors = {
 	Color3.fromRGB(150, 110, 220),
 	Color3.fromRGB(70, 170, 200),
@@ -84,6 +85,7 @@ TileStyle.Board = {
 	weed = Color3.fromRGB(96, 158, 66),
 	clover = Color3.fromRGB(72, 170, 92),
 	stone = Color3.fromRGB(150, 146, 140),
+	basket = Color3.fromRGB(176, 128, 78),
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream
