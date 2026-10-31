@@ -93,7 +93,9 @@ local Recipes: { [string]: RecipeDef } = {
 	Glue = { id = "Glue", displayName = "Glue", factory = "RubberWorks", unlockLevel = 37, inputs = { RubberTrees = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 111, xp = 48 },
 	-- Candy Factory (content bank)
 	JellyBeans = { id = "JellyBeans", displayName = "Jelly Beans", factory = "CandyFactory", unlockLevel = 39, inputs = { Strawberries = 3, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 79, xp = 34 },
+	Toffee = { id = "Toffee", displayName = "Toffee", factory = "CandyFactory", unlockLevel = 40, inputs = { Caramel = 1, Butter = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 112, xp = 48 },
 	-- Homewares Shop (content bank)
+	Plunger = { id = "Plunger", displayName = "Plunger", factory = "HomewaresShop", unlockLevel = 40, inputs = { PineTrees = 1, Rubber = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 122, xp = 52 },
 	Clothesline = { id = "Clothesline", displayName = "Clothesline", factory = "HomewaresShop", unlockLevel = 39, inputs = { Sugarcane = 5, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 202, xp = 87 },
 	SoapDispenser = { id = "SoapDispenser", displayName = "Soap Dispenser", factory = "HomewaresShop", unlockLevel = 38, inputs = { CorkOak = 1, PlasticBottle = 1 }, outputQty = 1, seconds = 2 * HOUR + 20 * MIN, sellPrice = 154, xp = 66 },
 	ScrubBrush = { id = "ScrubBrush", displayName = "Scrub Brush", factory = "HomewaresShop", unlockLevel = 37, inputs = { Sugarcane = 3, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 169, xp = 72 },

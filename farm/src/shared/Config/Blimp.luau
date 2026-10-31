@@ -52,9 +52,9 @@ local crates: { [string]: Range } = {
 	-- Jam Kitchen, Rubber Works
 	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 }, Glue = { 1, 3 },
 	-- Homewares Shop
-	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 }, Clothesline = { 1, 2 },
+	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 }, Clothesline = { 1, 2 }, Plunger = { 1, 2 },
 	-- Candy Factory
-	JellyBeans = { 1, 3 },
+	JellyBeans = { 1, 3 }, Toffee = { 1, 3 },
 }
 
 return table.freeze({

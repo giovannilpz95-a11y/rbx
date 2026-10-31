@@ -1354,6 +1354,53 @@ TYPES.WeatherStation = function(b, s)
 	return body
 end
 
+-- Skydiving School (content bank, level 40): a sky-blue clubhouse beside a jump tower with a
+-- railed platform, a striped parachute canopy floating above the field and a red-and-white
+-- landing target on the grass.
+TYPES.SkydivingSchool = function(b, s)
+	local z0 = s * 0.1
+	local up = CFrame.Angles(0, 0, math.rad(90)) -- a Kit cylinder standing upright
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.4, 3.8, s * 0.3),
+		Vector3.new(-s * 0.16, PLINTH + 1.9, z0 + s * 0.1),
+		Palette.sky:Lerp(Palette.cream, 0.35),
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local bx, face = -s * 0.16, z0 + s * 0.1 - s * 0.15
+	Kit.gableRoof(
+		t,
+		"Roof",
+		Vector3.new(bx, PLINTH + 3.8, z0 + s * 0.1),
+		s * 0.44,
+		s * 0.34,
+		1.6,
+		Palette.roofMustard,
+		Palette.cream
+	)
+	Kit.door(t, "Door", CFrame.new(bx + s * 0.08, PLINTH, face), 1.4, 2.8, Palette.roofMustard, Palette.cream)
+	Kit.window(t, "Window", CFrame.new(bx - s * 0.08, PLINTH + 2.1, face), 1.8, 1.4, Palette.cream, Palette.glass)
+	-- The jump tower: two legs, a platform with its rail
+	local tx, tz = s * 0.2, z0 + s * 0.12
+	for _, dx in { -0.9, 0.9 } do
+		t.post("TowerLeg", 6, 0.4, Vector3.new(tx + dx, PLINTH + 3, tz), Palette.stoneLight)
+	end
+	t.block("Platform", Vector3.new(2.6, 0.3, 2.2), Vector3.new(tx, PLINTH + 6.15, tz), Palette.wood)
+	t.block("TowerRail", Vector3.new(2.6, 0.6, 0.15), Vector3.new(tx, PLINTH + 6.6, tz + 1.05), Palette.roofRed)
+	-- The parachute: a wide canopy, its crown and a jumper hanging under it
+	local px, pz = s * 0.05, z0 - s * 0.05
+	t.cyl("Canopy", 0.5, 4.4, CFrame.new(px, PLINTH + 10, pz) * up, Palette.roofRed)
+	t.cyl("CanopyCrown", 0.5, 2.4, CFrame.new(px, PLINTH + 10.45, pz) * up, Palette.cream)
+	t.block("Jumper", Vector3.new(0.6, 1, 0.6), Vector3.new(px, PLINTH + 7.6, pz), Palette.roofMustard)
+	-- The landing target on the grass in front
+	t.cyl("Target", 0.1, 3.4, CFrame.new(s * 0.18, PLINTH + 0.05, z0 - s * 0.2) * up, Palette.cream)
+	t.cyl("TargetEye", 0.12, 1.4, CFrame.new(s * 0.18, PLINTH + 0.07, z0 - s * 0.2) * up, Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(bx - s * 0.12, PLINTH + 5.2, z0 + s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end
