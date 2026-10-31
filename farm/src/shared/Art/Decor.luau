@@ -322,6 +322,213 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Seat", Vector3.new(3.6, 0.3, 1.1), at(0, 2.35, 0), Palette.roofMustard)
 		b.block("Back", Vector3.new(3.6, 1, 0.2), at(0, 2.9, 0.5), Palette.roofMustard:Lerp(Palette.cream, 0.3), QUIET)
 	end,
+	-- Level 21-28 set: Township's level and price slots, our own pieces
+	DaffodilBed = function(b)
+		b.post("Rim", 0.7, 3.6, at(0, 0.35, 0), Palette.stoneLight, SOLID)
+		b.post("Soil", 0.15, 3.1, at(0, 0.75, 0), Palette.soil, QUIET)
+		b.post("Leaves", 0.45, 2.6, at(0, 1, 0), Palette.leaf, QUIET)
+		for _, spot in { at(-0.8, 1.55, -0.6), at(0.85, 1.7, -0.3), at(0, 1.6, 0.85) } do
+			-- a white star of petals with a deep yellow trumpet facing up
+			b.post("Petals", 0.12, 1, spot, Palette.flowerWhite:Lerp(Palette.flowerYellow, 0.35), QUIET)
+			b.post("Trumpet", 0.4, 0.45, spot + Vector3.new(0, 0.25, 0), Palette.carrot, QUIET)
+		end
+	end,
+	PalmPair = function(b)
+		b.post("Sand", 0.3, 3.8, at(0, 0.15, 0), Palette.oat, QUIET)
+		for i, palm in { { at(-0.7, 0, 0.5), 4.6, -10 }, { at(0.8, 0, -0.6), 3.4, 14 } } do
+			local foot, h, lean = palm[1] :: Vector3, palm[2] :: number, palm[3] :: number
+			local trunk = CFrame.new(foot) * CFrame.Angles(0, 0, math.rad(lean)) * CFrame.new(0, h / 2, 0)
+			b.block("Trunk", Vector3.new(0.45, h, 0.45), trunk, Palette.trunk)
+			local top = (trunk * CFrame.new(0, h / 2, 0)).Position
+			-- four fronds fanning out from the top and drooping at the tips
+			for k = 0, 3 do
+				b.block(
+					"Frond",
+					Vector3.new(2, 0.15, 0.6),
+					CFrame.new(top)
+						* Kit.yaw(k * 90 + i * 40)
+						* CFrame.Angles(0, 0, math.rad(-28))
+						* CFrame.new(0.9, 0, 0),
+					if (k + i) % 2 == 0 then Palette.leafLight else Palette.leaf,
+					QUIET
+				)
+			end
+		end
+		b.ball("Coconut", 0.45, at(-0.45, 4.45, 0.5), Palette.woodDark, QUIET)
+	end,
+	FishingJetty = function(b)
+		-- planks running out over a patch of water at the back, with a rod over the end
+		b.block("Water", Vector3.new(3.9, 0.15, 3.2), at(0, 0.08, 2.3), Palette.water, QUIET)
+		b.block("Deck", Vector3.new(2.8, 0.3, 6), at(0, 0.9, -0.8), Palette.wood)
+		for _, x in { -0.7, 0.7 } do
+			b.block("Seam", Vector3.new(0.08, 0.32, 6), at(x, 0.9, -0.8), Palette.woodDark, QUIET)
+		end
+		for _, x in { -1.25, 1.25 } do
+			for _, z in { -3.3, 1.8 } do
+				b.post("Piling", 1.4, 0.45, at(x, 0.55, z), Palette.woodDark, SOLID)
+			end
+		end
+		b.post("Bollard", 0.6, 0.5, at(1, 1.35, 1.2), Palette.woodDark, QUIET)
+		b.post("Bucket", 0.6, 0.6, at(-0.8, 1.35, -0.4), Palette.metal, QUIET)
+		b.block(
+			"Rod",
+			Vector3.new(0.1, 0.1, 3.2),
+			CFrame.new(-0.6, 1.7, 2.2) * CFrame.Angles(math.rad(22), 0, 0),
+			Palette.cocoa,
+			QUIET
+		)
+	end,
+	GardenObelisk = function(b)
+		b.block("Plinth", Vector3.new(2.6, 0.8, 2.6), at(0, 0.4, 0), Palette.stoneDark, SOLID)
+		b.block("Step", Vector3.new(1.9, 0.4, 1.9), at(0, 1, 0), Palette.stone, QUIET)
+		b.block("Shaft", Vector3.new(1.1, 5, 1.1), at(0, 3.7, 0), Palette.stoneLight)
+		b.block(
+			"Tip",
+			Vector3.new(0.8, 0.8, 0.8),
+			CFrame.new(0, 6.3, 0) * CFrame.Angles(math.rad(45), 0, math.rad(35)),
+			Palette.coins,
+			QUIET
+		)
+		b.block("Band", Vector3.new(1.25, 0.25, 1.25), at(0, 5.2, 0), Palette.coins, QUIET)
+		b.block("Ivy", Vector3.new(0.12, 2.2, 0.6), at(-0.6, 2.4, -0.2), Palette.leaf, QUIET)
+		b.block("Ivy", Vector3.new(0.6, 1.4, 0.12), at(0.15, 2, -0.6), Palette.leafLight, QUIET)
+	end,
+	DeckChairs = function(b)
+		for i, x in { -1, 1 } do
+			local stripe = if i == 1 then Palette.roofTeal else Palette.roofRed
+			b.block("Frame", Vector3.new(1.2, 0.5, 2.6), at(x, 0.25, 0.1), Palette.wood, SOLID)
+			b.block("Seat", Vector3.new(1.05, 0.15, 1.6), at(x, 0.58, -0.3), stripe:Lerp(Palette.cream, 0.25), QUIET)
+			b.block(
+				"Back",
+				Vector3.new(1.05, 0.15, 1.3),
+				CFrame.new(x, 1.05, 0.95) * CFrame.Angles(math.rad(50), 0, 0),
+				stripe,
+				QUIET
+			)
+		end
+		b.post("Pole", 3.8, 0.15, at(0, 1.9, 1.4), Palette.metal, QUIET)
+		b.post("Canopy", 0.3, 3.8, at(0, 3.85, 1.4), Palette.roofMustard, QUIET)
+		b.ball("Top", 0.35, at(0, 4.1, 1.4), Palette.cream, QUIET)
+		b.post("Table", 0.9, 0.7, at(0, 0.45, -1.3), Palette.woodLight, QUIET)
+	end,
+	PumpkinCart = function(b)
+		b.block("Bed", Vector3.new(3, 0.7, 1.8), at(0, 1.25, 0), Palette.wood, SOLID)
+		for _, z in { -1, 1 } do
+			b.cyl("Wheel", 0.25, 1.6, CFrame.new(-0.4, 0.8, z) * Kit.yaw(90), Palette.woodDark, QUIET)
+		end
+		b.block("Handle", Vector3.new(1.6, 0.18, 1.2), at(1.85, 1.35, 0), Palette.woodDark, QUIET)
+		b.block("Leg", Vector3.new(0.2, 0.9, 0.2), at(1.2, 0.45, 0), Palette.woodDark, QUIET)
+		for i, spot in { at(-0.8, 1.95, -0.3), at(0.5, 1.95, 0.35), at(-0.1, 2.6, 0) } do
+			local d = if i == 3 then 0.95 else 1.1
+			b.ball("Pumpkin", d, spot, Palette.carrot)
+			if i ~= 2 then
+				b.block("Stem", Vector3.new(0.15, 0.3, 0.15), spot + Vector3.new(0, d / 2, 0), Palette.leaf, QUIET)
+			end
+		end
+	end,
+	RoseBed = function(b)
+		b.block("Box", Vector3.new(3.6, 0.9, 3.6), at(0, 0.45, 0), Palette.woodLight, SOLID)
+		b.block("Soil", Vector3.new(3.1, 0.2, 3.1), at(0, 0.92, 0), Palette.soilDark, QUIET)
+		b.block("Trellis", Vector3.new(3.2, 2.4, 0.15), at(0, 2, 1.55), Palette.cream, QUIET)
+		for _, spot in { at(-1, 1.5, 0.6), at(0.9, 1.6, 0.5), at(0, 1.45, -0.7) } do
+			b.ball("Bush", 1.5, spot, Palette.treeTopDark)
+		end
+		for _, spot in { at(-1.1, 2.1, 0.3), at(0.7, 2.25, 0.1), at(0.2, 2, -1.1), at(-0.4, 2.9, 1.35) } do
+			b.ball("Rose", 0.6, spot, Palette.roofRed, QUIET)
+		end
+	end,
+	IrisBed = function(b)
+		b.block("Planter", Vector3.new(3.6, 0.8, 1.8), at(0, 0.4, 0), Palette.stone, SOLID)
+		b.block("Soil", Vector3.new(3.2, 0.15, 1.4), at(0, 0.82, 0), Palette.soil, QUIET)
+		for i, x in { -1.1, 0, 1.1 } do
+			local h = 1.8 + (i % 2) * 0.5
+			b.block(
+				"Blades",
+				Vector3.new(0.5, h, 0.15),
+				CFrame.new(x, 0.85 + h / 2, 0) * Kit.yaw(i * 30),
+				Palette.leaf,
+				QUIET
+			)
+			b.ball(
+				"Iris",
+				0.75,
+				at(x + 0.15, 0.95 + h, -0.1),
+				if i == 2 then Palette.plum:Lerp(Palette.cream, 0.3) else Palette.plum
+			)
+		end
+		b.ball("Bud", 0.4, at(-0.5, 2, 0.3), Palette.flowerYellow, QUIET)
+	end,
+	Rowboat = function(b)
+		local beached = CFrame.new(0, 0, 0) * Kit.yaw(20)
+		b.post("Sand", 0.25, 3.9, at(0, 0.12, 0), Palette.oat, QUIET)
+		b.block("Hull", Vector3.new(1.8, 0.8, 2.6), beached * CFrame.new(0, 0.6, 0.2), Palette.roofTeal, SOLID)
+		b.block(
+			"Bow",
+			Vector3.new(1.27, 0.8, 1.27),
+			beached * CFrame.new(0, 0.6, -1.1) * Kit.yaw(45),
+			Palette.roofTeal,
+			QUIET
+		)
+		b.block("Floor", Vector3.new(1.4, 0.1, 2.2), beached * CFrame.new(0, 0.95, 0.3), Palette.woodLight, QUIET)
+		b.block("Thwart", Vector3.new(1.6, 0.15, 0.4), beached * CFrame.new(0, 1.05, 0.4), Palette.wood, QUIET)
+		b.block("Trim", Vector3.new(1.85, 0.15, 0.15), beached * CFrame.new(0, 1, 1.45), Palette.cream, QUIET)
+		b.block(
+			"Oar",
+			Vector3.new(0.15, 0.1, 3.2),
+			beached * CFrame.new(1.2, 0.35, 0.2) * Kit.yaw(-8),
+			Palette.woodDark,
+			QUIET
+		)
+	end,
+	Treehouse = function(b)
+		b.post("Trunk", 7, 1.3, at(0, 3.5, 0.4), Palette.trunk, SOLID)
+		b.block("Platform", Vector3.new(3.4, 0.3, 3.4), at(0, 4, 0), Palette.woodLight, QUIET)
+		b.block("Hut", Vector3.new(2.4, 1.9, 2.2), at(0, 5.1, 0), Palette.wood)
+		b.block(
+			"Roof",
+			Vector3.new(1.9, 1.9, 2.6),
+			CFrame.new(0, 6.1, 0) * CFrame.Angles(0, 0, math.rad(45)),
+			Palette.roofRed,
+			QUIET
+		)
+		b.block("Door", Vector3.new(0.8, 1.2, 0.1), at(-0.5, 4.75, -1.12), Palette.cocoa, QUIET)
+		b.block("Window", Vector3.new(0.6, 0.5, 0.1), at(0.6, 5.3, -1.12), Palette.lantern, QUIET)
+		b.block(
+			"Ladder",
+			Vector3.new(0.9, 4.4, 0.15),
+			CFrame.new(-0.5, 2, -1.9) * CFrame.Angles(math.rad(-14), 0, 0),
+			Palette.woodDark,
+			QUIET
+		)
+		b.ball("Leaves", 3.4, at(-1, 7.4, 1.1), Palette.treeTop)
+		b.ball("Leaves", 2.8, at(1.2, 7, 1.2), Palette.treeTopDark)
+	end,
+	TieredFountain = function(b)
+		b.post("Basin", 0.9, 3.7, at(0, 0.45, 0), Palette.stoneLight, SOLID)
+		b.post("Water", 0.15, 3.2, at(0, 0.9, 0), Palette.water, QUIET)
+		b.post("Pillar", 1.6, 0.6, at(0, 1.7, 0), Palette.stone, QUIET)
+		b.post("Bowl", 0.4, 2, at(0, 2.6, 0), Palette.stoneLight)
+		b.post("BowlWater", 0.1, 1.7, at(0, 2.82, 0), Palette.water, QUIET)
+		b.post("Top", 0.7, 0.35, at(0, 3.2, 0), Palette.stone, QUIET)
+		b.ball("Finial", 0.45, at(0, 3.65, 0), Palette.stoneLight, QUIET)
+		b.ball("Splash", 0.8, at(0, 4, 0), Palette.glass, { shadow = false, transparency = 0.3 })
+	end,
+	WeepingWillow = function(b)
+		b.post("Trunk", 4, 1.1, at(0, 2, 0), Palette.trunk, SOLID)
+		b.ball("Crown", 4.2, at(0, 5.2, 0), Palette.leafLight)
+		b.ball("Crown", 2.6, at(0.4, 6.6, 0.3), Palette.leaf, QUIET)
+		-- the curtain of drooping branches, hanging nearly to the ground all round
+		for i = 0, 5 do
+			local a = math.rad(i * 60 + 15)
+			b.block(
+				"Drape",
+				Vector3.new(1.6, 3.6, 0.25),
+				CFrame.new(math.cos(a) * 1.85, 3.3, math.sin(a) * 1.85) * Kit.yaw(-i * 60 - 15 + 90),
+				if i % 2 == 0 then Palette.leaf else Palette.leafLight:Lerp(Palette.lime, 0.2),
+				QUIET
+			)
+		end
+	end,
 	-- VIP gold fence (Model List §7, P1 with the VIP pass): gilded pickets with ball finials and
 	-- a little Neon glint on the middle one. Not in Config/Decor until the VIP pass exists.
 	GoldFence = function(b)

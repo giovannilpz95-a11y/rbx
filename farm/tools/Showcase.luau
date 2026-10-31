@@ -384,6 +384,28 @@ SCENES.decor2 = function(root)
 	end
 end
 
+SCENES.decor3 = function(root)
+	ground(root, 60)
+	local row = {
+		{ "DaffodilBed", -15, -8 },
+		{ "PalmPair", -9, -8 },
+		{ "FishingJetty", -3, -8 },
+		{ "GardenObelisk", 3, -8 },
+		{ "DeckChairs", 9, -8 },
+		{ "PumpkinCart", 15, -8 },
+		{ "RoseBed", -15, 6 },
+		{ "IrisBed", -9, 6 },
+		{ "Rowboat", -3, 6 },
+		{ "Treehouse", 3, 6 },
+		{ "TieredFountain", 9, 6 },
+		{ "WeepingWillow", 15, 6 },
+	}
+	for _, d in row do
+		local m = Kit.model(d[1], root)
+		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
 SCENES.items = function(root)
 	ground(root, 40)
 	local ids = {}
