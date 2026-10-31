@@ -39,6 +39,7 @@ ArtMotion.SPECS = {
 	MoldingWorks = { kind = "bob", pivot = "Press", speed = 4, amplitude = 0.7 },
 	HomewaresShop = { kind = "spin", pivot = "Brush", speed = 2 },
 	CandyFactory = { kind = "spin", pivot = "Swirl", speed = 1.6 },
+	Cantina = { kind = "glow", pivot = "NeonSign", speed = 3, color = Palette.carrot },
 	Smelter = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 	Smelter2 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 } :: { [string]: Spec }

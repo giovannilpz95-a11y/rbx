@@ -50,6 +50,8 @@ local Factories: { [string]: FactoryDef } = {
 	HomewaresShop = { id = "HomewaresShop", displayName = "Homewares Shop", unlockLevel = 37, population = 3130, buildCost = 18000, buildSeconds = 38 * HOUR, xp = 747, queueSlots = 2, trayCapacity = 6, order = 19, color = { 240, 200, 120 } },
 	-- Township's Candy Factory (level 39): placed by the player once it's built
 	CandyFactory = { id = "CandyFactory", displayName = "Candy Factory", unlockLevel = 39, population = 3190, buildCost = 20000, buildSeconds = 40 * HOUR, xp = 830, queueSlots = 2, trayCapacity = 6, order = 20, color = { 245, 150, 190 } },
+	-- Township's Mexican Restaurant (level 43): placed by the player once it's built
+	Cantina = { id = "Cantina", displayName = "Cantina", unlockLevel = 43, population = 3950, buildCost = 33000, buildSeconds = 44 * HOUR, xp = 1861, queueSlots = 2, trayCapacity = 6, order = 21, color = { 230, 120, 60 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

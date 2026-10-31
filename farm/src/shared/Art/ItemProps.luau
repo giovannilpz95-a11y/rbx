@@ -286,6 +286,27 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		end
 		b.ball("Dumpling", 0.6, at(0, 0.7, -0.35), Palette.cream, QUIET)
 	end,
+	Peppers = function(b)
+		-- Two red pods with green stalks
+		b.block("Pod", Vector3.new(0.5, 1.1, 0.5), tilt(-0.3, 0.55, 0, 0, 0, 12), Palette.roofRed, QUIET)
+		b.block("Pod", Vector3.new(0.5, 1, 0.5), tilt(0.35, 0.5, 0.1, 0, 0, -10), Palette.roofRed, QUIET)
+		b.block("Stalk", Vector3.new(0.2, 0.3, 0.2), at(-0.4, 1.2, 0), Palette.leaf, QUIET)
+		b.block("Stalk", Vector3.new(0.2, 0.3, 0.2), at(0.45, 1.1, 0.1), Palette.leaf, QUIET)
+	end,
+	ChiliSauce = function(b)
+		-- A tall red bottle with a green cap and a pepper on the label
+		b.post("Bottle", 1.3, 0.6, at(0, 0.65, 0), Palette.roofRed, QUIET)
+		b.post("Neck", 0.4, 0.3, at(0, 1.5, 0), Palette.roofRed, QUIET)
+		b.post("Cap", 0.25, 0.35, at(0, 1.8, 0), Palette.leaf, QUIET)
+		b.block("Label", Vector3.new(0.5, 0.5, 0.1), at(0, 0.7, -0.3), Palette.cream, QUIET)
+	end,
+	GlazedBacon = function(b)
+		-- Three shiny glazed rashers on a plate
+		b.post("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		for i, z in { -0.4, 0, 0.4 } do
+			b.block("Rasher", Vector3.new(1.3, 0.15, 0.3), tilt(0, 0.22 + i * 0.03, z, 0, 8, 0), Palette.bread, QUIET)
+		end
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)

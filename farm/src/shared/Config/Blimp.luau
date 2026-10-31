@@ -23,7 +23,7 @@ local crates: { [string]: Range } = {
 	-- Crops
 	Wheat = { 18, 99 }, Corn = { 47, 81 }, Carrots = { 19, 40 }, Sugarcane = { 11, 27 },
 	Cotton = { 8, 20 }, Strawberries = { 5, 14 }, Tomatoes = { 6, 15 }, PineTrees = { 6, 11 },
-	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, CorkOak = { 2, 3 }, Silk = { 1, 5 },
+	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, CorkOak = { 2, 3 }, Peppers = { 6, 9 }, Silk = { 1, 5 },
 	-- Animal goods
 	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 }, Honeycomb = { 1, 7 }, Bacon = { 2, 4 },
 	-- Bakery
@@ -53,6 +53,8 @@ local crates: { [string]: Range } = {
 	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 }, Glue = { 1, 3 },
 	-- Homewares Shop
 	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 }, Clothesline = { 1, 2 }, Plunger = { 1, 2 },
+	-- Cantina, Snack Factory
+	ChiliSauce = { 1, 3 }, GlazedBacon = { 1, 2 },
 	-- Candy Factory
 	JellyBeans = { 1, 3 }, Toffee = { 1, 3 }, CandyCane = { 1, 2 }, Dumplings = { 1, 2 },
 }

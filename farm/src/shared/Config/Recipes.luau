@@ -57,6 +57,7 @@ local Recipes: { [string]: RecipeDef } = {
 	Suit = { id = "Suit", displayName = "Suit", factory = "Tailor", unlockLevel = 36, inputs = { Yarn = 1, CottonFabric = 1, SilkFabric = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 330, xp = 141 }, -- content bank
 	WoolScarf = { id = "WoolScarf", displayName = "Wool Scarf", factory = "Tailor", unlockLevel = 14, inputs = { Yarn = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 76, xp = 33 }, -- content bank
 	-- Snack Factory (content bank)
+	GlazedBacon = { id = "GlazedBacon", displayName = "Glazed Bacon", factory = "SnackFactory", unlockLevel = 43, inputs = { Bacon = 2, CaneSyrup = 1 }, outputQty = 1, seconds = 1 * HOUR + 20 * MIN, sellPrice = 115, xp = 49 },
 	Popcorn = { id = "Popcorn", displayName = "Popcorn", factory = "SnackFactory", unlockLevel = 14, inputs = { Corn = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 12, xp = 5 },
 	BerryGranola = { id = "BerryGranola", displayName = "Berry Granola", factory = "SnackFactory", unlockLevel = 19, inputs = { Wheat = 2, Strawberries = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 29, xp = 12 },
 	PotatoChips = { id = "PotatoChips", displayName = "Potato Chips", factory = "SnackFactory", unlockLevel = 22, inputs = { Potatoes = 2 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 69, xp = 30 },
@@ -97,6 +98,8 @@ local Recipes: { [string]: RecipeDef } = {
 	JellyBeans = { id = "JellyBeans", displayName = "Jelly Beans", factory = "CandyFactory", unlockLevel = 39, inputs = { Strawberries = 3, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 79, xp = 34 },
 	Toffee = { id = "Toffee", displayName = "Toffee", factory = "CandyFactory", unlockLevel = 40, inputs = { Caramel = 1, Butter = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 112, xp = 48 },
 	CandyCane = { id = "CandyCane", displayName = "Candy Cane", factory = "CandyFactory", unlockLevel = 42, inputs = { Caramel = 1, Cream = 1, Paper = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 105, xp = 45 },
+	-- Cantina (content bank)
+	ChiliSauce = { id = "ChiliSauce", displayName = "Chili Sauce", factory = "Cantina", unlockLevel = 43, inputs = { Tomatoes = 3, Peppers = 3, Sugar = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 144, xp = 62 },
 	-- Homewares Shop (content bank)
 	Plunger = { id = "Plunger", displayName = "Plunger", factory = "HomewaresShop", unlockLevel = 40, inputs = { PineTrees = 1, Rubber = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 122, xp = 52 },
 	Clothesline = { id = "Clothesline", displayName = "Clothesline", factory = "HomewaresShop", unlockLevel = 39, inputs = { Sugarcane = 5, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 202, xp = 87 },

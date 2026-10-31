@@ -1490,6 +1490,51 @@ TYPES.LifeboatStation = function(b, s)
 	return body
 end
 
+-- Grocery Store (content bank, level 43): a wide shop with a glass front under a green
+-- awning, a flat roof with a big sign, crates of produce out front and a shopping trolley.
+TYPES.GroceryStore = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.66, 4.4, s * 0.36),
+		Vector3.new(0, PLINTH + 2.2, z0 + s * 0.08),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + s * 0.08 - s * 0.18
+	t.block("Roof", Vector3.new(s * 0.7, 0.5, s * 0.4), Vector3.new(0, PLINTH + 4.65, z0 + s * 0.08), Palette.leaf)
+	t.block("SignBoard", Vector3.new(s * 0.4, 1.4, 0.3), Vector3.new(0, PLINTH + 5.6, face + 0.3), Palette.leaf)
+	t.block("SignFace", Vector3.new(s * 0.34, 0.9, 0.1), Vector3.new(0, PLINTH + 5.6, face + 0.12), Palette.cream)
+	t.block(
+		"GlassFront",
+		Vector3.new(s * 0.5, 2.6, 0.2),
+		Vector3.new(-s * 0.04, PLINTH + 1.6, face - 0.05),
+		Palette.glass
+	)
+	t.block(
+		"Awning",
+		Vector3.new(s * 0.62, 0.25, 1.6),
+		CFrame.new(0, PLINTH + 3.4, face - 0.7) * CFrame.Angles(math.rad(-15), 0, 0),
+		Palette.leaf
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.25, PLINTH, face), 1.6, 2.8, Palette.glass, Palette.cream)
+	-- Produce crates and a trolley out front
+	for i, color in { Palette.roofRed, Palette.flowerYellow, Palette.carrot } do
+		t.block(
+			"Crate",
+			Vector3.new(1.1, 0.7, 0.9),
+			Vector3.new(-s * 0.26 + (i - 1) * 1.3, PLINTH + 0.35, face - 1.3),
+			Palette.wood
+		)
+		t.ball("Produce", 0.8, Vector3.new(-s * 0.26 + (i - 1) * 1.3, PLINTH + 0.85, face - 1.3), color)
+	end
+	t.block("Trolley", Vector3.new(1, 0.9, 1.4), Vector3.new(s * 0.33, PLINTH + 0.75, face - 1.4), Palette.stoneLight)
+	Kit.sproutTag(t, Vector3.new(-s * 0.26, PLINTH + 5.4, z0 + s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end
