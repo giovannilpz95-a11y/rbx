@@ -320,7 +320,7 @@ local function tick()
 			depart()
 		else
 			local index
-			index, seed = Express.npcTick(train, now, seed)
+			index, seed = Express.npcTick(train, now, seed, Clock.getTimeScale())
 			if index then
 				payEveryone()
 				publish()
@@ -349,6 +349,42 @@ function ExpressService.debugArrive(player: Player): (boolean, string?)
 	local now = Clock.now()
 	arrive(now, now + Config.windowSeconds)
 	NetService.toast(player, "Dev: the Town Express is in, north of the Town Square")
+	return true
+end
+
+-- Studio: the train leaves now, the way it does when its window ends
+function ExpressService.debugLeave(player: Player): (boolean, string?)
+	if not RunService:IsStudio() then
+		return false
+	end
+	if train == nil then
+		return false, "Dev: no Town Express in the station"
+	end
+	train.leavesAt = Clock.now()
+	depart()
+	NetService.toast(player, "Dev: the Town Express left")
+	return true
+end
+
+-- Studio: goods in the Barn for the next 3 crates still to load
+function ExpressService.debugGoods(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	if train == nil then
+		return false, "Dev: bring a Town Express in first"
+	end
+	local given = 0
+	for _, crate in train.crates do
+		if crate.by == nil and given < 3 then
+			data.inventory.items[crate.item] = (data.inventory.items[crate.item] or 0) + crate.qty
+			given += 1
+		end
+	end
+	DataService.markDirty(player, true)
+	NetService.pushState(player)
+	NetService.toast(player, string.format("Dev: goods for %d Town Express crates in your Barn", given))
 	return true
 end
 
@@ -395,6 +431,8 @@ end
 function ExpressService.init()
 	NetService.on(Net.Express_Load, 3, 6, ExpressService.load)
 	NetService.on(Net.Debug_Express, 1, 2, ExpressService.debugArrive)
+	NetService.on(Net.Debug_ExpressLeave, 1, 2, ExpressService.debugLeave)
+	NetService.on(Net.Debug_ExpressGoods, 1, 2, ExpressService.debugGoods)
 	seed = Random.new():NextInteger(1, 2147483646)
 	-- A train already in its window when the server starts runs for what's left of it
 	task.spawn(function()
