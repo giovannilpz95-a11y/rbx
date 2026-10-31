@@ -12,6 +12,7 @@
 	  { kind = "Fences" }                                -- break every fence (blasts only)
 	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
+	  { kind = "Tarps" }                                 -- roll up every tarp cell
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -30,7 +31,7 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local mudLayers, bales, frost, weeds, bare, stones, goo = 0, 0, 0, 0, 0, 0, 0
+	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps = 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.goo then
 			goo += 1
@@ -40,7 +41,9 @@ function Goals.new(defs: { any }, board)
 		end
 		mudLayers += cell.mud
 		frost += cell.frost
-		if cell.crate then
+		if cell.tarp then
+			tarps += 1 -- tarps aren't bales for the HayBale goal
+		elseif cell.crate then
 			-- Surprise crates aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
@@ -74,6 +77,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Stones", target = def.count or stones, progress = 0 })
 		elseif def.kind == "Goo" then
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
+		elseif def.kind == "Tarps" then
+			table.insert(list, { kind = "Tarps", target = def.count or tarps, progress = 0 })
 		elseif def.kind == "Statues" then
 			table.insert(list, { kind = "Statues", target = def.count or #board.statues, progress = 0 })
 		elseif def.kind == "Fences" then
@@ -136,6 +141,10 @@ function Goals.onGooGrown(self)
 			goal.target += 1
 		end
 	end
+end
+
+function Goals.onTarp(self)
+	bump(self, "Tarps", nil)
 end
 
 function Goals.onStatue(self)

@@ -15,6 +15,9 @@
 	  b  buried statue under the tile: touching b cells make one statue; only
 	     blasts (power-ups, boosters) dig a cell up, and the Statues goal wants
 	     every statue dug up
+	  t  tarp: touching t cells in a row make one tarp, blocking like 1-layer
+	     bales; matches next to it and blasts on it roll it up from its right
+	     end (the Tarps goal)
 	  x  surprise crate: blocks like a 1-layer bale; a match next to it or a blast
 	     opens it, and it leaves a power-up (or now and then a hay bale)
 	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
@@ -44,7 +47,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -77,6 +80,7 @@ local VALID_CHARS = {
 	["#"] = true,
 	d = true,
 	b = true,
+	t = true,
 	g = true,
 	G = true,
 	h = true,
@@ -228,7 +232,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -267,6 +271,8 @@ function Levels.validate(level): string?
 				buried += 1
 			elseif ch == "G" then
 				springs += 1
+			elseif ch == "t" then
+				tarps += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -344,6 +350,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Goo" then
 			if goo == 0 then
 				return "goo goal but no goo in the layout"
+			end
+		elseif goal.kind == "Tarps" then
+			if tarps == 0 then
+				return "tarps goal but no tarps in the layout"
 			end
 		elseif goal.kind == "Statues" then
 			if buried == 0 then

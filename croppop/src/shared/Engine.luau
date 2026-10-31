@@ -45,6 +45,11 @@
 	it up; matches don't. When the last cell of a statue is dug up, the statue
 	is found (a "Statue" effect with its cells) for the Statues goal.
 
+	Tarps: touching tarp cells in a row make one tarp, which blocks its cells
+	like 1-layer bales. A match next to it rolls it up by one cell from its
+	right end (once per tarp per wave), and each blast on one of its cells
+	rolls up one more, for the Tarps goal.
+
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
 	it (matches don't), for the Fences goal.
 
@@ -178,6 +183,7 @@ local function newWave()
 		spread = false, -- the power-up going off started on clover
 		pendingCreates = {},
 		balesTouched = {}, -- bales already hit by a neighbouring match this wave
+		tarpsRolled = {}, -- tarps already rolled by a neighbouring match this wave
 		basketsHit = {}, -- baskets already shaken this wave
 	}
 end
@@ -216,7 +222,35 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	end
 end
 
-function Engine._damageBale(self, wave, cell)
+-- Rolls a tarp up by one cell from its right end.
+function Engine._rollTarp(self, wave, tarp)
+	for i = #tarp.cells, 1, -1 do
+		local cell = tarp.cells[i]
+		if cell.tarp then
+			cell.tarp = nil
+			cell.bale = 0
+			tarp.left -= 1
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, tarp = true })
+			table.insert(wave.effects, { type = "Roll", x = cell.x, y = cell.y })
+			self.goals:onTarp()
+			return
+		end
+	end
+end
+
+-- byMatch: the hit is a match next to the bale (not a blast on it).
+function Engine._damageBale(self, wave, cell, byMatch: boolean?)
+	if cell.tarp then
+		local tarp = cell.tarp
+		if byMatch then
+			if wave.tarpsRolled[tarp] then
+				return
+			end
+			wave.tarpsRolled[tarp] = true
+		end
+		self:_rollTarp(wave, tarp)
+		return
+	end
 	cell.bale -= 1
 	if cell.crate then
 		cell.crate = false
@@ -389,7 +423,7 @@ function Engine._popGroups(self, wave, groups)
 				local n = board:get(cell.x + d[1], cell.y + d[2])
 				if n and n.bale > 0 and not n.stone and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
-					self:_damageBale(wave, n)
+					self:_damageBale(wave, n, true)
 				elseif not n then
 					local basket = board:basket(cell.x + d[1], cell.y + d[2])
 					if basket then
@@ -441,6 +475,7 @@ function Engine._chooseBeeTarget(self)
 			local wanted = if cell.weed
 				then goals:wants("Weeds")
 				elseif cell.stone then goals:wants("Stones")
+				elseif cell.tarp then goals:wants("Tarps")
 				else goals:wants("HayBale")
 			table.insert(if wanted then tiers[1] else tiers[4], cell)
 		elseif cell.piece and not cell.piece.pumpkin then

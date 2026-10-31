@@ -50,6 +50,7 @@ export type Cell = {
 	bale: number, -- hay bale layers left (0 = no bale); a bale cell holds no piece
 	weed: boolean, -- the "bale" is a weed (always 1 layer; weeds spread)
 	stone: boolean, -- the "bale" is a stone wall (only blasts break it, not matches next to it)
+	tarp: any?, -- the "bale" is part of a tarp ({ cells, left }), rolled up from its right end
 	crate: boolean?, -- the "bale" is a surprise crate (opens like a 1-layer bale and reveals something)
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
@@ -87,6 +88,9 @@ function Board.new(width: number, height: number)
 		-- Buried statues ("b" in the layout; touching "b" cells make one statue):
 		-- { cells = { Cell }, left = cells still buried } in reading order.
 		statues = {},
+		-- Tarps ("t" in the layout; touching t cells in a row make one tarp):
+		-- { cells = { Cell } left to right, left = cells still covered }.
+		tarps = {},
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -179,6 +183,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.goo = true
 				elseif ch == "b" then
 					cell.buried = true
+				elseif ch == "t" then
+					cell.bale = 1
+					cell.tarp = true -- replaced by its tarp below
 				elseif ch == "x" then
 					cell.bale = 1
 					cell.crate = true
@@ -187,6 +194,24 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.stone = true
 				end
 				self.cells[y][x] = cell
+			end
+		end
+	end
+	-- Touching tarp cells in a row make up one tarp.
+	for y = 1, height do
+		local tarp = nil
+		for x = 1, width do
+			local cell = self.cells[y][x]
+			if cell and cell.tarp == true then
+				if not tarp then
+					tarp = { cells = {}, left = 0 }
+					table.insert(self.tarps, tarp)
+				end
+				cell.tarp = tarp
+				table.insert(tarp.cells, cell)
+				tarp.left += 1
+			else
+				tarp = nil
 			end
 		end
 	end
@@ -646,6 +671,8 @@ function Board.hash(self): string
 				table.insert(row, "#")
 			elseif cell.crate then
 				table.insert(row, "X" .. clover)
+			elseif cell.tarp then
+				table.insert(row, "T" .. clover)
 			elseif cell.weed then
 				table.insert(row, "W" .. clover)
 			elseif cell.bale > 0 then
@@ -693,6 +720,7 @@ function Board.snapshot(self)
 			weed = cell.weed,
 			stone = cell.stone,
 			crate = cell.crate,
+			tarp = cell.tarp ~= nil,
 			mud = cell.mud,
 			frost = cell.frost,
 			clover = cell.clover,

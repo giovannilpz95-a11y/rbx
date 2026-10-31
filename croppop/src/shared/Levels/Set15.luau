@@ -24,12 +24,12 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 60% (target 50%).
+	-- Bot wins 52% (target 50%; 400-game check, was 42% at 32 moves).
 	{
 		id = 352,
 		name = "Bubbling Well",
 		difficulty = "Normal",
-		moves = 32,
+		moves = 35,
 		colors = { "Tomato", "Egg", "Carrot", "Corn", "Wool" },
 		layout = {
 			".........",
@@ -97,12 +97,12 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 35% (target 32%).
+	-- Bot wins 32% (target 32%; 400-game check, was 30% at 27 moves).
 	{
 		id = 355,
 		name = "Seep Hollow",
 		difficulty = "Tough",
-		moves = 27,
+		moves = 28,
 		colors = { "Tomato", "Egg", "Carrot", "Corn", "Wool" },
 		layout = {
 			"#......#",

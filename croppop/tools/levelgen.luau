@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 375
+local LAST = tonumber(ARGS[2]) or 400
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -103,6 +103,11 @@ local NAMES = {
 	"Frogspawn Pool", "Bubble Bog", "Lily Fountain", "Spout Lane", "Burbling Brook",
 	"Sticky Spring", "Swamp Geyser", "Toad Hall Well", "Pond Dipping", "Bog Spring",
 	"Wellspring Farm", "Drizzle Dell", "Fountain Square", "Gushing Gulch", "Grand Spring Gala",
+	"Tarp Rolling", "Canvas Cover", "Market Awning", "Striped Tent", "Rainy Day Tarp",
+	"Hay Wagon Cover", "Marquee Meadow", "Shade Sail", "Roll-Up Barn", "Fair Tent",
+	"Canvas Corner", "Picnic Awning", "Tarpaulin Lane", "Circus Field", "Rain Cover",
+	"Pavilion Green", "Wagon Tilt", "Big Top Farm", "Awning Alley", "Show Tent",
+	"Bunting Row", "Stall Covers", "Tent Pegs", "Rolling Shade", "Grand Marquee Fair",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -121,7 +126,8 @@ local HEN_INTRO = 276 -- first level with hen houses
 local CRATE_INTRO = 301 -- first level with surprise crates
 local STATUE_INTRO = 326 -- first level with buried statues
 local SPRING_INTRO = 351 -- first level with goo springs
-local INTROS = { [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local TARP_INTRO = 376 -- first level with tarps
+local INTROS = { [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -448,6 +454,7 @@ local function mechanics(id)
 		crates = id >= CRATE_INTRO, -- "x"
 		statues = id >= STATUE_INTRO, -- "b"
 		springs = id >= SPRING_INTRO, -- "G"
+		tarps = id >= TARP_INTRO, -- "t"
 	}
 end
 
@@ -455,6 +462,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_TARPS = { "Tarps", "Springs", "Statues", "Collect", "Tarps", "Crates", "Fences", "Goo", "Tarps", "Hens", "Mud", "Mix" }
 local FOCUS_SPRINGS = { "Springs", "Statues", "Crates", "Collect", "Springs", "Hens", "Fences", "Baskets", "Springs", "Stones", "Mud", "Mix" }
 local FOCUS_STATUES = { "Statues", "Crates", "Goo", "Collect", "Statues", "Hens", "Fences", "Baskets", "Statues", "Stones", "Mud", "Mix" }
 local FOCUS_CRATES = { "Crates", "Hens", "Goo", "Collect", "Crates", "Fences", "Baskets", "Stones", "Crates", "Mud", "Clover", "Mix" }
@@ -477,6 +485,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Tarp", "Canvas", "Awning", "Tent", "Marquee", "Shade", "Cover", "Big Top" }, focus = "Tarps", needs = "tarps" },
 	{ words = { "Spring", "Well", "Fountain", "Geyser", "Seep", "Spout" }, focus = "Springs", needs = "springs" },
 	{ words = { "Statue", "Relic", "Monument", "Bust", "Dig", "Plinth", "Fossil", "Unveiling" }, focus = "Statues", needs = "statues" },
 	{ words = { "Crate", "Box", "Surprise", "Mystery", "Parcel", "Gift", "Prize" }, focus = "Crates", needs = "crates" },
@@ -512,6 +521,8 @@ local function focusOf(id, name)
 		return "Statues"
 	elseif id == SPRING_INTRO then
 		return "Springs"
+	elseif id == TARP_INTRO then
+		return "Tarps"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -523,7 +534,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -608,6 +619,40 @@ local function placeStatues(g, rng, id)
 				for xx = x, x + sw - 1 do
 					setSym(g, xx, yy, "b")
 				end
+			end
+			placed += 1
+		end
+	end
+	return placed
+end
+
+-- Tarps: centred runs of plain cells in a row (so they stay mirrored), with
+-- tiles above them to fall in once they roll up, never stacked. The first
+-- tarp level has one run of four.
+local NOT_FALLING = "123wsSxtfF#dhG" -- cells nothing falls out of
+local function placeTarps(g, rng, id)
+	local want = if id == TARP_INTRO then 1 else rng:int(1, 2)
+	local placed = 0
+	for _ = 1, 30 do
+		if placed >= want then
+			break
+		end
+		local len = if id == TARP_INTRO then 4 else rng:int(3, math.min(6, g.w - 2))
+		if (g.w - len) % 2 == 1 then
+			len += 1
+		end
+		local x0 = (g.w - len) // 2 + 1
+		local y = rng:int(3, g.h - 1)
+		local ok = true
+		for x = x0, x0 + len - 1 do
+			local above, below = g[y - 1][x], g[y + 1] and g[y + 1][x]
+			if g[y][x] ~= "." or string.find(NOT_FALLING, above, 1, true) or below == "t" then
+				ok = false
+			end
+		end
+		if ok then
+			for x = x0, x0 + len - 1 do
+				g[y][x] = "t"
 			end
 			placed += 1
 		end
@@ -953,6 +998,11 @@ local function draft(id, variant)
 	if focus == "Crates" or (focus == "Mix" and mech.crates and rng:int(1, 3) == 1) then
 		placeCrates(g, rng, id)
 	end
+	if focus == "Tarps" or (focus == "Mix" and mech.tarps and rng:int(1, 3) == 1) then
+		if placeTarps(g, rng, id) == 0 and focus == "Tarps" then
+			return nil
+		end
+	end
 	if focus == "Statues" or (focus == "Mix" and mech.statues and rng:int(1, 3) == 1) then
 		if placeStatues(g, rng, id) == 0 and focus == "Statues" then
 			return nil
@@ -1054,6 +1104,9 @@ local function draft(id, variant)
 	end
 	if has(g, "b") > 0 then
 		table.insert(goals, { kind = "Statues" })
+	end
+	if has(g, "t") > 0 then
+		table.insert(goals, { kind = "Tarps" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most
