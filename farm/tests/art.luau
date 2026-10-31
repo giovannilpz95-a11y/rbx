@@ -38,6 +38,7 @@ local ArtItemProps = require("../src/shared/Art/ItemProps")
 local ArtMotion = require("../src/shared/Art/Motion")
 local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtQuarry = require("../src/shared/Art/Quarry")
+local ArtBlimp = require("../src/shared/Art/Blimp")
 local ArtTown = require("../src/shared/Art/Town")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Animals = require("../src/shared/Config/Animals")
@@ -744,6 +745,64 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ArtMarket.pennant(p, CFrame.new())
 		within(p, ArtMarket.PENNANT_PARTS_MAX, "pennant")
 		hinged(p, "Pennant")
+	end)
+
+	test("art: Blimp Mast, Cargo Blimp and its crates", function()
+		local plot = Instance.new("Model")
+		local origin = CFrame.new(40, 0, 10) * Kit.yaw(90)
+		local parts = ArtBlimp.build(plot, origin)
+		ok(parts.body.Name == "Body" and parts.body.CanCollide, "the office is the solid tap target")
+		ok(parts.board.Name == "TimerBoard", "timer board")
+		ok(parts.blimp.PrimaryPart ~= nil, "the blimp pivots on its root")
+		local mastParts = Kit.countParts(plot) - Kit.countParts(parts.blimp)
+		ok(mastParts <= ArtBlimp.MAST_PARTS_MAX, "mast has " .. mastParts .. " parts")
+		within(parts.blimp, ArtBlimp.BLIMP_PARTS_MAX, "blimp")
+		paletteRules(plot, "Blimp Mast")
+		-- The mast and office stay on their 4 x 3 tile footprint
+		Kit.eachPart(plot, function(p)
+			if p:FindFirstAncestor("Blimp") == nil then
+				local c = origin:PointToObjectSpace(p.CFrame.Position)
+				ok(
+					math.abs(c.X) <= ArtBlimp.WIDTH / 2 and math.abs(c.Z) <= ArtBlimp.DEPTH / 2,
+					"mast: " .. p.Name .. " inside its footprint"
+				)
+			end
+		end)
+		-- A full hold: two filled crates and a flagged one per row
+		local rows = {}
+		for r = 1, ArtBlimp.ROWS do
+			rows[r] = { { filled = true }, { filled = true }, { flagged = true } }
+		end
+		ArtBlimp.setCargo(plot, rows)
+		local cargo = parts.blimp:FindFirstChild("Cargo") :: Model
+		ok(cargo ~= nil, "cargo hangs under the blimp")
+		within(cargo, ArtBlimp.CARGO_PARTS_MAX, "cargo")
+		local crates = 0
+		for _, d in cargo:GetChildren() do
+			if d.Name == "Crate" then
+				crates += 1
+				ok(d:GetAttribute("Row") ~= nil and d:GetAttribute("Slot") ~= nil, "crate knows its row and slot")
+			end
+		end
+		eq(crates, ArtBlimp.ROWS * ArtBlimp.PER_ROW, "nine crates")
+		ArtBlimp.setCargo(plot, { { {} } })
+		eq(Kit.countParts(parts.blimp:FindFirstChild("Cargo") :: Model), 1, "cargo rebuilt each call")
+		-- States: broken hides the cup and shows the fallen sock; only Docked shows the blimp
+		ArtBlimp.setState(plot, "Broken")
+		eq((plot:FindFirstChild("Cup", true) :: BasePart).Transparency, 1, "broken mast has no cup")
+		eq((plot:FindFirstChild("FallenSock", true) :: BasePart).Transparency, 0, "broken mast shows the fallen sock")
+		eq((parts.blimp:FindFirstChild("Gondola", true) :: BasePart).Transparency, 1, "no blimp while broken")
+		ArtBlimp.setState(plot, "Docked")
+		eq((plot:FindFirstChild("Cup", true) :: BasePart).Transparency, 0, "repaired mast has its cup")
+		eq((plot:FindFirstChild("FallenSock", true) :: BasePart).Transparency, 1, "and the sock is back up")
+		eq((parts.blimp:FindFirstChild("Gondola", true) :: BasePart).Transparency, 0, "docked blimp shows")
+		eq(parts.beacon.Material, Enum.Material.Neon, "beacon lit")
+		local nose = parts.blimp:FindFirstChild("Nose", true) :: BasePart
+		local cup = plot:FindFirstChild("Cup", true) :: BasePart
+		ok((nose.CFrame.Position - cup.CFrame.Position).Magnitude < 3, "docked nose sits at the cup")
+		ArtBlimp.setState(plot, "Away")
+		eq((parts.blimp:FindFirstChild("Gondola", true) :: BasePart).Transparency, 1, "away: no blimp")
+		ok(not (parts.blimp:FindFirstChild("Gondola", true) :: BasePart).CanQuery, "and nothing to tap")
 	end)
 
 	test("art: Town Hall, locked land, Puzzle Porch, townsfolk, pickups and the Quarry", function()

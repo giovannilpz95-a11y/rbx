@@ -75,6 +75,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Prep Kitchen (content bank)
 	Dough = { id = "Dough", displayName = "Dough", factory = "PrepKitchen", unlockLevel = 31, inputs = { Wheat = 3 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 4, xp = 2 },
 	-- Rubber Works (content bank)
+	Plastic = { id = "Plastic", displayName = "Plastic", factory = "RubberWorks", unlockLevel = 32, inputs = { RubberTrees = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 73, xp = 31 },
 	Rubber = { id = "Rubber", displayName = "Rubber", factory = "RubberWorks", unlockLevel = 29, inputs = { RubberTrees = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 35, xp = 15 },
 	-- Smelter (Township's Foundry: 5 ore -> 1 ingot, all at level 21). Bars go to the Barn.
 	CopperBar = { id = "CopperBar", displayName = "Copper Bar", factory = "Smelter", unlockLevel = 21, inputs = { CopperOre = 5 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 96, xp = 41, fromOreShed = true },
