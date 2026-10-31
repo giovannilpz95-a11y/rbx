@@ -257,7 +257,17 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 28, "levels 17 to 28 are banked")
+	eq(Levels.built, 29, "levels 17 to 29 are banked")
+	eq(Levels.list[29].xpToNext, 21495, "L29 row")
+	ok(
+		table.find(Balance.enabledCrops, "RubberTrees") ~= nil and Crops.RubberTrees.growSeconds == 12 * 3600,
+		"Rubber Trees at 29"
+	)
+	eq(Levels.gifts[29].RubberTrees, 3, "Rubber Trees to start with")
+	eq(Factories.RubberWorks.population, 1670, "Rubber Works Population")
+	eq(Recipes.Rubber.inputs.RubberTrees, 1, "Rubber from a Rubber Tree")
+	eq(Town.houses.BrickTownhouse.copyLevels[1], 29, "Brick Townhouse")
+	eq(Town.community.CabStand.capBonus, 140, "Cab Stand")
 	eq(Levels.list[28].xpToNext, 19210, "L28 row")
 	eq(Recipes.Fries.factory, "Diner", "Fries at the Diner")
 	eq(Recipes.Fries.inputs.Cream, 1, "Fries (Township's inputs)")
@@ -365,7 +375,18 @@ test("the content bank stays locked at the live cap", function()
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor", "PastryShop", "JamKitchen" } do
+	for _, id in
+		{
+			"SnackFactory",
+			"Diner",
+			"PaperMill",
+			"FeedMill2",
+			"IceCreamParlor",
+			"PastryShop",
+			"JamKitchen",
+			"RubberWorks",
+		}
+	do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")

@@ -41,6 +41,7 @@ local Factories: { [string]: FactoryDef } = {
 	-- Township's Foundries #1 and #2 (level 21): smelt Quarry ore into Bars, one at a time
 	Smelter = { id = "Smelter", displayName = "Smelter", unlockLevel = 21, population = 730, buildCost = 2000, buildSeconds = 36 * HOUR, xp = 87, queueSlots = 1, trayCapacity = 6, order = 13, color = { 170, 120, 95 }, land = 2, fixedSlots = true },
 	Smelter2 = { id = "Smelter2", displayName = "Second Smelter", unlockLevel = 21, population = 920, buildCost = 8000, buildSeconds = 36 * HOUR, xp = 335, queueSlots = 1, trayCapacity = 6, order = 14, color = { 150, 110, 100 }, land = 2, makes = "Smelter", fixedSlots = true },
+	RubberWorks = { id = "RubberWorks", displayName = "Rubber Works", unlockLevel = 29, population = 1670, buildCost = 9000, buildSeconds = 32 * HOUR, xp = 376, queueSlots = 2, trayCapacity = 6, order = 15, color = { 90, 95, 105 }, land = 2 },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 12, color = { 200, 60, 90 }, land = 2 },
 }
 
