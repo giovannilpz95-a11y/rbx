@@ -1,5 +1,5 @@
 --!strict
--- The five MVP factories: Bakery, Feed Mill, Dairy, Sugar Mill, Textile Mill.
+-- The six MVP factories: Bakery, Feed Mill, Dairy, Sugar Mill, Textile Mill, Tailor.
 -- Design/16 Model Catalog §2.4 and Design/04 Factories & Recipes.
 --
 -- Each factory has its own roof shape (the main silhouette tool, 16 §1.2), one big moving
@@ -753,12 +753,72 @@ local function smelter(model: Model, b: Kit.Builder, roof: Color3?): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Tailor (level 12): a lilac boutique under a plum gable roof, with a striped awning over
+-- the display window, a dress form at the door, and a giant four-hole button standing on the
+-- ridge that rolls while it works.
+local function tailor(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.roofPlum:Lerp(Palette.cream, 0.82), Palette.stoneLight)
+	local d = b.into(body, true)
+	d.block(
+		"Beam",
+		Vector3.new(ArtFactories.WIDTH + 0.3, 0.5, ArtFactories.DEPTH + 0.3),
+		Vector3.new(0, TOP - 0.25, 0),
+		Palette.cream,
+		{ shadow = false }
+	)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 13.4, 3.6, Palette.roofPlum)
+	local chimney = d.block("Chimney", Vector3.new(1.2, 3, 1.2), Vector3.new(3.8, TOP + 2.4, 3.4), Palette.brick)
+	-- The button: a pink disc facing the street, its four holes turning with it
+	local buttonAt = Vector3.new(-1, TOP + 5.6, 0)
+	local face = CFrame.new(buttonAt) * TURN
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.cyl("Button", 0.7, 3.6, face, Palette.flowerPink)
+	for _, offset in
+		{ Vector3.new(-0.5, 0.5, 0), Vector3.new(0.5, 0.5, 0), Vector3.new(-0.5, -0.5, 0), Vector3.new(0.5, -0.5, 0) }
+	do
+		a.cyl("Hole", 0.8, 0.45, CFrame.new(buttonAt + offset) * TURN, Palette.roofPlum, { shadow = false })
+	end
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.2, FRONT), 3.6, 2.8, Palette.cream, Palette.glass)
+	for i, color in { Palette.roofPlum, Palette.cream, Palette.roofPlum } do
+		d.block(
+			"Awning",
+			Vector3.new(1.4, 0.3, 1.4),
+			CFrame.new(-3.4 + (i - 1) * 1.4, PLINTH + 5.4, FRONT - 0.6) * CFrame.Angles(math.rad(18), 0, 0),
+			color,
+			{ shadow = false }
+		)
+	end
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofPlum, Palette.cream)
+	-- The dress form by the door: a stand, a skirt and a bust
+	local form = Vector3.new(0.9, PLINTH, FRONT - 1.4)
+	d.post("FormStand", 1.6, 0.25, form + Vector3.new(0, 0.8, 0), Palette.woodDark)
+	d.post("Skirt", 1.4, 1.3, form + Vector3.new(0, 2.2, 0), Palette.flowerPink)
+	d.ball("Bust", 1.1, form + Vector3.new(0, 3.3, 0), Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("Needle", Vector3.new(0.2, 1.6, 0.15), at * CFrame.Angles(0, 0, math.rad(30)), Palette.metal, {
+			shadow = false,
+		})
+		s.block(
+			"Thread",
+			Vector3.new(0.9, 0.2, 0.15),
+			at + Vector3.new(0, -0.4, 0),
+			Palette.roofPlum,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(-3.8, TOP + 1.6, 4.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Bakery = bakery,
 	FeedMill = feedMill,
 	Dairy = dairy,
 	SugarMill = sugarMill,
 	TextileMill = textileMill,
+	Tailor = tailor,
 	SnackFactory = snackFactory,
 	Diner = diner,
 	PaperMill = paperMill,

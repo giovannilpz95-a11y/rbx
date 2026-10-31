@@ -120,6 +120,8 @@ local LAYOUT = {
 		Dairy = Vector3.new(30, 0, -12),
 		SugarMill = Vector3.new(30, 0, -26),
 		TextileMill = Vector3.new(30, 0, -40),
+		-- The Tailor (level 12) in the West Meadow, between its pen row and its fields
+		Tailor = Vector3.new(-62, 0, -7),
 		-- Content bank: a second row in the East Meadow (land expansion 2), facing the same way
 		SnackFactory = Vector3.new(66, 0, 16),
 		Diner = Vector3.new(66, 0, 2),

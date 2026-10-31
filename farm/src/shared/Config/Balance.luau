@@ -26,6 +26,7 @@ return table.freeze({
 		"Dairy",
 		"SugarMill",
 		"TextileMill",
+		"Tailor",
 		"SnackFactory",
 		"Diner",
 		"PaperMill",

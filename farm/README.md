@@ -16,7 +16,7 @@ A walkable greybox of the farm, built from plain blocks, for testing the walk-fi
 - **Everything in the level-12 MVP** (*18 MVP & Roadmap*):
   - Crops: Wheat (L1), Corn (L3), Carrots (L4), Sugarcane (L7), Cotton (L9).
   - Animals: the Cow Barn comes with 3 Cows at level 1 (plus 9 bags of Cow Feed to start, Township's level-1 gift), Chicken Coop at 5, Sheep Fold at 10. Each pen comes with 3 animals and you can buy up to 3 more. One bag of feed feeds 3 animals.
-  - Factories: Bakery (L2), Feed Mill (L3), Dairy (L4), Sugar Mill (L7), Textile Mill (L9), with 13 recipes: Bread, Cookies, Bagel; Cow, Chicken and Sheep Feed (3 bags a batch); Cream, Cheese, Butter; Sugar; Cotton Fabric, Yarn, Shirt.
+  - Factories: Bakery (L2), Feed Mill (L3), Dairy (L4), Sugar Mill (L7), Textile Mill (L9) and Tailor (L12, in the East Meadow, Township's Tailor Shop), with 13 recipes: Bread, Cookies, Bagel; Cow, Chicken and Sheep Feed (3 bags a batch); Cream, Cheese, Butter; Sugar; Cotton Fabric, Yarn; Shirt.
   - Order cards only ask for things your farm can make right now (and never feed).
 - **Gem speed-ups** (Township baseline prices, two taps to confirm): finish a growing field (tap it; with 2+ fields of that crop growing, **Finish all** does them together for the summed price), a factory job or construction, every producing animal in a pen, or an Order Board wait; buy extra factory queue slots (8 Gems, then +4 each, to 6 slots; the 7th waits for factory upgrades). Finished goods wait on a 6-item output tray (Township start; upgrades would take it to 8).
 - **Town** (*07 Town Building*, Township baseline): Houses raise Population, Community Buildings raise the Population Cap (base 75, Township: the Houses that unlock always fill it exactly). A farm starts with 4 Houses (Population 60). House copies unlock by level and need room under the Cap; factories need a minimum Population to build (Bakery 55 … Textile Mill 105). Community Buildings also cost Bricks, Planks and Panes, which drop from harvests (2%, more for long crops) and Order Board deliveries (25%) from level 5, or cost 8 Gems each (drop rates first-pass). There is no builder limit: any number of Houses, Community Buildings, factories and pens can be under construction at once, as in Township (decided 2026-10-30). New buildings go on the next free lot of **Main Street**, the strip between your gate and the Ring Road, then of **North Lane** in the North Fields. Tap any town building, or press T, for the Town panel.
@@ -61,7 +61,7 @@ The plot is dressed with our own cartoon models in the spirit of Township's look
 | `Kit` | Part builder, roofs, windows, doors, fences, trees, bushes, the Sprout Tag, scaffolds, `fade` and `weld` helpers |
 | `Crops` | Field beds and every crop at 4 growth stages (seeded, sprout, growing, ready) |
 | `Animals` | Cows, Chickens and Sheep, their products, and the Cow Barn, Chicken Coop and Sheep Fold |
-| `Factories` | Bakery, Feed Mill, Dairy, Sugar Mill, Textile Mill, each with an output table and a moving part |
+| `Factories` | Bakery, Feed Mill, Dairy, Sugar Mill, Textile Mill, Tailor and the content bank's, each with an output table and a moving part |
 | `Buildings` | Barn, Order Board, loading dock, delivery truck, plot gate |
 | `Houses` / `Community` | The 7 House types and 9 Community Buildings |
 | `ItemProps` / `Icons` | A small prop for every Barn item, shown on factory output tables; `Icons.viewport(id, size)` puts one in a ViewportFrame as a UI icon |
