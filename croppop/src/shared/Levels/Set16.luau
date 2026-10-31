@@ -372,12 +372,12 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 20% (target 20%).
+	-- Bot wins 24% (target 20%; 400-game check, was 17% at 20 moves).
 	{
 		id = 390,
 		name = "Rain Cover",
 		difficulty = "Super Tough",
-		moves = 20,
+		moves = 22,
 		colors = { "Tomato", "Egg", "Corn", "Milk", "Wool" },
 		layout = {
 			".......",

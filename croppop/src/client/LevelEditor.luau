@@ -57,6 +57,7 @@ local BRUSH_ROWS = {
 		{ char = "b", label = TileStyle.GoalGlyphs.Statues },
 		{ char = "G", label = TileStyle.SpringGlyph },
 		{ char = "t", label = TileStyle.GoalGlyphs.Tarps },
+		{ char = "e", label = TileStyle.GoalGlyphs.Goo .. "2" },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -329,6 +330,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.spring, TileStyle.SpringGlyph
 	elseif char == "t" then
 		return TileStyle.Board.tarp, TileStyle.GoalGlyphs.Tarps
+	elseif char == "e" then
+		return TileStyle.Board.thickGoo, TileStyle.GoalGlyphs.Goo .. "2"
 	end
 	return Colors.cellLight, ""
 end

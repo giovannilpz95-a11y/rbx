@@ -95,6 +95,7 @@ TileStyle.Board = {
 	basket = Color3.fromRGB(176, 128, 78),
 	fence = Color3.fromRGB(122, 84, 46),
 	goo = Color3.fromRGB(120, 200, 80),
+	thickGoo = Color3.fromRGB(62, 140, 40), -- darker: two clears
 	hen = Color3.fromRGB(196, 90, 70),
 	crate = Color3.fromRGB(150, 110, 200),
 	spring = Color3.fromRGB(70, 140, 60), -- a goo spring's basin

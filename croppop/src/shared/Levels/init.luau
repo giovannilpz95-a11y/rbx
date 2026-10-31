@@ -18,6 +18,8 @@
 	  t  tarp: touching t cells in a row make one tarp, blocking like 1-layer
 	     bales; matches next to it and blasts on it roll it up from its right
 	     end (the Tarps goal)
+	  e  thick goo over the tile: two clears (the first leaves plain goo), and
+	     goo spreading next to it spreads thick
 	  x  surprise crate: blocks like a 1-layer bale; a match next to it or a blast
 	     opens it, and it leaves a power-up (or now and then a hay bale)
 	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
@@ -47,7 +49,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -80,6 +82,7 @@ local VALID_CHARS = {
 	["#"] = true,
 	d = true,
 	b = true,
+	e = true,
 	t = true,
 	g = true,
 	G = true,
@@ -265,7 +268,7 @@ function Levels.validate(level): string?
 				if not table.find(level.colors, "Egg") then
 					return "hen houses lay eggs: add Egg to the colours"
 				end
-			elseif ch == "g" then
+			elseif ch == "g" or ch == "e" then
 				goo += 1
 			elseif ch == "b" then
 				buried += 1
