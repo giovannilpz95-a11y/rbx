@@ -152,6 +152,20 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Crown", 0.7, 1, at(0, 0.45, 0), Palette.straw, QUIET)
 		b.post("Ribbon", 0.2, 1.05, at(0, 0.25, 0), Palette.flowerPink, QUIET)
 	end,
+	Dress = function(b)
+		-- A summer dress on a hanger: a flared skirt, a fitted top and a sash
+		b.block("Hook", Vector3.new(0.1, 0.4, 0.1), at(0, 1.9, 0), Palette.metal, QUIET)
+		b.block("Hanger", Vector3.new(1.3, 0.1, 0.12), at(0, 1.7, 0), Palette.wood, QUIET)
+		b.block("Top", Vector3.new(0.9, 0.7, 0.3), at(0, 1.3, 0), Palette.sky, QUIET)
+		b.block("Sash", Vector3.new(0.95, 0.15, 0.35), at(0, 0.95, 0), Palette.cream, QUIET)
+		b.block("Skirt", Vector3.new(1.5, 0.9, 0.35), at(0, 0.45, 0), Palette.sky, QUIET)
+	end,
+	Donut = function(b)
+		-- A ring donut with pink icing and a chocolate dot in the middle
+		b.cyl("Ring", 0.5, 1.5, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.bread, QUIET)
+		b.cyl("Icing", 0.12, 1.35, at(0, 0.53, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerPink, QUIET)
+		b.cyl("Hole", 0.14, 0.45, at(0, 0.56, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cocoa, QUIET)
+	end,
 	Dough = function(b)
 		b.post("Bowl", 0.6, 1.5, at(0, 0.3, 0), Palette.sky, QUIET)
 		b.ball("Dough", 1.1, at(0, 0.75, 0), Palette.bread:Lerp(Palette.cream, 0.5), QUIET)

@@ -914,6 +914,42 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Broadcast Studio (content bank, level 33): a two-storey studio block with a red "on air"
+-- lamp over the door, a satellite dish on the roof and a lattice aerial with a red tip.
+TYPES.BroadcastStudio = function(b, s)
+	local w, d, h = s * 0.7, s * 0.5, 7
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(w + 0.6, PLINTH, d + 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(w, h, d),
+		Vector3.new(0, PLINTH + h / 2, z0),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 - d / 2
+	t.block("Band", Vector3.new(w + 0.2, 0.5, d + 0.2), Vector3.new(0, PLINTH + 3.5, z0), Palette.roofTeal)
+	t.block("Roof", Vector3.new(w + 0.5, 0.5, d + 0.5), Vector3.new(0, PLINTH + h + 0.25, z0), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 2, 2.6, Palette.roofTeal, Palette.metal)
+	t.block(
+		"OnAir",
+		Vector3.new(1.8, 0.6, 0.2),
+		Vector3.new(0, PLINTH + 3.1, face - 0.1),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	Kit.window(t, "Window", CFrame.new(-w / 3, PLINTH + 5, face), 2, 1.4, Palette.cream, Palette.glass)
+	Kit.window(t, "Window", CFrame.new(w / 3, PLINTH + 5, face), 2, 1.4, Palette.cream, Palette.glass)
+	-- Sign object: the dish and the aerial on the roof
+	t.post("DishPost", 1, 0.3, Vector3.new(-w / 4, PLINTH + h + 1, z0), Palette.metal)
+	t.cyl("Dish", 0.3, 2.4, CFrame.new(-w / 4, PLINTH + h + 1.9, z0) * CFrame.Angles(0, 0, math.rad(60)), Palette.cream)
+	t.post("Aerial", 5, 0.3, Vector3.new(w / 4, PLINTH + h + 2.5, z0 + d / 6), Palette.metal)
+	t.ball("AerialTip", 0.6, Vector3.new(w / 4, PLINTH + h + 5.2, z0 + d / 6), Palette.roofRed, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, PLINTH + h + 0.6, z0 - d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Grand Hotel (content bank, level 32): a wide four-storey hotel in cream and red, a gold-
 -- trimmed entrance canopy over the steps, and a tall roof sign.
 TYPES.GrandHotel = function(b, s)

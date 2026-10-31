@@ -69,6 +69,14 @@ for _, x in { 55, -55, 70, -70, 85, -85 } do
 	table.insert(community, table.freeze({ x = x, z = -86, yaw = 180, land = CORNERS }))
 end
 
+-- Level 33 on: the last gaps. A pair back to back where North Lane's middle meets its west
+-- end (it needs the Far Corners), and a pair in the West Meadow between its fields and pens,
+-- west of the Blimp Mast, facing the fields. Added at the end so saved lot numbers don't move.
+table.insert(houses, table.freeze({ x = -48, z = -64, yaw = 0, land = CORNERS }))
+table.insert(houses, table.freeze({ x = -48, z = -54, yaw = 180, land = CORNERS }))
+table.insert(houses, table.freeze({ x = -83, z = -8, yaw = 0, land = Lots.westMeadowLand }))
+table.insert(houses, table.freeze({ x = -91, z = -8, yaw = 0, land = Lots.westMeadowLand }))
+
 -- The West Meadow (expansion 1), south of its pen row: two back-to-back rows of Community lots
 -- for level 28 on, the row nearest the town facing it, the lots nearest the start area first
 for _, x in { -58, -72, -86 } do

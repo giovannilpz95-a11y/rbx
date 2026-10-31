@@ -275,7 +275,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 32, "levels 17 to 32 are banked")
+	eq(Levels.built, 33, "levels 17 to 33 are banked")
+	eq(Levels.list[33].xpToNext, 32663, "L33 row")
+	eq(Recipes.Dress.inputs.SilkFabric, 1, "Dress from Yarn and Silk Fabric")
+	eq(Recipes.Donut.inputs.Cocoa, 1, "Donut from Bagel, Caramel and Cocoa")
+	eq(Town.community.BroadcastStudio.capBonus, 160, "Broadcast Studio")
 	eq(Levels.list[32].xpToNext, 29547, "L32 row")
 	eq(Recipes.Plastic.inputs.RubberTrees, 2, "Plastic from 2 Rubber Trees")
 	eq(Town.houses.Condos.copyLevels[1], 32, "Terrace Condos")
@@ -978,7 +982,7 @@ end)
 test("North Lane opens more lots once the North Fields are cleared", function()
 	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
 	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
-	eq(#Lots.houses, 64, "House lots with North Lane and the Far Corners")
+	eq(#Lots.houses, 68, "House lots with North Lane, the Far Corners and the last gaps")
 	eq(#Lots.community, 29, "Community lots with North Lane, the Far Corners and the West Meadow")
 	for i = 24, 29 do
 		eq(Lots.community[i].land, Lots.westMeadowLand, "Community lot " .. i .. " in the West Meadow")
@@ -1032,18 +1036,29 @@ test("every lot sits on the plot, on its land, clear of the streets and the othe
 			local box = { lot.x - size / 2, lot.z - size / 2, lot.x + size / 2, lot.z + size / 2, what .. " " .. i }
 			ok(box[1] >= -96 and box[3] <= 96 and box[2] >= -96 and box[4] <= 96, box[5] .. " on the plot")
 			if lot.land > 0 then
-				local inside = false
-				for _, rect in Land.rects do -- an expansion can clear more than one rectangle
-					if
-						rect.stage == lot.land
-						and box[1] >= rect.minX
-						and box[3] <= rect.maxX
-						and box[2] >= rect.minZ
-						and box[4] <= rect.maxZ
-					then
-						inside = true
+				-- Every corner on land cleared by then: its own expansion's rectangles, an earlier
+				-- one's (expansions go in order) or the start area. A lot may straddle a border.
+				local function cleared(x: number, z: number): boolean
+					if math.abs(x) <= Land.startArea and math.abs(z) <= Land.startArea then
+						return true
 					end
+					for _, rect in Land.rects do -- an expansion can clear more than one rectangle
+						if
+							rect.stage <= lot.land
+							and x >= rect.minX
+							and x <= rect.maxX
+							and z >= rect.minZ
+							and z <= rect.maxZ
+						then
+							return true
+						end
+					end
+					return false
 				end
+				local inside = cleared(box[1], box[2])
+					and cleared(box[3], box[2])
+					and cleared(box[1], box[4])
+					and cleared(box[3], box[4])
 				ok(inside, box[5] .. " inside its land")
 			end
 			table.insert(boxes, box)
