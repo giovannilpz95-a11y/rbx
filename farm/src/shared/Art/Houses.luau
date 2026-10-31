@@ -704,6 +704,43 @@ TYPES.SunburstFlats = {
 	end,
 }
 
+-- Tiled Tower (content bank, level 52): a tall terracotta-tiled block of flats with cream
+-- window bands, a flat roof with a water tank and a glass entrance.
+TYPES.TiledTower = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.56, s * 0.52, STORY * 3.5
+		local body = walls(b, w, d, h, Palette.brick:Lerp(Palette.carrot, 0.3), 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.3), roof)
+		t.post("Tank", 1.6, 1.4, Vector3.new(w / 4, PLINTH + h + 1.3, 0.8), Palette.stoneLight)
+		for i = 1, 2 do
+			t.block(
+				"Band",
+				Vector3.new(w + 0.1, 0.5, d + 0.1),
+				Vector3.new(0, PLINTH + STORY * i + 0.25, 0.3),
+				Palette.cream
+			)
+		end
+		for i = 1, 3 do
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(0, PLINTH + STORY * i + 1.6, face),
+				2.4,
+				1.6,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		t.block("Entrance", Vector3.new(2.6, 3, 0.2), Vector3.new(0, PLINTH + 1.5, face - 0.05), Palette.glass)
+		t.block("Canopy", Vector3.new(3.2, 0.3, 1.2), Vector3.new(0, PLINTH + 3.2, face - 0.6), roof)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 0.8, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

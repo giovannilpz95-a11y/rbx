@@ -484,6 +484,31 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Cube", Vector3.new(0.7, 0.7, 0.7), tilt(0, 1, 0, 0, 30, 0), Palette.cream, QUIET)
 		b.block("Honey", Vector3.new(0.72, 0.25, 0.72), tilt(0, 1.25, 0, 0, 30, 0), Palette.roofMustard, QUIET)
 	end,
+	Book = function(b)
+		-- A closed red book with cream pages
+		b.block("Cover", Vector3.new(1.5, 0.5, 1.9), at(0, 0.25, 0), Palette.roofRed, QUIET)
+		b.block("Pages", Vector3.new(1.35, 0.4, 1.8), at(0.1, 0.25, 0), Palette.cream, QUIET)
+		b.block("Ribbon", Vector3.new(0.15, 0.52, 0.5), at(-0.3, 0.25, -0.8), Palette.flowerYellow, QUIET)
+	end,
+	HighlighterPen = function(b)
+		-- A fat yellow pen with a cap, lying down
+		b.block("Barrel", Vector3.new(1.6, 0.45, 0.45), tilt(0, 0.25, 0, 0, 20, 0), Palette.flowerYellow, QUIET)
+		b.block("Cap", Vector3.new(0.5, 0.5, 0.5), tilt(-0.8, 0.25, -0.3, 0, 20, 0), Palette.stoneDark, QUIET)
+	end,
+	FishBurger = function(b)
+		-- A bun with a golden fish fillet and lettuce
+		b.cyl("Bun", 0.4, 1.4, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.block("Fillet", Vector3.new(1.5, 0.3, 1), at(0, 0.5, 0), Palette.corn, QUIET)
+		b.block("Lettuce", Vector3.new(1.4, 0.12, 1.3), at(0, 0.7, 0), Palette.leaf, QUIET)
+		b.ball("Top", 1.4, at(0, 1, 0), Palette.wheat, QUIET)
+	end,
+	Pendant = function(b)
+		-- A blue stone on a silver chain
+		b.block("Chain", Vector3.new(1.6, 0.1, 0.1), tilt(0, 1.6, 0, 0, 0, 0), Palette.stoneLight, QUIET)
+		b.block("ChainL", Vector3.new(0.1, 1, 0.1), tilt(-0.5, 1.15, 0, 0, 0, -25), Palette.stoneLight, QUIET)
+		b.block("ChainR", Vector3.new(0.1, 1, 0.1), tilt(0.5, 1.15, 0, 0, 0, 25), Palette.stoneLight, QUIET)
+		b.block("Stone", Vector3.new(0.6, 0.6, 0.3), tilt(0, 0.45, 0, 0, 0, 45), Palette.sky, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

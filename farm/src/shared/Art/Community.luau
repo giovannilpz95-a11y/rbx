@@ -1876,6 +1876,58 @@ TYPES.KartTrack = function(b, s)
 	return body
 end
 
+-- Fitness Club (content bank, level 52): a bright modern gym with a wall of glass, a giant
+-- dumbbell on the roof and a running track stripe out front.
+TYPES.FitnessClub = function(b, s)
+	local body = hall(b, s * 0.7, s * 0.42, 4.4, Palette.cream)
+	local t = b.into(body, true)
+	local face = -s * 0.21
+	t.block("Roof", Vector3.new(s * 0.74, 0.4, s * 0.46), Vector3.new(0, PLINTH + 4.6, 0), Palette.sky)
+	t.block("GlassWall", Vector3.new(s * 0.44, 3, 0.2), Vector3.new(-s * 0.1, PLINTH + 2, face - 0.05), Palette.glass)
+	Kit.door(t, "Door", CFrame.new(s * 0.24, PLINTH, face), 1.4, 3, Palette.sky, Palette.cream)
+	-- The dumbbell on the roof: a bar and two weights
+	t.cyl("Bar", s * 0.4, 0.3, CFrame.new(0, PLINTH + 5.8, 0), Palette.stoneLight)
+	for _, x in { -s * 0.18, s * 0.18 } do
+		t.cyl("Weight", 0.8, 2, CFrame.new(x, PLINTH + 5.8, 0), Palette.stoneDark)
+	end
+	-- The track stripe and a bench out front
+	t.block("Track", Vector3.new(s * 0.7, 0.1, 1.6), Vector3.new(0, PLINTH + 0.05, face - 1.6), Palette.roofRed)
+	t.block("TrackLine", Vector3.new(s * 0.7, 0.12, 0.15), Vector3.new(0, PLINTH + 0.06, face - 1.6), Palette.cream)
+	t.block("Bench", Vector3.new(2, 0.3, 0.7), Vector3.new(-s * 0.26, PLINTH + 0.7, face - 3), Palette.wood)
+	Kit.sproutTag(t, Vector3.new(s * 0.28, PLINTH + 5.2, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Day Spa (content bank, level 53): a low timber pavilion with a deep roof, a round steaming
+-- hot pool out front, two loungers and a stack of towels.
+TYPES.DaySpa = function(b, s)
+	local z0 = s * 0.14
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.36), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.6, 3.6, s * 0.3),
+		Vector3.new(0, PLINTH + 1.8, z0),
+		Palette.woodLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 - s * 0.15
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + 3.6, z0), s * 0.72, s * 0.4, 1.8, Palette.roofTeal, Palette.cream)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3, Palette.roofTeal, Palette.cream)
+	t.block("Screen", Vector3.new(2, 2, 0.2), Vector3.new(-s * 0.18, PLINTH + 1.6, face - 0.05), Palette.cream)
+	-- The hot pool with its rim and the steam
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	local pz = -s * 0.24
+	t.cyl("PoolRim", 0.5, 4.4, CFrame.new(-s * 0.12, 0.25, pz) * up, Palette.stoneLight)
+	t.cyl("Pool", 0.52, 3.6, CFrame.new(-s * 0.12, 0.27, pz) * up, Palette.sky)
+	t.ball("Steam", 1.4, Vector3.new(-s * 0.12, 1.6, pz), Palette.cream, { transparency = 0.5, shadow = false })
+	-- Loungers and towels
+	t.block("Lounger", Vector3.new(1, 0.4, 2.6), Vector3.new(s * 0.2, 0.5, pz), Palette.cream)
+	t.block("Towels", Vector3.new(0.8, 0.6, 0.8), Vector3.new(s * 0.32, 0.3, pz + 0.8), Palette.flowerPink)
+	Kit.sproutTag(t, Vector3.new(s * 0.26, PLINTH + 5.6, z0 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

@@ -126,6 +126,12 @@ local Recipes: { [string]: RecipeDef } = {
 	MintChocIceCream = { id = "MintChocIceCream", displayName = "Mint Choc Ice Cream", factory = "IceCreamParlor", unlockLevel = 50, inputs = { Milk = 1, Mint = 2, Chocolate = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 214, xp = 92 },
 	PineappleSorbet = { id = "PineappleSorbet", displayName = "Pineapple Sorbet", factory = "IceCreamParlor", unlockLevel = 51, inputs = { CaneSyrup = 1, Pineapples = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 343, xp = 147 },
 	HoneyMarshmallow = { id = "HoneyMarshmallow", displayName = "Honey Marshmallow", factory = "CandyFactory", unlockLevel = 51, inputs = { HoneyCaramel = 1, Eggs = 2 }, outputQty = 1, seconds = 4 * HOUR + 30 * MIN, sellPrice = 211, xp = 90 },
+	-- Level 52-53 goods
+	Book = { id = "Book", displayName = "Book", factory = "PaperMill", unlockLevel = 52, inputs = { Paper = 4, CottonFabric = 1, Glue = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 304, xp = 130 },
+	HighlighterPen = { id = "HighlighterPen", displayName = "Highlighter Pen", factory = "StationeryShop", unlockLevel = 52, inputs = { NylonThread = 1, Cotton = 3, Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 283, xp = 121 },
+	FishBurger = { id = "FishBurger", displayName = "Fish Burger", factory = "Diner", unlockLevel = 53, inputs = { Bread = 2, Fish = 2, Peppers = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 184, xp = 79 },
+	-- Jeweler (Township's Jewelry Store): Quarry ore from the Ore Shed, like the Smelter
+	Pendant = { id = "Pendant", displayName = "Pendant", factory = "Jeweler", unlockLevel = 53, inputs = { SilverOre = 9 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 345, xp = 148, fromOreShed = true },
 	BulletinBoard = { id = "BulletinBoard", displayName = "Bulletin Board", factory = "StationeryShop", unlockLevel = 48, inputs = { CorkOak = 3, Paper = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 124, xp = 53 },
 	Taco = { id = "Taco", displayName = "Taco", factory = "Cantina", unlockLevel = 49, inputs = { Corn = 3, Cream = 1, Tomatoes = 2, Peppers = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 109, xp = 47 },
 	-- Homewares Shop (content bank)
