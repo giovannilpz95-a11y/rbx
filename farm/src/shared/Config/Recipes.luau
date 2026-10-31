@@ -36,6 +36,7 @@ local Recipes: { [string]: RecipeDef } = {
 	PigFeed = { id = "PigFeed", displayName = "Pig Feed", factory = "FeedMill", unlockLevel = 42, inputs = { Wheat = 2, Carrots = 2, Corn = 1 }, outputQty = 3, seconds = 40 * MIN, sellPrice = 10, xp = 4, isFeed = true },
 	SheepFeed = { id = "SheepFeed", displayName = "Sheep Feed", factory = "FeedMill", unlockLevel = 10, inputs = { Corn = 2, Carrots = 2 }, outputQty = 3, seconds = 20 * MIN, sellPrice = 5, xp = 2, isFeed = true },
 	-- Dairy
+	PeachYogurt = { id = "PeachYogurt", displayName = "Peach Yogurt", factory = "Dairy", unlockLevel = 47, inputs = { Milk = 2, Peaches = 2 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 157, xp = 67 },
 	Cream = { id = "Cream", displayName = "Cream", factory = "Dairy", unlockLevel = 4, inputs = { Milk = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 12, xp = 5 },
 	Cheese = { id = "Cheese", displayName = "Cheese", factory = "Dairy", unlockLevel = 6, inputs = { Milk = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 25, xp = 11 },
 	Butter = { id = "Butter", displayName = "Butter", factory = "Dairy", unlockLevel = 11, inputs = { Milk = 3 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 39, xp = 17 },
@@ -65,6 +66,7 @@ local Recipes: { [string]: RecipeDef } = {
 	PotatoChips = { id = "PotatoChips", displayName = "Potato Chips", factory = "SnackFactory", unlockLevel = 22, inputs = { Potatoes = 2 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 69, xp = 30 },
 	CornChips = { id = "CornChips", displayName = "Corn Chips", factory = "SnackFactory", unlockLevel = 17, inputs = { Corn = 3 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 19, xp = 8 },
 	-- Diner (content bank)
+	BakedPotato = { id = "BakedPotato", displayName = "Baked Potato", factory = "Diner", unlockLevel = 46, inputs = { Potatoes = 2, Bacon = 1, Cheese = 1 }, outputQty = 1, seconds = 50 * MIN, sellPrice = 111, xp = 48 },
 	StrawberryMilkshake = { id = "StrawberryMilkshake", displayName = "Strawberry Milkshake", factory = "Diner", unlockLevel = 16, inputs = { Milk = 2, Strawberries = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 30, xp = 13 },
 	FarmBurger = { id = "FarmBurger", displayName = "Farm Burger", factory = "Diner", unlockLevel = 16, inputs = { Bread = 2, Cheese = 1, Tomatoes = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 57, xp = 24 },
 	BerrySandwich = { id = "BerrySandwich", displayName = "Berry Sandwich", factory = "Diner", unlockLevel = 19, inputs = { Bread = 1, Butter = 1, Strawberries = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 80, xp = 34 },
@@ -79,6 +81,7 @@ local Recipes: { [string]: RecipeDef } = {
 	FrozenYogurt = { id = "FrozenYogurt", displayName = "Frozen Yogurt", factory = "IceCreamParlor", unlockLevel = 23, inputs = { Yogurt = 1, Cream = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 87, xp = 37 },
 	IceCreamBar = { id = "IceCreamBar", displayName = "Ice Cream Bar", factory = "IceCreamParlor", unlockLevel = 25, inputs = { CaneSyrup = 1, Cocoa = 1, PineTrees = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 148, xp = 63 },
 	-- Pastry Shop (content bank)
+	CoconutMacaroon = { id = "CoconutMacaroon", displayName = "Coconut Macaroon", factory = "PastryShop", unlockLevel = 46, inputs = { Coconuts = 2, Eggs = 2, Sugar = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 253, xp = 108 },
 	KeyLimePie = { id = "KeyLimePie", displayName = "Key Lime Pie", factory = "PastryShop", unlockLevel = 44, inputs = { Wheat = 3, KeyLimes = 2, Sugar = 1, Cream = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 285, xp = 122 },
 	HoneyGingerbread = { id = "HoneyGingerbread", displayName = "Honey Gingerbread", factory = "PastryShop", unlockLevel = 37, inputs = { Wheat = 3, Honeycomb = 2, Eggs = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 119, xp = 51 },
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
@@ -105,6 +108,12 @@ local Recipes: { [string]: RecipeDef } = {
 	ChiliSauce = { id = "ChiliSauce", displayName = "Chili Sauce", factory = "Cantina", unlockLevel = 43, inputs = { Tomatoes = 3, Peppers = 3, Sugar = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 144, xp = 62 },
 	Burrito = { id = "Burrito", displayName = "Burrito", factory = "Cantina", unlockLevel = 44, inputs = { Wheat = 2, Bacon = 2, Tomatoes = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 97, xp = 42 },
 	Chocolate = { id = "Chocolate", displayName = "Chocolate", factory = "CandyFactory", unlockLevel = 45, inputs = { Cocoa = 3, Cream = 1, Sugar = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 108, xp = 46 },
+	Nachos = { id = "Nachos", displayName = "Nachos", factory = "Cantina", unlockLevel = 46, inputs = { CornChips = 1, Cheese = 1, Peppers = 2 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 112, xp = 48 },
+	-- Stationery Shop and Furniture Workshop (content bank)
+	Eraser = { id = "Eraser", displayName = "Eraser", factory = "StationeryShop", unlockLevel = 46, inputs = { RubberTrees = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 111, xp = 48 },
+	StickyNotes = { id = "StickyNotes", displayName = "Sticky Notes", factory = "StationeryShop", unlockLevel = 47, inputs = { Paper = 3, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 219, xp = 94 },
+	Table = { id = "Table", displayName = "Table", factory = "FurnitureWorkshop", unlockLevel = 47, inputs = { PineTrees = 3 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 62, xp = 27 },
+	Chair = { id = "Chair", displayName = "Chair", factory = "FurnitureWorkshop", unlockLevel = 47, inputs = { Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 97, xp = 71 },
 	-- Homewares Shop (content bank)
 	Plunger = { id = "Plunger", displayName = "Plunger", factory = "HomewaresShop", unlockLevel = 40, inputs = { PineTrees = 1, Rubber = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 122, xp = 52 },
 	Clothesline = { id = "Clothesline", displayName = "Clothesline", factory = "HomewaresShop", unlockLevel = 39, inputs = { Sugarcane = 5, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 202, xp = 87 },

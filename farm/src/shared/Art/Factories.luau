@@ -876,6 +876,78 @@ local function cantina(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Stationery Shop (level 46, placed by the player): a tidy blue shop with a white roof, a
+-- giant yellow pencil on the roof that taps up and down as it writes while it works, a stack
+-- of paper by the door and a ruler for a sign.
+local function stationeryShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.sky:Lerp(Palette.cream, 0.4), Palette.cream)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 9.4, 2.4, Palette.cream, Palette.sky)
+	local chimney = d.post("Chimney", 2.4, 1, Vector3.new(4, TOP + 2.2, 2.6), Palette.stoneLight)
+	-- The pencil on its frame: a post either side, the pencil hanging point-down between them
+	local pencil = Vector3.new(-1, TOP + 4.4, -1.4)
+	d.block("PencilFrame", Vector3.new(4.4, 0.4, 0.4), pencil + Vector3.new(0, 2.6, 0), Palette.woodDark)
+	for _, x in { -2, 2 } do
+		d.block("FramePost", Vector3.new(0.4, 4, 0.4), pencil + Vector3.new(x, 0.8, 0), Palette.woodDark)
+	end
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.post("Pencil", 3.4, 0.8, pencil, Palette.flowerYellow)
+	a.wedge(
+		"PencilTip",
+		Vector3.new(0.8, 0.8, 0.8),
+		CFrame.new(pencil - Vector3.new(0, 2.1, 0)) * CFrame.Angles(math.rad(180), 0, 0),
+		Palette.wood
+	)
+	a.post("Eraser", 0.5, 0.82, pencil + Vector3.new(0, 1.95, 0), Palette.flowerPink)
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofTeal, Palette.cream)
+	-- A stack of paper by the door
+	d.block("Paper", Vector3.new(1.4, 1, 1), Vector3.new(4.9, 0.5, FRONT - 1.4), Palette.cream)
+	d.block(
+		"PaperBand",
+		Vector3.new(1.42, 0.2, 1.02),
+		Vector3.new(4.9, 0.5, FRONT - 1.4),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("RulerIcon", Vector3.new(1.4, 0.35, 0.2), at, Palette.flowerYellow, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
+-- Furniture Workshop (level 47, placed by the player): a timber workshop with a big round saw
+-- blade on the gable end that spins while it works, planks stacked by the door and a finished
+-- chair out front.
+local function furnitureWorkshop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.woodLight, Palette.woodDark)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 9.4, 2.6, Palette.roofTeal, Palette.cream)
+	local chimney = d.post("Chimney", 2.4, 1, Vector3.new(-4, TOP + 2.2, 2.6), Palette.brick)
+	-- The saw blade on the front gable, its hub on the wall
+	local saw = CFrame.new(0, TOP + 0.9, FRONT - 0.5) * Kit.yaw(90)
+	d.cyl("SawHub", 0.6, 0.8, saw * CFrame.new(0.3, 0, 0), Palette.stoneDark)
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.cyl("Saw", 0.2, 2.6, saw, Palette.stoneLight)
+	for i = 0, 1 do
+		a.block("SawTooth", Vector3.new(0.22, 2.9, 0.3), saw * CFrame.Angles(i * math.pi / 2, 0, 0), Palette.stoneDark)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.8, PLINTH, FRONT), 2.6, 4.2, Palette.woodDark, Palette.cream)
+	-- Planks stacked by the door and a chair out front
+	d.block("Planks", Vector3.new(1.2, 0.9, 3), Vector3.new(5, 0.45, FRONT - 1.8), Palette.wood)
+	d.block("ChairSeat", Vector3.new(1.2, 0.25, 1.2), Vector3.new(-4.6, 1, FRONT - 1.6), Palette.roofRed)
+	d.block("ChairBack", Vector3.new(1.2, 1.2, 0.25), Vector3.new(-4.6, 1.6, FRONT - 1.05), Palette.roofRed)
+	d.block("ChairLegs", Vector3.new(1, 0.9, 1), Vector3.new(-4.6, 0.45, FRONT - 1.6), Palette.woodDark)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1007,6 +1079,8 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	HomewaresShop = homewaresShop,
 	CandyFactory = candyFactory,
 	Cantina = cantina,
+	StationeryShop = stationeryShop,
+	FurnitureWorkshop = furnitureWorkshop,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

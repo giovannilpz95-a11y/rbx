@@ -41,6 +41,8 @@ ArtMotion.SPECS = {
 	HomewaresShop = { kind = "spin", pivot = "Brush", speed = 2 },
 	CandyFactory = { kind = "spin", pivot = "Swirl", speed = 1.6 },
 	Cantina = { kind = "glow", pivot = "NeonSign", speed = 3, color = Palette.carrot },
+	StationeryShop = { kind = "bob", pivot = "Pencil", speed = 5, amplitude = 0.5 },
+	FurnitureWorkshop = { kind = "spin", pivot = "Saw", speed = 4 },
 	Smelter = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 	Smelter2 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 	Smelter3 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
@@ -52,6 +54,7 @@ export type Rig = {
 	base: { CFrame },
 	pivot: CFrame,
 	color: Color3,
+	materials: { Enum.Material }, -- glow parts' own material, put back when the glow fades
 }
 
 -- Builds a rig for a factory model (the one ArtFactories.build filled), or nil when this
@@ -91,10 +94,12 @@ function ArtMotion.bind(factoryId: string, model: Instance): Rig?
 		return nil
 	end
 	local base = {}
+	local materials = {}
 	for i, p in parts do
 		base[i] = p.CFrame
+		materials[i] = p.Material
 	end
-	return { spec = spec, parts = parts, base = base, pivot = pivot.CFrame, color = pivot.Color }
+	return { spec = spec, parts = parts, base = base, pivot = pivot.CFrame, color = pivot.Color, materials = materials }
 end
 
 -- Poses the rig at time t (seconds). t = 0 is the rest pose.
@@ -113,9 +118,11 @@ function ArtMotion.pose(rig: Rig, t: number)
 			p.CFrame = rig.base[i] + up
 		end
 	else
+		-- The colour pulses, and the part lights up (Neon) through the bright half of the pulse
 		local mix = (1 - math.cos(t * spec.speed)) / 2
-		for _, p in rig.parts do
+		for i, p in rig.parts do
 			p.Color = rig.color:Lerp(spec.color or rig.color, mix)
+			p.Material = if mix > 0.5 then Enum.Material.Neon else rig.materials[i]
 		end
 	end
 end

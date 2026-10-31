@@ -55,6 +55,9 @@ local Factories: { [string]: FactoryDef } = {
 	-- Township's third Feed Mill (level 44) and third Foundry (level 45): placed by the player
 	FeedMill3 = { id = "FeedMill3", displayName = "Third Feed Mill", unlockLevel = 44, population = 4150, buildCost = 40000, buildSeconds = 44 * HOUR, xp = 1655, queueSlots = 3, trayCapacity = 6, order = 22, color = { 180, 140, 170 }, makes = "FeedMill" },
 	Smelter3 = { id = "Smelter3", displayName = "Third Smelter", unlockLevel = 45, population = 4950, buildCost = 15000, buildSeconds = 36 * HOUR, xp = 623, queueSlots = 1, trayCapacity = 6, order = 23, color = { 140, 100, 120 }, makes = "Smelter", fixedSlots = true },
+	-- Township's Stationery Factory (46) and Furniture Factory (47): placed by the player
+	StationeryShop = { id = "StationeryShop", displayName = "Stationery Shop", unlockLevel = 46, population = 4130, buildCost = 40000, buildSeconds = 46 * HOUR, xp = 1655, queueSlots = 2, trayCapacity = 6, order = 24, color = { 120, 160, 230 } },
+	FurnitureWorkshop = { id = "FurnitureWorkshop", displayName = "Furniture Workshop", unlockLevel = 47, population = 4760, buildCost = 48000, buildSeconds = 48 * HOUR, xp = 2892, queueSlots = 2, trayCapacity = 6, order = 25, color = { 180, 130, 90 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 
