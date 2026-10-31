@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..250 from original shape and
+	Crop Pop level generator. Builds levels 6..275 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 250 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 275 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 250
+local LAST = tonumber(ARGS[2]) or 275
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -78,6 +78,11 @@ local NAMES = {
 	"Post and Rail", "Calf Pen", "Wattle Hurdles", "Cattle Grid", "Kissing Gate",
 	"Goat Pen", "Corral Corner", "Field Boundary", "Picket Path", "County Show",
 	"Fence Painting", "Pig Sty", "Fold Yard", "Boundary Walk", "Grand Gate",
+	"Sticky Situation", "Bog Lane", "Marsh Meadow", "Slimy Ditch", "Frog Pond",
+	"Swamp Hollow", "Reed Bed", "Squelchy Path", "Duckweed Dip", "Goo Lagoon",
+	"Wetland Walk", "Peat Moss", "Slime Pond", "Mire Farm", "Newt Corner",
+	"Soggy Bottom", "Cattail Creek", "Bullfrog Bend", "Muck Spreader", "Ooze Ridge",
+	"Willow Marsh", "Dragonfly Dell", "Heron Wade", "Sludge Pump", "Great Bog Fair",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -91,7 +96,8 @@ local STONE_INTRO = 151 -- first level with stone walls
 local PORTAL_INTRO = 176 -- first level with portals
 local BASKET_INTRO = 201 -- first level with pumpkin baskets
 local FENCE_INTRO = 226 -- first level with fences
-local INTROS = { [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local GOO_INTRO = 251 -- first level with goo
+local INTROS = { [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -413,6 +419,7 @@ local function mechanics(id)
 		portals = id >= PORTAL_INTRO, -- level.portals
 		baskets = id >= BASKET_INTRO, -- "d"
 		fences = id >= FENCE_INTRO, -- level.fences
+		goo = id >= GOO_INTRO, -- "g"
 	}
 end
 
@@ -420,6 +427,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_GOO = { "Goo", "Fences", "Collect", "Baskets", "Goo", "Stones", "Clover", "Mud", "Goo", "Weeds", "HayBale", "Mix" }
 local FOCUS_FENCES = { "Fences", "Baskets", "Collect", "Stones", "Fences", "Clover", "Weeds", "Mud", "Fences", "Frost", "HayBale", "Mix" }
 local FOCUS_BASKETS = { "Baskets", "Stones", "Collect", "Clover", "Baskets", "Weeds", "Mud", "Frost", "Baskets", "HayBale", "Mix", "Pumpkins" }
 local FOCUS_STONES = { "Stones", "Clover", "Collect", "Pumpkins", "Stones", "Weeds", "Mud", "Frost", "Stones", "HayBale", "Mix", "Clover" }
@@ -437,6 +445,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Goo", "Ooze", "Slim", "Sticky", "Sludge", "Bog", "Muck" }, focus = "Goo", needs = "goo" },
 }
 
 local function focusOf(id, name)
@@ -457,6 +466,8 @@ local function focusOf(id, name)
 		return "Baskets"
 	elseif id == FENCE_INTRO then
 		return "Fences"
+	elseif id == GOO_INTRO then
+		return "Goo"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -468,7 +479,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -504,6 +515,16 @@ local function placeFrost(g, rng, id, mech)
 	for _, p in PATTERNS[name](g, rng) do
 		if isCell(g, p[1], p[2]) and g[p[2]][p[1]] == "." then
 			setSym(g, p[1], p[2], if thick and (p[1] + p[2]) % 2 == 1 then "F" else "f")
+		end
+	end
+end
+
+-- Goo on plain cells; the first goo level starts with a small patch in the middle.
+local function placeGoo(g, rng, id)
+	local name = if id == GOO_INTRO then "centre" else rng:pick(FROST_PATTERNS)
+	for _, p in PATTERNS[name](g, rng) do
+		if isCell(g, p[1], p[2]) and g[p[2]][p[1]] == "." then
+			setSym(g, p[1], p[2], "g")
 		end
 	end
 end
@@ -696,7 +717,7 @@ local function keepRowsOpen(g)
 		local open = false
 		for x = 1, g.w do
 			local c = g[y][x]
-			open = open or c == "." or c == "m" or c == "M"
+			open = open or c == "." or c == "m" or c == "M" or c == "g"
 		end
 		if not open then
 			setSym(g, math.ceil(g.w / 2), y, ".")
@@ -759,6 +780,9 @@ local function draft(id, variant)
 	if focus == "Stones" or (focus == "Mix" and mech.stones and rng:int(1, 3) == 1) then
 		placeStones(g, rng, id, mech)
 	end
+	if focus == "Goo" or (focus == "Mix" and mech.goo and rng:int(1, 3) == 1) then
+		placeGoo(g, rng, id)
+	end
 	local pumpkins = 0
 	if focus == "Pumpkins" or (focus == "Mix" and mech.pumpkins and rng:int(1, 3) == 1) then
 		pumpkins = placePumpkins(g, rng, id)
@@ -791,7 +815,7 @@ local function draft(id, variant)
 		for y = 1, g.h do
 			local open = false
 			for x = 1, g.w do
-				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M"
+				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g"
 			end
 			if not open then
 				return nil
@@ -834,6 +858,9 @@ local function draft(id, variant)
 	end
 	if #fences > 0 then
 		table.insert(goals, { kind = "Fences" })
+	end
+	if has(g, "g") > 0 then
+		table.insert(goals, { kind = "Goo" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most
@@ -931,7 +958,7 @@ end
 
 local function build(id)
 	local baseTarget = targetOf(id, difficultyOf(id))
-	for variant = 0, 9 do
+	for variant = 0, 19 do -- later variants only matter to levels the first ten fail
 		local level = draft(id, variant)
 		local target = baseTarget
 		if level and not INTROS[id] and (hasGoal(level, "Pumpkins") or hasGoal(level, "Clover")) then

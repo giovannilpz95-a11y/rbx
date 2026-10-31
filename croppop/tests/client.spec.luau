@@ -894,6 +894,25 @@ test("fences show on their edges and go when blasts break them", function()
 	PuzzleScreen.close()
 end)
 
+test("goo shows on its cells and follows the engine as it clears and spreads", function()
+	local level = table.clone(CropPop.Levels.get(1))
+	level.id = 995
+	level.layout = { "........", "........", "...gg...", "...gg...", "........", "........", "........" }
+	level.fences = nil
+	level.goals = { { kind = "Goo" } }
+	level.moves = 40
+	PuzzleScreen.playTest(level, function() end)
+	local run = PuzzleScreen.currentRun()
+	truthy(run.view.cellGuis[3][4].goo.Visible)
+	falsy(run.view.cellGuis[1][1].goo.Visible)
+	run = playToEnd(40, false)
+	run.game.board:eachCell(function(cell)
+		eq(run.view.cellGuis[cell.y][cell.x].goo.Visible, cell.goo == true, "goo at " .. cell.x .. "," .. cell.y)
+	end)
+	eq(mismatches, 0, "tiles out of step before sync")
+	PuzzleScreen.close()
+end)
+
 test("the Trail's Dev: Editor button opens the level editor", function()
 	PuzzleScreen.open()
 	playerGui.CropPop.Backdrop.LevelSelect.DevEditor.Activated:Fire()

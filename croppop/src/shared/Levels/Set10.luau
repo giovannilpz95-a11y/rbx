@@ -291,7 +291,7 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 35% (target 32%).
+	-- Bot wins 35% (target 32%), retuned on 200 games.
 	{
 		id = 235,
 		name = "Rail Yard Farm",
@@ -319,7 +319,7 @@ return {
 		},
 		goals = {
 			{ kind = "Fences" },
-			{ kind = "Collect", tile = "Milk", count = 45 },
+			{ kind = "Collect", tile = "Milk", count = 42 },
 		},
 		rewards = { coins = 50, xp = 10 },
 	},
@@ -603,7 +603,7 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 27% (target 22%).
+	-- Bot wins 22% (target 22%), retuned on 200 games.
 	{
 		id = 245,
 		name = "County Show",
@@ -612,13 +612,13 @@ return {
 		colors = { "Tomato", "Carrot", "Corn", "Milk", "Wool" },
 		layout = {
 			".......",
-			".......",
+			"...c...",
 			"###.###",
 			".......",
 			".......",
 			".......",
 			"#.....#",
-			"...c...",
+			"..c.c..",
 			".......",
 		},
 		portals = {

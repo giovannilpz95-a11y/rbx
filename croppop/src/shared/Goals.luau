@@ -10,6 +10,7 @@
 	  { kind = "Clover" }                                -- grow clover on every cell
 	  { kind = "Stones" }                                -- break every stone wall (blasts only)
 	  { kind = "Fences" }                                -- break every fence (blasts only)
+	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -28,8 +29,11 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local mudLayers, bales, frost, weeds, bare, stones = 0, 0, 0, 0, 0, 0
+	local mudLayers, bales, frost, weeds, bare, stones, goo = 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
+		if cell.goo then
+			goo += 1
+		end
 		if not cell.clover then
 			bare += 1
 		end
@@ -65,6 +69,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Pumpkins", target = def.count, progress = 0 })
 		elseif def.kind == "Stones" then
 			table.insert(list, { kind = "Stones", target = def.count or stones, progress = 0 })
+		elseif def.kind == "Goo" then
+			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
 		elseif def.kind == "Fences" then
 			table.insert(list, { kind = "Fences", target = def.count or board.fenceCount, progress = 0 })
 		elseif def.kind == "Clover" then
@@ -112,6 +118,19 @@ end
 
 function Goals.onStone(self)
 	bump(self, "Stones", nil)
+end
+
+function Goals.onGoo(self)
+	bump(self, "Goo", nil)
+end
+
+-- Goo spread onto a new cell: one more to clear.
+function Goals.onGooGrown(self)
+	for _, goal in self.list do
+		if goal.kind == "Goo" then
+			goal.target += 1
+		end
+	end
 end
 
 function Goals.onFence(self)

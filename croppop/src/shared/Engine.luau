@@ -10,7 +10,7 @@
 	  { kind = "Swap", from = {x, y}, to = {x, y}, ok = boolean, combo = boolean? }
 	  { kind = "Pop", removed = {{id, x, y, cause}}, created = {{piece, x, y}},
 	    transformed = {{id, power}}, bales = {{x, y, hp, weed?}}, mud = {{x, y, layers}},
-	    frost = {{x, y, layers}}, clover = {{x, y}}, fences = {{x, y, side}},
+	    frost = {{x, y, layers}}, clover = {{x, y}}, fences = {{x, y, side}}, goo = {{x, y, on}},
 	    effects = {{type = "Spray" | "Bomb" | "Bee" | "Sun" | "Everything" | "Grow", ...}} }
 	  { kind = "Drop", moves = {Board.Move}, spawns = {Board.Spawn} }
 	  { kind = "Shuffle", moves = {Board.Move} }
@@ -29,6 +29,11 @@
 	(a Pop phase with a "Pumpkin" effect, removed with cause "pumpkin"). Refills
 	drop new ones until the Pumpkins goal has enough on the way. Matches and
 	blasts never break a pumpkin.
+
+	Goo: covers a tile; a match or blast on the tile clears it. After a swap
+	that clears no goo, goo spreads onto a neighbouring tile (a Pop phase with
+	an "Ooze" effect, and one more for the Goo goal). If goo covers every tile
+	the level is lost (`flooded`).
 
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
 	it (matches don't), for the Fences goal.
@@ -94,6 +99,7 @@ function Engine.new(level, seed: number, options: Options?)
 		boostersUsed = {}, -- in-level booster kind -> times used
 		continues = 0, -- paid +5-move continues taken
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
+		gooCleared = 0, -- during the current action (stops goo spreading)
 	}, Engine)
 
 	-- As many pumpkins on the board at once as the layout starts with (at least 1).
@@ -153,6 +159,7 @@ local function newWave()
 		frost = {},
 		clover = {},
 		fences = {},
+		goo = {},
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
 		spread = false, -- the power-up going off started on clover
@@ -177,6 +184,12 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	cell.piece = nil
 	table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = cause })
 	self.goals:onCollect(piece.color)
+	if cell.goo then
+		cell.goo = false
+		table.insert(wave.goo, { x = cell.x, y = cell.y, on = false })
+		self.goals:onGoo()
+		self.gooCleared += 1
+	end
 	if piece.color > 0 then
 		self.stats.cleared[piece.color] = (self.stats.cleared[piece.color] or 0) + 1
 	end
@@ -385,6 +398,8 @@ function Engine._chooseBeeTarget(self)
 			if cell.frost > 0 and goals:wants("Frost") then
 				table.insert(tiers[2], cell)
 			elseif cell.mud > 0 and goals:wants("Mud") then
+				table.insert(tiers[2], cell)
+			elseif cell.goo and goals:wants("Goo") then
 				table.insert(tiers[2], cell)
 			elseif goals:wants("Collect", cell.piece.color) then
 				table.insert(tiers[3], cell)
@@ -603,6 +618,7 @@ function Engine._finishWave(self, wave, phases)
 		frost = wave.frost,
 		clover = wave.clover,
 		fences = wave.fences,
+		goo = wave.goo,
 		effects = wave.effects,
 	})
 end
@@ -655,6 +671,55 @@ function Engine._growWeeds(self, phases)
 	self:_finishWave(wave, phases)
 	if not Matcher.hasPossibleMove(board) then
 		table.insert(phases, { kind = "Shuffle", moves = board:shuffle(self.rng, self.colors) })
+	end
+end
+
+-- After a swap that cleared no goo, goo spreads onto one neighbouring tile.
+-- Covering every tile floods the board (the level is lost).
+function Engine._growGoo(self, phases)
+	local board = self.board
+	local any = false
+	board:eachCell(function(cell)
+		any = any or cell.goo == true
+	end)
+	if not any then
+		return
+	end
+	local candidates, seen = {}, {}
+	board:eachCell(function(cell)
+		if cell.goo then
+			for _, d in NEIGHBORS do
+				local n = board:get(cell.x + d[1], cell.y + d[2])
+				if n and not seen[n] and not n.goo and n.bale == 0 and n.frost == 0 and n.piece and not n.piece.pumpkin then
+					seen[n] = true
+					table.insert(candidates, n)
+				end
+			end
+		end
+	end)
+	if #candidates == 0 then
+		return
+	end
+	-- Row-major order keeps the pick the same on client and server.
+	table.sort(candidates, function(a, b)
+		if a.y ~= b.y then
+			return a.y < b.y
+		end
+		return a.x < b.x
+	end)
+	local cell = candidates[self.rng:int(1, #candidates)]
+	cell.goo = true
+	self.goals:onGooGrown()
+	local wave = newWave()
+	table.insert(wave.goo, { x = cell.x, y = cell.y, on = true })
+	table.insert(wave.effects, { type = "Ooze", x = cell.x, y = cell.y })
+	self:_finishWave(wave, phases)
+	local clean = false
+	board:eachCell(function(c)
+		clean = clean or (not c.goo and c.bale == 0)
+	end)
+	if not clean then
+		self.flooded = true
 	end
 end
 
@@ -772,6 +837,10 @@ end
 function Engine._updateStatus(self)
 	if self.goals:isComplete() then
 		self.status = "Won"
+	elseif self.flooded then
+		-- Goo covers the whole board: more moves won't help.
+		self.status = "Lost"
+		self.stuck = true
 	elseif self.movesLeft <= 0 then
 		self.status = "Lost"
 	elseif not Matcher.hasPossibleMove(self.board) then
@@ -806,6 +875,7 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 	local swapPhase = { kind = "Swap", from = { x1, y1 }, to = { x2, y2 }, ok = true }
 
 	self.weedsPulled = 0
+	self.gooCleared = 0
 	local isCombo = (pa.power ~= nil and pb.power ~= nil)
 		or pa.power == Power.Sunflower
 		or pb.power == Power.Sunflower
@@ -841,6 +911,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	self:_settle(phases)
 	if wasSwap and self.weedsPulled == 0 and not self.goals:isComplete() then
 		self:_growWeeds(phases)
+	end
+	if wasSwap and self.gooCleared == 0 and not self.goals:isComplete() then
+		self:_growGoo(phases)
 	end
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then
@@ -960,7 +1033,7 @@ function Engine.continue(self): (boolean, { any })
 	local phases = {}
 	if step.power then
 		local placed, shuffle = self:_placePowerUps({ step.power })
-		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, effects = {} })
+		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, fences = {}, goo = {}, effects = {} })
 		if shuffle then
 			table.insert(phases, shuffle)
 		end
