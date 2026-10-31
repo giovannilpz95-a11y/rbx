@@ -209,8 +209,10 @@ function Express.collect(train: Train, userId: number): { number }
 end
 
 -- An NPC neighbor loads one crate when one is due. Returns the crate's index, or nil.
-function Express.npcTick(train: Train, now: number, seed: number): (number?, number)
-	if not train.npc or not Express.isOpen(train, now) or now - train.npcAt < Config.npcSeconds then
+-- `scale` is the Studio time scale (1 when left out).
+function Express.npcTick(train: Train, now: number, seed: number, scale: number?): (number?, number)
+	local every = math.max(1, math.floor(Config.npcSeconds * (scale or 1) + 0.5))
+	if not train.npc or not Express.isOpen(train, now) or now - train.npcAt < every then
 		return nil, seed
 	end
 	local open = {}
@@ -219,7 +221,7 @@ function Express.npcTick(train: Train, now: number, seed: number): (number?, num
 			table.insert(open, i)
 		end
 	end
-	train.npcAt += Config.npcSeconds
+	train.npcAt += every
 	if #open == 0 then
 		return nil, seed
 	end

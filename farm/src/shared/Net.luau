@@ -82,6 +82,8 @@ return table.freeze({
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
 	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)
 	Debug_Express = "Debug_Express", -- the Town Express in the station now, for a full window (Studio only)
+	Debug_ExpressLeave = "Debug_ExpressLeave", -- the Town Express leaves now (Studio only)
+	Debug_ExpressGoods = "Debug_ExpressGoods", -- goods for the next 3 Town Express crates (Studio only)
 	Debug_Records = "Debug_Records", -- raise Town Records to their next medal (Studio only)
 	Client_Ready = "Client_Ready",
 
