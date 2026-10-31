@@ -316,17 +316,17 @@ function ArtRail.expressStation(parent: Instance, cf: CFrame): (Model, Part)
 	-- over a parked train from the square
 	local BOARD_Y = FLOOR + 10.2
 	b.block("BackWall", Vector3.new(16, 3.6, 0.4), Vector3.new(-13, FLOOR + 1.8, 4.8), Palette.oat, SOLID)
-	for _, x in { -18.6, -7.4 } do
+	for _, x in { -21.6, -4.4 } do
 		b.post(
 			"BoardPost",
 			BOARD_Y - FLOOR - 3.6,
-			0.4,
+			0.5,
 			Vector3.new(x, (FLOOR + 3.6 + BOARD_Y) / 2, 4.8),
 			Palette.woodDark
 		)
 	end
-	local board = b.block("ExpressBoard", Vector3.new(10, 3, 0.2), Vector3.new(-13, BOARD_Y, 4.5), Palette.cocoa)
-	b.block("BoardFrame", Vector3.new(10.6, 3.6, 0.15), Vector3.new(-13, BOARD_Y, 4.58), Palette.wood, QUIET)
+	local board = b.block("ExpressBoard", Vector3.new(17, 5, 0.2), Vector3.new(-13, BOARD_Y + 1, 4.5), Palette.cocoa)
+	b.block("BoardFrame", Vector3.new(17.8, 5.8, 0.15), Vector3.new(-13, BOARD_Y + 1, 4.58), Palette.wood, QUIET)
 	-- Four tier flags on the right, lowered until the server reaches that share of the train
 	for i = 1, #ArtRail.EXPRESS_TIERS do
 		local x = 8 + (i - 1) * 3.6

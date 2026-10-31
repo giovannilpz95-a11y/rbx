@@ -46,6 +46,7 @@ local ArtTownSquare = require(Shared.Art.TownSquare)
 local Kit = require(Shared.Art.Kit)
 local Palette = require(Shared.Art.Palette)
 local TownRules = require(Shared.TownRules)
+local Layout = require(Shared.Layout)
 
 local DataService = require(script.Parent.DataService)
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -229,6 +230,12 @@ local factoryVisualState: { [Player]: { [string]: string } } = {}
 local penVisualState: { [Player]: { [string]: string } } = {}
 local townVisualState: { [Player]: { [string]: string } } = {}
 local landVisualState: { [Player]: { [number]: string } } = {}
+
+-- Where the player moved a building to (shared/Layout), or nil for its usual spot
+local function movedTo(player: Player, key: string): Layout.Spot?
+	local data = DataService.get(player)
+	return if data then Layout.spot(data, key) else nil
+end
 local truckBusy: { [Player]: boolean } = {}
 
 local function part(props: { [string]: any }): Part
@@ -391,14 +398,15 @@ end
 
 -- A factory (FarmShared.Art.Factories): the walls are the tap target, the output table in
 -- front faces the spine path, and the chimney carries the working smoke.
-local function buildFactory(plot: Model, id: string, at: (Vector3, number) -> CFrame)
+local function buildFactory(plot: Model, id: string, at: (Vector3, number) -> CFrame, spot: Layout.Spot?)
 	local def = Factories[id]
-	local pos = LAYOUT.factories[id]
+	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.factories[id]
 	local factory = Instance.new("Model")
 	factory.Name = id
+	factory:SetAttribute("LayoutKey", Layout.key("factory", id))
 	-- The models face local -Z; turn them to face west, toward the spine path, so the output
-	-- table lands at LAYOUT.factoryOutputOffset.
-	local base = at(pos, 0) * Kit.yaw(90)
+	-- table lands at LAYOUT.factoryOutputOffset (then any turn the player gave it).
+	local base = at(pos, 0) * Kit.yaw(if spot then spot.r else 0) * Kit.yaw(90)
 	factory:SetAttribute("BaseCFrame", base)
 	local parts = ArtFactories.build(id, factory, base)
 	parts.body:SetAttribute("Interact", "Factory")
@@ -506,9 +514,15 @@ local function buildPenAt(plot: Model, id: string, facing: CFrame)
 	pen.Parent = plot
 end
 
-local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
-	-- The gate faces south (+Z), toward the Barn and the spawn
-	buildPenAt(plot, id, at(LAYOUT.pens[id], 0.6) * Kit.yaw(LAYOUT.penYaw[id] or 180))
+local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame, spot: Layout.Spot?)
+	-- The gate faces south (+Z), toward the Barn and the spawn (then any turn the player gave it)
+	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.pens[id]
+	local turn = if spot then spot.r else 0
+	buildPenAt(plot, id, at(pos, 0.6) * Kit.yaw(turn) * Kit.yaw(LAYOUT.penYaw[id] or 180))
+	local pen = plot:FindFirstChild(id)
+	if pen then
+		pen:SetAttribute("LayoutKey", Layout.key("pen", id))
+	end
 end
 
 -- The Town Hall, with the owner's name on the plot sign out front. Rebuilt with more storeys
@@ -737,10 +751,10 @@ local function buildPlot(player: Player, slot: Slot): Model
 	end
 
 	for _, id in Balance.enabledFactories do
-		buildFactory(model, id, at)
+		buildFactory(model, id, at, movedTo(player, Layout.key("factory", id)))
 	end
 	for _, id in Balance.enabledPens do
-		buildPen(model, id, at)
+		buildPen(model, id, at, movedTo(player, Layout.key("pen", id)))
 	end
 	buildQuarry(model, at)
 	buildBlimpMast(model, at)
@@ -888,7 +902,8 @@ local function townModel(
 	lotSize: number,
 	tint: number,
 	building: boolean,
-	labelText: string?
+	labelText: string?,
+	key: string
 )
 	local old = folder:FindFirstChild(name)
 	if old then
@@ -903,6 +918,7 @@ local function townModel(
 	local holder = Instance.new("Model")
 	holder.Name = name
 	holder:SetAttribute("BaseCFrame", at)
+	holder:SetAttribute("LayoutKey", key)
 	local body = if kind == "House"
 		then ArtHouses.build(typeId, holder, at, { size = lotSize, roof = ArtHouses.ROOF_TINTS[(tint % 3) + 1] })
 		else ArtCommunity.build(typeId, holder, at, lotSize)
@@ -952,16 +968,23 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		local state = house.type .. ":" .. tostring(TownRules.isDone(house, now))
 		if cache[name] ~= state then
 			cache[name] = state
+			local key = Layout.key("house", house.lot)
+			local spot = Layout.spot(data, key)
+				or PlotService.placeNew(player, data, key, pos, folder:FindFirstChild(name))
 			townModel(
 				folder,
 				name,
-				slot.cframe * CFrame.new(pos) * Kit.yaw(Lots.houses[house.lot].yaw),
+				slot.cframe
+					* CFrame.new(if spot then Vector3.new(spot.x, 0, spot.z) else pos)
+					* Kit.yaw(if spot then spot.r else 0)
+					* Kit.yaw(Lots.houses[house.lot].yaw),
 				"House",
 				house.type,
 				8,
 				house.lot,
 				not TownRules.isDone(house, now),
-				nil
+				nil,
+				key
 			)
 		end
 	end
@@ -976,23 +999,30 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 		local state = tostring(TownRules.isDone(entry, now))
 		if cache[name] ~= state then
 			cache[name] = state
+			local key = Layout.key("community", id)
+			local spot = Layout.spot(data, key)
+				or PlotService.placeNew(player, data, key, pos, folder:FindFirstChild(name))
 			townModel(
 				folder,
 				name,
-				slot.cframe * CFrame.new(pos) * Kit.yaw(Lots.community[lot].yaw),
+				slot.cframe
+					* CFrame.new(if spot then Vector3.new(spot.x, 0, spot.z) else pos)
+					* Kit.yaw(if spot then spot.r else 0)
+					* Kit.yaw(Lots.community[lot].yaw),
 				"Community",
 				id,
 				12,
 				lot,
 				not TownRules.isDone(entry, now),
-				def.displayName
+				def.displayName,
+				key
 			)
 		end
 	end
 end
 
-local function buildField(fieldsFolder: Instance, slot: Slot, id: string)
-	local pos = LAYOUT.fields[id]
+local function buildField(fieldsFolder: Instance, slot: Slot, id: string, spot: Layout.Spot?)
+	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.fields[id]
 	if pos == nil then
 		return
 	end
@@ -1004,6 +1034,7 @@ local function buildField(fieldsFolder: Instance, slot: Slot, id: string)
 	})
 	bed:SetAttribute("Interact", "Field")
 	bed:SetAttribute("FieldId", id)
+	bed:SetAttribute("LayoutKey", Layout.key("field", id))
 	ArtCrops.dressBed(bed)
 	-- The crop model for the current growth stage; refreshFields swaps it
 	Kit.model("Crop", bed)
@@ -1084,7 +1115,7 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 	end
 	for id in data.fields do
 		if fieldsFolder:FindFirstChild("Field_" .. id) == nil then
-			buildField(fieldsFolder, slot, id)
+			buildField(fieldsFolder, slot, id, Layout.spot(data, Layout.key("field", id)))
 		end
 	end
 	for id, field in data.fields do
@@ -1672,6 +1703,148 @@ function PlotService.blocked(player: Player, x: number, z: number, width: number
 	return #Workspace:GetPartBoundsInBox(box, Vector3.new(width - 0.4, 5.4, depth - 0.4), params) > 0
 end
 
+-- Is anything standing in a building's footprint (shared/Layout) at (x, z) turned by r? Skips
+-- `except` (the building being moved). With `buildingsOnly`, only other buildings and placed
+-- decorations count (not trees, guides or props), for picking a spot for a new building.
+function PlotService.footprintBlocked(
+	player: Player,
+	kind: string,
+	x: number,
+	z: number,
+	r: number,
+	except: Instance?,
+	buildingsOnly: boolean?
+): boolean
+	local model = plotsByPlayer[player]
+	local slot = slotByPlayer[player]
+	if model == nil or slot == nil then
+		return true
+	end
+	local cx, cz, w, d = Layout.box(kind, x, z, r)
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { model }
+	-- From just above flat ground (paths, floors) to head height
+	local box = slot.cframe * CFrame.new(cx, 3.3, cz)
+	for _, hit in Workspace:GetPartBoundsInBox(box, Vector3.new(w - 0.4, 5.4, d - 0.4), params) do
+		if except and hit:IsDescendantOf(except) then
+			continue
+		end
+		if hit:FindFirstAncestor("Land") or hit:FindFirstAncestor("ScaffoldPop") then
+			continue -- locked land is the land check's job; a finished scaffold is going away
+		end
+		if buildingsOnly then
+			local owner: Instance? = hit
+			local counts = hit:FindFirstAncestor("Placed") ~= nil
+			while owner and owner ~= model and not counts do
+				counts = owner:GetAttribute("LayoutKey") ~= nil
+				owner = owner.Parent
+			end
+			if not counts then
+				continue
+			end
+		end
+		return true
+	end
+	return false
+end
+
+-- A building's model on the plot (a field's bed, a town building's holder)
+function PlotService.layoutModel(player: Player, key: string): Instance?
+	local model = plotsByPlayer[player]
+	local kind, id = Layout.parse(key)
+	if model == nil or kind == nil or id == nil then
+		return nil
+	end
+	if kind == "factory" or kind == "pen" then
+		return model:FindFirstChild(id)
+	elseif kind == "field" then
+		local fields = model:FindFirstChild("Fields")
+		return fields and fields:FindFirstChild("Field_" .. id)
+	end
+	local town = model:FindFirstChild("Town")
+	return town and town:FindFirstChild((if kind == "house" then "House_" else "Community_") .. id)
+end
+
+-- A new town building whose usual lot is now taken by something the player moved there: find
+-- the nearest open spot on the farm's land and remember it (shared/Layout). Returns the spot,
+-- or nil to use the usual lot.
+function PlotService.placeNew(
+	player: Player,
+	data: { [string]: any },
+	key: string,
+	usual: Vector3,
+	existing: Instance?
+): Layout.Spot?
+	local kind = Layout.parse(key)
+	if kind == nil or existing ~= nil then
+		return nil -- only a building going up for the first time looks for room
+	end
+	if not PlotService.footprintBlocked(player, kind, usual.X, usual.Z, 0, nil, true) then
+		return nil
+	end
+	local now = Clock.now()
+	local x0, z0 = Layout.snap(usual.X), Layout.snap(usual.Z)
+	for ring = 1, 40 do
+		local step = ring * Layout.GRID * 2
+		for _, offset in
+			{
+				{ step, 0 },
+				{ -step, 0 },
+				{ 0, step },
+				{ 0, -step },
+				{ step, step },
+				{ -step, step },
+				{ step, -step },
+				{ -step, -step },
+			}
+		do
+			local x, z = x0 + offset[1], z0 + offset[2]
+			if
+				Layout.onOwnLand(data, kind, x, z, 0, now)
+				and not PlotService.footprintBlocked(player, kind, x, z, 0, nil, false)
+			then
+				data.layout[key] = { x = x, z = z, r = 0 }
+				DataService.markDirty(player, true)
+				return data.layout[key]
+			end
+		end
+	end
+	return nil
+end
+
+-- Rebuild a building where its save says it stands now (after a move)
+function PlotService.relocate(player: Player, key: string)
+	local model = plotsByPlayer[player]
+	local slot = slotByPlayer[player]
+	local kind, id = Layout.parse(key)
+	if model == nil or slot == nil or kind == nil or id == nil then
+		return
+	end
+	local function at(localPos: Vector3, y: number): CFrame
+		return slot.cframe * CFrame.new(localPos.X, y, localPos.Z)
+	end
+	local old = PlotService.layoutModel(player, key)
+	if old then
+		old:Destroy()
+	end
+	local spot = movedTo(player, key)
+	if kind == "factory" then
+		buildFactory(model, id, at, spot)
+		factoryVisualState[player][id] = nil
+	elseif kind == "pen" then
+		buildPen(model, id, at, spot)
+		penVisualState[player][id] = nil
+	elseif kind == "field" then
+		fieldVisualState[player][id] = nil -- refreshFields builds the bed again
+	elseif kind == "house" then
+		townVisualState[player]["House_" .. id] = nil
+	elseif kind == "community" then
+		townVisualState[player]["Community_" .. id] = nil
+	end
+	PlotService.refresh(player)
+end
+
 function PlotService.getPlot(player: Player): Model?
 	return plotsByPlayer[player]
 end
@@ -1723,11 +1896,17 @@ function PlotService.worldPosition(player: Player, localPos: Vector3): Vector3?
 end
 
 function PlotService.fieldPosition(player: Player, fieldId: string): Vector3?
-	local pos = LAYOUT.fields[fieldId]
+	local spot = movedTo(player, Layout.key("field", fieldId))
+	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.fields[fieldId]
 	return if pos then PlotService.worldPosition(player, pos) else nil
 end
 
 function PlotService.factoryOutputPosition(player: Player, factoryId: string): Vector3?
+	local spot = movedTo(player, Layout.key("factory", factoryId))
+	if spot then
+		local offset = (Kit.yaw(spot.r) * CFrame.new(LAYOUT.factoryOutputOffset)).Position
+		return PlotService.worldPosition(player, Vector3.new(spot.x, 0, spot.z) + offset)
+	end
 	local pos = LAYOUT.factories[factoryId]
 	return if pos then PlotService.worldPosition(player, pos + LAYOUT.factoryOutputOffset) else nil
 end
@@ -1739,7 +1918,8 @@ function PlotService.blimpCratePosition(player: Player, row: number, slot: numbe
 end
 
 function PlotService.penPosition(player: Player, penId: string): Vector3?
-	local pos = LAYOUT.pens[penId]
+	local spot = movedTo(player, Layout.key("pen", penId))
+	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.pens[penId]
 	return if pos then PlotService.worldPosition(player, pos) else nil
 end
 

@@ -49,6 +49,11 @@ end
 
 -- Crop Pop, at the next level's pre-level window (UI Reference & Gaps G14): the Puzzle Porch
 -- on our plot and in the Town Square. Crop Pop's client listens on this BindableEvent.
+-- Set by Move mode (MovePlacer): returns true when it used a tap
+ReachController.tapOverride = function(_hit: Instance?): boolean
+	return false
+end
+
 function ReachController.openCropPop()
 	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
 	if event == nil then
@@ -328,6 +333,10 @@ local function handleTap(screenPosition: Vector2)
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { player.Character :: Instance }
 	local result = Workspace:Raycast(ray.Origin, ray.Direction * 600, params)
+	-- Move mode takes the tap first (it picks up whole buildings, not just their tap targets)
+	if ReachController.tapOverride(if result then result.Instance else nil) then
+		return
+	end
 	local target = result and interactiveFrom(result.Instance)
 	if target == nil then
 		return
