@@ -160,6 +160,122 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		end
 	end
 
+	-- Moving a building (shared/Layout: key -> { x, z, r }): set down in its new spot.
+	local layoutBefore, layout = prev.layout, nextState.layout
+	if type(layoutBefore) == "table" and type(layout) == "table" then
+		local movedBuilding = false
+		for key, spot in layout do
+			local was = layoutBefore[key]
+			if type(spot) == "table" and (type(was) ~= "table" or was.x ~= spot.x or was.z ~= spot.z or was.r ~= spot.r) then
+				movedBuilding = true
+				break
+			end
+		end
+		if movedBuilding then
+			table.insert(cues, { sound = "DecorPlace", pitch = -3 })
+		end
+	end
+
+	-- Tinker's Guild upgrades (buildingLevels: factory id -> { time, shelves, coins, xp }).
+	local function upgrades(levels: any): number
+		local n = 0
+		for _, entry in (if type(levels) == "table" then levels else {}) do
+			if type(entry) == "table" then
+				for _, count in entry do
+					n += if type(count) == "number" then count else 0
+				end
+			end
+		end
+		return n
+	end
+	if prev.buildingLevels ~= nil and upgrades(nextState.buildingLevels) > upgrades(prev.buildingLevels) then
+		table.insert(cues, { sound = "Unlock" })
+	end
+
+	-- The Quarry (shared/Quarry): rows[row] is a bitmask of the cells dug out, hits["r:c"] the
+	-- hits a Stone block has taken. A cell opening is a dig; a Stone block taking a hit and
+	-- staying is a higher clink. Ore turning up goes to the Ore Shed: a low shimmer.
+	local quarryBefore, quarry = prev.quarry, nextState.quarry
+	if type(quarryBefore) == "table" and type(quarry) == "table" then
+		local function dugCells(rows: any): number
+			local n = 0
+			for _, mask in (if type(rows) == "table" then rows else {}) do
+				if type(mask) == "number" then
+					local m = mask
+					while m > 0 do
+						n += m % 2
+						m = m // 2
+					end
+				end
+			end
+			return n
+		end
+		local function totalHits(hits: any): number
+			local n = 0
+			for _, h in (if type(hits) == "table" then hits else {}) do
+				n += if type(h) == "number" then h else 0
+			end
+			return n
+		end
+		if dugCells(quarry.rows) > dugCells(quarryBefore.rows) then
+			table.insert(cues, { sound = "Dig" })
+		elseif totalHits(quarry.hits) > totalHits(quarryBefore.hits) then
+			table.insert(cues, { sound = "Dig", pitch = 3 })
+		end
+	end
+	local oreBefore, ore = prev.oreShed, nextState.oreShed
+	if type(oreBefore) == "table" and type(ore) == "table" then
+		for id, qty in ore do
+			if type(qty) == "number" and qty > amount(oreBefore, id) then
+				table.insert(cues, { sound = "Gem", pitch = -5, delay = 0.15 })
+				break
+			end
+		end
+	end
+
+	-- Airship Freight (shared/Blimp): leavesAt is set while it's docked. Docking and leaving
+	-- sound its horn (leaving a little lower); loading a crate is a soft collect.
+	local blimpBefore, blimp = prev.blimp, nextState.blimp
+	if type(blimpBefore) == "table" and type(blimp) == "table" then
+		if blimpBefore.leavesAt == nil and blimp.leavesAt ~= nil then
+			table.insert(cues, { sound = "AirshipHorn" })
+		elseif blimpBefore.leavesAt ~= nil and blimp.leavesAt == nil then
+			table.insert(cues, { sound = "AirshipHorn", pitch = -2 })
+		elseif blimp.leavesAt ~= nil then
+			local function filled(load: any): number
+				local n = 0
+				for _, row in (if type(load) == "table" and type(load.rows) == "table" then load.rows else {}) do
+					for _, crate in row do
+						if type(crate) == "table" and crate.filledBy ~= nil then
+							n += 1
+						end
+					end
+				end
+				return n
+			end
+			if filled(blimp.load) > filled(blimpBefore.load) then
+				table.insert(cues, { sound = "FactoryCollect", pitch = -3 })
+			end
+		end
+	end
+
+	-- The Market stall (shared/Market): a new listing is goods set out on the stall; one
+	-- going with Coins coming in is a sale, without them it was taken back down.
+	local marketBefore, market = prev.market, nextState.market
+	local marketSold = false
+	if type(marketBefore) == "table" and type(market) == "table" then
+		local before, now = #(marketBefore.listings or {}), #(market.listings or {})
+		if now > before then
+			table.insert(cues, { sound = "DecorPlace", pitch = 2 })
+		elseif now < before then
+			if amount(nextState.currencies, "Coins") > amount(prev.currencies, "Coins") then
+				marketSold = true
+			else
+				table.insert(cues, { sound = "DecorRotate" })
+			end
+		end
+	end
+
 	-- The tutorial moving to a new step (tutorial.step: 0 = off).
 	local stepBefore = amount(prev.tutorial, "step")
 	local step = amount(nextState.tutorial, "step")
@@ -182,7 +298,7 @@ function FarmCues.diff(prev: { [string]: any }?, nextState: { [string]: any }?, 
 		local prizesSold = type(prev.prizes) == "table"
 			and type(nextState.prizes) == "table"
 			and #nextState.prizes < #prev.prizes
-		if coinsUp and (decorSold or prizesSold or (itemsDown and started == 0)) then
+		if coinsUp and (decorSold or prizesSold or marketSold or (itemsDown and started == 0)) then
 			table.insert(cues, { sound = "Sell" })
 		elseif coinsUp then
 			table.insert(cues, { sound = "Coin" })
@@ -232,6 +348,13 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 			buildDone = true
 		end
 	end
+	-- The Quarry reopening and the airship mast's repair are builds too.
+	for _, key in { "quarry", "blimp" } do
+		local site = state[key]
+		if type(site) == "table" and crossed(site.readyAt, fromTime, toTime) then
+			buildDone = true
+		end
+	end
 	local landOpened = false
 	for _, plot in state.land or {} do
 		if type(plot) == "table" and crossed(plot.readyAt, fromTime, toTime) then
@@ -264,7 +387,9 @@ function FarmCues.timed(state: { [string]: any }?, fromTime: number, toTime: num
 end
 
 -- Reward_Popup payloads from the farm server ({ kind = "LevelUp" | "Order" | "Drop" |
--- "Field" | "BarnUpgrade" | "Prize" | "PrizeLost" | "Crier" | "Purchase", ... }).
+-- "Field" | "BarnUpgrade" | "Prize" | "PrizeLost" | "Crier" | "Purchase" | "Quest" |
+-- "QuestClaim" | "QuestChest" | "RecordClaim" | "Daily" | "WelcomeBoost" | "Away" |
+-- "Helped" | "HelpedYou" | "Visitor" | "Place", ... }).
 function FarmCues.popup(payload: { [string]: any }?): { Cue }
 	local kind = type(payload) == "table" and payload.kind
 	if kind == "LevelUp" then
@@ -288,8 +413,32 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 		return { { sound = "CrierBell" } } -- news from another player's farm
 	elseif kind == "Drop" or kind == "Field" or kind == "BarnUpgrade" then
 		return { { sound = "Unlock" } } -- a tool dropped, a new field placed, a bigger Barn
+	elseif kind == "Quest" then
+		return { { sound = "Notify" } } -- a daily quest is done and ready to claim
+	elseif kind == "QuestClaim" then
+		return { { sound = "OrderComplete" }, { sound = "Coin", delay = 0.35 } }
+	elseif kind == "QuestChest" then
+		return { { sound = "Unlock" }, { sound = "Gem", delay = 0.35 } } -- the chest for all three
+	elseif kind == "RecordClaim" then
+		return { { sound = "PrizeHeirloom" }, { sound = "Gem", delay = 0.6 } } -- a Town Record medal
+	elseif kind == "Daily" or kind == "WelcomeBoost" then
+		return { { sound = "Unlock" } } -- the login gift; a friend's Welcome Boost
+	elseif kind == "Away" or kind == "HelpedYou" or kind == "Visitor" then
+		return { { sound = "Notify" } } -- news: what finished while away, help, a visitor
+	elseif kind == "Helped" then
+		return { { sound = "Xp" } } -- you helped a neighbour
+	elseif kind == "Place" then
+		return { { sound = "UiOpen" } } -- the Place bar for a new building
 	end
 	return {}
+end
+
+-- Popups that are news rather than a reward: nothing on our farm paid out, so the Coins
+-- and Gems of the snapshot that follows still get their own sounds.
+local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true })
+
+function FarmCues.isReward(payload: { [string]: any }?): boolean
+	return type(payload) == "table" and not NEWS[payload.kind]
 end
 
 return FarmCues

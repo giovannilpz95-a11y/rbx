@@ -18,6 +18,10 @@ local CropPopCues = {}
 local CASCADE_STEP = 2 -- semitones higher per cascade
 local CASCADE_MAX = 12 -- an octave up at most
 
+-- A long chain earns a little fanfare on top of the pops: at the 3rd, 5th and 7th pop of
+-- one move, each a few semitones higher.
+local COMBO_AT: { [number]: number } = { [3] = 0, [5] = 3, [7] = 6 }
+
 local EFFECT_SOUNDS = {
 	Spray = "PopSprayer",
 	Bomb = "PopBomb",
@@ -26,6 +30,8 @@ local EFFECT_SOUNDS = {
 	Everything = "PopSun",
 	Trowel = "PopBooster",
 	Grow = "PopWeedGrow", -- a weed spreading onto a tile
+	Ooze = "PopMud", -- goo spreading
+	Pumpkin = "PopGoal", -- a pumpkin reaching the bottom and being collected
 }
 
 function CropPopCues.phase(phase: { [string]: any }, popIndex: number?): { Cue }
@@ -33,6 +39,10 @@ function CropPopCues.phase(phase: { [string]: any }, popIndex: number?): { Cue }
 	local kind = phase.kind
 	if kind == "Swap" then
 		table.insert(cues, { sound = if phase.ok == false then "PopBad" else "PopSwap" })
+		if phase.ok ~= false and phase.combo then
+			-- Two power-ups swapped into each other: a bright charge-up before they go off.
+			table.insert(cues, { sound = "PopPowerMade", pitch = 5 })
+		end
 	elseif kind == "Pop" then
 		local seen = {}
 		local function once(sound: string, cue: Cue?)
@@ -73,6 +83,27 @@ function CropPopCues.phase(phase: { [string]: any }, popIndex: number?): { Cue }
 		end
 		if #(phase.mud or {}) > 0 then
 			once("PopMud")
+		end
+		for _, g in phase.goo or {} do
+			if not g.on then
+				once("PopMud") -- goo cleared off a cell
+				break
+			end
+		end
+		if #(phase.fences or {}) > 0 then
+			once("PopBale", { sound = "PopBale", pitch = -3 }) -- a fence knocked down
+		end
+		if #(phase.clover or {}) > 0 then
+			once("PopGoal", { sound = "PopGoal", pitch = 2 }) -- clover planted
+		end
+		if #(phase.statues or {}) > 0 then
+			once("PopFrost", { sound = "PopFrost", pitch = -4 }) -- a statue dug up
+		end
+		-- The bonus round (leftover moves turned into Seed Sprayers) pays out Coins.
+		if phase.bonus then
+			once("CoinBig", { sound = "CoinBig", delay = 0.1 })
+		elseif matched and popIndex and COMBO_AT[popIndex] then
+			once("PopCombo", { sound = "PopCombo", pitch = COMBO_AT[popIndex], delay = 0.08 })
 		end
 		-- New power-ups land just after the pop (BoardView grows them in after POP_TIME).
 		if #(phase.created or {}) > 0 or #(phase.transformed or {}) > 0 then

@@ -6,6 +6,9 @@
 		GameAudio.play("PopMatch", { pitch = 4 })    -- 4 semitones up
 		GameAudio.playCues(cues)                     -- a list from FarmCues / CropPopCues
 		GameAudio.setMusic("Puzzle")                 -- crossfade to another context's music (and ambience)
+		GameAudio.setWorld("Visit")                  -- the music for where you are when no puzzle is open
+		local hum = GameAudio.attachLoop("FactoryHum", part)  -- a loop that plays from a part
+		hum.stop()
 		GameAudio.setAmbience("AmbienceFarm")        -- or set the ambience bed by hand
 		GameAudio.setVolume("Music", 0.5)            -- groups: Music, Ambience, Effects, Ui
 		GameAudio.setMuted("Music", true)
@@ -189,6 +192,18 @@ function GameAudio.getMusic(): string?
 	return musicContext
 end
 
+-- Where the player is in the world ("Farm" on their own farm, "Visit" on someone else's).
+-- Crop Pop's screen sits on top: while it's open the world's music waits for it to close.
+local worldContext = "Farm"
+local inPuzzle = false
+
+function GameAudio.setWorld(context: string)
+	worldContext = context
+	if not inPuzzle then
+		GameAudio.setMusic(context)
+	end
+end
+
 function GameAudio.setAmbience(name: string?)
 	setup()
 	if name == ambienceName then
@@ -273,6 +288,54 @@ function GameAudio.play(name: string, opts: PlayOptions?): boolean
 	return true
 end
 
+-- Positional loops ----------------------------------------------------------------
+
+local LOOP_NEAR = 12 -- studs: full volume this close
+local LOOP_FAR = 70 -- studs: silent past this (a plot is about 290 across)
+
+export type LoopHandle = { stop: () -> () }
+
+-- Plays a looped sound from `parent` (a BasePart or Attachment), so it fades with distance
+-- like the building it comes from. Silent (but still a handle) until the sound has an asset.
+function GameAudio.attachLoop(name: string, parent: Instance, opts: PlayOptions?): LoopHandle
+	setup()
+	GameAudio.stats[name] = (GameAudio.stats[name] or 0) + 1
+	local sound = Sounds.list[name]
+	local asset = sound and Sounds.assetFor(sound)
+	if sound == nil or asset == nil then
+		if sound == nil then
+			warn("[GameAudio] no sound named " .. name)
+		else
+			note(name, name .. ": not uploaded yet, silent (" .. tostring(sound.file) .. ")")
+		end
+		return { stop = function() end }
+	end
+	local s = Instance.new("Sound")
+	s.Name = "Loop_" .. name
+	s.SoundId = asset
+	s.Looped = true
+	s.Volume = 0
+	s.PlaybackSpeed = semitones(opts and opts.pitch)
+	s.RollOffMode = Enum.RollOffMode.InverseTapered
+	s.RollOffMinDistance = LOOP_NEAR
+	s.RollOffMaxDistance = LOOP_FAR
+	s.SoundGroup = groups[sound.group]
+	s.Parent = parent
+	-- Start somewhere in the loop, so two busy factories side by side don't chug in step.
+	s.TimePosition = (sound.length or 0) * math.random()
+	s:Play()
+	TweenService:Create(s, TweenInfo.new(0.6), { Volume = sound.volume * (opts and opts.volume or 1) }):Play()
+	local stopped = false
+	return {
+		stop = function()
+			if not stopped then
+				stopped = true
+				fadeOut(s)
+			end
+		end,
+	}
+end
+
 export type Cue = { sound: string, pitch: number?, delay: number? }
 
 function GameAudio.playCues(cues: { Cue })
@@ -293,9 +356,11 @@ end
 
 function GameAudio.cropPopEvent(name: string)
 	if name == "Open" then
+		inPuzzle = true
 		GameAudio.setMusic("Puzzle")
 	elseif name == "Close" then
-		GameAudio.setMusic("Farm")
+		inPuzzle = false
+		GameAudio.setMusic(worldContext)
 	else
 		GameAudio.playCues(CropPopCues.event(name))
 	end
