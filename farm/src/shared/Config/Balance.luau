@@ -53,6 +53,7 @@ return table.freeze({
 		"SheepFold2",
 		"BeeYard",
 		"ChickenCoop3",
+		"PigPen",
 	}),
 
 	-- Cow Feed a new farm starts with, so the given Cows work before the Feed Mill opens at

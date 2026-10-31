@@ -32,6 +32,7 @@ local Recipes: { [string]: RecipeDef } = {
 	CowFeed = { id = "CowFeed", displayName = "Cow Feed", factory = "FeedMill", unlockLevel = 3, inputs = { Wheat = 2, Corn = 1 }, outputQty = 3, seconds = 5 * MIN, sellPrice = 3, xp = 1, isFeed = true },
 	ChickenFeed = { id = "ChickenFeed", displayName = "Chicken Feed", factory = "FeedMill", unlockLevel = 5, inputs = { Wheat = 2, Carrots = 1 }, outputQty = 3, seconds = 10 * MIN, sellPrice = 4, xp = 2, isFeed = true },
 	BeeFeed = { id = "BeeFeed", displayName = "Bee Feed", factory = "FeedMill", unlockLevel = 35, inputs = { Wheat = 3, Sugarcane = 1 }, outputQty = 3, seconds = 30 * MIN, sellPrice = 7, xp = 3, isFeed = true },
+	PigFeed = { id = "PigFeed", displayName = "Pig Feed", factory = "FeedMill", unlockLevel = 42, inputs = { Wheat = 2, Carrots = 2, Corn = 1 }, outputQty = 3, seconds = 40 * MIN, sellPrice = 10, xp = 4, isFeed = true },
 	SheepFeed = { id = "SheepFeed", displayName = "Sheep Feed", factory = "FeedMill", unlockLevel = 10, inputs = { Corn = 2, Carrots = 2 }, outputQty = 3, seconds = 20 * MIN, sellPrice = 5, xp = 2, isFeed = true },
 	-- Dairy
 	Cream = { id = "Cream", displayName = "Cream", factory = "Dairy", unlockLevel = 4, inputs = { Milk = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 12, xp = 5 },
@@ -83,6 +84,7 @@ local Recipes: { [string]: RecipeDef } = {
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
 	-- Prep Kitchen (content bank)
 	FrozenVegetables = { id = "FrozenVegetables", displayName = "Frozen Vegetables", factory = "PrepKitchen", unlockLevel = 34, inputs = { Tomatoes = 1, Corn = 1, Carrots = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 26, xp = 11 },
+	Dumplings = { id = "Dumplings", displayName = "Dumplings", factory = "PrepKitchen", unlockLevel = 42, inputs = { Dough = 2, Bacon = 2 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 98, xp = 42 },
 	-- Molding Works (content bank)
 	InflatableBoat = { id = "InflatableBoat", displayName = "Inflatable Boat", factory = "MoldingWorks", unlockLevel = 38, inputs = { Rubber = 2, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 236, xp = 101 },
 	Ball = { id = "Ball", displayName = "Ball", factory = "MoldingWorks", unlockLevel = 37, inputs = { Plastic = 1, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 235, xp = 101 },
@@ -94,6 +96,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Candy Factory (content bank)
 	JellyBeans = { id = "JellyBeans", displayName = "Jelly Beans", factory = "CandyFactory", unlockLevel = 39, inputs = { Strawberries = 3, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 79, xp = 34 },
 	Toffee = { id = "Toffee", displayName = "Toffee", factory = "CandyFactory", unlockLevel = 40, inputs = { Caramel = 1, Butter = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 112, xp = 48 },
+	CandyCane = { id = "CandyCane", displayName = "Candy Cane", factory = "CandyFactory", unlockLevel = 42, inputs = { Caramel = 1, Cream = 1, Paper = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 105, xp = 45 },
 	-- Homewares Shop (content bank)
 	Plunger = { id = "Plunger", displayName = "Plunger", factory = "HomewaresShop", unlockLevel = 40, inputs = { PineTrees = 1, Rubber = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 122, xp = 52 },
 	Clothesline = { id = "Clothesline", displayName = "Clothesline", factory = "HomewaresShop", unlockLevel = 39, inputs = { Sugarcane = 5, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 202, xp = 87 },

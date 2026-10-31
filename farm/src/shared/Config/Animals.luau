@@ -49,6 +49,8 @@ local Pens: { [string]: PenDef } = {
 	-- Township's Apiary (level 35): no usual spot, the player places it once it's built
 	BeeYard = { id = "BeeYard", displayName = "Bee Yard", animalName = "Bee Hive", animalPlural = "Bee Hives", unlockLevel = 35, given = false, buildCost = 9000, buildSeconds = 38 * HOUR, xp = 376, feed = "BeeFeed", product = "Honeycomb", productName = "Honeycomb", produceSeconds = 6 * HOUR, sellPrice = 22, productXP = 9, startAnimals = 3, extraAnimalCosts = { 900, 1200, 1500 }, order = 8, color = { 245, 200, 70 }, productColor = { 240, 170, 40 } },
 	ChickenCoop3 = { id = "ChickenCoop3", displayName = "Third Chicken Coop", animalName = "Chicken", animalPlural = "Chickens", unlockLevel = 39, given = false, buildCost = 15000, buildSeconds = 40 * HOUR, xp = 623, feed = "ChickenFeed", product = "Eggs", productName = "Eggs", produceSeconds = 1 * HOUR, sellPrice = 10, productXP = 4, startAnimals = 3, extraAnimalCosts = { 2250, 2400, 2550 }, order = 9, color = { 250, 240, 220 }, productColor = { 240, 220, 170 }, copyOf = "ChickenCoop" },
+	-- Township's Pig Farm (level 42): placed by the player once it's built
+	PigPen = { id = "PigPen", displayName = "Pig Pen", animalName = "Pig", animalPlural = "Pigs", unlockLevel = 42, given = false, buildCost = 12000, buildSeconds = 43 * HOUR, xp = 500, feed = "PigFeed", product = "Bacon", productName = "Bacon", produceSeconds = 7 * HOUR, sellPrice = 32, productXP = 14, startAnimals = 3, extraAnimalCosts = { 2100, 2400, 3150 }, order = 10, color = { 245, 180, 180 }, productColor = { 220, 110, 100 } },
 }
 
 for _, pen in Pens do

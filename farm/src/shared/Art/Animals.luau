@@ -1,6 +1,6 @@
 --!strict
 -- The animals and their pens: Cows / Cow Barn, Chickens / Chicken Coop, Sheep / Sheep Fold,
--- and (level 35) Bee Hives / Bee Yard.
+-- (level 35) Bee Hives / Bee Yard and (level 42) Pigs / Pig Pen.
 -- Design/16 Model Catalog §2.2 and Design/03 Animals.
 --
 -- Animals are chunky and cute with big heads, so they read from the Overview camera. Built
@@ -100,15 +100,41 @@ local function beeHive(b: Kit.Builder)
 	end
 end
 
+-- "Barrel pig": a round pink barrel of a body, a big flat snout, floppy ears, short legs and
+-- a curly tail. 11 parts. About 1.6 x 1.9 x 2.6 studs.
+local function pig(b: Kit.Builder)
+	local skin = Palette.flowerPink:Lerp(Palette.cream, 0.45)
+	b.block("Body", Vector3.new(1.6, 1.3, 2.2), Vector3.new(0, 1.1, 0.25), skin)
+	b.block("Head", Vector3.new(1.3, 1.15, 0.95), Vector3.new(0, 1.35, -1.2), skin)
+	b.cyl("Snout", 0.35, 0.75, CFrame.new(0, 1.2, -1.82) * Kit.yaw(90), Palette.cowMuzzle)
+	b.block(
+		"Ears",
+		Vector3.new(1.55, 0.18, 0.45),
+		CFrame.new(0, 1.95, -1.2) * CFrame.Angles(math.rad(-20), 0, 0),
+		Palette.cowMuzzle
+	)
+	for _, x in { -0.3, 0.3 } do
+		b.ball("Eye", 0.24, Vector3.new(x, 1.6, -1.68), Palette.eye, { shadow = false })
+	end
+	for _, x in { -0.5, 0.5 } do
+		for _, z in { -0.6, 1 } do
+			b.block("Leg", Vector3.new(0.4, 0.5, 0.4), Vector3.new(x, 0.25, z), skin, { shadow = false })
+		end
+	end
+	b.ball("Tail", 0.35, Vector3.new(0, 1.5, 1.4), Palette.cowMuzzle, { shadow = false })
+end
+
 local ANIMALS: { [string]: AnimalBuild } = {
 	CowBarn = cow,
 	ChickenCoop = chicken,
 	SheepFold = sheep,
 	BeeYard = beeHive,
+	PigPen = pig,
 }
 
 -- Height of each animal, so products can float just above it.
-ArtAnimals.HEIGHT = { CowBarn = 2.8, ChickenCoop = 2.3, SheepFold = 2.7, BeeYard = 3 } :: { [string]: number }
+ArtAnimals.HEIGHT =
+	{ CowBarn = 2.8, ChickenCoop = 2.3, SheepFold = 2.7, BeeYard = 3, PigPen = 2.2 } :: { [string]: number }
 
 -- One animal of the pen `penId` standing at `cf` (its feet), facing local -Z.
 function ArtAnimals.animal(penId: string, cf: CFrame, name: string?): Model
@@ -163,6 +189,9 @@ function ArtAnimals.product(penId: string, cf: CFrame, name: string?): Model
 	if penId == "ChickenCoop" then
 		b.ball("Egg", 0.75, Vector3.new(-0.25, 0.4, 0), Palette.egg, glow)
 		b.ball("Egg", 0.65, Vector3.new(0.3, 0.35, 0.1), Palette.egg, glow)
+	elseif penId == "PigPen" then
+		b.block("Bacon", Vector3.new(1.3, 0.15, 0.4), Vector3.new(0, 0.3, -0.25), Palette.cowMuzzle, glow)
+		b.block("Bacon", Vector3.new(1.3, 0.15, 0.4), Vector3.new(0.1, 0.45, 0.2), Palette.roofRed, glow)
 	elseif penId == "BeeYard" then
 		b.block("Comb", Vector3.new(1.1, 0.9, 0.3), Vector3.new(0, 0.45, 0), Palette.roofMustard, glow)
 		b.block("Drip", Vector3.new(0.3, 0.35, 0.32), Vector3.new(0.25, -0.05, 0), Palette.coins, glow)
@@ -341,11 +370,33 @@ local function beeYard(b: Kit.Builder)
 	Kit.sproutTag(b, Vector3.new(2.6, 4.2, 4), 1.2, Palette.wood, Palette.lime)
 end
 
+-- Pig Pen: a fenced yard with a round mud wallow, a low wooden sty with a rose roof at the
+-- back and a trough by the gate.
+local function pigPen(b: Kit.Builder)
+	fenceRing(b, Palette.woodDark)
+	b.cyl(
+		"Mud",
+		0.12,
+		4.6,
+		CFrame.new(2.4, 0.06, 0.4) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.soil,
+		{ shadow = false }
+	)
+	local hx, hz = -2.4, 3.8
+	b.block("Sty", Vector3.new(4.4, 2, 2.8), Vector3.new(hx, 1, hz), Palette.woodLight, { collide = true })
+	Kit.gableRoof(b, "Roof", Vector3.new(hx, 2, hz), 5.2, 3.6, 1.6, Palette.roofRed)
+	b.block("StyDoor", Vector3.new(1.4, 1.3, 0.1), Vector3.new(hx, 0.65, hz - 1.42), Palette.cocoa)
+	trough(b, Vector3.new(3.2, 0, -3.6), Palette.wheatHead)
+	gate(b, -HALF, 3)
+	Kit.sproutTag(b, Vector3.new(hx, 4.4, hz), 1.2, Palette.wood, Palette.lime)
+end
+
 local PENS: { [string]: (Kit.Builder) -> () } = {
 	CowBarn = cowBarn,
 	ChickenCoop = chickenCoop,
 	SheepFold = sheepFold,
 	BeeYard = beeYard,
+	PigPen = pigPen,
 }
 
 ArtAnimals.FLOOR_COLOR = {
@@ -353,6 +404,7 @@ ArtAnimals.FLOOR_COLOR = {
 	ChickenCoop = Palette.straw,
 	SheepFold = Palette.grassLight,
 	BeeYard = Palette.grassLight,
+	PigPen = Palette.soilLight,
 } :: { [string]: Color3 }
 
 -- Build a pen's fences and buildings into `parent`. `cf` is the pen's bottom-centre with the
@@ -388,6 +440,7 @@ ArtAnimals.ACCENT = {
 	ChickenCoop = Palette.roofMustard,
 	SheepFold = Palette.roofPlum,
 	BeeYard = Palette.roofMustard,
+	PigPen = Palette.roofRed,
 } :: { [string]: Color3 }
 
 local TROUGH_AT = {
@@ -395,6 +448,7 @@ local TROUGH_AT = {
 	ChickenCoop = Vector3.new(3.2, 0, -3.6),
 	SheepFold = Vector3.new(-2.6, 0, -2.6),
 	BeeYard = Vector3.new(-2.2, 0, 3.6),
+	PigPen = Vector3.new(3.2, 0, -3.6),
 } :: { [string]: Vector3 }
 
 -- Paints `p` (remembering its built color, so a lower level can put it back).
