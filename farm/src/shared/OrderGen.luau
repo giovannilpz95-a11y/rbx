@@ -6,6 +6,7 @@
 
 local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
+local Harbor = require("./Harbor")
 local Items = require("./Items")
 local OrderConfig = require("./Config/Orders")
 local Recipes = require("./Config/Recipes")
@@ -55,6 +56,10 @@ end
 function OrderGen.makeablePool(data: { [string]: any }): { string }
 	local can: { [string]: boolean } = {}
 	for _, id in Balance.enabledCrops do
+		can[id] = true
+	end
+	-- Far Isle goods, once a Sailboat has brought some back from their isle
+	for _, id in Harbor.visitedGoods(data) do
 		can[id] = true
 	end
 	local function addRecipes()

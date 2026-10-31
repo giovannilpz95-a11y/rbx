@@ -43,5 +43,5 @@ return table.freeze({
 
 	-- What can be sold: crops, animal goods and factory goods with a Barn price. Never Gems,
 	-- tools, materials, decorations or anything bought with Robux.
-	kinds = table.freeze({ Crop = true, Animal = true, Product = true }),
+	kinds = table.freeze({ Crop = true, Animal = true, Product = true, Isle = true }),
 })

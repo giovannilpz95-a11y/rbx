@@ -8,6 +8,7 @@ local Crops = require("./Config/Crops")
 local Daily = require("./Config/Daily")
 local Decor = require("./Config/Decor")
 local Factories = require("./Config/Factories")
+local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
 local Tools = require("./Config/Tools")
 local Town = require("./Config/Town")
@@ -68,6 +69,14 @@ function Unlocks.at(level: number): { Unlock }
 	for id, def in Decor.items do
 		if def.unlockLevel == level then
 			table.insert(out, { kind = "Decor", id = id, name = def.displayName })
+		end
+	end
+	if level == Isles.unlockLevel then
+		table.insert(out, { kind = "Feature", id = "Harbor", name = "Harbor" })
+	end
+	for _, isle in Isles.isles do
+		if isle.unlockLevel == level and isle.unlockCoins > 0 then
+			table.insert(out, { kind = "Feature", id = isle.id, name = isle.displayName })
 		end
 	end
 	if level == Daily.unlockLevel then

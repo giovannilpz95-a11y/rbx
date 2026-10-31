@@ -27,7 +27,7 @@ local crates: { [string]: Range } = {
 	-- Animal goods
 	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 }, Honeycomb = { 1, 7 },
 	-- Bakery
-	Bread = { 5, 14 }, Cookies = { 4, 9 }, Bagel = { 2, 6 }, GardenPizza = { 1, 3 }, PotatoBread = { 2, 4 },
+	Bread = { 5, 14 }, Cookies = { 4, 9 }, Bagel = { 2, 6 }, GardenPizza = { 1, 3 }, PotatoBread = { 2, 4 }, BananaBread = { 1, 3 },
 	-- Dairy
 	Cream = { 4, 11 }, Cheese = { 3, 10 }, Butter = { 2, 6 }, Yogurt = { 1, 4 },
 	-- Sugar Mill
@@ -50,7 +50,7 @@ local crates: { [string]: Range } = {
 	-- Prep Kitchen, Molding Works
 	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 }, Ball = { 1, 2 }, InflatableBoat = { 1, 2 },
 	-- Jam Kitchen, Rubber Works
-	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 }, Glue = { 1, 3 },
+	StrawberryJam = { 1, 3 }, PeachMarmalade = { 1, 3 }, WatermelonJam = { 1, 3 }, PlumJam = { 1, 3 }, GrapeJelly = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 }, Glue = { 1, 3 },
 	-- Homewares Shop
 	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 }, Clothesline = { 1, 2 }, Plunger = { 1, 2 },
 	-- Candy Factory
