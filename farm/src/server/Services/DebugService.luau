@@ -62,6 +62,29 @@ function DebugService.buildAll(player: Player): (boolean, string?)
 	return true
 end
 
+-- Every open House lot filled with a finished Cottage, ignoring copy limits and Coins (for
+-- testing what happens once the lots run out: the next House goes up at an open spot).
+function DebugService.fillLots(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local open = TownRules.houseLotCount(data, Clock.now())
+	local added = 0
+	while true do
+		local lot = TownRules.freeLot(data, open)
+		if lot == nil then
+			break
+		end
+		table.insert(data.town.houses, { type = "Cottage", lot = lot })
+		added += 1
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.toast(player, string.format("Dev: %d Cottages fill all %d open House lots", added, open))
+	return true
+end
+
 DebugService.GRANT = { gems = 500, coins = 5000, tools = 5 }
 
 -- For testing the Quarry, Smelters and Tinker's Guild (Features/F01) without digging or
@@ -331,6 +354,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)
+	NetService.on(Net.Debug_FillLots, 1, 2, DebugService.fillLots)
 end
 
 return DebugService

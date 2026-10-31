@@ -10,6 +10,7 @@
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
@@ -1606,6 +1607,59 @@ local function refreshShelf(player: Player, model: Model, data: { [string]: any 
 	end
 end
 
+-- A building standing (or going up) on its usual spot while that spot's land is still locked
+-- (a save from before free placement, or a Studio shortcut that skipped the build checks):
+-- move it to the nearest open spot to the player on the farm's land and remember it there.
+local rehoming: { [Player]: boolean } = {}
+local function rehome(player: Player, data: { [string]: any }, now: number)
+	if rehoming[player] then
+		return
+	end
+	local moves = {}
+	local function check(kind: string, id: string, land: number?)
+		if land == nil or land == 0 or TownRules.landDone(data, land, now) then
+			return
+		end
+		local key = Layout.key(kind, id)
+		if Layout.spot(data, key) or PlotService.usualSpot(kind, id) == nil then
+			return
+		end
+		table.insert(moves, { kind = kind, key = key })
+	end
+	for id, factory in data.factories do
+		if factory.built and Factories[id] then
+			check("factory", id, Factories[id].land)
+		end
+	end
+	for id, pen in data.pens do
+		if pen.built and Animals.pens[id] then
+			check("pen", id, Animals.pens[id].land)
+		end
+	end
+	for id in data.town.community do
+		local lot = Town.community[id] and TownRules.communityLot(id)
+		local def = lot and Lots.community[lot]
+		if def then
+			check("community", id, def.land)
+		end
+	end
+	if #moves == 0 then
+		return
+	end
+	rehoming[player] = true
+	for _, move in moves do
+		local spot = PlotService.findOpenSpot(player, data, move.kind, PlotService.nearPlayer(player))
+		if spot then
+			data.layout[move.key] = spot
+			DataService.markDirty(player, true)
+			PlotService.relocate(player, move.key)
+		else
+			warn("[PlotService] no open spot for", move.key, "on locked land")
+		end
+	end
+	rehoming[player] = nil
+end
+
 function PlotService.refresh(player: Player)
 	local model = plotsByPlayer[player]
 	local data = DataService.get(player)
@@ -1613,6 +1667,7 @@ function PlotService.refresh(player: Player)
 		return
 	end
 	local now = Clock.now()
+	rehome(player, data, now)
 	refreshFields(player, model, data, now)
 	for id, factory in data.factories do
 		refreshFactory(player, model, data, id, factory, now)
@@ -1822,7 +1877,20 @@ function PlotService.prepareBuild(
 		return nil, nil
 	end
 	local usual = PlotService.usualSpot(kind, id)
-	if usual and (land == nil or land == 0 or TownRules.landDone(data, land, now)) then
+	local landOk = land == nil or land == 0 or TownRules.landDone(data, land, now)
+	if RunService:IsStudio() then
+		print(
+			string.format(
+				"[Layout] build %s:%s usual=%s land=%s cleared=%s",
+				kind,
+				id,
+				tostring(usual),
+				tostring(land),
+				tostring(landOk)
+			)
+		)
+	end
+	if usual and landOk then
 		return nil, nil
 	end
 	local spot = PlotService.findOpenSpot(player, data, kind, PlotService.nearPlayer(player))
