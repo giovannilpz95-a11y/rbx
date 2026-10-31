@@ -59,6 +59,7 @@ local Recipes: { [string]: RecipeDef } = {
 	Fries = { id = "Fries", displayName = "Fries", factory = "Diner", unlockLevel = 28, inputs = { Potatoes = 2, Cream = 1, Tomatoes = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 88, xp = 38 },
 	-- Paper Mill (content bank)
 	Paper = { id = "Paper", displayName = "Paper", factory = "PaperMill", unlockLevel = 18, inputs = { PineTrees = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 19, xp = 8 },
+	Wallpaper = { id = "Wallpaper", displayName = "Wallpaper", factory = "PaperMill", unlockLevel = 30, inputs = { PineTrees = 2, Rubber = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 147, xp = 63 },
 	PaperTowel = { id = "PaperTowel", displayName = "Paper Towels", factory = "PaperMill", unlockLevel = 23, inputs = { PineTrees = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 39, xp = 17 },
 	-- Ice Cream Parlor (content bank)
 	IceCreamCone = { id = "IceCreamCone", displayName = "Ice Cream Cone", factory = "IceCreamParlor", unlockLevel = 20, inputs = { Milk = 1, Cream = 1, Sugar = 1 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 39, xp = 17 },
@@ -67,6 +68,7 @@ local Recipes: { [string]: RecipeDef } = {
 	IceCreamBar = { id = "IceCreamBar", displayName = "Ice Cream Bar", factory = "IceCreamParlor", unlockLevel = 25, inputs = { CaneSyrup = 1, Cocoa = 1, PineTrees = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 148, xp = 63 },
 	-- Pastry Shop (content bank)
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
+	Cupcake = { id = "Cupcake", displayName = "Cupcake", factory = "PastryShop", unlockLevel = 30, inputs = { Sugar = 1, Eggs = 5, Cream = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 93, xp = 40 },
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
 	-- Rubber Works (content bank)
 	Rubber = { id = "Rubber", displayName = "Rubber", factory = "RubberWorks", unlockLevel = 29, inputs = { RubberTrees = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 35, xp = 15 },

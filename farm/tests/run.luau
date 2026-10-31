@@ -257,7 +257,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 29, "levels 17 to 29 are banked")
+	eq(Levels.built, 30, "levels 17 to 30 are banked")
+	eq(Levels.list[30].xpToNext, 23974, "L30 row")
+	eq(Recipes.Wallpaper.inputs.Rubber, 1, "Wallpaper uses Rubber (Township's inputs)")
+	eq(Recipes.Cupcake.inputs.Eggs, 5, "Cupcake")
+	eq(Town.community.OpenAirCinema.capBonus, 145, "Open-Air Cinema")
 	eq(Levels.list[29].xpToNext, 21495, "L29 row")
 	ok(
 		table.find(Balance.enabledCrops, "RubberTrees") ~= nil and Crops.RubberTrees.growSeconds == 12 * 3600,

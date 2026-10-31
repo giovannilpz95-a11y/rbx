@@ -80,6 +80,7 @@ local Community: { [string]: CommunityDef } = {
 	SculpturePark = { id = "SculpturePark", displayName = "Sculpture Park", unlockLevel = 25, capBonus = 120, coinCost = 1600, materials = { Bricks = 7, Planks = 10, Panes = 8 }, buildSeconds = 11 * HOUR, xp = 240, order = 22, color = { 190, 210, 170 } },
 	BigTop = { id = "BigTop", displayName = "Big Top", unlockLevel = 26, capBonus = 125, coinCost = 1900, materials = { Bricks = 8, Planks = 7, Panes = 12 }, buildSeconds = 12 * HOUR, xp = 250, order = 23, color = { 220, 70, 70 } },
 	BusDepot = { id = "BusDepot", displayName = "Bus Depot", unlockLevel = 27, capBonus = 130, coinCost = 2200, materials = { Bricks = 6, Planks = 9, Panes = 14 }, buildSeconds = 13 * HOUR, xp = 260, order = 24, color = { 240, 200, 80 } },
+	OpenAirCinema = { id = "OpenAirCinema", displayName = "Open-Air Cinema", unlockLevel = 30, capBonus = 145, coinCost = 3300, materials = { Bricks = 16, Planks = 9, Panes = 10 }, buildSeconds = 16 * HOUR, xp = 290, order = 27, color = { 70, 80, 120 } },
 	CabStand = { id = "CabStand", displayName = "Cab Stand", unlockLevel = 29, capBonus = 140, coinCost = 2900, materials = { Bricks = 11, Planks = 9, Panes = 13 }, buildSeconds = 15 * HOUR, xp = 280, order = 26, color = { 245, 200, 50 } },
 	FillingStation = { id = "FillingStation", displayName = "Filling Station", unlockLevel = 28, capBonus = 135, coinCost = 2500, materials = { Bricks = 12, Planks = 10, Panes = 9 }, buildSeconds = 14 * HOUR, xp = 270, order = 25, color = { 230, 90, 70 } },
 }
