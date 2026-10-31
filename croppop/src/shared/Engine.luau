@@ -61,7 +61,7 @@ export type Options = {
 }
 
 function Engine.new(level, seed: number, options: Options?)
-	local board = Board.fromLayout(level.layout)
+	local board = Board.fromLayout(level.layout, level.portals)
 	local colors = {}
 	for _, name in level.colors do
 		table.insert(colors, Tiles.ByName[name])

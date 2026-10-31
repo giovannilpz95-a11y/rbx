@@ -37,6 +37,16 @@ function LevelText.write(level): string
 		table.insert(lines, "\t\t" .. quote(row) .. ",")
 	end
 	table.insert(lines, "\t},")
+	if level.portals and #level.portals > 0 then
+		table.insert(lines, "\tportals = {")
+		for _, portal in level.portals do
+			table.insert(
+				lines,
+				string.format("\t\t{ from = { %d, %d }, to = { %d, %d } },", portal.from[1], portal.from[2], portal.to[1], portal.to[2])
+			)
+		end
+		table.insert(lines, "\t},")
+	end
 	table.insert(lines, "\tgoals = {")
 	for _, goal in level.goals do
 		table.insert(lines, "\t\t" .. goalText(goal) .. ",")

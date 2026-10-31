@@ -353,6 +353,26 @@ function BoardView.load(self, game)
 			exit.Parent = self.baleLayer
 		end
 
+		-- Portals: a swirl on the bottom edge of the entrance and the top edge of
+		-- the exit, in the same colour for each pair.
+		for _, link in { { cell.portalOut, "PortalIn", 1, y }, { cell.portalIn, "PortalOut", 0, y - 1 } } do
+			if link[1] then
+				local pair = self:_portalIndex(board, if link[2] == "PortalIn" then cell else link[1])
+				local mark = Instance.new("TextLabel")
+				mark.Name = link[2]
+				mark.AnchorPoint = Vector2.new(0.5, link[3])
+				mark.Position = UDim2.fromScale((x - 0.5) / board.width, link[4] / board.height)
+				mark.Size = UDim2.fromScale(0.45 / board.width, 0.3 / board.height)
+				mark.BackgroundColor3 = TileStyle.PortalColors[(pair - 1) % #TileStyle.PortalColors + 1]
+				mark.Text = TileStyle.PortalGlyph
+				mark.TextScaled = true
+				mark.Parent = self.baleLayer
+				local markCorner = Instance.new("UICorner")
+				markCorner.CornerRadius = UDim.new(0.5, 0)
+				markCorner.Parent = mark
+			end
+		end
+
 		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
@@ -362,6 +382,22 @@ function BoardView.load(self, game)
 			self.grid[y][x] = cell.piece.id
 		end
 	end)
+end
+
+-- Numbers portal entrances 1, 2, ... in board order, so each pair gets its own colour.
+function BoardView._portalIndex(self, board, entrance)
+	if not self.portalIndex or self.portalIndexBoard ~= board then
+		self.portalIndex = {}
+		self.portalIndexBoard = board
+		local n = 0
+		board:eachCell(function(cell)
+			if cell.portalOut then
+				n += 1
+				self.portalIndex[cell] = n
+			end
+		end)
+	end
+	return self.portalIndex[entrance] or 1
 end
 
 -- Snaps every tile, bale and mud patch to the engine's current state.

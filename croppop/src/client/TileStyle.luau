@@ -43,6 +43,14 @@ TileStyle.PowerBadges = {
 
 TileStyle.Sunflower = { color = Color3.fromRGB(255, 196, 30), glyph = "🌻" }
 TileStyle.Pumpkin = { color = Color3.fromRGB(196, 120, 52), glyph = "🎃", exit = "⬇️" }
+-- Portal ends: a swirl on a coloured disc, one colour per entrance/exit pair.
+TileStyle.PortalGlyph = "🌀"
+TileStyle.PortalColors = {
+	Color3.fromRGB(150, 110, 220),
+	Color3.fromRGB(70, 170, 200),
+	Color3.fromRGB(230, 140, 60),
+	Color3.fromRGB(220, 90, 140),
+}
 
 TileStyle.GoalGlyphs = {
 	Mud = "🟫",

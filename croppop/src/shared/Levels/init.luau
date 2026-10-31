@@ -12,6 +12,9 @@
 	  s  stone wall, 1 layer   S  stone wall, 2 layers (only blasts break stone)
 	  1 2 3  hay bale with that many layers
 
+	Portals sit outside the layout, as `portals = { { from = { x, y }, to = { x, y } } }`:
+	pieces falling out of `from` land in `to` instead of the cell below.
+
 	Difficulty: every 5th level is Tough, and every 10th from level 20 is
 	Super Tough. Levels 6 onwards come from tools/levelgen.luau, with moves
 	tuned by the test bot; the level editor (Studio) is for hand changes.
@@ -22,7 +25,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -65,6 +68,77 @@ local VALID_CHARS = {
 }
 local DIFFICULTIES = { Normal = true, Tough = true, ["Super Tough"] = true }
 Levels.MAX_SIZE = 10
+
+--[[
+	Portals must link two different board cells, each cell may be one
+	portal's entrance and one portal's exit at most, and falling must never
+	loop (following portals and cells below from any cell ends).
+]]
+function Levels.checkPortals(level): string?
+	local portals = level.portals
+	if portals == nil then
+		return nil
+	end
+	if type(portals) ~= "table" then
+		return "portals must be a list"
+	end
+	local layout = level.layout
+	local function isCell(x, y)
+		local row = layout[y]
+		return row ~= nil and type(x) == "number" and x >= 1 and x <= #row and x == math.floor(x) and string.sub(row, x, x) ~= "#"
+	end
+	local outOf, into = {}, {}
+	for i, portal in portals do
+		local from, to = type(portal) == "table" and portal.from, type(portal) == "table" and portal.to
+		if type(from) ~= "table" or type(to) ~= "table" or not isCell(from[1], from[2]) or not isCell(to[1], to[2]) then
+			return "portal " .. i .. " must link two board cells"
+		end
+		local a, b = from[1] .. "," .. from[2], to[1] .. "," .. to[2]
+		if a == b then
+			return "portal " .. i .. " goes nowhere"
+		end
+		if outOf[a] or into[b] then
+			return "portal " .. i .. " shares an entrance or exit with another"
+		end
+		outOf[a] = to
+		into[b] = from
+	end
+	-- Where a piece falls from (x, y), as Board.cellBelow does it.
+	local function below(x, y)
+		local target = outOf[x .. "," .. y]
+		if target then
+			return target[1], target[2]
+		end
+		for yy = y + 1, #layout do
+			if isCell(x, yy) then
+				local feeder = into[x .. "," .. yy]
+				if feeder and (feeder[1] ~= x or feeder[2] ~= y) then
+					return nil
+				end
+				return x, yy
+			end
+		end
+		return nil
+	end
+	local cells = #layout * #layout[1]
+	for y = 1, #layout do
+		for x = 1, #layout[1] do
+			if isCell(x, y) then
+				local cx, cy = x, y
+				for _ = 1, cells + 1 do
+					cx, cy = below(cx, cy)
+					if not cx then
+						break
+					end
+				end
+				if cx then
+					return string.format("portals make pieces fall in a loop from %d,%d", x, y)
+				end
+			end
+		end
+	end
+	return nil
+end
 
 -- Returns nil if the level is well-formed, or a message saying what's wrong.
 function Levels.validate(level): string?
@@ -126,6 +200,10 @@ function Levels.validate(level): string?
 				end
 			end
 		end
+	end
+	local portalError = Levels.checkPortals(level)
+	if portalError then
+		return portalError
 	end
 	if #level.goals == 0 then
 		return "level needs at least one goal"
