@@ -128,16 +128,10 @@ end
 local function attach(model: Model)
 	plot = model
 	table.clear(bedLabels) -- beds arrive over time (new fields); render adds their labels
+	-- Factory and pen labels are added by render as their buildings turn up: from level 34
+	-- they only exist once the player has built and placed them
 	table.clear(factoryLabels)
-	for _, id in Balance.enabledFactories do
-		local building = model:WaitForChild(id)
-		factoryLabels[id] = billboard(building:WaitForChild("Body") :: BasePart, 10.5, 60)
-	end
 	table.clear(penLabels)
-	for _, id in Balance.enabledPens do
-		local pen = model:WaitForChild(id)
-		penLabels[id] = billboard(pen:WaitForChild("Floor") :: BasePart, 8.5, 60)
-	end
 
 	local board = model:WaitForChild("OrderBoard") :: BasePart
 	local surface = Ui.new("SurfaceGui", {
@@ -161,10 +155,32 @@ local function attach(model: Model)
 	Ui.padding(12).Parent = boardText
 end
 
+-- A label on `part` of building `id`, kept in `labels`; made again if the building was rebuilt
+local function labelOn(labels: { [string]: TextLabel }, id: string, partName: string, offsetY: number)
+	local label = labels[id]
+	local gui = label and label.Parent
+	if gui and gui.Parent and gui.Parent:IsDescendantOf(plot :: Model) then
+		return
+	end
+	local building = (plot :: Model):FindFirstChild(id)
+	local part = building and building:FindFirstChild(partName)
+	if part and part:IsA("BasePart") then
+		labels[id] = billboard(part, offsetY, 60)
+	else
+		labels[id] = nil
+	end
+end
+
 local function render()
 	local state = ClientStore.state
 	if plot == nil or state == nil then
 		return
+	end
+	for _, id in Balance.enabledFactories do
+		labelOn(factoryLabels, id, "Body", 10.5)
+	end
+	for _, id in Balance.enabledPens do
+		labelOn(penLabels, id, "Floor", 8.5)
 	end
 	local now = ClientStore.now()
 
