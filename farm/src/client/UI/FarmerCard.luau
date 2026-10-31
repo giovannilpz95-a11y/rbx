@@ -422,6 +422,9 @@ function FarmerCard.init()
 			string.format("%s %s medal!  +%d Gems  +%d XP", payload.name, payload.tier, payload.gems, payload.xp),
 			"celebrate"
 		)
+		if type(payload.trophy) == "string" then
+			Hud.toast(string.format("You won the %s! Place it from Build (F), Decor tab.", payload.trophy), "celebrate")
+		end
 	end
 	-- A toast when a record's next medal is reached (checked on every state change)
 	local known: { [string]: boolean }? = nil

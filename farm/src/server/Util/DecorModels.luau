@@ -7,12 +7,13 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local ArtDecor = require(Shared.Art.Decor)
 local ArtMerge = require(Shared.Art.Merge)
 local Decor = require(Shared.Config.Decor)
+local DecorRules = require(Shared.DecorRules)
 
 local DecorModels = {}
 
 -- origin: the footprint centre on the ground, already turned. index: the save slot.
 function DecorModels.build(id: string, origin: CFrame, index: number): Model
-	local def = Decor.items[id]
+	local def = DecorRules.def(id) -- a shop decoration or a Gold trophy
 	local model = Instance.new("Model")
 	model.Name = "Decor_" .. id
 	local w, d = def.size[1] * Decor.tile, def.size[2] * Decor.tile

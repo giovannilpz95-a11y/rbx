@@ -1,6 +1,8 @@
 --!strict
 -- Decorations (Design/07 Town Building): buy one from the Town panel and place it in front
 -- of you, turn it, or sell it back for 50%. Placing is instant and gives a little XP once.
+-- Gold Town Record trophies place the same way from storage (data.trophies), for free, and
+-- "selling" one puts it back in storage.
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Decor = require(Shared.Config.Decor)
@@ -31,7 +33,7 @@ local function fits(player: Player, data: { [string]: any }, p: DecorRules.Place
 end
 
 function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (boolean, string?)
-	if not NetService.check.id(id) or Decor.items[id] == nil then
+	if not NetService.check.id(id) or DecorRules.def(id) == nil then
 		return false
 	end
 	if typeof(x) ~= "number" or typeof(z) ~= "number" or x ~= x or z ~= z then
@@ -43,8 +45,12 @@ function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (b
 	if not NetService.check.int(r, 0, 3) then
 		return false
 	end
-	local def = Decor.items[id]
+	local def = DecorRules.def(id)
 	local data = DataService.get(player) :: { [string]: any }
+	local trophy = def.trophy == true
+	if trophy and (data.trophies[id] or 0) < 1 then
+		return false, "Win this record's Gold medal to get its trophy"
+	end
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
 	end
@@ -58,15 +64,19 @@ function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (b
 	if not ok then
 		return false, reason
 	end
+	if trophy then
+		data.trophies[id] -= 1
 	-- One prepaid at the Seed Cart is placed for free
-	if
+	elseif
 		not SeedCartRules.useCoupon(data, id)
 		and not EconomyService.spend(player, "Coins", def.coinCost, "decor_" .. id)
 	then
 		return false, string.format("The %s costs %d Coins", def.displayName, def.coinCost)
 	end
 	table.insert(data.decor, p)
-	EconomyService.add(player, "XP", def.xp, "decor_" .. id)
+	if def.xp > 0 then
+		EconomyService.add(player, "XP", def.xp, "decor_" .. id)
+	end
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	return true
@@ -97,7 +107,11 @@ function DecorService.sell(player: Player, index: any): (boolean, string?)
 		return false
 	end
 	local p = table.remove(data.decor, index)
-	EconomyService.add(player, "Coins", DecorRules.refund(p.id), "decor_sell")
+	if DecorRules.isTrophy(p.id) then
+		data.trophies[p.id] = (data.trophies[p.id] or 0) + 1 -- back to storage, never sold
+	else
+		EconomyService.add(player, "Coins", DecorRules.refund(p.id), "decor_sell")
+	end
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	return true

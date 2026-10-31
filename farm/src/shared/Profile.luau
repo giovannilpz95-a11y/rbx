@@ -160,6 +160,7 @@ function Profile.template(): { [string]: any }
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
+		trophies = {}, -- Gold Town Record trophy id -> copies in storage, not placed (Config/Trophies)
 		social = { -- visiting, Helping Hands and boosts (shared/Social)
 			privacy = Social.defaultPrivacy, -- who may visit: Open / Friends / Closed
 			helpers = Social.defaultHelpers, -- who may help: Nobody / Friends / Anyone
