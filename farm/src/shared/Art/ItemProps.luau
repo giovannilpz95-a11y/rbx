@@ -192,6 +192,29 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.cyl("Icing", 0.12, 1.35, at(0, 0.53, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerPink, QUIET)
 		b.cyl("Hole", 0.14, 0.45, at(0, 0.56, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cocoa, QUIET)
 	end,
+	Glue = function(b)
+		-- A squeeze bottle of white glue with an orange nozzle cap
+		b.post("Bottle", 1.2, 0.8, at(0, 0.6, 0), Palette.cream, QUIET)
+		b.post("Label", 0.4, 0.84, at(0, 0.6, 0), Palette.roofMustard, QUIET)
+		b.wedge("Nozzle", Vector3.new(0.4, 0.5, 0.4), at(0, 1.45, 0), Palette.carrot, QUIET)
+	end,
+	Ball = function(b)
+		-- A striped beach ball
+		b.ball("Ball", 1.3, at(0, 0.65, 0), Palette.roofRed, QUIET)
+		b.cyl("Stripe", 0.35, 1.34, at(0, 0.65, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+	end,
+	HoneyGingerbread = function(b)
+		-- A gingerbread round with white icing and a drop of honey on top
+		b.cyl("Biscuit", 0.3, 1.4, at(0, 0.15, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.bread, QUIET)
+		b.cyl("Icing", 0.08, 1.1, at(0, 0.33, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Honey", 0.4, at(0, 0.45, 0), Palette.roofMustard, QUIET)
+	end,
+	ScrubBrush = function(b)
+		-- A wooden brush block with cream bristles and a loop handle
+		b.block("Back", Vector3.new(1.4, 0.35, 0.7), at(0, 0.55, 0), Palette.wood, QUIET)
+		b.block("Bristles", Vector3.new(1.3, 0.35, 0.6), at(0, 0.2, 0), Palette.cream, QUIET)
+		b.block("Handle", Vector3.new(0.8, 0.2, 0.2), at(0, 0.85, 0), Palette.woodDark, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)
