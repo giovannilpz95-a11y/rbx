@@ -190,6 +190,7 @@ local function missingButton(
 	end, props)
 	return button, "Missing: " .. Missing.describe(lines)
 end
+Panels.missingButton = missingButton -- for registered panels (the Blimp Mast's crates)
 
 -- A small red line under a row's text, naming what's missing
 local function missingLine(parent: Instance, text: string, y: number, rightInset: number)
@@ -204,6 +205,18 @@ local function missingLine(parent: Instance, text: string, y: number, rightInset
 end
 
 -- Every key of a config table, in its `order`.
+-- Gold Town Record trophies in storage (state.trophies: id -> copies), by name
+local function storedTrophies(state: { [string]: any }): { string }
+	local ids = {}
+	for id, count in state.trophies or {} do
+		if type(count) == "number" and count > 0 and DecorRules.def(id) then
+			table.insert(ids, id)
+		end
+	end
+	table.sort(ids)
+	return ids
+end
+
 local function sortedKeys(defs: { [string]: { order: number } }): { string }
 	local ids = {}
 	for id in defs do
@@ -1487,6 +1500,28 @@ local function renderBuildings(state: { [string]: any })
 		end
 	elseif tab == "Decor" then
 		local coupons = state.decorCoupons or {}
+		-- Gold Town Record trophies in storage, placed for free (Config/Trophies)
+		for n, id in storedTrophies(state) do
+			local count = state.trophies[id]
+			local def = DecorRules.def(id)
+			do
+				local room, full = DecorRules.hasRoom(state, id)
+				local card = buildCard(
+					cards,
+					-100 + n,
+					{ kind = "Decor", id = id },
+					def.displayName,
+					string.format("🏆 Gold trophy x%d", count),
+					if not room then full :: string else "Free to place, 1 x 1 tile",
+					if room then nil else danger,
+					nil
+				)
+				cardButton(card, "Place free", room, function()
+					Panels.close()
+					DecorPlacer.start(id)
+				end)
+			end
+		end
 		for i, id in sortedKeys(Decor.items) do
 			local def = Decor.items[id]
 			local unlocked = state.level >= def.unlockLevel
@@ -1908,6 +1943,21 @@ local function renderTown(state: { [string]: any })
 	end
 
 	heading("Decorations (placed in front of you)")
+	for _, id in storedTrophies(state) do
+		local count = state.trophies[id]
+		local def = DecorRules.def(id)
+		do
+			local room, full = DecorRules.hasRoom(state, id)
+			local card = line(
+				string.format("🏆 %s   x%d", def.displayName, count),
+				if room then "Gold trophy, free to place" else full :: string
+			)
+			rightButton(card, "Free", room, function()
+				Panels.close()
+				DecorPlacer.start(id)
+			end)
+		end
+	end
 	for _, id in sortedKeys(Decor.items) do
 		local def = Decor.items[id]
 		if def.unlockLevel > state.level + 2 then
@@ -1944,12 +1994,25 @@ local function renderDecor(state: { [string]: any }, index: number)
 		Panels.close()
 		return
 	end
-	local def = Decor.items[placed.id]
+	local def = DecorRules.def(placed.id)
 	titleLabel.Text = def.displayName
 	local line = row(42, 1)
 	Ui.button("Turn", function()
 		Remotes.fire("Decor_Rotate", index)
 	end, { Size = UDim2.fromOffset(100, 30), Parent = line })
+	-- A trophy goes back into storage (Build menu, Decor tab) instead of being sold
+	if def.trophy then
+		Ui.button("Put away", function()
+			Remotes.fire("Decor_Sell", index)
+			Panels.close()
+		end, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromOffset(140, 30),
+			Parent = line,
+		})
+		return
+	end
 	-- Two taps: the first arms it ("Sure?"), the second sells
 	local refund = DecorRules.refund(placed.id)
 	confirmButton(
@@ -2237,6 +2300,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("+1 level (opens the content bank past the cap)", "Debug_LevelUp", 380, 10)
 	devButton("Reach the next Town Record medals", "Debug_Records", 320, 11)
 	devButton("+Bars, Barn room, ore, Pickaxes, open Quarry, Population 1,200", "Debug_Quarry", 380, 12)
+	devButton("Airship Freight: mast repaired, Cargo Blimp docked now", "Debug_Blimp", 380, 13)
 end
 
 ---------------------------------------------------------------------------------------------

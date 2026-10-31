@@ -210,6 +210,19 @@ local function act(part: BasePart)
 		Panels.open("Quarry")
 	elseif kind == "Guild" then
 		Panels.open("Guild")
+	elseif kind == "Blimp" then
+		Panels.open("Blimp")
+	elseif kind == "BlimpCrate" then
+		-- Load it straight from the Barn when there's enough; otherwise show the panel
+		local row, slot = part:GetAttribute("Row"), part:GetAttribute("Slot")
+		local load = ClientStore.state and ClientStore.state.blimp and ClientStore.state.blimp.load
+		local cells = load and load.rows[row]
+		local crate = cells and cells[slot]
+		if crate and crate.filledBy == nil and ClientStore.itemCount(crate.item) >= crate.qty then
+			Remotes.fire("Blimp_Fill", row, slot)
+		else
+			Panels.open("Blimp")
+		end
 	end
 end
 

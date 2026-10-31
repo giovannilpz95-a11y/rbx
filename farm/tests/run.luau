@@ -10,11 +10,17 @@ local Animals = require("../src/shared/Config/Animals")
 local Away = require("../src/shared/Away")
 local Balance = require("../src/shared/Config/Balance")
 local Barn = require("../src/shared/Config/Barn")
+local Blimp = require("../src/shared/Blimp")
+local BlimpConfig = require("../src/shared/Config/Blimp")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
 local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
+local Badges = require("../src/shared/Badges")
+local BadgesConfig = require("../src/shared/Config/Badges")
+local RecordsConfig = require("../src/shared/Config/Records")
+local Trophies = require("../src/shared/Config/Trophies")
 local Drops = require("../src/shared/Drops")
 local Products = require("../src/shared/Config/Products")
 local Shop = require("../src/shared/Shop")
@@ -42,6 +48,7 @@ local Settings = require("../src/shared/Settings")
 local Social = require("../src/shared/Config/Social")
 local SocialRules = require("../src/shared/Social")
 local Speedup = require("../src/shared/Speedup")
+local Tools = require("../src/shared/Config/Tools")
 local Timer = require("../src/shared/Timer")
 local Town = require("../src/shared/Config/Town")
 local TownRules = require("../src/shared/TownRules")
@@ -627,6 +634,143 @@ test("the Tinker's Guild: Township's Academy numbers and upgrades", function()
 	eq(Guild.level(Guild.levels(data, "FeedMill2")), 1, "copies upgrade on their own")
 	local canBuild = Guild.canBuild(Profile.migrate(nil) :: any, 100)
 	ok(not canBuild, "a new farm can't build the Guild")
+end)
+
+test("Airship Freight: Township's airport numbers and crate list", function()
+	eq(BlimpConfig.unlockLevel, 17, "mast at level 17")
+	eq(BlimpConfig.repairCoins, 1500, "1,500 Coins")
+	eq(BlimpConfig.repairSeconds, 24 * 3600, "24 h")
+	eq(BlimpConfig.repairXp, 66, "66 XP")
+	eq(BlimpConfig.loadSeconds, 15 * 3600, "15 h to load")
+	eq(BlimpConfig.gapSeconds, 5 * 3600, "5 h to the next")
+	-- Every crate good is a real, sellable, non-feed item; every sellable crop, animal good
+	-- and factory good is on the list except the Bars and Dough
+	local skip = { CopperBar = true, SilverBar = true, GoldBar = true, PlatinumBar = true, Dough = true }
+	for id, range in BlimpConfig.crates do
+		local def = Items[id]
+		ok(def ~= nil and def.sellPrice > 0 and not def.isFeed, id .. " is a sellable good")
+		ok(range[1] >= 1 and range[2] >= range[1], id .. " range")
+	end
+	for id, def in Items do
+		if def.sellPrice > 0 and not def.isFeed and def.kind ~= "Material" and not skip[id] then
+			ok(BlimpConfig.crates[id] ~= nil, id .. " can go on a blimp")
+		end
+	end
+	for _, group in BlimpConfig.chest do
+		for _, entry in group do
+			ok(
+				Items[entry.item] ~= nil or Tools.tools[entry.item] ~= nil or entry.item == QuarryConfig.pickaxe,
+				entry.item .. " exists"
+			)
+		end
+	end
+	local low, high = Blimp.qtyRange("Wheat", 17)
+	ok(low == 18 and high < 99, "Wheat starts low")
+	low, high = Blimp.qtyRange("Wheat", 60)
+	ok(low == 18 and high == 99, "the whole Wheat range by 60")
+end)
+
+test("Airship Freight: repair, dock, load, send, expire", function()
+	local data = Profile.migrate(nil) :: any
+	data.level = 16
+	local can, why = Blimp.canRepair(data, 0)
+	ok(not can and why ~= nil, "not before level 17")
+	data.level = 25
+	for _, id in { "Bakery", "Dairy", "SugarMill", "FeedMill" } do
+		data.factories[id].built = true
+	end
+	data.pens.CowBarn.built = true
+	ok(not Blimp.canRepair(data, 0), "not before the West Meadow is cleared")
+	data.land = { { readyAt = 0 } }
+	ok(Blimp.canRepair(data, 0), "can repair at 25")
+	local H = 3600
+	Blimp.repair(data, 1000, 12345)
+	ok(not Blimp.canRepair(data, 0), "only once")
+	local load = data.blimp.load
+	eq(#load.rows, 3, "3 rows")
+	local seen = {}
+	for _, row in load.rows do
+		ok(#row >= 2 and #row <= 3, "2-3 crates a row")
+		for _, crate in row do
+			ok(BlimpConfig.crates[crate.item] ~= nil and crate.qty >= 1, "a crate good")
+			ok(not seen[crate.item], crate.item .. " once per load")
+			seen[crate.item] = true
+		end
+	end
+	eq(#load.chest, 3, "chest: a Bar, a tool, a material")
+	-- Same seed, same load
+	local again = Profile.migrate(nil) :: any
+	again.level, again.factories, again.pens = data.level, data.factories, data.pens
+	Blimp.repair(again, 1000, 12345)
+	eq(again.blimp.load.rows[2][1].item, load.rows[2][1].item, "loads are fixed by the seed")
+
+	eq(Blimp.tick(data, 1000 + 23 * H), nil, "nothing during the repair")
+	eq(Blimp.tick(data, 1000 + 24 * H), "docked", "docks when the repair ends")
+	eq(data.blimp.leavesAt, 1000 + 39 * H, "15 h window")
+	ok(Blimp.canFill(data, 4, 1, 1000 + 24 * H) == nil, "no row 4")
+	ok(Blimp.canFill(data, 1, 1.5, 1000 + 24 * H) == nil, "whole numbers only")
+	-- Flags: one per row, toggled
+	ok(Blimp.flag(data, 1, 1, 1000 + 24 * H), "flag")
+	ok(Blimp.flag(data, 1, 2, 1000 + 24 * H), "move the flag")
+	ok(not load.rows[1][1].flagged and load.rows[1][2].flagged, "one flag a row")
+	Blimp.flag(data, 1, 2, 1000 + 24 * H)
+	ok(not load.rows[1][2].flagged, "flag off")
+	-- Fill row 1 only and send: row 1 pays, no chest
+	local now = 1000 + 25 * H
+	for slot in load.rows[1] do
+		local crate = Blimp.canFill(data, 1, slot, now) :: any
+		ok(crate ~= nil, "row 1 crate open")
+		local coins, xp, miles = Blimp.crateRewards(crate)
+		ok(coins > 0 and xp > 0 and miles >= 1 and miles <= 3, "crate pays")
+		Blimp.fill(crate, 42)
+	end
+	local _, why2 = Blimp.canFill(data, 1, 1, now)
+	eq(why2, "That crate is already loaded", "no double loading")
+	local rowCoins, rowMiles = Blimp.rowRewards(load.rows[1], 1)
+	local payout = Blimp.send(data, now) :: any
+	eq(payout.coins, rowCoins, "row 1 bonus")
+	eq(payout.miles, rowMiles, "row 1 miles")
+	eq(payout.chest, nil, "no chest for a part load")
+	eq(data.blimp.skyMiles, rowMiles, "Sky Miles kept")
+	eq(data.blimp.arrivesAt, now + 5 * H, "next in 5 h")
+	ok(data.blimp.load ~= load, "Next Flight drawn")
+	-- Skipping the wait costs Gems scaled by time left, free in the last 30 s
+	eq(Blimp.skipCost(data, now), 9, "9 Gems with 5 h to go")
+	eq(Blimp.skipCost(data, now + 5 * H - 20), 0, "free at the end")
+	-- Offline past the arrival: docks only on the next tick, with a full window
+	eq(Blimp.tick(data, now + 9 * H), "docked", "docks when the player is back")
+	eq(data.blimp.leavesAt, now + 24 * H, "window starts on arrival")
+	-- Fill everything and send: every row and the chest
+	local full = data.blimp.load
+	for _, row in full.rows do
+		for _, crate in row do
+			Blimp.fill(crate, 42)
+		end
+	end
+	local all = Blimp.send(data, now + 10 * H) :: any
+	eq(#all.rows, 3, "every row pays")
+	eq(all.chest, full.chest, "Full Hold chest")
+	eq(data.blimp.fullHolds, 1, "one full hold")
+	-- Running out of time: leaves with nothing, next one 5 h after it left
+	Blimp.tick(data, now + 15 * H + 1)
+	local leaves = data.blimp.leavesAt
+	eq(Blimp.tick(data, leaves), "expired", "leaves when time runs out")
+	eq(data.blimp.arrivesAt, leaves + 5 * H, "gap from when it left")
+	eq(data.blimp.flights, 3, "three flights")
+	-- The Studio time scale shortens every timer
+	local quick = Profile.migrate(nil) :: any
+	quick.level = 17
+	Blimp.repair(quick, 0, 7, 0.05)
+	eq(quick.blimp.readyAt, math.floor(24 * H * 0.05 + 0.5), "scaled repair")
+	Blimp.tick(quick, quick.blimp.readyAt, 0.05)
+	eq(quick.blimp.leavesAt, quick.blimp.readyAt + math.floor(15 * H * 0.05 + 0.5), "scaled window")
+	-- Finishing the repair early brings the first blimp in too
+	local fresh = Profile.migrate(nil) :: any
+	fresh.level = 17
+	Blimp.repair(fresh, 0, 7)
+	ok(Blimp.finishRepair(fresh, 100), "finish early")
+	eq(Blimp.tick(fresh, 100), "docked", "first blimp docks")
+	ok(#fresh.blimp.load.rows[1] >= 2, "a load from crops alone")
 end)
 
 test("level rewards", function()
@@ -1498,6 +1642,35 @@ test("records: the public card others see has stars and the card's six numbers",
 		n += 1
 	end
 	eq(n, 6, "six numbers")
+end)
+
+test("trophies: Gold Town Record trophies place like decorations, free and never sold", function()
+	local def = DecorRules.def("TrophyOrders")
+	ok(def ~= nil and def.trophy == true, "trophy def")
+	eq(def.coinCost, 0, "free")
+	eq(DecorRules.refund("TrophyOrders"), 0, "no refund")
+	ok(DecorRules.isTrophy("TrophyHelping") and not DecorRules.isTrophy("Bench"), "isTrophy")
+	eq(DecorRules.def("Nope"), nil, "junk id")
+	local w, d = DecorRules.footprint("TrophyHarvest", 1)
+	eq(w * d, 1, "1 x 1")
+	local data = Profile.template()
+	ok(type(data.trophies) == "table", "trophies in the save")
+	local fine = DecorRules.canPlace(data, { id = "TrophyGoods", x = 2, z = 2, r = 0 }, 0)
+	ok(fine, "a trophy fits on the start area")
+	for _, trophy in Trophies.byRecord do
+		ok(RecordsConfig ~= nil and Records.def(trophy.record) ~= nil, trophy.id .. " matches a record")
+	end
+end)
+
+test("badges: medals map to badge ids, and a save's earned badges are listed", function()
+	eq(Badges.forMedal("Orders", 3), nil, "no ids set yet")
+	eq(Badges.forMedal("Nope", 1), nil, "junk record")
+	for id in RecordsConfig.list do
+		ok(BadgesConfig.records[RecordsConfig.list[id].id] ~= nil, "a badge slot per record")
+	end
+	local data = Profile.template()
+	data.records.claimed.Orders = 3
+	eq(#Badges.earned(data), 0, "nothing earned while ids are 0")
 end)
 
 test("records: the Studio fill reaches each counted record's next medal", function()

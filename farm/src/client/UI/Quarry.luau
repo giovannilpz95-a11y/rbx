@@ -19,7 +19,7 @@ local Ui = require(script.Parent.Ui)
 local QuarryUi = {}
 
 local ROWS_SHOWN = 9
-local CELL_HEIGHT = 30
+local CELL_HEIGHT = 28
 local lastTap = 0
 local top: number? = nil -- the first row shown; nil follows the digging
 
@@ -91,7 +91,7 @@ local function shaft(state: { [string]: any }, body: Instance, order: number)
 	local grid = Ui.new("Frame", {
 		Size = UDim2.new(1, -8, 0, ROWS_SHOWN * CELL_HEIGHT),
 		BackgroundTransparency = 1,
-		LayoutOrder = order,
+		LayoutOrder = order + 1,
 		Parent = body,
 	})
 	for i = 0, ROWS_SHOWN - 1 do
@@ -145,11 +145,12 @@ local function shaft(state: { [string]: any }, body: Instance, order: number)
 			end
 		end
 	end
-	-- Look up and down the shaft; "Follow" goes back to the digging
+	-- Look up and down the shaft; "Follow" goes back to the digging. Above the grid, so the
+	-- row is on screen without scrolling at any window size (Studio check).
 	local nav = Ui.new("Frame", {
 		Size = UDim2.new(1, -8, 0, 34),
 		BackgroundTransparency = 1,
-		LayoutOrder = order + 1,
+		LayoutOrder = order,
 		Parent = body,
 	})
 	local function navButton(text: string, x: number, fire: () -> ())

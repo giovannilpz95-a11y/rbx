@@ -687,6 +687,239 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			b.post("Petals", 0.05, 0.9, spot, Palette.flowerPink:Lerp(Palette.flowerWhite, 0.4), QUIET)
 		end
 	end,
+	-- Level 33-36 set: Township's level and price slots, our own pieces
+	Birdbath = function(b)
+		b.post("Base", 0.4, 1.6, at(0, 0.2, 0), Palette.stone, SOLID)
+		b.post("Pedestal", 2.2, 0.6, at(0, 1.5, 0), Palette.stoneLight)
+		b.post("Bowl", 0.5, 2.6, at(0, 2.85, 0), Palette.stoneLight)
+		b.post("Water", 0.1, 2.2, at(0, 3.1, 0), Palette.water, QUIET)
+		for _, bird in { { -0.8, -0.3, Palette.sky }, { 0.85, 0.35, Palette.flowerYellow } } do
+			b.ball("Bird", 0.55, at(bird[1], 3.4, bird[2]), bird[3], QUIET)
+			b.ball("BirdHead", 0.38, at(bird[1] * 0.75, 3.75, bird[2] - 0.1), bird[3], QUIET)
+		end
+		b.ball("Bush", 1.2, at(-1.3, 0.5, 1.2), Palette.leaf, QUIET)
+		b.ball("Bush", 1, at(1.3, 0.45, -1.2), Palette.leafLight, QUIET)
+	end,
+	GardenWindmill = function(b)
+		b.post("Base", 0.5, 2.8, at(0, 0.25, 0), Palette.stone, SOLID)
+		b.post("Tower", 4, 2.2, at(0, 2.5, 0), Palette.cream, SOLID)
+		b.ball("Cap", 2.4, at(0, 4.6, 0), Palette.roofRed)
+		b.block("Door", Vector3.new(0.8, 1.3, 0.2), at(0, 1.15, -1.05), Palette.woodDark, QUIET)
+		b.cyl("Hub", 0.6, 0.6, CFrame.new(0, 4.3, -1.3) * Kit.yaw(90), Palette.woodDark, QUIET)
+		for i = 0, 3 do
+			b.block(
+				"Sail",
+				Vector3.new(0.6, 1.9, 0.1),
+				CFrame.new(0, 4.3, -1.55) * CFrame.Angles(0, 0, math.rad(i * 90 + 20)) * CFrame.new(0, 1.1, 0),
+				Palette.woodLight,
+				QUIET
+			)
+		end
+	end,
+	KoiPond = function(b)
+		b.block("Rim", Vector3.new(3.8, 0.5, 7.6), at(0, 0.25, 0), Palette.stoneLight)
+		b.block("Water", Vector3.new(3.1, 0.2, 6.9), at(0, 0.45, 0), Palette.water, QUIET)
+		for i, koi in { { -0.6, -2, 30 }, { 0.5, 0.3, -50 }, { -0.3, 2.2, 80 } } do
+			b.block(
+				"Koi",
+				Vector3.new(0.35, 0.12, 0.9),
+				CFrame.new(koi[1], 0.58, koi[2]) * Kit.yaw(koi[3]),
+				if i == 2 then Palette.flowerWhite else Palette.carrot,
+				QUIET
+			)
+		end
+		for _, lily in { at(0.9, 0.58, -2.8), at(-0.9, 0.58, 1) } do
+			b.post("Lily", 0.06, 0.8, lily, Palette.leafLight, QUIET)
+		end
+		b.ball("Bloom", 0.35, at(0.9, 0.7, -2.8), Palette.flowerPink, QUIET)
+		b.ball("Rock", 1, at(1.6, 0.6, 3.3), Palette.stone, QUIET)
+		b.ball("Rock", 0.7, at(-1.6, 0.5, -3.4), Palette.stoneDark, QUIET)
+		b.post("Lantern", 1.5, 0.35, at(-1.55, 1.25, 3.3), Palette.stone, QUIET)
+		b.block("LanternCap", Vector3.new(0.8, 0.25, 0.8), at(-1.55, 2.1, 3.3), Palette.stoneDark, QUIET)
+	end,
+	BeehiveStand = function(b)
+		b.block("Bench", Vector3.new(3.4, 0.3, 1.5), at(0, 1.1, 0.4), Palette.wood, SOLID)
+		for _, x in { -1.4, 1.4 } do
+			b.block("Leg", Vector3.new(0.3, 1, 1.2), at(x, 0.5, 0.4), Palette.woodDark, QUIET)
+		end
+		for _, x in { -0.8, 0.8 } do
+			b.block("Hive", Vector3.new(1.3, 1.5, 1.2), at(x, 2, 0.4), Palette.flowerWhite)
+			b.block("HiveLid", Vector3.new(1.5, 0.3, 1.4), at(x, 2.9, 0.4), Palette.roofMustard, QUIET)
+		end
+		b.ball("Bee", 0.3, at(-0.2, 3.5, -0.4), Palette.flowerYellow, QUIET)
+		b.ball("Bee", 0.3, at(1.3, 3.1, -0.6), Palette.flowerYellow, QUIET)
+		b.post("Stem", 2.6, 0.15, at(-1.5, 1.3, -1.3), Palette.leaf, QUIET)
+		b.post(
+			"Sunflower",
+			0.2,
+			0.9,
+			CFrame.new(-1.5, 2.7, -1.35) * CFrame.Angles(math.rad(80), 0, 0),
+			Palette.flowerYellow,
+			QUIET
+		)
+	end,
+	LavenderRow = function(b)
+		b.block("Planter", Vector3.new(3.6, 0.8, 1.6), at(0, 0.4, 0), Palette.wood, SOLID)
+		b.block("Soil", Vector3.new(3.3, 0.1, 1.3), at(0, 0.82, 0), Palette.soil, QUIET)
+		for i, x in { -1.3, -0.65, 0, 0.65, 1.3 } do
+			local h = 1.1 + (i % 2) * 0.3
+			b.block(
+				"Lavender",
+				Vector3.new(0.3, h, 0.3),
+				at(x, 0.85 + h / 2 + 0.3, (i % 2) * 0.2 - 0.1),
+				Palette.plum:Lerp(Palette.flowerPink, 0.25),
+				QUIET
+			)
+		end
+		for _, x in { -1, 0.3, 1.1 } do
+			b.ball("Leaves", 0.8, at(x, 1.05, 0.2), Palette.leafLight:Lerp(Palette.stoneLight, 0.3), QUIET)
+		end
+	end,
+	Sundial = function(b)
+		b.post("Step", 0.3, 3.4, at(0, 0.15, 0), Palette.stone, SOLID)
+		b.post("Plinth", 2, 1.2, at(0, 1.3, 0), Palette.stoneLight, SOLID)
+		b.post("Dial", 0.2, 2.4, at(0, 2.4, 0), Palette.cream)
+		b.wedge("Gnomon", Vector3.new(0.12, 0.9, 1), at(0, 2.95, 0), Palette.coins:Lerp(Palette.cocoa, 0.3), QUIET)
+		for i = 0, 3 do
+			local a = math.rad(i * 90)
+			b.block(
+				"Mark",
+				Vector3.new(0.15, 0.06, 0.4),
+				CFrame.new(math.cos(a) * 0.95, 2.52, math.sin(a) * 0.95) * Kit.yaw(-i * 90 + 90),
+				Palette.woodDark,
+				QUIET
+			)
+		end
+		b.ball("Bush", 1, at(-1.4, 0.55, 1.3), Palette.leaf, QUIET)
+		b.ball("Bush", 0.9, at(1.4, 0.5, 1.3), Palette.leafLight, QUIET)
+	end,
+	SwanFountain = function(b)
+		b.post("Basin", 0.9, 3.8, at(0, 0.45, 0), Palette.stoneLight, SOLID)
+		b.post("Water", 0.12, 3.3, at(0, 0.92, 0), Palette.water, QUIET)
+		local swan = Palette.flowerWhite
+		b.ball("Body", 1.5, at(0, 1.5, 0.3), swan)
+		for _, sx in { -1, 1 } do
+			b.wedge(
+				"Wing",
+				Vector3.new(0.4, 1.3, 1.7),
+				CFrame.new(sx * 0.62, 2, 0.55) * CFrame.Angles(0, 0, math.rad(-sx * 20)),
+				swan,
+				QUIET
+			)
+		end
+		b.block(
+			"Neck",
+			Vector3.new(0.3, 1.5, 0.3),
+			CFrame.new(0, 2.4, -0.25) * CFrame.Angles(math.rad(-12), 0, 0),
+			swan,
+			QUIET
+		)
+		b.ball("Head", 0.55, at(0, 3.2, -0.45), swan, QUIET)
+		b.block("Beak", Vector3.new(0.18, 0.15, 0.4), at(0, 3.15, -0.85), Palette.carrot, QUIET)
+	end,
+	HedgeMaze = function(b)
+		b.block("Lawn", Vector3.new(7.8, 0.2, 7.8), at(0, 0.1, 0), Palette.grassWild, QUIET)
+		local hedge = Palette.treeTopDark
+		local walls = {
+			{ 7.6, 0.6, 0, 3.5 },
+			{ 0.6, 7.6, -3.5, 0 },
+			{ 0.6, 7.6, 3.5, 0 },
+			{ 2.9, 0.6, -2.35, -3.5 },
+			{ 2.9, 0.6, 2.35, -3.5 },
+			{ 4.4, 0.6, 0.6, 1.5 },
+			{ 0.6, 3.4, -1.6, -0.1 },
+			{ 3.2, 0.6, 1.4, -1.6 },
+		}
+		for i, w in walls do
+			b.block(
+				"Hedge",
+				Vector3.new(w[1], 1.6, w[2]),
+				at(w[3], 0.95, w[4]),
+				if i % 2 == 0 then hedge else Palette.treeTop,
+				if i <= 3 then SOLID else nil
+			)
+		end
+		b.post("Pedestal", 1, 0.8, at(0.6, 0.7, 0), Palette.stoneLight, QUIET)
+		b.ball("Topiary", 1.2, at(0.6, 1.7, 0), Palette.leafLight, QUIET)
+	end,
+	ScarecrowPatch = function(b)
+		b.block("Soil", Vector3.new(7.6, 0.3, 7.6), at(0, 0.15, 0), Palette.soil, QUIET)
+		b.post("Pole", 4.4, 0.3, at(0, 2.2, 0.5), Palette.woodDark, SOLID)
+		b.block("Arms", Vector3.new(3.2, 0.25, 0.25), at(0, 3.3, 0.5), Palette.woodDark, QUIET)
+		b.block("Shirt", Vector3.new(1.3, 1.5, 0.6), at(0, 3, 0.5), Palette.roofTeal)
+		b.ball("Head", 0.9, at(0, 4.2, 0.5), Palette.sack)
+		b.post("Brim", 0.1, 1.5, at(0, 4.55, 0.5), Palette.straw, QUIET)
+		b.post("Hat", 0.6, 0.8, at(0, 4.85, 0.5), Palette.straw, QUIET)
+		b.ball("Pumpkin", 1.2, at(-2.4, 0.8, -2.3), Palette.carrot)
+		b.ball("Pumpkin", 0.9, at(-1.3, 0.7, -2.8), Palette.carrot:Lerp(Palette.flowerYellow, 0.3), QUIET)
+		b.block("HayBale", Vector3.new(1.8, 1.1, 1.2), at(2.4, 0.85, -2.2), Palette.straw, SOLID)
+		b.ball("Crow", 0.5, at(1.4, 3.6, 0.5), Palette.stoneDark, QUIET)
+	end,
+	Lighthouse = function(b)
+		b.ball("Rocks", 3.6, at(0, -0.6, 0), Palette.stone, SOLID)
+		b.post("Tower", 4.6, 1.6, at(0, 3.3, 0), Palette.flowerWhite, SOLID)
+		for _, y in { 2.2, 4.2 } do
+			b.post("Stripe", 0.7, 1.7, at(0, y, 0), Palette.roofRed, QUIET)
+		end
+		b.post("Gallery", 0.3, 2.2, at(0, 5.75, 0), Palette.stoneDark, QUIET)
+		b.post("Lamp", 0.9, 1.1, at(0, 6.35, 0), Palette.lantern, { material = Enum.Material.Neon })
+		b.ball("Cap", 1.4, at(0, 6.9, 0), Palette.roofRed, QUIET)
+		b.block("Door", Vector3.new(0.6, 1, 0.2), at(0, 1.6, -0.75), Palette.woodDark, QUIET)
+	end,
+	HotAirBalloon = function(b)
+		b.post("Pad", 0.15, 3.6, at(0, 0.08, 0), Palette.grassLight, QUIET)
+		b.block("Basket", Vector3.new(1.4, 1, 1.4), at(0, 0.65, 0), Palette.wood, SOLID)
+		local r, cy = 1.9, 5.4
+		b.ball("Envelope", r * 2, at(0, cy, 0), Palette.roofRed)
+		for _, dy in { -0.8, 0.8 } do
+			local d = 2 * math.sqrt(r * r - dy * dy) + 0.06
+			b.post("Band", 0.45, d, at(0, cy + dy, 0), Palette.flowerYellow, QUIET)
+		end
+		b.post("Skirt", 0.6, 1.2, at(0, cy - r + 0.1, 0), Palette.roofRed:Lerp(Palette.woodDark, 0.3), QUIET)
+		for _, c in { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } } do
+			local foot = Vector3.new(c[1] * 0.6, 1.15, c[2] * 0.6)
+			local top = Vector3.new(c[1] * 0.5, cy - r + 0.1, c[2] * 0.5)
+			b.block(
+				"Rope",
+				Vector3.new(0.07, (top - foot).Magnitude, 0.07),
+				CFrame.lookAt((foot + top) / 2, top) * CFrame.Angles(math.rad(90), 0, 0),
+				Palette.woodDark,
+				QUIET
+			)
+		end
+	end,
+	-- The lights are plain bright parts, not Neon, so the whole tree merges into one union
+	-- (six Neon bulbs would stay separate and cost every placed copy six extra parts)
+	FairyLightTree = function(b)
+		b.post("Trunk", 2.4, 0.7, at(0, 1.2, 0), Palette.trunk, SOLID)
+		b.ball("Crown", 3.4, at(0, 3.6, 0), Palette.treeTop)
+		b.ball("Crown", 2.2, at(0.4, 5, 0.2), Palette.treeTopDark)
+		-- bulbs sit on the crown's surface, spiralling up so each one shows
+		for i = 0, 5 do
+			local a = math.rad(i * 60 + 15)
+			local tilt = math.rad(-25 + i * 14)
+			local r = 1.75
+			b.ball(
+				"Light",
+				0.5,
+				at(math.cos(a) * math.cos(tilt) * r, 3.6 + math.sin(tilt) * r, math.sin(a) * math.cos(tilt) * r),
+				if i % 2 == 0 then Palette.lantern else Palette.flowerPink:Lerp(Palette.cream, 0.4),
+				QUIET
+			)
+		end
+	end,
+	Bandstand = function(b)
+		b.post("Platform", 0.8, 7.4, at(0, 0.4, 0), Palette.stoneLight, SOLID)
+		b.block("Steps", Vector3.new(2, 0.4, 1), at(0, 0.2, -3.9), Palette.stone, QUIET)
+		for i = 0, 3 do
+			local a = math.rad(i * 90 + 45)
+			b.post("Pillar", 3.4, 0.4, at(math.cos(a) * 2.9, 2.5, math.sin(a) * 2.9), Palette.cream, QUIET)
+		end
+		b.post("Eave", 0.4, 7.6, at(0, 4.4, 0), Palette.cream, QUIET)
+		Kit.gableRoof(b, "Roof", at(0, 4.6, 0), 7, 7, 2.4, Palette.roofPlum)
+		b.ball("Finial", 0.6, at(0, 7.4, 0), Palette.coins, QUIET)
+		b.post("MusicStand", 1.2, 0.15, at(0.8, 1.4, 0.6), Palette.metal, QUIET)
+	end,
 	-- VIP gold fence (Model List §7, P1 with the VIP pass): gilded pickets with ball finials and
 	-- a little Neon glint on the middle one. Not in Config/Decor until the VIP pass exists.
 	GoldFence = function(b)

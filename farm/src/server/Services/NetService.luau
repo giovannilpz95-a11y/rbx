@@ -106,8 +106,10 @@ local function snapshot(data: { [string]: any })
 		oreShed = data.oreShed,
 		guild = data.guild,
 		buildingLevels = data.buildingLevels,
+		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
+		trophies = data.trophies,
 		quests = data.quests,
 		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)
 		serverNow = Clock.now(),

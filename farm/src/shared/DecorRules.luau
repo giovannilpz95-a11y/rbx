@@ -7,15 +7,41 @@
 
 local Decor = require("./Config/Decor")
 local Land = require("./Config/Land")
+local Trophies = require("./Config/Trophies")
 local TownRules = require("./TownRules")
 
 local DecorRules = {}
 
 export type Placed = { id: string, x: number, z: number, r: number }
 
+-- Gold Town Record trophies (Config/Trophies) place like decorations but are never bought:
+-- they cost nothing, give no XP and go back into storage instead of being sold.
+local trophyDefs: { [string]: any } = {}
+for _, trophy in Trophies.byRecord do
+	trophyDefs[trophy.id] = table.freeze({
+		id = trophy.id,
+		displayName = trophy.displayName,
+		size = trophy.size,
+		category = "Trophy",
+		coinCost = 0,
+		xp = 0,
+		unlockLevel = 0,
+		trophy = true,
+	})
+end
+
+-- A shop decoration's def, or a trophy's in the same shape; nil for anything else
+function DecorRules.def(id: string): any
+	return Decor.items[id] or trophyDefs[id]
+end
+
+function DecorRules.isTrophy(id: string): boolean
+	return trophyDefs[id] ~= nil
+end
+
 -- Footprint in tiles after rotation.
 function DecorRules.footprint(id: string, r: number): (number, number)
-	local size = Decor.items[id].size
+	local size = DecorRules.def(id).size
 	if r % 2 == 1 then
 		return size[2], size[1]
 	end
@@ -82,7 +108,7 @@ end
 
 -- Everything but the physical check against buildings. Returns false and a reason.
 function DecorRules.canPlace(data: { [string]: any }, p: Placed, now: number, skip: number?): (boolean, string?)
-	local def = Decor.items[p.id]
+	local def = DecorRules.def(p.id)
 	if def == nil then
 		return false, nil
 	end
@@ -97,7 +123,7 @@ end
 
 -- Big pieces (2 x 2 tiles and up) have their own, smaller cap
 function DecorRules.isBig(id: string): boolean
-	local size = Decor.items[id].size
+	local size = DecorRules.def(id).size
 	return size[1] * size[2] >= Decor.bigTiles
 end
 
@@ -122,7 +148,7 @@ function DecorRules.hasRoom(data: { [string]: any }, id: string): (boolean, stri
 end
 
 function DecorRules.refund(id: string): number
-	return math.floor(Decor.items[id].coinCost * Decor.sellRefund)
+	return math.floor(DecorRules.def(id).coinCost * Decor.sellRefund)
 end
 
 return DecorRules

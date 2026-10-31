@@ -1046,6 +1046,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
 		total += ArtBuildings.TOOLSHED_PARTS_MAX
 		total += ArtQuarry.PARTS_MAX
+		-- The Blimp Mast with the Cargo Blimp docked and a full load of crates
+		total += ArtBlimp.PARTS_MAX
 		-- The Tinker's Guild, merged like a town building once it's built
 		local guild = Instance.new("Model")
 		total += ArtMerge.count(guild, ArtGuild.build(guild, CFrame.new()))

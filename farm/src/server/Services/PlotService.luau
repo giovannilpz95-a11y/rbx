@@ -15,6 +15,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
+local Blimp = require(Shared.Blimp)
 local Crops = require(Shared.Config.Crops)
 local Factories = require(Shared.Config.Factories)
 local Guild = require(Shared.Guild)
@@ -27,6 +28,7 @@ local Lots = require(Shared.Lots)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local ArtAnimals = require(Shared.Art.Animals)
+local ArtBlimp = require(Shared.Art.Blimp)
 local ArtBuildings = require(Shared.Art.Buildings)
 local ArtCommunity = require(Shared.Art.Community)
 local ArtCrops = require(Shared.Art.Crops)
@@ -144,6 +146,9 @@ local LAYOUT = {
 	quarry = Vector3.new(89, 0, -40),
 	-- The Tinker's Guild, in the third column between the Smelters and the Jam Kitchen
 	guild = Vector3.new(88, 0, 2),
+	-- The Blimp Mast (Features/F04) in the West Meadow, between its fields and its pen row, its
+	-- freight office facing the fields; the docked blimp floats east over the strip
+	blimpMast = Vector3.new(-70, 0, -7),
 	-- Pen row between the fields and the Barn, the Cow Barn nearest the spine
 	pens = {
 		CowBarn = Vector3.new(-12, 0, 6),
@@ -432,6 +437,34 @@ local function buildQuarry(plot: Model, at: (Vector3, number) -> CFrame)
 	quarry.Parent = plot
 end
 
+-- The Blimp Mast and its Cargo Blimp (Art/Blimp); refreshBlimp sets its state and crates
+local function buildBlimpMast(plot: Model, at: (Vector3, number) -> CFrame)
+	local mast = Instance.new("Model")
+	mast.Name = "BlimpMast"
+	local base = at(LAYOUT.blimpMast, 0)
+	mast:SetAttribute("BaseCFrame", base)
+	local parts = ArtBlimp.build(mast, base)
+	parts.body:SetAttribute("Interact", "Blimp")
+	label(parts.body, "Blimp Mast", 8, UDim2.fromOffset(150, 28), 50)
+	local surface = Instance.new("SurfaceGui")
+	surface.Name = "TimerGui"
+	surface.Face = Enum.NormalId.Front
+	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	surface.PixelsPerStud = 30
+	local text = Instance.new("TextLabel")
+	text.Name = "Text"
+	text.Size = UDim2.fromScale(1, 1)
+	text.BackgroundTransparency = 1
+	text.TextScaled = true
+	text.Font = Enum.Font.GothamBold
+	text.TextColor3 = Palette.cocoa
+	text.Text = ""
+	text.Parent = surface
+	surface.Parent = parts.board
+	ArtBlimp.setState(mast, "Broken")
+	mast.Parent = plot
+end
+
 -- A pen: a floor you tap (feed / collect), its fences and shelter (FarmShared.Art.Animals) and
 -- up to six animals, each with the product it shows when ready. `facing` is the pen's
 -- bottom-centre with the gate at local -Z.
@@ -701,6 +734,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 		buildPen(model, id, at)
 	end
 	buildQuarry(model, at)
+	buildBlimpMast(model, at)
 	-- The Tinker's Guild's spot: refreshGuild builds it there (faded until it's built)
 	local guildSpot = Instance.new("Model")
 	guildSpot.Name = "Guild"
@@ -1210,6 +1244,71 @@ local function refreshQuarry(player: Player, model: Model, data: { [string]: any
 	ArtQuarry.setOpen(quarry, open)
 end
 
+-- The Blimp Mast: broken until its repair starts (in a scaffold while it's repaired), then
+-- working, with the Cargo Blimp moored and its crates hanging while it's docked. The board by
+-- the office door counts down to the next arrival or the end of the loading window.
+local function refreshBlimp(player: Player, model: Model, data: { [string]: any }, now: number)
+	local mast = model:FindFirstChild("BlimpMast")
+	if mast == nil or data.blimp == nil then
+		return
+	end
+	local blimp = data.blimp
+	local repairing = blimp.readyAt ~= nil and now < blimp.readyAt
+	local state = if blimp.readyAt == nil or repairing
+		then "Broken"
+		elseif Blimp.isDocked(data) then "Docked"
+		else "Away"
+	local cargo = {}
+	if state == "Docked" and blimp.load then
+		for _, row in blimp.load.rows do
+			local marks = {}
+			for _, crate in row do
+				table.insert(marks, if crate.filledBy then "f" elseif crate.flagged then "h" else "e")
+			end
+			table.insert(cargo, table.concat(marks))
+		end
+	end
+	local key = string.format("%s:%s:%s", state, tostring(repairing), table.concat(cargo, "/"))
+	local cache = factoryVisualState[player]
+	if cache.BlimpMast ~= key then
+		cache.BlimpMast = key
+		setScaffold(mast, repairing, ArtBlimp.WIDTH, ArtBlimp.DEPTH, 12)
+		ArtBlimp.setState(mast, state)
+		local rows = {}
+		if state == "Docked" and blimp.load then
+			for r, row in blimp.load.rows do
+				rows[r] = {}
+				for c, crate in row do
+					rows[r][c] = { filled = crate.filledBy ~= nil, flagged = crate.flagged == true }
+				end
+			end
+		end
+		ArtBlimp.setCargo(mast, rows)
+		local sky = mast:FindFirstChild("Blimp")
+		local hold = sky and sky:FindFirstChild("Cargo")
+		if hold then
+			for _, p in hold:GetDescendants() do
+				if p:IsA("BasePart") and p.Name == "Crate" then
+					p:SetAttribute("Interact", "BlimpCrate")
+					p.CanQuery = true -- Kit leaves non-colliding parts out of taps
+				end
+			end
+		end
+	end
+	local board = mast:FindFirstChild("TimerGui", true)
+	local text = board and board:FindFirstChild("Text") :: TextLabel?
+	if text then
+		text.Text = if blimp.readyAt == nil
+			then "Out of order"
+			elseif repairing then "Repairing\n" .. Timer.format(blimp.readyAt - now)
+			elseif blimp.leavesAt then "Leaves in\n" .. Timer.format(math.max(0, blimp.leavesAt - now))
+			elseif blimp.arrivesAt and now < blimp.arrivesAt then "Next blimp\n" .. Timer.format(
+				blimp.arrivesAt - now
+			)
+			else "Blimp due"
+	end
+end
+
 -- The Tinker's Guild: faded on its spot until it's built (tap it to build), faded in a
 -- scaffold while it goes up, then built for real and merged into one part.
 local function refreshGuild(player: Player, model: Model, data: { [string]: any }, now: number)
@@ -1451,6 +1550,7 @@ function PlotService.refresh(player: Player)
 	end
 	refreshQuarry(player, model, data, now)
 	refreshGuild(player, model, data, now)
+	refreshBlimp(player, model, data, now)
 	refreshTown(player, model, data, now)
 	refreshLand(player, model, data, now)
 	refreshDecor(player, model, data)

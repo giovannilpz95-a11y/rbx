@@ -4,10 +4,11 @@
 -- action goes ahead in the same step. Nothing is charged unless the action succeeds.
 --
 --   Missing_Buy("Recipe", factoryId, recipeId) | ("Order", slotIndex)
---             | ("Community", buildingId) | ("Barn")
+--             | ("Community", buildingId) | ("Barn") | ("Blimp", row, slot)
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local BarnRules = require(Shared.BarnRules)
+local Blimp = require(Shared.Blimp)
 local Factories = require(Shared.Config.Factories)
 local Missing = require(Shared.Missing)
 local Net = require(Shared.Net)
@@ -16,6 +17,7 @@ local Profile = require(Shared.Profile)
 local Recipes = require(Shared.Config.Recipes)
 local Town = require(Shared.Config.Town)
 
+local BlimpService = require(script.Parent.BlimpService)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local FactoryService = require(script.Parent.FactoryService)
@@ -62,6 +64,14 @@ local function resolve(
 		end
 		return Town.community[a].materials, function()
 			return TownService.buildCommunity(player, a)
+		end
+	elseif context == "Blimp" then
+		local crate = Blimp.crate(data, a, b)
+		if crate == nil or crate.filledBy ~= nil then
+			return nil, nil
+		end
+		return { [crate.item] = crate.qty }, function()
+			return BlimpService.fill(player, a, b)
 		end
 	elseif context == "Barn" then
 		return BarnRules.upgradeCost(data.inventory.upgrades + 1),
