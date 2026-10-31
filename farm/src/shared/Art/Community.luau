@@ -914,6 +914,46 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Loop Coaster (content bank, level 36): a sky-blue track climbing to a red loop over a
+-- station shed, with a little train of cars waiting at the platform.
+TYPES.LoopCoaster = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(3.4, 2.4, 2.2),
+		Vector3.new(-s * 0.25, PLINTH + 1.2, z0 - s * 0.12),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local sx, sz = -s * 0.25, z0 - s * 0.12
+	t.block("StationRoof", Vector3.new(3.8, 0.3, 2.6), Vector3.new(sx, PLINTH + 2.55, sz), Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(sx, PLINTH, sz - 1.1), 1.2, 1.8, Palette.roofTeal, Palette.cream)
+	-- The lift hill: a sloped track on a trestle, then the loop
+	t.block(
+		"Track",
+		Vector3.new(0.6, 0.3, s * 0.6),
+		CFrame.new(s * 0.05, PLINTH + 3.2, z0) * CFrame.Angles(math.rad(25), 0, 0),
+		Palette.sky
+	)
+	t.block("Trestle", Vector3.new(0.4, 4, 0.4), Vector3.new(s * 0.05, PLINTH + 2, z0 + s * 0.15), Palette.metal)
+	local loop = Vector3.new(s * 0.28, PLINTH + 4.2, z0)
+	t.cyl("Loop", 0.5, 6, CFrame.new(loop) * Kit.yaw(0), Palette.roofRed)
+	t.cyl("LoopHole", 0.6, 4.8, CFrame.new(loop) * Kit.yaw(0), Palette.grassLight)
+	t.block("LoopLeg", Vector3.new(0.5, 1.4, 0.5), loop - Vector3.new(0, 3.5, 0), Palette.metal)
+	for i = 0, 2 do
+		t.block(
+			"Car",
+			Vector3.new(0.9, 0.6, 0.9),
+			Vector3.new(sx - 1 + i * 1, PLINTH + 0.3, sz - 2),
+			if i % 2 == 0 then Palette.roofMustard else Palette.roofTeal
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(sx + 1.4, PLINTH + 3.2, sz), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Sky Wheel (content bank, level 35): a big wheel on two splayed legs over a ticket booth,
 -- its rim ringed with coloured gondolas.
 TYPES.SkyWheel = function(b, s)
