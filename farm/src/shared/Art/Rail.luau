@@ -352,10 +352,12 @@ function ArtRail.setExpressProgress(station: Model, fraction: number)
 	station:SetAttribute("Progress", fraction)
 end
 
-function ArtRail.track(kind: string, parent: Instance, cf: CFrame): Model
+-- `scale` builds a bigger piece (the Town Express runs on EXPRESS_SCALE track: a scaled piece
+-- is TRACK_LENGTH x scale long, with the gauge to match the scaled train)
+function ArtRail.track(kind: string, parent: Instance, cf: CFrame, scale: number?): Model
 	local model = Kit.model("Track_" .. kind, parent)
 	local builder = TRACKS[kind] or TRACKS.Straight
-	builder(Kit.builder(model, cf, false), cf)
+	builder(Kit.builder(model, cf, false, scale), cf)
 	return model
 end
 

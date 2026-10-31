@@ -663,6 +663,21 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		local x = Instance.new("Model")
 		ArtRail.track("Crossing", x, CFrame.new())
 		hinged(x, "Barrier")
+		-- The Town Express track: the same pieces at EXPRESS_SCALE, so the giant train's wheels
+		-- sit on its rails
+		local scaled = Instance.new("Model")
+		ArtRail.track("Straight", scaled, CFrame.new(), ArtRail.EXPRESS_SCALE)
+		inside(scaled, Vector3.new(ArtRail.TRACK_LENGTH / 2, 0, 4) * ArtRail.EXPRESS_SCALE, "Express track")
+		local railZ = 0
+		Kit.eachPart(scaled, function(p)
+			if p.Name == "Rail" then
+				railZ = math.max(railZ, p.CFrame.Position.Z)
+			end
+		end)
+		ok(
+			math.abs(railZ - ArtRail.GAUGE / 2 * ArtRail.EXPRESS_SCALE) < 0.01,
+			"Express track gauge scales with the train"
+		)
 
 		-- The Town Express: hub station with tier flags, and a giant train from the same builders
 		local xs = Instance.new("Model")
