@@ -4,6 +4,7 @@
 local Animals = require("./Config/Animals")
 local Barn = require("./Config/Barn")
 local Crops = require("./Config/Crops")
+local DuckPond = require("./Config/DuckPond")
 local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
 local Town = require("./Config/Town")
@@ -78,6 +79,33 @@ for _, pen in Animals.pens do
 		unitSeconds = unitSeconds(pen.product, 0),
 		isFeed = false,
 	}
+end
+
+-- Duck Pond feathers (Config/DuckPond): a visit's wait plus its food, shared over the
+-- feathers it leaves on average (Down from Bread, Colorful from Bagels)
+local function featherSeconds(food: string, perVisit: number): number
+	local def = DuckPond.foods[food]
+	return (def.seconds + unitSeconds(def.item, 0)) / perVisit
+end
+local featherTimes = {
+	[DuckPond.down] = featherSeconds("Bread", (DuckPond.foods.Bread.ducks[1] + DuckPond.foods.Bread.ducks[2]) / 2),
+	[DuckPond.colorful] = featherSeconds(
+		"Bagel",
+		(DuckPond.foods.Bagel.drakes[1] + DuckPond.foods.Bagel.drakes[2]) / 2
+	),
+}
+for id, feather in DuckPond.feathers do
+	Items[id] = {
+		id = id,
+		displayName = feather.displayName,
+		kind = "Animal",
+		unlockLevel = DuckPond.unlockLevel,
+		sellPrice = feather.sellPrice,
+		xpPerUnit = feather.xp,
+		unitSeconds = featherTimes[id],
+		isFeed = false,
+	}
+	unitSecondsCache[id] = featherTimes[id]
 end
 
 -- Far Isle goods (Config/Isles): only Sailboats bring them back

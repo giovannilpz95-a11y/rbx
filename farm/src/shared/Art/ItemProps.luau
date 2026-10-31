@@ -412,6 +412,31 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			b.block("Arm", Vector3.new(0.25, 0.6, 0.8), at(x, 0.5, 0), Palette.glassDeep, QUIET)
 		end
 	end,
+	DownFeather = function(b)
+		-- A soft white feather standing on its quill
+		b.post("Quill", 1.2, 0.08, at(0, 0.6, 0), Palette.stoneLight, QUIET)
+		b.wedge("Vane", Vector3.new(0.12, 1.1, 0.7), at(0, 0.8, 0.12), Palette.cream, QUIET)
+		b.wedge("Vane", Vector3.new(0.12, 1.1, 0.7), at(0, 0.8, -0.12) * Kit.yaw(180), Palette.cream, QUIET)
+	end,
+	ColorfulFeather = function(b)
+		-- A green feather with a blue tip
+		b.post("Quill", 1.4, 0.08, at(0, 0.7, 0), Palette.trunk, QUIET)
+		b.wedge("Vane", Vector3.new(0.12, 1.1, 0.7), at(0, 0.8, 0.12), Palette.leaf, QUIET)
+		b.wedge("Vane", Vector3.new(0.12, 1.1, 0.7), at(0, 0.8, -0.12) * Kit.yaw(180), Palette.leaf, QUIET)
+		b.ball("Tip", 0.4, at(0, 1.4, 0), Palette.roofTeal, QUIET)
+	end,
+	Shuttlecock = function(b)
+		-- A cork nose with a skirt of feathers
+		b.ball("Nose", 0.5, at(0, 0.25, 0), Palette.cream, QUIET)
+		b.cyl("Skirt", 0.9, 0.9, at(0, 0.8, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
+		b.cyl("Rim", 0.08, 1, at(0, 1.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+	end,
+	FeatherDuster = function(b)
+		-- A wooden handle with a puff of coloured feathers
+		b.post("Handle", 1.2, 0.18, at(0, 0.6, 0), Palette.wood, QUIET)
+		b.ball("Puff", 0.9, at(0, 1.5, 0), Palette.leaf, QUIET)
+		b.ball("Puff", 0.6, at(0.25, 1.75, 0.1), Palette.flowerPink, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

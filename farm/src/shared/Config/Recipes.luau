@@ -116,6 +116,8 @@ local Recipes: { [string]: RecipeDef } = {
 	Chair = { id = "Chair", displayName = "Chair", factory = "FurnitureWorkshop", unlockLevel = 47, inputs = { Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 97, xp = 71 },
 	Lollipop = { id = "Lollipop", displayName = "Lollipop", factory = "CandyFactory", unlockLevel = 48, inputs = { Strawberries = 2, CaneSyrup = 1, PineTrees = 2 }, outputQty = 1, seconds = 5 * HOUR, sellPrice = 117, xp = 50 },
 	Couch = { id = "Couch", displayName = "Couch", factory = "FurnitureWorkshop", unlockLevel = 48, inputs = { PineTrees = 2, CottonFabric = 1 }, outputQty = 1, seconds = 6 * HOUR, sellPrice = 100, xp = 43 },
+	Shuttlecock = { id = "Shuttlecock", displayName = "Shuttlecock", factory = "MoldingWorks", unlockLevel = 49, inputs = { DownFeather = 2, Plastic = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 117, xp = 50 },
+	FeatherDuster = { id = "FeatherDuster", displayName = "Feather Duster", factory = "HomewaresShop", unlockLevel = 49, inputs = { Sugarcane = 1, ColorfulFeather = 3 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 136, xp = 58 },
 	BulletinBoard = { id = "BulletinBoard", displayName = "Bulletin Board", factory = "StationeryShop", unlockLevel = 48, inputs = { CorkOak = 3, Paper = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 124, xp = 53 },
 	Taco = { id = "Taco", displayName = "Taco", factory = "Cantina", unlockLevel = 49, inputs = { Corn = 3, Cream = 1, Tomatoes = 2, Peppers = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 109, xp = 47 },
 	-- Homewares Shop (content bank)
