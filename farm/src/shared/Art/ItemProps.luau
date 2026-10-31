@@ -152,6 +152,26 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Crown", 0.7, 1, at(0, 0.45, 0), Palette.straw, QUIET)
 		b.post("Ribbon", 0.2, 1.05, at(0, 0.25, 0), Palette.flowerPink, QUIET)
 	end,
+	Suit = function(b)
+		-- A suit on a hanger: a charcoal-blue jacket with lapels and a red tie
+		b.block("Hanger", Vector3.new(1.3, 0.1, 0.12), at(0, 1.8, 0), Palette.wood, QUIET)
+		b.block(
+			"Jacket",
+			Vector3.new(1.4, 1.6, 0.35),
+			at(0, 0.95, 0),
+			Palette.roofPlum:Lerp(Palette.stoneDark, 0.5),
+			QUIET
+		)
+		b.wedge("Shirt", Vector3.new(0.5, 0.7, 0.1), tilt(0, 1.4, -0.2, 180, 0, 0), Palette.cream, QUIET)
+		b.block("Tie", Vector3.new(0.16, 0.7, 0.08), at(0, 1.2, -0.24), Palette.roofRed, QUIET)
+	end,
+	NylonThread = function(b)
+		-- A spool of shiny white thread
+		b.post("Spool", 1.4, 0.9, at(0, 0.7, 0), Palette.flowerWhite, QUIET)
+		for _, y in { 0.06, 1.34 } do
+			b.post("Rim", 0.12, 1.3, at(0, y, 0), Palette.sky, QUIET)
+		end
+	end,
 	Dress = function(b)
 		-- A summer dress on a hanger: a flared skirt, a fitted top and a sash
 		b.block("Hook", Vector3.new(0.1, 0.4, 0.1), at(0, 1.9, 0), Palette.metal, QUIET)
@@ -159,6 +179,12 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Top", Vector3.new(0.9, 0.7, 0.3), at(0, 1.3, 0), Palette.sky, QUIET)
 		b.block("Sash", Vector3.new(0.95, 0.15, 0.35), at(0, 0.95, 0), Palette.cream, QUIET)
 		b.block("Skirt", Vector3.new(1.5, 0.9, 0.35), at(0, 0.45, 0), Palette.sky, QUIET)
+	end,
+	Cheesecake = function(b)
+		-- A wedge of cheesecake on a biscuit base with strawberries on top
+		b.wedge("Cake", Vector3.new(1.2, 0.9, 1.8), tilt(0, 0.65, 0, 0, 90, 0), Palette.cream, QUIET)
+		b.block("Base", Vector3.new(1.8, 0.25, 1.25), at(0, 0.12, 0), Palette.bread, QUIET)
+		b.ball("Berry", 0.45, at(0.6, 1.15, 0), Palette.roofRed, QUIET)
 	end,
 	Donut = function(b)
 		-- A ring donut with pink icing and a chocolate dot in the middle
@@ -409,6 +435,12 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Cup", 0.9, 1.1, at(0, 0.45, 0), Palette.flowerPink, QUIET)
 		b.ball("Top", 1.4, at(0, 1.05, 0), Palette.bread, QUIET)
 		b.ball("Berry", 0.35, at(0.2, 1.7, -0.1), Palette.plum, QUIET)
+	end,
+	HoneyCaramel = function(b)
+		-- Golden honey caramels in a little jar
+		b.post("Jar", 1.2, 1.3, at(0, 0.6, 0), Palette.glass:Lerp(Palette.cream, 0.4), QUIET)
+		b.post("Honey", 0.9, 1.15, at(0, 0.5, 0), Palette.roofMustard, QUIET)
+		b.post("Lid", 0.25, 1.4, at(0, 1.3, 0), Palette.woodLight, QUIET)
 	end,
 	Caramel = function(b)
 		b.block("Square", Vector3.new(0.9, 0.6, 0.9), at(-0.35, 0.3, 0.2), Palette.bread, QUIET)
