@@ -134,6 +134,28 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Canopy", 1.3, at(0, 1.55, 0), Palette.leaf, QUIET)
 		b.post("Cup", 0.3, 0.35, at(0, 0.5, -0.3), Palette.cream, QUIET)
 	end,
+	Silk = function(b)
+		-- Three white cocoons on a twig
+		b.block("Twig", Vector3.new(1.8, 0.15, 0.15), at(0, 0.9, 0), Palette.woodDark, QUIET)
+		for _, x in { -0.55, 0, 0.55 } do
+			b.ball("Cocoon", 0.55, at(x, 0.6, 0), Palette.cotton, QUIET)
+		end
+	end,
+	SilkFabric = function(b)
+		-- A folded bolt of sheen-pink silk with a cream band
+		b.block("Bolt", Vector3.new(1.6, 0.6, 1.1), at(0, 0.3, 0), Palette.flowerPink:Lerp(Palette.cream, 0.3), QUIET)
+		b.block("Fold", Vector3.new(1.6, 0.25, 1.1), at(0, 0.73, 0), Palette.flowerPink, QUIET)
+		b.block("Band", Vector3.new(0.3, 0.9, 1.15), at(0, 0.45, 0), Palette.cream, QUIET)
+	end,
+	SunHat = function(b)
+		b.cyl("Brim", 0.12, 2, at(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.straw, QUIET)
+		b.post("Crown", 0.7, 1, at(0, 0.45, 0), Palette.straw, QUIET)
+		b.post("Ribbon", 0.2, 1.05, at(0, 0.25, 0), Palette.flowerPink, QUIET)
+	end,
+	Dough = function(b)
+		b.post("Bowl", 0.6, 1.5, at(0, 0.3, 0), Palette.sky, QUIET)
+		b.ball("Dough", 1.1, at(0, 0.75, 0), Palette.bread:Lerp(Palette.cream, 0.5), QUIET)
+	end,
 	Wallpaper = function(b)
 		-- A roll of patterned paper, unrolled a little at the front
 		b.cyl("Roll", 1.8, 0.9, at(0, 0.45, 0.2), Palette.flowerPink:Lerp(Palette.cream, 0.5), QUIET)

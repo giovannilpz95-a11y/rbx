@@ -914,6 +914,44 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Office Block (content bank, level 31): a tall glass-banded tower on a stone base, a flat
+-- roof with a water tank, and a revolving-door porch with a flagpole.
+TYPES.OfficeBlock = function(b, s)
+	local w, d, h = s * 0.55, s * 0.55, 11
+	b.block("Plinth", Vector3.new(w + 1.2, PLINTH, d + 1.2), Vector3.new(0, PLINTH / 2, 0), Palette.stone)
+	local body =
+		b.block("Body", Vector3.new(w, h, d), Vector3.new(0, PLINTH + h / 2, 0), Palette.stoneLight, { collide = true })
+	local t = b.into(body, true)
+	local face = -d / 2
+	-- Glass bands across the front, two floors apart
+	for _, y in { 4, 7.4 } do
+		t.block(
+			"Band",
+			Vector3.new(w - 0.6, 1.6, 0.2),
+			Vector3.new(0, PLINTH + y, face - 0.1),
+			Palette.glassDeep,
+			{ shadow = false }
+		)
+	end
+	t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0), Palette.stoneDark)
+	t.post("Tank", 1.8, 1.6, Vector3.new(w / 4, PLINTH + h + 1.4, d / 4), Palette.wood)
+	t.block("TankLid", Vector3.new(1.8, 0.3, 1.8), Vector3.new(w / 4, PLINTH + h + 2.45, d / 4), Palette.roofTeal)
+	-- The porch with its door
+	t.block("Porch", Vector3.new(3.4, 3, 1.6), Vector3.new(0, PLINTH + 1.5, face - 0.8), Palette.roofTeal)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 1.6), 1.8, 2.6, Palette.glass, Palette.metal)
+	-- Sign object: the flagpole and flag by the porch
+	t.post("Flagpole", 7, 0.2, Vector3.new(w / 2 + 0.6, 3.5, face - 1), Palette.metal)
+	t.block(
+		"Flag",
+		Vector3.new(1.6, 1, 0.1),
+		Vector3.new(w / 2 + 1.4, 6.4, face - 1),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	Kit.sproutTag(t, Vector3.new(-w / 4, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Open-Air Cinema (content bank, level 30): a big white screen on dark posts at the back, a
 -- little ticket booth with a striped roof, and a row of speaker posts out front.
 TYPES.OpenAirCinema = function(b, s)
