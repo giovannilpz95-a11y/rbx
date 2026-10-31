@@ -106,6 +106,7 @@ local function snapshot(data: { [string]: any })
 		oreShed = data.oreShed,
 		guild = data.guild,
 		buildingLevels = data.buildingLevels,
+		market = data.market, -- your stall's listings (shared/Market, client/UI/Market)
 		layout = data.layout, -- buildings the player moved (shared/Layout), for the move ghost
 		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,

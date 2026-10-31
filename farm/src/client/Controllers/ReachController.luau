@@ -54,6 +54,9 @@ ReachController.tapOverride = function(_hit: Instance?): boolean
 	return false
 end
 
+-- Set by the Market panel (UI/Market): a tap on our own stall
+ReachController.openMarket = function() end
+
 function ReachController.openCropPop()
 	local event = ReplicatedStorage:FindFirstChild("CropPopOpen")
 	if event == nil then
@@ -213,6 +216,8 @@ local function act(part: BasePart)
 		ReachController.openCropPop()
 	elseif kind == "Quarry" then
 		Panels.open("Quarry")
+	elseif kind == "Market" then
+		ReachController.openMarket()
 	elseif kind == "Guild" then
 		Panels.open("Guild")
 	elseif kind == "Blimp" then

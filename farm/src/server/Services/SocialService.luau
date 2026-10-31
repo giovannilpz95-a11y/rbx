@@ -14,6 +14,8 @@ local ServerStorage = game:GetService("ServerStorage")
 local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
+local Market = require(Shared.Market)
+local MarketConfig = require(Shared.Config.Market)
 local Net = require(Shared.Net)
 local Palette = require(Shared.Art.Palette)
 local Social = require(Shared.Config.Social)
@@ -310,6 +312,12 @@ local function testNeighborFarm(player: Player): (boolean, string?)
 				plantedAt = now - (if ripe then 600 else 0),
 				readyAt = if ripe then now - 1 else now + Clock.duration(300),
 			}
+		end
+		-- A stocked Market stall, for trying a purchase
+		data.level = math.max(data.level, MarketConfig.unlockLevel)
+		for slot, entry in { { "Wheat", 10 }, { "Corn", 6 }, { "Milk", 4 } } do
+			local _, _, price = Market.priceRange(entry[1], entry[2])
+			Market.list(data, slot, entry[1], entry[2], price, now)
 		end
 		DataService.addDummy(stand, data)
 		if PlotService.assign(stand :: any, { player }) == nil then

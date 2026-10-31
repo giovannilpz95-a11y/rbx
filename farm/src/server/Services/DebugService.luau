@@ -18,6 +18,7 @@ local Shop = require(Shared.Shop)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local Layout = require(Shared.Layout)
+local Lots = require(Shared.Lots)
 local TownRules = require(Shared.TownRules)
 
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -119,16 +120,35 @@ function DebugService.population(player: Player): (boolean, string?)
 			table.insert(changed, house.lot)
 		end
 	end
+	-- Still short (too few Houses to swap): new ones of the biggest type at open spots
+	local added = 0
+	while TownRules.population(data, now) < DebugService.POPULATION and added < 40 do
+		local spot = PlotService.findOpenSpot(player, data, "house", PlotService.nearPlayer(player))
+		if spot == nil then
+			break
+		end
+		local lot = #Lots.houses
+		for _, house in data.town.houses do
+			lot = math.max(lot, house.lot)
+		end
+		lot += 1
+		data.layout[Layout.key("house", lot)] = spot
+		table.insert(data.town.houses, { type = best, lot = lot })
+		added += 1
+		PlotService.refresh(player) -- so the next search sees this one standing
+	end
 	DataService.markDirty(player, true)
 	for _, lot in changed do
 		PlotService.relocate(player, Layout.key("house", lot))
 	end
+	PlotService.refresh(player)
 	NetService.toast(
 		player,
 		string.format(
-			"Dev: %d Houses became %s. Population %d",
+			"Dev: %d Houses became %s and %d more went up. Population %d",
 			#changed,
 			Town.houses[best].displayName,
+			added,
 			TownRules.population(data, now)
 		)
 	)

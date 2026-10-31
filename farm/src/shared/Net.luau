@@ -72,6 +72,10 @@ return table.freeze({
 	Blimp_Skip = "Blimp_Skip", -- (call the next blimp now, Gems)
 	Layout_Move = "Layout_Move", -- key, x, z, r: move one of your buildings (shared/Layout)
 	Express_Load = "Express_Load", -- index: load a Town Express crate from the Barn (at the hub station)
+	Market_List = "Market_List", -- slot, item, qty, price: put Barn goods on your stall
+	Market_Unlist = "Market_Unlist", -- slot: take a listing down (goods back to the Barn)
+	Market_Feature = "Market_Feature", -- slot: show it on the Town Square's Market board
+	Market_Buy = "Market_Buy", -- sellerUserId, slot: buy from another farm's stall
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
 	Debug_BuildAll = "Debug_BuildAll", -- finish every building, ignoring gates (Studio only)

@@ -32,6 +32,13 @@ local offered = false -- Move mode came on to place a building the player just s
 local hint: TextLabel
 local spot: { x: number, z: number, ok: boolean, reason: string? } = { x = 0, z = 0, ok = false, reason = nil }
 
+-- Studio: say what happened to each Place offer, for the test passes
+local function trace(...: any)
+	if RunService:IsStudio() then
+		print("[MovePlacer]", ...)
+	end
+end
+
 local function fade(model: Instance?, amount: number)
 	if model == nil then
 		return
@@ -167,11 +174,15 @@ end
 -- soon as it stands on the plot (Cancel leaves it where it went up)
 function MovePlacer.offer(payload: { [string]: any })
 	local key = payload.key
-	if type(key) ~= "string" or active ~= nil then
+	if type(key) ~= "string" then
+		return
+	elseif active ~= nil then
+		trace("not offered:", key, "(already moving", active, ")")
 		return
 	end
+	trace("offered:", key)
 	task.spawn(function()
-		for _ = 1, 50 do
+		for _ = 1, 100 do
 			local found: Instance? = nil
 			if plot then
 				for _, d in (plot :: Model):GetDescendants() do
@@ -185,10 +196,12 @@ function MovePlacer.offer(payload: { [string]: any })
 				editing = true
 				offered = true
 				pickUp(key, found)
+				trace("picked up:", key)
 				return
 			end
 			task.wait(0.1)
 		end
+		trace("gave up:", key, "never appeared on the plot", plot and plot:GetFullName() or "(no plot)")
 	end)
 end
 
