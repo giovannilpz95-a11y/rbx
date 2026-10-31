@@ -357,6 +357,41 @@ local function handleTap(screenPosition: Vector2)
 	end
 end
 
+-- The nearest non-field thing on our plot in reach (a building, a pen, a crate), and how far
+local function nearestHands(root: BasePart): (BasePart?, number)
+	local best, bestDistance = nil, math.huge
+	for _, part in interactives do
+		local d = distanceToPart(part, root.Position)
+		if d <= reach() and d < bestDistance and part:GetAttribute("Interact") ~= "Field" then
+			best, bestDistance = part, d
+		end
+	end
+	return best, bestDistance
+end
+
+-- How far the nearest bed a swing would work on is (ready in the arc, or empty and sowable)
+local function nearestBedWork(root: BasePart): number
+	local front = root.Position + root.CFrame.LookVector * 3
+	local seed = ClientStore.state and ClientStore.state.settings.lastSeed
+	local sow = seed ~= nil and canAffordSeed(seed)
+	local nearest = math.huge
+	for _, part in interactives do
+		if part:GetAttribute("Interact") == "Field" then
+			local status = fieldState(part:GetAttribute("FieldId") :: string)
+			local works = (status == "ready" and distanceToPart(part, front) <= Balance.harvestArcStuds)
+				or (sow and status == "empty" and distanceToPart(part, root.Position) <= Balance.plantRadiusStuds)
+			if works then
+				nearest = math.min(nearest, distanceToPart(part, root.Position))
+			end
+		end
+	end
+	return nearest
+end
+
+-- Standing right at a building (a door, an office, a crate) with beds a few studs off: a fresh
+-- press uses the building, not the beds (holding on still sweeps the beds)
+local HANDS_FIRST_STUDS = 4
+
 -- One swing of the context action. Returns true if it did something.
 local function sweep(firstPress: boolean): boolean
 	local root = rootPart()
@@ -365,6 +400,14 @@ local function sweep(firstPress: boolean): boolean
 	end
 	local front = root.Position + root.CFrame.LookVector * 3
 	local did = false
+
+	if firstPress then
+		local hands, handsDistance = nearestHands(root)
+		if hands and handsDistance <= HANDS_FIRST_STUDS and handsDistance < nearestBedWork(root) then
+			act(hands)
+			return true
+		end
+	end
 
 	-- Scythe: every ready bed in the arc in front of you
 	for _, part in interactives do
@@ -419,13 +462,7 @@ local function sweep(firstPress: boolean): boolean
 
 	-- Hands: on a fresh press, use the nearest thing in reach (opens its panel, collects...)
 	if firstPress then
-		local best, bestDistance = nil, math.huge
-		for _, part in interactives do
-			local d = distanceToPart(part, root.Position)
-			if d <= reach() and d < bestDistance and part:GetAttribute("Interact") ~= "Field" then
-				best, bestDistance = part, d
-			end
-		end
+		local best, bestDistance = nearestHands(root)
 		if best then
 			act(best)
 			return true
@@ -477,6 +514,10 @@ ReachController.setActionHeld = setActionHeld
 ---------------------------------------------------------------------------------------------
 
 local function contextLabel(root: BasePart): string
+	local hands, handsDistance = nearestHands(root)
+	if hands and handsDistance <= HANDS_FIRST_STUDS and handsDistance < nearestBedWork(root) then
+		return "Use"
+	end
 	local front = root.Position + root.CFrame.LookVector * 3
 	local nearEmpty = false
 	for _, part in interactives do

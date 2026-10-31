@@ -26,7 +26,21 @@ local Ui = require(script.Parent.Ui)
 local BlimpUi = {}
 
 local CRATE_HEIGHT = 88
-local sendArmedAt = 0 -- a send that leaves a row unpaid takes a second tap within 3 s
+local BUTTON_WIDTH = 176 -- fits "Buy missing  70 Gems"
+local ARM_SECONDS = 10
+local sendArmedAt = 0 -- a send that leaves a row unpaid takes a second tap within ARM_SECONDS
+
+-- Shrink a button's text to fit it rather than clip it (big prices, larger text settings)
+local function fit(button: TextButton?)
+	if button == nil then
+		return
+	end
+	local limit = Instance.new("UITextSizeConstraint")
+	limit.MaxTextSize = button.TextSize
+	limit.MinTextSize = 9
+	limit.Parent = button
+	button.TextScaled = true
+end
 
 local function line(text: string, order: number, body: Instance, height: number?, color: Color3?)
 	return Ui.label(text, {
@@ -99,7 +113,7 @@ local function crateCard(row: number, slot: number, crate: Blimp.Crate, body: In
 	Ui.label(string.format("%d %s", crate.qty, def.displayName), {
 		Font = Ui.theme.Type.display,
 		TextSize = 15,
-		Size = UDim2.new(1, -140, 0, 22),
+		Size = UDim2.new(1, -(BUTTON_WIDTH + 16), 0, 22),
 		Position = UDim2.fromOffset(8, 4),
 		Parent = card,
 	})
@@ -110,25 +124,34 @@ local function crateCard(row: number, slot: number, crate: Blimp.Crate, body: In
 	Ui.label(if done then loadedText else string.format("You have %d   ·   +%d Coins  +%d XP", have, coins, xp), {
 		TextSize = 13,
 		TextColor3 = if done then Ui.colors.ready elseif have >= crate.qty then Ui.colors.muted else Ui.colors.danger,
-		Size = UDim2.new(1, -140, 0, 18),
+		Size = UDim2.new(1, -(BUTTON_WIDTH + 16), 0, 18),
 		Position = UDim2.fromOffset(8, 28),
 		Parent = card,
 	})
 	if done then
 		return
 	end
-	local props = { Size = UDim2.fromOffset(124, 36), Position = UDim2.new(1, -130, 0, 6), Parent = card }
+	local props = {
+		Size = UDim2.fromOffset(BUTTON_WIDTH, 36),
+		Position = UDim2.new(1, -(BUTTON_WIDTH + 6), 0, 6),
+		Parent = card,
+	}
 	-- Help flag: neighbors on this server can load a flagged crate from their own Barn (one a row)
 	local flag = Ui.button(if crate.flagged then "Help asked ✓" else "Ask for help", function()
 		Remotes.fire("Blimp_Flag", row, slot)
-	end, { Size = UDim2.fromOffset(124, 34), Position = UDim2.new(1, -130, 0, 48), Parent = card })
+	end, {
+		Size = UDim2.fromOffset(BUTTON_WIDTH, 34),
+		Position = UDim2.new(1, -(BUTTON_WIDTH + 6), 0, 48),
+		Parent = card,
+	})
+	fit(flag)
 	if crate.flagged then
 		Ui.setEnabled(flag, true, Ui.colors.selected)
 	end
 	if have >= crate.qty then
-		Ui.button("Load", function()
+		fit(Ui.button("Load", function()
 			Remotes.fire("Blimp_Fill", row, slot)
-		end, props)
+		end, props))
 	else
 		local button = Panels.missingButton(
 			string.format("blimp:%d:%d", row, slot),
@@ -138,6 +161,7 @@ local function crateCard(row: number, slot: number, crate: Blimp.Crate, body: In
 			row,
 			slot
 		)
+		fit(button)
 		if button == nil then
 			Ui.setEnabled(Ui.button("Load", function() end, props), false)
 		end
@@ -187,10 +211,10 @@ local function docked(state: { [string]: any }, body: ScrollingFrame, now: numbe
 	order += 1
 
 	local payout = Blimp.payout(load)
-	local armed = os.clock() - sendArmedAt < 3
+	local armed = os.clock() - sendArmedAt < ARM_SECONDS
 	local text
 	if armed then
-		text = "Tap again to send"
+		text = "Tap again to send (rows not full get no bonus)"
 	elseif #payout.rows == 0 then
 		text = "Send off (no full rows: no bonus)"
 	else
@@ -202,9 +226,17 @@ local function docked(state: { [string]: any }, body: ScrollingFrame, now: numbe
 		)
 	end
 	local send = Ui.button(text, function()
-		if #payout.rows < #load.rows and os.clock() - sendArmedAt >= 3 then
-			sendArmedAt = os.clock()
+		-- `armed` is what the button shows, so a tap on "Tap again" always sends, however long
+		-- the panel sat before it went back to the plain text
+		if #payout.rows < #load.rows and not armed then
+			local at = os.clock()
+			sendArmedAt = at
 			Panels.refresh()
+			task.delay(ARM_SECONDS, function()
+				if sendArmedAt == at then
+					Panels.refresh()
+				end
+			end)
 			return
 		end
 		sendArmedAt = 0
