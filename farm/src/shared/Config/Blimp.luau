@@ -54,7 +54,11 @@ local crates: { [string]: Range } = {
 	-- Homewares Shop
 	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 }, Clothesline = { 1, 2 }, Plunger = { 1, 2 },
 	-- Cantina, Snack Factory
-	ChiliSauce = { 1, 3 }, GlazedBacon = { 1, 2 }, Burrito = { 1, 2 },
+	ChiliSauce = { 1, 3 }, GlazedBacon = { 1, 2 }, Burrito = { 1, 2 }, Nachos = { 1, 3 },
+	-- Stationery Shop, Furniture Workshop
+	Eraser = { 1, 3 }, StickyNotes = { 2, 2 }, Table = { 1, 2 }, Chair = { 1, 2 },
+	-- Level 46-47 goods at older factories
+	BakedPotato = { 1, 4 }, CoconutMacaroon = { 1, 2 }, PeachYogurt = { 1, 3 },
 	-- Candy Factory
 	JellyBeans = { 1, 3 }, Toffee = { 1, 3 }, CandyCane = { 1, 2 }, Chocolate = { 1, 2 }, Dumplings = { 1, 2 },
 }

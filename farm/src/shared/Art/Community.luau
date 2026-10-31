@@ -1633,6 +1633,79 @@ TYPES.SplashPark = function(b, s)
 	return body
 end
 
+-- Car Show (content bank, level 46): a glass showroom under a red roof band, a red car on a
+-- turntable out front, a classic car on the forecourt and two flag poles.
+TYPES.CarShow = function(b, s)
+	local z0 = s * 0.1
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.6, 4, s * 0.28),
+		Vector3.new(0, PLINTH + 2, z0 + s * 0.13),
+		Palette.glass,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + s * 0.13 - s * 0.14
+	t.block(
+		"RoofBand",
+		Vector3.new(s * 0.64, 0.8, s * 0.32),
+		Vector3.new(0, PLINTH + 4.4, z0 + s * 0.13),
+		Palette.roofRed
+	)
+	t.block("SignFace", Vector3.new(s * 0.3, 0.5, 0.1), Vector3.new(0, PLINTH + 4.4, face - 0.07), Palette.cream)
+	Kit.door(t, "Door", CFrame.new(s * 0.2, PLINTH, face), 1.6, 3, Palette.cream, Palette.glass)
+	-- The turntable and its car
+	local cx, cz = -s * 0.12, z0 - s * 0.12
+	t.cyl("Turntable", 0.3, 4.4, CFrame.new(cx, PLINTH + 0.15, cz) * up, Palette.stoneLight)
+	t.block("Car", Vector3.new(3.4, 0.9, 1.7), Vector3.new(cx, PLINTH + 0.85, cz), Palette.roofRed)
+	t.block("CarTop", Vector3.new(1.8, 0.7, 1.5), Vector3.new(cx + 0.2, PLINTH + 1.65, cz), Palette.glass)
+	-- A classic car on the forecourt
+	local kx, kz = s * 0.2, z0 - s * 0.15
+	t.block("Classic", Vector3.new(3, 0.9, 1.6), Vector3.new(kx, PLINTH + 0.75, kz), Palette.flowerYellow)
+	t.block("ClassicTop", Vector3.new(1.5, 0.6, 1.4), Vector3.new(kx - 0.3, PLINTH + 1.5, kz), Palette.cream)
+	for _, x in { -s * 0.38, s * 0.38 } do
+		t.post("FlagPole", 5, 0.2, Vector3.new(x, PLINTH + 2.5, z0 - s * 0.24), Palette.stoneLight)
+		t.block("Flag", Vector3.new(1.2, 0.8, 0.1), Vector3.new(x + 0.6, PLINTH + 4.5, z0 - s * 0.24), Palette.roofRed)
+	end
+	Kit.sproutTag(t, Vector3.new(-s * 0.26, PLINTH + 5.4, z0 + s * 0.18), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Hydro Dam (content bank, level 47): a curved grey dam wall holding back a blue reservoir,
+-- water spilling from two sluices into a pool below, and a control house on top.
+TYPES.HydroDam = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.75, 4.4, 1.6),
+		Vector3.new(0, PLINTH + 2.2, z0),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block(
+		"Reservoir",
+		Vector3.new(s * 0.75, 3.6, s * 0.22),
+		Vector3.new(0, PLINTH + 1.8, z0 + s * 0.14),
+		Palette.glassDeep
+	)
+	t.block("Walkway", Vector3.new(s * 0.77, 0.3, 2), Vector3.new(0, PLINTH + 4.55, z0), Palette.stone)
+	for _, x in { -s * 0.15, s * 0.15 } do
+		t.block("Sluice", Vector3.new(1.4, 1, 0.4), Vector3.new(x, PLINTH + 3, z0 - 0.9), Palette.stoneDark)
+		t.block("Spill", Vector3.new(1.2, 3, 0.3), Vector3.new(x, PLINTH + 1.5, z0 - 1.1), Palette.glass)
+	end
+	t.block("Pool", Vector3.new(s * 0.6, 0.2, s * 0.14), Vector3.new(0, PLINTH + 0.1, z0 - s * 0.12), Palette.glassDeep)
+	-- The control house on the walkway
+	t.block("ControlHouse", Vector3.new(3, 2.4, 1.8), Vector3.new(s * 0.26, PLINTH + 5.9, z0), Palette.cream)
+	t.block("ControlRoof", Vector3.new(3.4, 0.3, 2.2), Vector3.new(s * 0.26, PLINTH + 7.25, z0), Palette.roofTeal)
+	Kit.window(t, "Window", CFrame.new(s * 0.26, PLINTH + 5.8, z0 - 0.9), 1.6, 1, Palette.cream, Palette.glass)
+	Kit.sproutTag(t, Vector3.new(-s * 0.3, PLINTH + 5.4, z0), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

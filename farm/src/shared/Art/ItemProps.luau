@@ -341,6 +341,63 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Cream", 0.4, at(0, 0.55, 0), Palette.cream, QUIET)
 		b.block("Lime", Vector3.new(0.4, 0.3, 0.1), at(0.25, 0.6, 0), Palette.lime, QUIET)
 	end,
+	Nachos = function(b)
+		-- A basket of chips with a dip of melted cheese and pepper slices
+		b.post("Basket", 0.5, 1.6, at(0, 0.25, 0), Palette.wood, QUIET)
+		b.wedge("Chip", Vector3.new(0.1, 0.6, 0.6), tilt(-0.35, 0.7, 0, 0, 0, 20), Palette.corn, QUIET)
+		b.wedge("Chip", Vector3.new(0.1, 0.6, 0.6), tilt(0.3, 0.7, 0.2, 0, 40, -15), Palette.corn, QUIET)
+		b.post("Cheese", 0.2, 1.2, at(0, 0.55, 0), Palette.roofMustard, QUIET)
+		b.ball("Pepper", 0.3, at(0.2, 0.7, -0.3), Palette.roofRed, QUIET)
+	end,
+	Eraser = function(b)
+		-- A pink eraser with a blue sleeve
+		b.block("Rubber", Vector3.new(1.4, 0.45, 0.7), at(0, 0.23, 0), Palette.flowerPink, QUIET)
+		b.block("Sleeve", Vector3.new(0.8, 0.5, 0.75), at(0.25, 0.25, 0), Palette.sky, QUIET)
+	end,
+	StickyNotes = function(b)
+		-- A square pad of yellow notes with one peeled up
+		b.block("Pad", Vector3.new(1.2, 0.5, 1.2), at(0, 0.25, 0), Palette.flowerYellow, QUIET)
+		b.block(
+			"Note",
+			Vector3.new(1.2, 0.05, 0.6),
+			tilt(0, 0.6, -0.2, 25, 0, 0),
+			Palette.flowerYellow:Lerp(Palette.cream, 0.3),
+			QUIET
+		)
+	end,
+	Table = function(b)
+		-- A little wooden table on four legs
+		b.block("Top", Vector3.new(1.6, 0.2, 1.1), at(0, 1, 0), Palette.wood, QUIET)
+		for _, x in { -0.65, 0.65 } do
+			for _, z in { -0.4, 0.4 } do
+				b.block("Leg", Vector3.new(0.15, 0.9, 0.15), at(x, 0.45, z), Palette.woodDark, QUIET)
+			end
+		end
+	end,
+	Chair = function(b)
+		-- A bright plastic chair
+		b.block("Seat", Vector3.new(1, 0.15, 1), at(0, 0.7, 0), Palette.sky, QUIET)
+		b.block("Back", Vector3.new(1, 1, 0.15), at(0, 1.2, 0.45), Palette.sky, QUIET)
+		b.block("Legs", Vector3.new(0.9, 0.65, 0.9), at(0, 0.32, 0), Palette.glassDeep, QUIET)
+	end,
+	BakedPotato = function(b)
+		-- A split baked potato with butter, cheese and bacon bits
+		b.ball("Potato", 1.3, at(0, 0.55, 0), Palette.bread, QUIET)
+		b.block("Filling", Vector3.new(0.9, 0.2, 0.5), at(0, 1.1, 0), Palette.roofMustard, QUIET)
+		b.ball("Bacon", 0.3, at(0.2, 1.2, 0.05), Palette.roofRed, QUIET)
+	end,
+	CoconutMacaroon = function(b)
+		-- Three domed macaroons, one dipped in chocolate
+		for i, x in { -0.55, 0, 0.55 } do
+			b.ball("Macaroon", 0.6, at(x, 0.3, 0), if i == 2 then Palette.cocoa else Palette.cream, QUIET)
+		end
+	end,
+	PeachYogurt = function(b)
+		-- A cup of yogurt with a peach slice on top
+		b.post("Cup", 0.9, 0.9, at(0, 0.45, 0), Palette.cream, QUIET)
+		b.post("Band", 0.3, 0.92, at(0, 0.45, 0), Palette.carrot:Lerp(Palette.flowerPink, 0.4), QUIET)
+		b.ball("Peach", 0.45, at(0.1, 1, 0), Palette.carrot:Lerp(Palette.flowerPink, 0.4), QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)
