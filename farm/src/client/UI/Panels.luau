@@ -45,6 +45,7 @@ local Remotes = require(script.Parent.Parent.Remotes)
 local Townsfolk = require(script.Parent.Townsfolk)
 local Ui = require(script.Parent.Ui)
 local DecorPlacer = require(script.Parent.Parent.Controllers.DecorPlacer)
+local Fx = require(script.Parent.Fx)
 
 local Panels = {}
 
@@ -180,7 +181,11 @@ local function missingButton(
 	if #lines == 0 or price == nil then
 		return nil, nil
 	end
-	local button = gemButton("missing:" .. key, "Buy missing", price, function()
+	local button: TextButton
+	button = gemButton("missing:" .. key, "Buy missing", price, function()
+		if context == "Order" then
+			Fx.remember("Order", button) -- the order's rewards fly from here
+		end
 		Remotes.fire("Missing_Buy", context, a, b)
 	end, props)
 	return button, "Missing: " .. Missing.describe(lines)
@@ -345,7 +350,9 @@ local function renderOrders(state: { [string]: any })
 					Parent = card,
 				})
 			else
-				local deliver = Ui.button("Deliver", function()
+				local deliver: TextButton
+				deliver = Ui.button("Deliver", function()
+					Fx.remember("Order", deliver) -- the Coins and XP fly from here
 					Remotes.fire("Order_Fulfill", i)
 				end, {
 					AnchorPoint = Vector2.new(1, 1),
@@ -2207,6 +2214,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("+500 Gems, +5,000 Coins, +5 of each tool", "Debug_Grant", 340, 8)
 	devButton("Fuzz every remote with junk (farm restored after)", "Debug_Fuzz", 380, 9)
 	devButton("+1 level (opens the content bank past the cap)", "Debug_LevelUp", 380, 10)
+	devButton("Reach the next Town Record medals", "Debug_Records", 320, 11)
 end
 
 ---------------------------------------------------------------------------------------------

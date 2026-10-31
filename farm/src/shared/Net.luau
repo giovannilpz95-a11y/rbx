@@ -71,6 +71,7 @@ return table.freeze({
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
 	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)
+	Debug_Records = "Debug_Records", -- raise Town Records to their next medal (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client

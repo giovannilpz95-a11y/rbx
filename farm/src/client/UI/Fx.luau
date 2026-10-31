@@ -76,4 +76,37 @@ function Fx.centerOf(gui: GuiObject): Vector2
 	return gui.AbsolutePosition + gui.AbsoluteSize / 2
 end
 
+-- Where the next reward of a kind should fly from: a button remembers its spot when pressed,
+-- and the server's pop-up, a moment later, picks it up. Stale after a few seconds.
+local ORIGIN_SECONDS = 5
+local origins: { [string]: { at: number, pos: Vector2 } } = {}
+
+function Fx.remember(key: string, gui: GuiObject)
+	origins[key] = { at = os.clock(), pos = Fx.centerOf(gui) }
+end
+
+-- The remembered spot, or the middle of the screen
+function Fx.takeOrigin(key: string): Vector2
+	local entry = origins[key]
+	origins[key] = nil
+	if entry and os.clock() - entry.at <= ORIGIN_SECONDS then
+		return entry.pos
+	end
+	return getLayer().AbsoluteSize / 2
+end
+
+function Fx.init()
+	-- An order's Coins and XP fly from its Deliver (or Buy missing) button to their pills
+	Hud.handlers.Order = function(payload)
+		Hud.toast(string.format("Order delivered!  +%d Coins  +%d XP", payload.coins, payload.xp))
+		local from = Fx.takeOrigin("Order")
+		if (payload.coins or 0) > 0 then
+			Fx.currency("Coins", from, 4)
+		end
+		if (payload.xp or 0) > 0 then
+			task.delay(0.15, Fx.currency, "XP", from, 3)
+		end
+	end
+end
+
 return Fx

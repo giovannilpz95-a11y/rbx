@@ -1432,6 +1432,23 @@ test("records: counters, read stats, claiming tiers in order", function()
 	assert(Records.value(data, "houses", 0) >= 1, "starter houses count")
 end)
 
+test("records: the Studio fill reaches each counted record's next medal", function()
+	local data = Profile.template()
+	local ready = Records.debugFill(data, 0)
+	eq(Records.ready(data, "Harvest", 0), 1, "Bronze harvest ready")
+	eq(Records.ready(data, "Orders", 0), 1, "Bronze orders ready")
+	eq(Records.ready(data, "Population", 0), nil, "buildings aren't faked")
+	ok(ready >= 7, "the seven counted records")
+	Records.claim(data, "Harvest", 0)
+	Records.debugFill(data, 0)
+	eq(Records.ready(data, "Harvest", 0), 2, "then Silver")
+	for _ = 1, 3 do
+		Records.claim(data, "Harvest", 0)
+		Records.debugFill(data, 0)
+	end
+	eq(Records.claimed(data, "Harvest"), 3, "Gold claimed, nothing past it")
+end)
+
 test("settings: defaults in new profiles, checked values, the Gem confirm", function()
 	local profile = Profile.template()
 	eq(profile.settings.lastSeed, "Wheat", "lastSeed kept")
