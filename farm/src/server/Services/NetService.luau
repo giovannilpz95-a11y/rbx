@@ -108,6 +108,7 @@ local function snapshot(data: { [string]: any })
 		buildingLevels = data.buildingLevels,
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
+		trophies = data.trophies,
 		quests = data.quests,
 		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)
 		serverNow = Clock.now(),

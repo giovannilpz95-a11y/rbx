@@ -15,6 +15,10 @@ local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
 local Decor = require("../src/shared/Config/Decor")
 local DecorRules = require("../src/shared/DecorRules")
+local Badges = require("../src/shared/Badges")
+local BadgesConfig = require("../src/shared/Config/Badges")
+local RecordsConfig = require("../src/shared/Config/Records")
+local Trophies = require("../src/shared/Config/Trophies")
 local Drops = require("../src/shared/Drops")
 local Products = require("../src/shared/Config/Products")
 local Shop = require("../src/shared/Shop")
@@ -1498,6 +1502,35 @@ test("records: the public card others see has stars and the card's six numbers",
 		n += 1
 	end
 	eq(n, 6, "six numbers")
+end)
+
+test("trophies: Gold Town Record trophies place like decorations, free and never sold", function()
+	local def = DecorRules.def("TrophyOrders")
+	ok(def ~= nil and def.trophy == true, "trophy def")
+	eq(def.coinCost, 0, "free")
+	eq(DecorRules.refund("TrophyOrders"), 0, "no refund")
+	ok(DecorRules.isTrophy("TrophyHelping") and not DecorRules.isTrophy("Bench"), "isTrophy")
+	eq(DecorRules.def("Nope"), nil, "junk id")
+	local w, d = DecorRules.footprint("TrophyHarvest", 1)
+	eq(w * d, 1, "1 x 1")
+	local data = Profile.template()
+	ok(type(data.trophies) == "table", "trophies in the save")
+	local fine = DecorRules.canPlace(data, { id = "TrophyGoods", x = 2, z = 2, r = 0 }, 0)
+	ok(fine, "a trophy fits on the start area")
+	for _, trophy in Trophies.byRecord do
+		ok(RecordsConfig ~= nil and Records.def(trophy.record) ~= nil, trophy.id .. " matches a record")
+	end
+end)
+
+test("badges: medals map to badge ids, and a save's earned badges are listed", function()
+	eq(Badges.forMedal("Orders", 3), nil, "no ids set yet")
+	eq(Badges.forMedal("Nope", 1), nil, "junk record")
+	for id in RecordsConfig.list do
+		ok(BadgesConfig.records[RecordsConfig.list[id].id] ~= nil, "a badge slot per record")
+	end
+	local data = Profile.template()
+	data.records.claimed.Orders = 3
+	eq(#Badges.earned(data), 0, "nothing earned while ids are 0")
 end)
 
 test("records: the Studio fill reaches each counted record's next medal", function()

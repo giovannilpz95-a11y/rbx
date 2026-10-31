@@ -35,6 +35,7 @@ local SeedCartService = require(Services.SeedCartService)
 local QuarryService = require(Services.QuarryService)
 local GuildService = require(Services.GuildService)
 local RecordsService = require(Services.RecordsService)
+local BadgeService = require(Services.BadgeService)
 local SettingsService = require(Services.SettingsService)
 local MissingService = require(Services.MissingService)
 local Clock = require(script.Parent.Util.Clock)
@@ -101,6 +102,7 @@ local function onPlayerAdded(player: Player)
 	EconomyService.checkLevel(player) -- after a cap raise, banked XP levels up now
 	QuestService.refresh(player)
 	ShopService.playerLoaded(player)
+	BadgeService.playerLoaded(player) -- Town Record badges claimed before they existed
 
 	SocialService.playerLoaded(player)
 	local plot = PlotService.assign(player, SocialService.friendsOnServer(player))
