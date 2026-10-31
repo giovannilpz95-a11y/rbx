@@ -451,6 +451,29 @@ SCENES.decor4 = function(root)
 	end
 end
 
+SCENES.decor5 = function(root)
+	ground(root, 70)
+	local row = {
+		{ "Birdbath", -15, -10 },
+		{ "GardenWindmill", -9, -10 },
+		{ "KoiPond", -3, -10 },
+		{ "BeehiveStand", 3, -10 },
+		{ "LavenderRow", 9, -10 },
+		{ "Sundial", 15, -10 },
+		{ "SwanFountain", -15, 0 },
+		{ "Lighthouse", -9, 0 },
+		{ "HotAirBalloon", -3, 0 },
+		{ "FairyLightTree", 3, 0 },
+		{ "HedgeMaze", -10, 12 },
+		{ "ScarecrowPatch", 0, 12 },
+		{ "Bandstand", 10, 12 },
+	}
+	for _, d in row do
+		local m = Kit.model(d[1], root)
+		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
 SCENES.items = function(root)
 	ground(root, 40)
 	local ids = {}

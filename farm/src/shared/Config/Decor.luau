@@ -65,6 +65,20 @@ local Decor: { [string]: DecorDef } = {
 	LemonadeStand = { id = "LemonadeStand", displayName = "Lemonade Stand", category = "Lights & furniture", unlockLevel = 31, coinCost = 1600, xp = 12, size = { 1, 1 }, order = 43 },
 	BeachKit = { id = "BeachKit", displayName = "Beach Kit", category = "Lights & furniture", unlockLevel = 32, coinCost = 1000, xp = 10, size = { 1, 1 }, order = 44 },
 	MagnoliaTree = { id = "MagnoliaTree", displayName = "Magnolia Tree", category = "Nature", unlockLevel = 32, coinCost = 1300, xp = 11, size = { 1, 1 }, order = 45 },
+	-- Level 33-36 set, the same way
+	Birdbath = { id = "Birdbath", displayName = "Birdbath", category = "Nature", unlockLevel = 33, coinCost = 750, xp = 8, size = { 1, 1 }, order = 46 },
+	GardenWindmill = { id = "GardenWindmill", displayName = "Garden Windmill", category = "Landmarks", unlockLevel = 33, coinCost = 2600, xp = 16, size = { 1, 1 }, order = 47 },
+	KoiPond = { id = "KoiPond", displayName = "Koi Pond", category = "Nature", unlockLevel = 33, coinCost = 4000, xp = 20, size = { 1, 2 }, order = 48 },
+	BeehiveStand = { id = "BeehiveStand", displayName = "Beehive Stand", category = "Nature", unlockLevel = 34, coinCost = 2200, xp = 15, size = { 1, 1 }, order = 49 },
+	LavenderRow = { id = "LavenderRow", displayName = "Lavender Row", category = "Nature", unlockLevel = 34, coinCost = 1200, xp = 11, size = { 1, 1 }, order = 50 },
+	Sundial = { id = "Sundial", displayName = "Sundial", category = "Landmarks", unlockLevel = 34, coinCost = 2500, xp = 16, size = { 1, 1 }, order = 51 },
+	SwanFountain = { id = "SwanFountain", displayName = "Swan Fountain", category = "Landmarks", unlockLevel = 35, coinCost = 3000, xp = 17, size = { 1, 1 }, order = 52 },
+	HedgeMaze = { id = "HedgeMaze", displayName = "Hedge Maze", category = "Nature", unlockLevel = 35, coinCost = 5400, xp = 24, size = { 2, 2 }, order = 53 },
+	ScarecrowPatch = { id = "ScarecrowPatch", displayName = "Scarecrow Patch", category = "Nature", unlockLevel = 35, coinCost = 1500, xp = 12, size = { 2, 2 }, order = 54 },
+	Lighthouse = { id = "Lighthouse", displayName = "Lighthouse", category = "Landmarks", unlockLevel = 35, coinCost = 2500, xp = 16, size = { 1, 1 }, order = 55 },
+	HotAirBalloon = { id = "HotAirBalloon", displayName = "Hot Air Balloon", category = "Landmarks", unlockLevel = 36, coinCost = 3600, xp = 19, size = { 1, 1 }, order = 56 },
+	FairyLightTree = { id = "FairyLightTree", displayName = "Fairy Light Tree", category = "Lights & furniture", unlockLevel = 36, coinCost = 3800, xp = 19, size = { 1, 1 }, order = 57 },
+	Bandstand = { id = "Bandstand", displayName = "Bandstand", category = "Lights & furniture", unlockLevel = 36, coinCost = 4500, xp = 21, size = { 2, 2 }, order = 58 },
 }
 
 for _, def in Decor do
