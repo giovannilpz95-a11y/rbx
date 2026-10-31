@@ -416,6 +416,22 @@ function BoardView.load(self, game)
 		self.basketGuis[basket.y * 100 + basket.x] = label
 	end
 
+	-- Hen houses, in the gaps like baskets.
+	for _, hen in board.hens do
+		local label = Instance.new("TextLabel")
+		label.Name = "HenHouse"
+		label.Size = self:_cellSize()
+		label.Position = self:_cellPosition(hen.x, hen.y)
+		label.BackgroundColor3 = TileStyle.Board.hen
+		label.Text = TileStyle.HenGlyph
+		label.TextScaled = true
+		label.BorderSizePixel = 0
+		label.Parent = self.baleLayer
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.3, 0)
+		corner.Parent = label
+	end
+
 	-- Fences: a wooden bar on the edge right of or below their cell.
 	self.fenceGuis = {}
 	for _, fence in board.fences do

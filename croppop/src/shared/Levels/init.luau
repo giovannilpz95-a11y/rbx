@@ -12,6 +12,9 @@
 	  s  stone wall, 1 layer   S  stone wall, 2 layers (only blasts break stone)
 	  g  goo over the tile (a match or blast on it clears it; after a swap that
 	     clears none, it spreads to a neighbouring tile; covering the board loses)
+	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
+	     into the cell below whenever that cell is empty, every other one an
+	     Egg (needs Egg in the colours)
 	  d  pumpkin basket: not a cell (pieces fall past it); a match next to it or
 	     a blast on it drops a pumpkin into the cell below. Needs a Pumpkins goal,
 	     and then pumpkins come only from baskets, not from refills.
@@ -34,7 +37,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -60,13 +63,14 @@ function Levels.get(id: number)
 end
 
 -- Layout characters that aren't cells.
-local HOLES = { ["#"] = true, d = true }
+local HOLES = { ["#"] = true, d = true, h = true }
 
 local VALID_CHARS = {
 	["."] = true,
 	["#"] = true,
 	d = true,
 	g = true,
+	h = true,
 	m = true,
 	M = true,
 	f = true,
@@ -236,6 +240,17 @@ function Levels.validate(level): string?
 				clover += 1
 			elseif ch == "s" or ch == "S" then
 				stones += 1
+			elseif ch == "h" then
+				local below = false
+				for yy = y + 1, height do
+					below = below or not HOLES[string.sub(level.layout[yy], x, x)]
+				end
+				if not below then
+					return string.format("hen house at %d,%d has no cell below it", x, y)
+				end
+				if not table.find(level.colors, "Egg") then
+					return "hen houses lay eggs: add Egg to the colours"
+				end
 			elseif ch == "g" then
 				goo += 1
 			elseif ch == "d" then

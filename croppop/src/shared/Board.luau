@@ -17,6 +17,10 @@
 	and the cell under an entrance gets pieces only by sliding in diagonally.
 	Fences sit on the edge between two cells: nothing swaps across one, but
 	matches and falling pieces pass it. Only blasts break them.
+	Hen houses ("h") are not cells either, but nothing falls past one: the
+	column above stops on it, and the cell below gets a fresh tile from it
+	whenever it's empty: every other one is an Egg (so eggs never stack
+	into an endless match), the rest are random like the top of the board.
 	Pumpkin baskets ("d") are not cells: pieces fall past them like a hole.
 	The engine counts hits on them and drops pumpkins out of them.
 
@@ -25,6 +29,7 @@
 ]]
 
 local Matcher = require(script.Parent.Matcher)
+local EGG = require(script.Parent.Tiles).ByName.Egg -- what hen houses lay
 
 local Board = {}
 Board.__index = Board
@@ -68,6 +73,8 @@ function Board.new(width: number, height: number)
 		-- waiting = pumpkins hit loose that haven't found a cell yet.
 		baskets = {},
 		basketAt = {}, -- y * 100 + x -> basket
+		hens = {}, -- hen houses ("h" in the layout): { x, y } in row order
+		henAt = {}, -- y * 100 + x -> hen house
 		fences = {}, -- edge key -> { x, y, side = "r" | "d" } (the edge right of / below (x, y))
 		fenceCount = 0,
 	}, Board)
@@ -127,7 +134,11 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 	for y, row in layout do
 		for x = 1, width do
 			local ch = string.sub(row, x, x)
-			if ch == "d" then
+			if ch == "h" then
+				local hen = { x = x, y = y, laid = 0 }
+				table.insert(self.hens, hen)
+				self.henAt[y * 100 + x] = hen
+			elseif ch == "d" then
 				local basket = { x = x, y = y, waiting = 0 }
 				table.insert(self.baskets, basket)
 				self.basketAt[y * 100 + x] = basket
@@ -230,6 +241,9 @@ function Board.isExit(self, cell: Cell): boolean
 		return false
 	end
 	for yy = cell.y + 1, self.height do
+		if self.henAt[yy * 100 + cell.x] then
+			return true -- a hen house below closes the column
+		end
 		if self.cells[yy][cell.x] then
 			return false
 		end
@@ -249,6 +263,9 @@ function Board.cellBelow(self, x: number, y: number): Cell?
 		return here.portalOut
 	end
 	for yy = y + 1, self.height do
+		if self.henAt[yy * 100 + x] then
+			return nil -- nothing falls past a hen house
+		end
 		local cell = self.cells[yy][x]
 		if cell then
 			if cell.portalIn and cell.portalIn ~= here then
@@ -268,6 +285,9 @@ function Board.cellAbove(self, x: number, y: number): Cell?
 		return here.portalIn
 	end
 	for yy = y - 1, 1, -1 do
+		if self.henAt[yy * 100 + x] then
+			return nil -- fed by the hen house instead
+		end
 		local cell = self.cells[yy][x]
 		if cell then
 			if cell.portalOut and cell.portalOut ~= here then
@@ -371,6 +391,9 @@ function Board.applyGravity(self, rng, colors: { number }): ({ Move }, { Spawn }
 		for x = 1, self.width do
 			local top = nil
 			for y = 1, self.height do
+				if self.henAt[y * 100 + x] then
+					break -- a hen house feeds the cells under it
+				end
 				if self.cells[y][x] then
 					top = self.cells[y][x]
 					break
@@ -395,6 +418,37 @@ function Board.applyGravity(self, rng, colors: { number }): ({ Move }, { Spawn }
 					fromY = top.y - count,
 					toX = x,
 					toY = top.y,
+				}
+				table.insert(order, piece.id)
+				spawned = true
+			end
+		end
+		-- Hen houses lay an Egg into the first cell below them when it's empty.
+		for _, hen in self.hens do
+			local target = nil
+			for y = hen.y + 1, self.height do
+				if self.henAt[y * 100 + hen.x] then
+					break
+				end
+				if self.cells[y][hen.x] then
+					target = self.cells[y][hen.x]
+					break
+				end
+			end
+			if target and target.portalIn == nil and Board.isEmptySlot(target) then
+				local key = -(hen.y * 100 + hen.x)
+				local count = (spawnCounts[key] or 0) + 1
+				spawnCounts[key] = count
+				local piece = self:newPiece(if hen.laid % 2 == 0 then EGG else rng:pick(colors))
+				hen.laid += 1
+				target.piece = piece
+				tracks[piece.id] = {
+					id = piece.id,
+					spawned = piece,
+					fromX = hen.x,
+					fromY = math.max(hen.y, target.y - count),
+					toX = hen.x,
+					toY = target.y,
 				}
 				table.insert(order, piece.id)
 				spawned = true
@@ -536,7 +590,9 @@ function Board.hash(self): string
 			local cell = self.cells[y][x]
 			local clover = if cell and cell.clover then "+" else "" -- not "c": that is the column sprayer
 			local basket = self.basketAt[y * 100 + x]
-			if basket then
+			if self.henAt[y * 100 + x] then
+				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
+			elseif basket then
 				table.insert(row, "D" .. basket.waiting)
 			elseif not cell then
 				table.insert(row, "#")
