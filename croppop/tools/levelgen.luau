@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..175 from original shape and
+	Crop Pop level generator. Builds levels 6..200 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 175 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 200 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 175
+local LAST = tonumber(ARGS[2]) or 200
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -63,6 +63,11 @@ local NAMES = {
 	"Pine Cone Lane", "Icicle Eaves", "Mitten Hill", "Rock Garden", "Hearth Bread",
 	"Snowdrop Field", "Chimney Smoke", "Wool Socks", "Lantern Walk", "Winter Feast",
 	"Cobblestone Bridge", "Robin's Perch", "Frosted Turnips", "Firelight Barn", "New Year Fields",
+	"Rabbit Warren", "Mole Hills", "Hidden Burrow", "Well Bucket", "Tunnel Lane",
+	"Fox Den", "Badger Sett", "Secret Garden", "Rain Chute", "Grain Chute",
+	"Twisting Furrows", "Hollow Log", "Mill Race", "Cellar Steps", "Topsy Turvy Barn",
+	"Spring Thaw", "Lambing Season", "Seedling Trays", "April Showers", "Daffodil Dell",
+	"Nesting Box", "Blossom Orchard", "Spring Fair", "Hop Garden", "Maypole Meadow",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -73,7 +78,8 @@ local WEEDS_INTRO = 41 -- first level with weeds
 local PUMPKIN_INTRO = 101 -- first level with pumpkins
 local CLOVER_INTRO = 126 -- first level with clover
 local STONE_INTRO = 151 -- first level with stone walls
-local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true }
+local PORTAL_INTRO = 176 -- first level with portals
+local INTROS = { [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -392,6 +398,7 @@ local function mechanics(id)
 		clover = id >= CLOVER_INTRO, -- "c"
 		stones = id >= STONE_INTRO, -- "s"
 		thickStones = id >= 160, -- "S"
+		portals = id >= PORTAL_INTRO, -- level.portals
 	}
 end
 
@@ -426,6 +433,8 @@ local function focusOf(id, name)
 		return "Clover"
 	elseif id == STONE_INTRO then
 		return "Stones"
+	elseif id == PORTAL_INTRO then
+		return "Collect" -- portals have no goal of their own
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -541,6 +550,37 @@ local function placeClover(g, rng, id)
 	end
 end
 
+-- Portals cross the board: a row of holes cuts some columns, and each cut
+-- column pours into its mirror below (x -> w-x+1), so the two sides swap.
+-- Returns the level's portal list (empty if no columns fit).
+local function placePortals(g, rng, id)
+	local r = rng:int(3, g.h - 2)
+	local columns = {}
+	for x = 1, g.w // 2 do
+		local mx = g.w - x + 1
+		local fits = true
+		for dy = -1, 1 do
+			fits = fits and isCell(g, x, r + dy) and isCell(g, mx, r + dy)
+		end
+		if fits then
+			table.insert(columns, x)
+		end
+	end
+	rng:shuffle(columns)
+	local wanted = if id == PORTAL_INTRO then 1 else rng:int(1, 2)
+	local portals = {}
+	for i = 1, math.min(wanted, #columns) do
+		local x = columns[i]
+		local mx = g.w - x + 1
+		setSym(g, x, r, "#")
+		setSym(g, x, r - 1, ".")
+		setSym(g, x, r + 1, ".")
+		table.insert(portals, { from = { x, r - 1 }, to = { mx, r + 1 } })
+		table.insert(portals, { from = { mx, r - 1 }, to = { x, r + 1 } })
+	end
+	return portals
+end
+
 -- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
 -- tiles all stop falling tiles.
 local function keepRowsOpen(g)
@@ -616,6 +656,22 @@ local function draft(id, variant)
 		pumpkins = placePumpkins(g, rng, id)
 	end
 	keepRowsOpen(g)
+	local portals = {}
+	if mech.portals and (id == PORTAL_INTRO or rng:int(1, 3) <= 2) then
+		portals = placePortals(g, rng, id)
+		if #portals == 0 and id == PORTAL_INTRO then
+			return nil
+		end
+		for y = 1, g.h do
+			local open = false
+			for x = 1, g.w do
+				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M"
+			end
+			if not open then
+				return nil
+			end
+		end
+	end
 	if not connected(g) then
 		return nil
 	end
@@ -654,7 +710,7 @@ local function draft(id, variant)
 		return nil -- the goal bar shows 3 at most
 	end
 	-- Frost and bales can leave too few swappable tiles: the board must deal playable.
-	local probe = { layout = layoutText(g), colors = colors, goals = { { kind = "Collect", tile = colors[1], count = 1 } }, moves = 1 }
+	local probe = { layout = layoutText(g), portals = portals, colors = colors, goals = { { kind = "Collect", tile = colors[1], count = 1 } }, moves = 1 }
 	for seed = 1, 10 do
 		if not Matcher.hasPossibleMove(Engine.new(probe, seed).board) then
 			return nil
@@ -664,7 +720,7 @@ local function draft(id, variant)
 	if focus == "Collect" and collects == 0 then
 		collects = 1
 	end
-	if INTROS[id] then
+	if INTROS[id] and id ~= PORTAL_INTRO then
 		collects = 0 -- an intro level is about the new obstacle alone
 	end
 	local picks = table.clone(colors)
@@ -685,6 +741,7 @@ local function draft(id, variant)
 		moves = 25,
 		colors = colors,
 		layout = layoutText(g),
+		portals = if #portals > 0 then portals else nil,
 		goals = goals,
 		rewards = table.clone(REWARDS[difficulty]),
 	}

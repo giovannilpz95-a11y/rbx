@@ -11,6 +11,10 @@
 	swap like tiles, and the engine collects them from the bottom cell of a
 	column. Refills drop new ones while `pumpkinsToSpawn` is above 0.
 	Clover grows on cells (under whatever is there); the engine spreads it.
+	Portals link a cell to another anywhere on the board: pieces leaving the
+	entrance fall into the exit instead of the cell below. An exit is fed only
+	by its portal (nothing falls into it from above, and no tile spawns there),
+	and the cell under an entrance gets pieces only by sliding in diagonally.
 
 	Everything here is deterministic: loops run in row/column order and all
 	randomness comes from the Rng passed in.
@@ -38,6 +42,8 @@ export type Cell = {
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
+	portalOut: Cell?, -- a portal entrance: pieces falling out of here land in this cell
+	portalIn: Cell?, -- a portal exit: the entrance that feeds it
 }
 
 export type Move = { id: number, fromX: number, fromY: number, toX: number, toY: number }
@@ -60,8 +66,9 @@ function Board.new(width: number, height: number)
 	return self
 end
 
--- Builds an empty board from level layout rows (see Levels.luau for the characters).
-function Board.fromLayout(layout: { string })
+-- Builds an empty board from level layout rows (see Levels.luau for the
+-- characters) and the level's portals ({ from = { x, y }, to = { x, y } }).
+function Board.fromLayout(layout: { string }, portals: { any }?)
 	local height = #layout
 	local width = #layout[1]
 	local self = Board.new(width, height)
@@ -93,6 +100,14 @@ function Board.fromLayout(layout: { string })
 				end
 				self.cells[y][x] = cell
 			end
+		end
+	end
+	for _, portal in portals or {} do
+		local from = self:get(portal.from[1], portal.from[2])
+		local to = self:get(portal.to[1], portal.to[2])
+		if from and to then
+			from.portalOut = to
+			to.portalIn = from
 		end
 	end
 	return self
@@ -138,31 +153,55 @@ function Board.isPlainTile(cell: Cell?): boolean
 	return Board.isMovable(cell) and (cell :: Cell).piece.power == nil and not (cell :: Cell).piece.pumpkin
 end
 
--- The cell pumpkins leave from: the lowest one in its column.
+-- The cell pumpkins leave from: the lowest one in its column (and not a portal entrance).
 function Board.isExit(self, cell: Cell): boolean
-	return self:cellBelow(cell.x, cell.y) == nil
+	if cell.portalOut then
+		return false
+	end
+	for yy = cell.y + 1, self.height do
+		if self.cells[yy][cell.x] then
+			return false
+		end
+	end
+	return true
 end
 
 function Board.isEmptySlot(cell: Cell?): boolean
 	return cell ~= nil and cell.piece == nil and cell.bale == 0
 end
 
--- Next existing cell below (x, y), skipping holes.
+-- Where a piece at (x, y) falls next: through its portal, else the next
+-- existing cell below (skipping holes), unless that one is another portal's exit.
 function Board.cellBelow(self, x: number, y: number): Cell?
+	local here = self:get(x, y)
+	if here and here.portalOut then
+		return here.portalOut
+	end
 	for yy = y + 1, self.height do
 		local cell = self.cells[yy][x]
 		if cell then
+			if cell.portalIn and cell.portalIn ~= here then
+				return nil
+			end
 			return cell
 		end
 	end
 	return nil
 end
 
--- Next existing cell above (x, y), skipping holes.
+-- The cell that feeds (x, y): its portal entrance, else the next existing
+-- cell above, unless that one falls into a portal instead.
 function Board.cellAbove(self, x: number, y: number): Cell?
+	local here = self:get(x, y)
+	if here and here.portalIn then
+		return here.portalIn
+	end
 	for yy = y - 1, 1, -1 do
 		local cell = self.cells[yy][x]
 		if cell then
+			if cell.portalOut and cell.portalOut ~= here then
+				return nil
+			end
 			return cell
 		end
 	end
@@ -237,7 +276,8 @@ function Board.applyGravity(self, rng, colors: { number }): ({ Move }, { Spawn }
 		local movedAny = false
 		repeat
 			local moved = false
-			for y = self.height - 1, 1, -1 do
+			-- From the bottom row too: a portal entrance there still has somewhere to go.
+			for y = self.height, 1, -1 do
 				local row = self.cells[y]
 				for x = 1, self.width do
 					local cell = row[x]
@@ -265,7 +305,7 @@ function Board.applyGravity(self, rng, colors: { number }): ({ Move }, { Spawn }
 					break
 				end
 			end
-			if top and Board.isEmptySlot(top) then
+			if top and top.portalIn == nil and Board.isEmptySlot(top) then
 				local count = (spawnCounts[x] or 0) + 1
 				spawnCounts[x] = count
 				local piece

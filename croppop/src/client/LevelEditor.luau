@@ -50,8 +50,11 @@ local BRUSH_ROWS = {
 		{ char = "c", label = "🍀" },
 		{ char = "s", label = "🧱1" },
 		{ char = "S", label = "🧱2" },
+		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
+		{ char = "o", label = "🌀" },
 	},
 }
+local PORTAL = "o" -- the portal brush
 local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
@@ -85,6 +88,7 @@ local function blankLevel()
 		colors = { "Tomato", "Egg", "Carrot", "Corn", "Milk" },
 		grid = grid,
 		goals = { { kind = "Collect", tile = "Tomato", count = 15 } },
+		portals = {},
 		brush = ".",
 		loadId = 1,
 	}
@@ -102,6 +106,10 @@ local function fromLevel(level)
 	for _, goal in level.goals do
 		table.insert(goals, table.clone(goal))
 	end
+	local portals = {}
+	for _, portal in level.portals or {} do
+		table.insert(portals, { from = table.clone(portal.from), to = table.clone(portal.to) })
+	end
 	return {
 		id = level.id,
 		name = level.name,
@@ -110,6 +118,7 @@ local function fromLevel(level)
 		colors = table.clone(level.colors),
 		grid = grid,
 		goals = goals,
+		portals = portals,
 		brush = ".",
 		loadId = level.id,
 	}
@@ -131,6 +140,13 @@ local function toLevel()
 	for _, goal in state.goals do
 		table.insert(goals, table.clone(goal))
 	end
+	local portals = nil
+	if #state.portals > 0 then
+		portals = {}
+		for _, portal in state.portals do
+			table.insert(portals, { from = table.clone(portal.from), to = table.clone(portal.to) })
+		end
+	end
 	return {
 		id = state.id,
 		name = state.name,
@@ -138,6 +154,7 @@ local function toLevel()
 		moves = state.moves,
 		colors = colors,
 		layout = layout,
+		portals = portals,
 		goals = goals,
 		rewards = table.clone(REWARDS[state.difficulty]),
 	}
@@ -162,6 +179,14 @@ local function resize(dw: number, dh: number)
 		end
 	end
 	state.grid = grid
+	-- Portals with an end outside the new size go.
+	for i = #state.portals, 1, -1 do
+		local portal = state.portals[i]
+		if math.max(portal.from[1], portal.to[1]) > w or math.max(portal.from[2], portal.to[2]) > h then
+			table.remove(state.portals, i)
+		end
+	end
+	state.portalStart = nil
 end
 
 -- Small UI helpers ---------------------------------------------------------------
@@ -257,6 +282,43 @@ local function cellLook(char: string): (Color3, string)
 	return Colors.cellLight, ""
 end
 
+-- The portal using (x, y) as its entrance or exit: its index and which end.
+local function portalAt(x: number, y: number): (number?, string?)
+	for i, portal in state.portals do
+		if portal.from[1] == x and portal.from[2] == y then
+			return i, "from"
+		elseif portal.to[1] == x and portal.to[2] == y then
+			return i, "to"
+		end
+	end
+	return nil, nil
+end
+
+-- The portal brush: tap an entrance, then its exit; tap a portal end to remove it.
+local function tapPortal(x: number, y: number)
+	local i = portalAt(x, y)
+	if i then
+		table.remove(state.portals, i)
+		state.portalStart = nil
+	elseif state.grid[y][x] == "#" then
+		return
+	elseif not state.portalStart then
+		state.portalStart = { x, y }
+	elseif state.portalStart[1] ~= x or state.portalStart[2] ~= y then
+		table.insert(state.portals, { from = state.portalStart, to = { x, y } })
+		state.portalStart = nil
+	end
+end
+
+-- A hole can't hold a portal end.
+local function dropPortalsAt(x: number, y: number)
+	local i = portalAt(x, y)
+	while i do
+		table.remove(state.portals, i)
+		i = portalAt(x, y)
+	end
+end
+
 local function renderGrid()
 	for _, child in ui.grid:GetChildren() do
 		if child:IsA("GuiObject") then
@@ -268,6 +330,12 @@ local function renderGrid()
 	for y = 1, h do
 		for x = 1, w do
 			local color, text = cellLook(state.grid[y][x])
+			local portal, side = portalAt(x, y)
+			if portal then
+				text ..= string.format("🌀%d%s", portal, if side == "from" then "▼" else "▲")
+			elseif state.portalStart and state.portalStart[1] == x and state.portalStart[2] == y then
+				text ..= "🌀?"
+			end
 			local cell = textItem("TextButton", ui.grid, string.format("Cell%d_%d", x, y), text, UDim2.fromScale(1 / w, 1 / h))
 			cell.Position = UDim2.fromScale((x - 1) / w, (y - 1) / h)
 			cell.BackgroundTransparency = 0
@@ -277,7 +345,14 @@ local function renderGrid()
 			cell.TextColor3 = Colors.baleText
 			cell.AutoButtonColor = false
 			cell.Activated:Connect(function()
-				state.grid[y][x] = state.brush
+				if state.brush == PORTAL then
+					tapPortal(x, y)
+				else
+					state.grid[y][x] = state.brush
+					if state.brush == "#" then
+						dropPortalsAt(x, y)
+					end
+				end
 				render()
 			end)
 		end
@@ -355,7 +430,7 @@ local function renderPanel()
 		local brushes = BRUSH_ROWS[rowName]
 		local brushRow = row(rowName, nextOrder())
 		for i, brush in brushes do
-			local b = button(brushRow, "Brush" .. brush.char, brush.label, UDim2.new(1 / #BRUSH_ROWS.Brushes, -4, 1, -4), function()
+			local b = button(brushRow, "Brush" .. brush.char, brush.label, UDim2.new(1 / #brushes, -4, 1, -4), function()
 				state.brush = brush.char
 				render()
 			end)
@@ -626,10 +701,17 @@ function LevelEditor.export(): string?
 	return text
 end
 
--- For tests: paint one cell with a brush character.
+-- For tests: paint one cell with a brush character ("o" taps the portal brush).
 function LevelEditor.paint(x: number, y: number, char: string)
 	state.brush = char
-	state.grid[y][x] = char
+	if char == PORTAL then
+		tapPortal(x, y)
+	else
+		state.grid[y][x] = char
+		if char == "#" then
+			dropPortalsAt(x, y)
+		end
+	end
 	if ui then
 		render()
 	end
