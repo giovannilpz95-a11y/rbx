@@ -16,6 +16,7 @@ local ArtMotion = require("../src/shared/Art/Motion")
 local ArtFolk = require("../src/shared/Art/Folk")
 local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtTown = require("../src/shared/Art/Town")
+local ArtBlimp = require("../src/shared/Art/Blimp")
 local Items = require("../src/shared/Items")
 
 local Showcase = {}
@@ -381,6 +382,53 @@ SCENES.decor2 = function(root)
 	for _, d in row do
 		local m = Kit.model(d[1], root)
 		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
+SCENES.decor3 = function(root)
+	ground(root, 60)
+	local row = {
+		{ "DaffodilBed", -15, -8 },
+		{ "PalmPair", -9, -8 },
+		{ "FishingJetty", -3, -8 },
+		{ "GardenObelisk", 3, -8 },
+		{ "DeckChairs", 9, -8 },
+		{ "PumpkinCart", 15, -8 },
+		{ "RoseBed", -15, 6 },
+		{ "IrisBed", -9, 6 },
+		{ "Rowboat", -3, 6 },
+		{ "Treehouse", 3, 6 },
+		{ "TieredFountain", 9, 6 },
+		{ "WeepingWillow", 15, 6 },
+	}
+	for _, d in row do
+		local m = Kit.model(d[1], root)
+		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
+SCENES.blimp = function(root)
+	ground(root, 70)
+	local docked = Kit.model("Docked", root)
+	ArtBlimp.build(docked, CFrame.new(-12, 0, 0))
+	ArtBlimp.setCargo(docked, {
+		{ { filled = true }, { filled = true }, { flagged = true } },
+		{ { filled = true }, {}, {} },
+		{ { flagged = true }, {}, {} },
+	})
+	ArtBlimp.setState(docked, "Docked")
+	local broken = Kit.model("Broken", root)
+	ArtBlimp.build(broken, CFrame.new(22, 0, 0))
+	ArtBlimp.setState(broken, "Broken")
+end
+
+SCENES.trophies = function(root)
+	ground(root, 50)
+	local ids =
+		{ "Orders", "Harvest", "Goods", "Animals", "Coins", "Population", "Houses", "Factories", "Decor", "Helping" }
+	for i, record in ids do
+		local m = Kit.model(record, root)
+		ArtDecor.build("Trophy" .. record, m, CFrame.new(-18 + ((i - 1) % 5) * 9, 0, if i <= 5 then -5 else 5))
 	end
 end
 

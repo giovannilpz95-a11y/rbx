@@ -4,7 +4,7 @@
 
 return table.freeze({
 	-- What the game plays with: the level-12 MVP plus the content bank (Strawberries 13,
-	-- Tomatoes 15, Pine Trees 18, Potatoes 22, Cocoa 25), which stays locked by level until the cap is raised. The full crop table
+	-- Tomatoes 15, Pine Trees 18, Potatoes 22, Cocoa 25, Rubber Trees 29, Silk 31), which stays locked by level until the cap is raised. The full crop table
 	-- lives in Crops.
 	enabledCrops = table.freeze({
 		"Wheat",
@@ -17,6 +17,8 @@ return table.freeze({
 		"PineTrees",
 		"Potatoes",
 		"Cocoa",
+		"RubberTrees",
+		"Silk",
 	}),
 	enabledFactories = table.freeze({
 		"Bakery",
@@ -33,8 +35,18 @@ return table.freeze({
 		"JamKitchen",
 		"Smelter",
 		"Smelter2",
+		"RubberWorks",
+		"PrepKitchen",
 	}),
-	enabledPens = table.freeze({ "CowBarn", "ChickenCoop", "SheepFold", "CowBarn2", "CowBarn3", "ChickenCoop2" }),
+	enabledPens = table.freeze({
+		"CowBarn",
+		"ChickenCoop",
+		"SheepFold",
+		"CowBarn2",
+		"CowBarn3",
+		"ChickenCoop2",
+		"SheepFold2",
+	}),
 
 	-- Cow Feed a new farm starts with, so the given Cows work before the Feed Mill opens at
 	-- level 3 (Township's level-1 gift, Wiki Data - Farming & Animals §1)

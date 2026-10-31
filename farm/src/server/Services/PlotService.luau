@@ -129,6 +129,9 @@ local LAYOUT = {
 		PastryShop = Vector3.new(66, 0, 30),
 		-- A third column further east, its tables facing the second row's backs
 		JamKitchen = Vector3.new(88, 0, 30),
+		RubberWorks = Vector3.new(88, 0, 16),
+		-- The Prep Kitchen at the column's south end, by the plot edge
+		PrepKitchen = Vector3.new(88, 0, 43),
 		-- The Smelters, beside the Quarry at the column's north end
 		Smelter = Vector3.new(88, 0, -24),
 		Smelter2 = Vector3.new(88, 0, -10),
@@ -149,7 +152,11 @@ local LAYOUT = {
 		CowBarn2 = Vector3.new(-56, 0, 6),
 		CowBarn3 = Vector3.new(-70, 0, 6),
 		ChickenCoop2 = Vector3.new(-84, 0, 6),
+		-- The West Meadow's row is full: the second Sheep Fold stands at the East Meadow's
+		-- south end, its gate facing west (penYaw)
+		SheepFold2 = Vector3.new(66, 0, 42),
 	} :: { [string]: Vector3 },
+	penYaw = { SheepFold2 = 90 } :: { [string]: number }, -- default 180: the gate faces south
 	barn = Vector3.new(-28, 0, 30),
 	orderBoard = Vector3.new(12, 0, 34),
 	prizeShelf = Vector3.new(-28, 0, 43), -- south of the Barn, clear of its door
@@ -460,7 +467,7 @@ end
 
 local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame)
 	-- The gate faces south (+Z), toward the Barn and the spawn
-	buildPenAt(plot, id, at(LAYOUT.pens[id], 0.6) * Kit.yaw(180))
+	buildPenAt(plot, id, at(LAYOUT.pens[id], 0.6) * Kit.yaw(LAYOUT.penYaw[id] or 180))
 end
 
 -- The Town Hall, with the owner's name on the plot sign out front. Rebuilt with more storeys

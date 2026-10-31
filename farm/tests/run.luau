@@ -81,7 +81,7 @@ test("every crop has positive timers and matching ids", function()
 		eq(crop.id, id, "crop id")
 		ok(crop.growSeconds > 0 and crop.yield > 0, id .. " needs time and yield")
 		eq(crop.yield, 1, id .. " gives 1 unit a field, as in Township")
-		ok(crop.unlockLevel >= 1 and crop.unlockLevel <= 30, id .. " unlock level in 1-30")
+		ok(crop.unlockLevel >= 1 and crop.unlockLevel <= 60, id .. " unlock level in 1-60")
 	end
 end)
 
@@ -257,7 +257,34 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 28, "levels 17 to 28 are banked")
+	eq(Levels.built, 32, "levels 17 to 32 are banked")
+	eq(Levels.list[32].xpToNext, 29547, "L32 row")
+	eq(Recipes.Plastic.inputs.RubberTrees, 2, "Plastic from 2 Rubber Trees")
+	eq(Town.houses.Condos.copyLevels[1], 32, "Terrace Condos")
+	eq(Town.community.GrandHotel.capBonus, 155, "Grand Hotel")
+	eq(Levels.list[31].xpToNext, 26654, "L31 row")
+	ok(table.find(Balance.enabledCrops, "Silk") ~= nil and Crops.Silk.growSeconds == 15 * 3600, "Silk at 31")
+	eq(Recipes.SunHat.inputs.SilkFabric, 1, "Sun Hat (Township's inputs)")
+	eq(Recipes.Dough.factory, "PrepKitchen", "Dough at the Prep Kitchen")
+	eq(Factories.PrepKitchen.buildCost, 12000, "Prep Kitchen")
+	eq(Animals.pens.SheepFold2.copyOf, "SheepFold", "second Sheep Fold")
+	eq(Animals.pens.SheepFold2.buildCost, 8000, "second Sheep Fold cost")
+	eq(Town.houses.IvyApartments.copyLevels[1], 31, "Ivy Apartments")
+	eq(Town.community.OfficeBlock.capBonus, 150, "Office Block")
+	eq(Levels.list[30].xpToNext, 23974, "L30 row")
+	eq(Recipes.Wallpaper.inputs.Rubber, 1, "Wallpaper uses Rubber (Township's inputs)")
+	eq(Recipes.Cupcake.inputs.Eggs, 5, "Cupcake")
+	eq(Town.community.OpenAirCinema.capBonus, 145, "Open-Air Cinema")
+	eq(Levels.list[29].xpToNext, 21495, "L29 row")
+	ok(
+		table.find(Balance.enabledCrops, "RubberTrees") ~= nil and Crops.RubberTrees.growSeconds == 12 * 3600,
+		"Rubber Trees at 29"
+	)
+	eq(Levels.gifts[29].RubberTrees, 3, "Rubber Trees to start with")
+	eq(Factories.RubberWorks.population, 1670, "Rubber Works Population")
+	eq(Recipes.Rubber.inputs.RubberTrees, 1, "Rubber from a Rubber Tree")
+	eq(Town.houses.BrickTownhouse.copyLevels[1], 29, "Brick Townhouse")
+	eq(Town.community.CabStand.capBonus, 140, "Cab Stand")
 	eq(Levels.list[28].xpToNext, 19210, "L28 row")
 	eq(Recipes.Fries.factory, "Diner", "Fries at the Diner")
 	eq(Recipes.Fries.inputs.Cream, 1, "Fries (Township's inputs)")
@@ -365,7 +392,18 @@ test("the content bank stays locked at the live cap", function()
 		ok(def.unlockLevel > Levels.cap and def.unlockLevel <= Levels.built, id .. " in the bank")
 		eq(Lots.community[TownRules.communityLot(id) :: number].land, Lots.northLaneLand, id .. " stands on North Lane")
 	end
-	for _, id in { "SnackFactory", "Diner", "PaperMill", "FeedMill2", "IceCreamParlor", "PastryShop", "JamKitchen" } do
+	for _, id in
+		{
+			"SnackFactory",
+			"Diner",
+			"PaperMill",
+			"FeedMill2",
+			"IceCreamParlor",
+			"PastryShop",
+			"JamKitchen",
+			"RubberWorks",
+		}
+	do
 		ok(Factories[id].unlockLevel > Levels.cap and Factories[id].unlockLevel <= Levels.built, id .. " in the bank")
 		ok(table.find(Balance.enabledFactories, id) ~= nil, id .. " enabled")
 		eq(Factories[id].land, 2, id .. " stands in the East Meadow")
@@ -1430,6 +1468,42 @@ test("records: counters, read stats, claiming tiers in order", function()
 	assert(Records.stars(views) == 4, "four stars")
 	assert(Records.title(Records.stars(views)) == "Farmhand", "title from stars")
 	assert(Records.value(data, "houses", 0) >= 1, "starter houses count")
+end)
+
+test("records: the public card others see has stars and the card's six numbers", function()
+	local data = Profile.template()
+	Records.add(data, "harvest", 640)
+	data.orders.delivered = 120
+	Records.claim(data, "Orders", 0)
+	local card = Records.publicCard(data, 0)
+	eq(card.stars, 1, "one star")
+	eq(card.stats.Harvest, 640, "harvest")
+	eq(card.stats.Orders, 120, "orders")
+	eq(card.stats.Coins, nil, "only the card's stats")
+	eq(card.townHall, 1, "a new town's hall has one storey")
+	eq(card.upgrading, false, "nothing going up")
+	local n = 0
+	for _ in card.stats do
+		n += 1
+	end
+	eq(n, 6, "six numbers")
+end)
+
+test("records: the Studio fill reaches each counted record's next medal", function()
+	local data = Profile.template()
+	local ready = Records.debugFill(data, 0)
+	eq(Records.ready(data, "Harvest", 0), 1, "Bronze harvest ready")
+	eq(Records.ready(data, "Orders", 0), 1, "Bronze orders ready")
+	eq(Records.ready(data, "Population", 0), nil, "buildings aren't faked")
+	ok(ready >= 7, "the seven counted records")
+	Records.claim(data, "Harvest", 0)
+	Records.debugFill(data, 0)
+	eq(Records.ready(data, "Harvest", 0), 2, "then Silver")
+	for _ = 1, 3 do
+		Records.claim(data, "Harvest", 0)
+		Records.debugFill(data, 0)
+	end
+	eq(Records.claimed(data, "Harvest"), 3, "Gold claimed, nothing past it")
 end)
 
 test("settings: defaults in new profiles, checked values, the Gem confirm", function()

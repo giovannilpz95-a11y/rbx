@@ -489,6 +489,96 @@ TYPES.CanalHouse = {
 	end,
 }
 
+-- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
+-- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
+TYPES.Condos = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.8, s * 0.64, STORY
+		local body = walls(b, w, d, h, Palette.cream, 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		-- The upper flat, set back, and the terrace rail along the lower roof's edge
+		t.block(
+			"Upper",
+			Vector3.new(w, STORY, d * 0.6),
+			Vector3.new(0, PLINTH + h + STORY / 2, 0.3 + d * 0.2),
+			Palette.sky:Lerp(Palette.cream, 0.6)
+		)
+		t.block(
+			"Roof",
+			Vector3.new(w + 0.4, 0.4, d * 0.6 + 0.4),
+			Vector3.new(0, PLINTH + h + STORY + 0.2, 0.3 + d * 0.2),
+			roof
+		)
+		t.block("Rail", Vector3.new(w, 0.8, 0.2), Vector3.new(0, PLINTH + h + 0.4, face + 0.1), Palette.metal)
+		-- The side stair
+		t.wedge("Stair", Vector3.new(1.2, h, 2.4), CFrame.new(w / 2 + 0.6, PLINTH + h / 2, face + 1.4), Palette.stone)
+		Kit.door(t, "Door", CFrame.new(-w / 4, PLINTH, face), 1.6, 3.4, roof, Palette.cream)
+		Kit.window(t, "Window", CFrame.new(w / 5, PLINTH + 1.8, face), 2.4, 1.6, Palette.cream, Palette.glass)
+		Kit.window(t, "Window", CFrame.new(0, PLINTH + h + 1.6, face + d * 0.4), 2.4, 1.6, Palette.cream, Palette.glass)
+		Kit.sproutTag(t, Vector3.new(-w / 4, PLINTH + h + STORY + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Ivy Apartments (content bank, level 31): a wide three-storey block of honey stone with
+-- ivy climbing one corner, a flat roof with a parapet, and a shared front door under a canopy.
+TYPES.IvyApartments = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.82, s * 0.6, STORY * 2.6
+		local body = walls(b, w, d, h, Palette.wheat:Lerp(Palette.cream, 0.5), 0, 0.3)
+		local t = b.into(body, true)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.3), roof)
+		t.block("Parapet", Vector3.new(w + 0.4, 0.6, 0.3), Vector3.new(0, PLINTH + h + 0.8, 0.3 + front(d)), roof)
+		local face = 0.3 + front(d)
+		-- Ivy up the left corner
+		t.block(
+			"Ivy",
+			Vector3.new(1.4, h * 0.85, 0.3),
+			Vector3.new(-w / 2 + 0.6, PLINTH + h * 0.43, face - 0.1),
+			Palette.leaf
+		)
+		t.ball("IvyTop", 1.6, Vector3.new(-w / 2 + 0.6, PLINTH + h * 0.85, face - 0.1), Palette.leafLight)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 2, 3.6, roof, Palette.cream)
+		t.block("Canopy", Vector3.new(3, 0.3, 1.2), Vector3.new(0, PLINTH + 4, face - 0.6), roof)
+		for _, x in { -w / 4, w / 4 } do
+			Kit.window(t, "Window", CFrame.new(x, PLINTH + STORY * 1.6, face), 1.6, 1.8, Palette.cream, Palette.glass)
+		end
+		Kit.sproutTag(t, Vector3.new(w / 4, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Brick Townhouse (content bank, level 29): a tall red-brick house with a cream-trimmed bay
+-- window pushed out at the front, a steep gable roof and a door up two steps.
+TYPES.BrickTownhouse = {
+	roof = Palette.roofPlum,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.66, STORY * 2
+		local body = walls(b, w, d, h, Palette.brick:Lerp(Palette.roofRed, 0.25), 0, 0.3)
+		local t = b.into(body, true)
+		Kit.gableRoof(t, "Roof", CFrame.new(0, PLINTH + h, 0.3) * Kit.yaw(90), d + 1, w + 0.8, 3.4, roof)
+		local face = 0.3 + front(d)
+		-- The bay: a cream box pushed out from the left of the front, with a window and a lid
+		local bayX = -w / 4
+		t.block(
+			"Bay",
+			Vector3.new(w / 2, STORY - 0.4, 1),
+			Vector3.new(bayX, PLINTH + STORY / 2, face - 0.5),
+			Palette.cream
+		)
+		t.block("BayLid", Vector3.new(w / 2 + 0.4, 0.4, 1.4), Vector3.new(bayX, PLINTH + STORY, face - 0.5), roof)
+		Kit.window(t, "Window", CFrame.new(bayX, PLINTH + STORY / 2, face - 1), 1.6, 1.6, Palette.cream, Palette.glass)
+		Kit.window(t, "Window", CFrame.new(0, PLINTH + STORY * 1.5, face), 1.6, 1.8, Palette.cream, Palette.glass)
+		t.block("Steps", Vector3.new(1.8, 0.6, 1), Vector3.new(w / 4, PLINTH + 0.3, face - 0.5), Palette.stone)
+		Kit.door(t, "Door", CFrame.new(w / 4, PLINTH + 0.6, face), 1.5, 3.4, roof, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 ArtHouses.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtHouses.TYPES, id)

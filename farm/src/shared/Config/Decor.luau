@@ -41,6 +41,20 @@ local Decor: { [string]: DecorDef } = {
 	Topiary = { id = "Topiary", displayName = "Topiary", category = "Nature", unlockLevel = 18, coinCost = 350, xp = 6, size = { 1, 1 }, order = 22 },
 	Birdbath = { id = "Birdbath", displayName = "Birdbath", category = "Lights & furniture", unlockLevel = 19, coinCost = 450, xp = 7, size = { 1, 1 }, order = 23 },
 	GardenSwing = { id = "GardenSwing", displayName = "Garden Swing", category = "Lights & furniture", unlockLevel = 20, coinCost = 900, xp = 10, size = { 2, 1 }, order = 24 },
+	-- Level 21-28 set: Township's level and Coin price for each slot (wiki Decoration Table), our
+	-- own pieces and names
+	DaffodilBed = { id = "DaffodilBed", displayName = "Daffodil Bed", category = "Nature", unlockLevel = 21, coinCost = 550, xp = 6, size = { 1, 1 }, order = 25 },
+	PalmPair = { id = "PalmPair", displayName = "Palm Pair", category = "Nature", unlockLevel = 21, coinCost = 400, xp = 5, size = { 1, 1 }, order = 26 },
+	FishingJetty = { id = "FishingJetty", displayName = "Fishing Jetty", category = "Landmarks", unlockLevel = 22, coinCost = 650, xp = 7, size = { 1, 2 }, order = 27 },
+	GardenObelisk = { id = "GardenObelisk", displayName = "Garden Obelisk", category = "Landmarks", unlockLevel = 22, coinCost = 560, xp = 6, size = { 1, 1 }, order = 28 },
+	DeckChairs = { id = "DeckChairs", displayName = "Deck Chairs", category = "Lights & furniture", unlockLevel = 23, coinCost = 550, xp = 6, size = { 1, 1 }, order = 29 },
+	PumpkinCart = { id = "PumpkinCart", displayName = "Pumpkin Cart", category = "Nature", unlockLevel = 24, coinCost = 200, xp = 4, size = { 1, 1 }, order = 30 },
+	RoseBed = { id = "RoseBed", displayName = "Rose Bed", category = "Nature", unlockLevel = 24, coinCost = 400, xp = 5, size = { 1, 1 }, order = 31 },
+	IrisBed = { id = "IrisBed", displayName = "Iris Bed", category = "Nature", unlockLevel = 25, coinCost = 750, xp = 8, size = { 1, 1 }, order = 32 },
+	Rowboat = { id = "Rowboat", displayName = "Rowboat", category = "Landmarks", unlockLevel = 26, coinCost = 400, xp = 5, size = { 1, 1 }, order = 33 },
+	Treehouse = { id = "Treehouse", displayName = "Treehouse", category = "Landmarks", unlockLevel = 26, coinCost = 2300, xp = 15, size = { 1, 1 }, order = 34 },
+	TieredFountain = { id = "TieredFountain", displayName = "Tiered Fountain", category = "Lights & furniture", unlockLevel = 27, coinCost = 400, xp = 5, size = { 1, 1 }, order = 35 },
+	WeepingWillow = { id = "WeepingWillow", displayName = "Weeping Willow", category = "Nature", unlockLevel = 28, coinCost = 2700, xp = 16, size = { 1, 1 }, order = 36 },
 }
 
 for _, def in Decor do

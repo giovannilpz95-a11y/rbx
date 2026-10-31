@@ -49,6 +49,9 @@ local Houses: { [string]: HouseDef } = {
 	LakesideManor = { id = "LakesideManor", displayName = "Lakeside Manor", population = 55, coinCost = 385, buildSeconds = 7 * HOUR, xp = 55, copyLevels = { 22, 23, 23, 24 }, order = 11, color = { 200, 220, 235 } },
 	HearthHouse = { id = "HearthHouse", displayName = "Hearth House", population = 60, coinCost = 540, buildSeconds = 8 * HOUR, xp = 60, copyLevels = { 24, 25, 25, 26 }, order = 12, color = { 235, 225, 200 } },
 	TwinGables = { id = "TwinGables", displayName = "Twin Gables", population = 65, coinCost = 715, buildSeconds = 9 * HOUR, xp = 65, copyLevels = { 26, 27, 27, 28, 29 }, order = 13, color = { 240, 215, 150 } },
+	Condos = { id = "Condos", displayName = "Terrace Condos", population = 85, coinCost = 1700, buildSeconds = 18 * HOUR, xp = 85, copyLevels = { 32, 33, 36, 38, 40, 42 }, order = 17, color = { 150, 175, 200 } },
+	IvyApartments = { id = "IvyApartments", displayName = "Ivy Apartments", population = 80, coinCost = 1440, buildSeconds = 16 * HOUR, xp = 80, copyLevels = { 31, 35, 37, 39, 90 }, order = 16, color = { 200, 175, 140 } },
+	BrickTownhouse = { id = "BrickTownhouse", displayName = "Brick Townhouse", population = 75, coinCost = 1200, buildSeconds = 12 * HOUR, xp = 75, copyLevels = { 29, 30, 33, 34, 44 }, order = 15, color = { 160, 70, 60 } },
 	CanalHouse = { id = "CanalHouse", displayName = "Canal House", population = 70, coinCost = 910, buildSeconds = 10 * HOUR, xp = 70, copyLevels = { 28, 30, 31, 32 }, order = 14, color = { 175, 95, 75 } },
 }
 
@@ -79,6 +82,10 @@ local Community: { [string]: CommunityDef } = {
 	SculpturePark = { id = "SculpturePark", displayName = "Sculpture Park", unlockLevel = 25, capBonus = 120, coinCost = 1600, materials = { Bricks = 7, Planks = 10, Panes = 8 }, buildSeconds = 11 * HOUR, xp = 240, order = 22, color = { 190, 210, 170 } },
 	BigTop = { id = "BigTop", displayName = "Big Top", unlockLevel = 26, capBonus = 125, coinCost = 1900, materials = { Bricks = 8, Planks = 7, Panes = 12 }, buildSeconds = 12 * HOUR, xp = 250, order = 23, color = { 220, 70, 70 } },
 	BusDepot = { id = "BusDepot", displayName = "Bus Depot", unlockLevel = 27, capBonus = 130, coinCost = 2200, materials = { Bricks = 6, Planks = 9, Panes = 14 }, buildSeconds = 13 * HOUR, xp = 260, order = 24, color = { 240, 200, 80 } },
+	GrandHotel = { id = "GrandHotel", displayName = "Grand Hotel", unlockLevel = 32, capBonus = 155, coinCost = 4300, materials = { Bricks = 13, Planks = 15, Panes = 11 }, buildSeconds = 18 * HOUR, xp = 310, order = 29, color = { 200, 60, 70 } },
+	OfficeBlock = { id = "OfficeBlock", displayName = "Office Block", unlockLevel = 31, capBonus = 150, coinCost = 3800, materials = { Bricks = 12, Planks = 13, Panes = 12 }, buildSeconds = 17 * HOUR, xp = 300, order = 28, color = { 130, 160, 190 } },
+	OpenAirCinema = { id = "OpenAirCinema", displayName = "Open-Air Cinema", unlockLevel = 30, capBonus = 145, coinCost = 3300, materials = { Bricks = 16, Planks = 9, Panes = 10 }, buildSeconds = 16 * HOUR, xp = 290, order = 27, color = { 70, 80, 120 } },
+	CabStand = { id = "CabStand", displayName = "Cab Stand", unlockLevel = 29, capBonus = 140, coinCost = 2900, materials = { Bricks = 11, Planks = 9, Panes = 13 }, buildSeconds = 15 * HOUR, xp = 280, order = 26, color = { 245, 200, 50 } },
 	FillingStation = { id = "FillingStation", displayName = "Filling Station", unlockLevel = 28, capBonus = 135, coinCost = 2500, materials = { Bricks = 12, Planks = 10, Panes = 9 }, buildSeconds = 14 * HOUR, xp = 270, order = 25, color = { 230, 90, 70 } },
 }
 

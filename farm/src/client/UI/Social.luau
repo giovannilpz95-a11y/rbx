@@ -26,6 +26,7 @@ local Timer = require(Shared.Timer)
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Hud = require(script.Parent.Hud)
+local FarmerCard = require(script.Parent.FarmerCard)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
 local HeldTools = require(script.Parent.Parent.Controllers.HeldTools)
@@ -424,17 +425,22 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 	for _, other in others do
 		local line = card(body, 52, nextOrder())
 		local level = other:GetAttribute("FarmLevel")
-		Ui.label(string.format("%s%s", other.DisplayName, if type(level) == "number" then "   Lv " .. level else ""), {
-			Font = Enum.Font.GothamBold,
-			Position = UDim2.fromOffset(10, 4),
-			Size = UDim2.new(1, -270, 0, 22),
-			Parent = line,
-		})
-		Ui.label((if isFriend(other) then "Friend, " else "") .. whereabouts(other), {
+		local nameLabel = Ui.label(
+			string.format("%s%s", other.DisplayName, if type(level) == "number" then "   Lv " .. level else ""),
+			{
+				Font = Enum.Font.GothamBold,
+				Position = UDim2.fromOffset(10, 4),
+				Size = UDim2.new(1, -270, 0, 22),
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				Parent = line,
+			}
+		)
+		local whereLabel = Ui.label((if isFriend(other) then "Friend, " else "") .. whereabouts(other), {
 			TextColor3 = Ui.colors.muted,
 			TextSize = Type.size.small,
 			Position = UDim2.fromOffset(10, 26),
 			Size = UDim2.new(1, -270, 0, 20),
+			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = line,
 		})
 		local visitButton = smallButton("Visit", function()
@@ -458,7 +464,18 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 			end, Ui.colors.danger, 110)
 			send.Position = UDim2.new(1, right, 0.5, 0)
 			send.Parent = line
+			right -= 116
 		end
+		-- Their Farmer Card: level, title, stars and six numbers
+		local cardButton = smallButton("🏆", function()
+			FarmerCard.showOther(other.UserId)
+		end, Palette.button.neutral.face, 44)
+		cardButton.Position = UDim2.new(1, right, 0.5, 0)
+		cardButton.Parent = line
+		right -= 50
+		-- The name and whereabouts use what the buttons leave
+		nameLabel.Size = UDim2.new(1, right - 16, 0, 22)
+		whereLabel.Size = UDim2.new(1, right - 16, 0, 20)
 	end
 
 	heading(body, "Your farm", nextOrder())

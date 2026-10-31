@@ -914,6 +914,167 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Grand Hotel (content bank, level 32): a wide four-storey hotel in cream and red, a gold-
+-- trimmed entrance canopy over the steps, and a tall roof sign.
+TYPES.GrandHotel = function(b, s)
+	local w, d, h = s * 0.8, s * 0.5, 10
+	local z0 = s * 0.12
+	b.block("Plinth", Vector3.new(w + 0.6, PLINTH, d + 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body =
+		b.block("Body", Vector3.new(w, h, d), Vector3.new(0, PLINTH + h / 2, z0), Palette.cream, { collide = true })
+	local t = b.into(body, true)
+	local face = z0 - d / 2
+	-- Red floor bands
+	for _, y in { 3.4, 6.6 } do
+		t.block("Band", Vector3.new(w + 0.2, 0.5, d + 0.2), Vector3.new(0, PLINTH + y, z0), Palette.roofRed)
+	end
+	t.block("Roof", Vector3.new(w + 0.6, 0.6, d + 0.6), Vector3.new(0, PLINTH + h + 0.3, z0), Palette.roofRed)
+	-- The entrance canopy and steps
+	t.block("Canopy", Vector3.new(4, 0.4, 2.4), Vector3.new(0, PLINTH + 3, face - 1.2), Palette.coins)
+	t.block("Steps", Vector3.new(3.4, 0.5, 1.4), Vector3.new(0, PLINTH + 0.25, face - 0.7), Palette.stoneLight)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 2.2, 2.8, Palette.roofRed, Palette.coins)
+	Kit.window(t, "Window", CFrame.new(-w / 3, PLINTH + 5, face), 2.2, 1.6, Palette.cream, Palette.glass)
+	Kit.window(t, "Window", CFrame.new(w / 3, PLINTH + 5, face), 2.2, 1.6, Palette.cream, Palette.glass)
+	-- Sign object: the roof sign on two legs
+	for _, x in { -1.6, 1.6 } do
+		t.block("SignLeg", Vector3.new(0.3, 1.4, 0.3), Vector3.new(x, PLINTH + h + 1.3, face + 0.6), Palette.metal)
+	end
+	t.block(
+		"RoofSign",
+		Vector3.new(4.4, 1.2, 0.3),
+		Vector3.new(0, PLINTH + h + 2.4, face + 0.6),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1, PLINTH + h + 0.6, z0 + d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Office Block (content bank, level 31): a tall glass-banded tower on a stone base, a flat
+-- roof with a water tank, and a revolving-door porch with a flagpole.
+TYPES.OfficeBlock = function(b, s)
+	local w, d, h = s * 0.55, s * 0.55, 11
+	b.block("Plinth", Vector3.new(w + 1.2, PLINTH, d + 1.2), Vector3.new(0, PLINTH / 2, 0), Palette.stone)
+	local body =
+		b.block("Body", Vector3.new(w, h, d), Vector3.new(0, PLINTH + h / 2, 0), Palette.stoneLight, { collide = true })
+	local t = b.into(body, true)
+	local face = -d / 2
+	-- Glass bands across the front, two floors apart
+	for _, y in { 4, 7.4 } do
+		t.block(
+			"Band",
+			Vector3.new(w - 0.6, 1.6, 0.2),
+			Vector3.new(0, PLINTH + y, face - 0.1),
+			Palette.glassDeep,
+			{ shadow = false }
+		)
+	end
+	t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0), Palette.stoneDark)
+	t.post("Tank", 1.8, 1.6, Vector3.new(w / 4, PLINTH + h + 1.4, d / 4), Palette.wood)
+	t.block("TankLid", Vector3.new(1.8, 0.3, 1.8), Vector3.new(w / 4, PLINTH + h + 2.45, d / 4), Palette.roofTeal)
+	-- The porch with its door
+	t.block("Porch", Vector3.new(3.4, 3, 1.6), Vector3.new(0, PLINTH + 1.5, face - 0.8), Palette.roofTeal)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 1.6), 1.8, 2.6, Palette.glass, Palette.metal)
+	-- Sign object: the flagpole and flag by the porch
+	t.post("Flagpole", 7, 0.2, Vector3.new(w / 2 + 0.6, 3.5, face - 1), Palette.metal)
+	t.block(
+		"Flag",
+		Vector3.new(1.6, 1, 0.1),
+		Vector3.new(w / 2 + 1.4, 6.4, face - 1),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	Kit.sproutTag(t, Vector3.new(-w / 4, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Open-Air Cinema (content bank, level 30): a big white screen on dark posts at the back, a
+-- little ticket booth with a striped roof, and a row of speaker posts out front.
+TYPES.OpenAirCinema = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grass, { collide = true })
+	local t = b.into(body, true)
+	-- Sign object: the screen, a cream face in a dark frame on two posts
+	local sz = w / 2 - 1
+	for _, x in { -w / 3, w / 3 } do
+		t.post("ScreenPost", 7, 0.5, Vector3.new(x, 3.9, sz), Palette.woodDark)
+	end
+	t.block("ScreenFrame", Vector3.new(w * 0.72, 4.4, 0.4), Vector3.new(0, 5.2, sz), Palette.stoneDark)
+	t.block(
+		"Screen",
+		Vector3.new(w * 0.66, 3.8, 0.2),
+		Vector3.new(0, 5.2, sz - 0.25),
+		Palette.cream,
+		{ shadow = false }
+	)
+	-- The ticket booth at the front corner
+	local booth = Vector3.new(-w / 2 + 2, 0, -w / 2 + 2)
+	t.block("Booth", Vector3.new(2.6, 3, 2.6), booth + Vector3.new(0, 1.9, 0), Palette.roofRed)
+	t.block("BoothRoof", Vector3.new(3.2, 0.5, 3.2), booth + Vector3.new(0, 3.65, 0), Palette.cream)
+	Kit.window(t, "Window", CFrame.new(booth + Vector3.new(0, 2.2, -1.3)), 1.6, 1, Palette.cream, Palette.glass)
+	-- Speaker posts in a row, where the cars park
+	for _, x in { -1, 1.5, 4 } do
+		t.post("Speaker", 1.6, 0.25, Vector3.new(x, 1.2, -0.5), Palette.metal)
+		t.block(
+			"SpeakerBox",
+			Vector3.new(0.6, 0.5, 0.4),
+			Vector3.new(x, 2.2, -0.5),
+			Palette.stoneDark,
+			{ shadow = false }
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Cab Stand (content bank, level 29): a little dispatch booth under a striped awning, a
+-- yellow cab with a roof light waiting at the kerb, and a tall checkered sign.
+TYPES.CabStand = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.road, { collide = true })
+	local t = b.into(body, true)
+	-- The booth at the back
+	local bz = w / 2 - 2.2
+	t.block("Booth", Vector3.new(4, 3.6, 3.2), Vector3.new(-w / 4, 2.2, bz), Palette.cream)
+	t.block("BoothRoof", Vector3.new(4.6, 0.5, 3.8), Vector3.new(-w / 4, 4.25, bz), Palette.roofTeal)
+	t.block(
+		"Awning",
+		Vector3.new(4.2, 0.3, 1.4),
+		CFrame.new(-w / 4, 3.4, bz - 2.2) * CFrame.Angles(math.rad(18), 0, 0),
+		Palette.roofMustard,
+		{ shadow = false }
+	)
+	Kit.window(t, "Window", CFrame.new(-w / 4, 2.4, bz - 1.6), 2.4, 1.4, Palette.cream, Palette.glass)
+	-- Sign object: the cab, yellow with a dark window band, a roof light and four wheels
+	local cab = Vector3.new(w / 8, 0, -0.8)
+	t.block("Cab", Vector3.new(4.2, 1.4, 2), cab + Vector3.new(0, 1.2, 0), Palette.roofMustard)
+	t.block("CabTop", Vector3.new(2.4, 0.9, 1.9), cab + Vector3.new(-0.2, 2.35, 0), Palette.roofMustard)
+	t.block(
+		"CabWindows",
+		Vector3.new(2.2, 0.6, 1.95),
+		cab + Vector3.new(-0.2, 2.35, 0),
+		Palette.glassDeep,
+		{ shadow = false }
+	)
+	t.block(
+		"RoofLight",
+		Vector3.new(0.8, 0.35, 0.5),
+		cab + Vector3.new(-0.2, 2.95, 0),
+		Palette.cream,
+		{ shadow = false }
+	)
+	for _, x in { -1.3, 1.3 } do
+		t.cyl("Wheel", 2.1, 0.8, CFrame.new(cab + Vector3.new(x, 0.4, 0)) * TURN, Palette.tire, { shadow = false })
+	end
+	-- The checkered sign on its pole
+	local pole = Vector3.new(w / 2 - 0.8, 0, -w / 2 + 0.8)
+	t.post("SignPole", 4.6, 0.3, pole + Vector3.new(0, 2.7, 0), Palette.metal)
+	t.block("Sign", Vector3.new(1.8, 1, 0.2), pole + Vector3.new(0, 5.3, 0), Palette.roofMustard, { shadow = false })
+	t.block("Checks", Vector3.new(1.85, 0.3, 0.22), pole + Vector3.new(0, 5.3, 0), Palette.tire, { shadow = false })
+	Kit.sproutTag(t, Vector3.new(-w / 2 + 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 ArtCommunity.TYPES = {} :: { string }
 for id in TYPES do
 	table.insert(ArtCommunity.TYPES, id)

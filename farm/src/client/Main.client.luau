@@ -32,6 +32,7 @@ local DailyGift = require(script.Parent.UI.DailyGift)
 local FarmerCard = require(script.Parent.UI.FarmerCard)
 local PorchStatus = require(script.Parent.UI.PorchStatus)
 local EdgeStack = require(script.Parent.UI.EdgeStack)
+local Fx = require(script.Parent.UI.Fx)
 
 local player = Players.LocalPlayer
 
@@ -55,6 +56,7 @@ SeedCartUi.init()
 QuarryUi.init()
 GuildUi.init()
 LevelUp.init()
+Fx.init()
 SettingsUi.init()
 DailyGift.init()
 FarmerCard.init()

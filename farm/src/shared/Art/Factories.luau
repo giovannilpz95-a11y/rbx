@@ -637,6 +637,73 @@ local function jamKitchen(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Rubber Works (content bank, level 29): a grey works shed under a curved metal roof. Two big
+-- press rollers stand on a frame on the roof, squeezing a dark rubber sheet, and the lower
+-- one turns while it works. A stack of tyres leans by the door.
+local function rubberWorks(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.stoneLight:Lerp(Palette.sky, 0.15), Palette.stoneDark)
+	local d = b.into(body, true)
+	Kit.archRoof(d, "Roof", Vector3.new(0, TOP, 0), 11, 13, 2.6, 4, 0.5, Palette.metal)
+	local chimney = d.post("Chimney", 3.4, 1.2, Vector3.new(-3.6, TOP + 3.4, 4), Palette.stoneDark)
+	-- The press: two posts carrying the rollers, the top one still, the sheet between them
+	local press = Vector3.new(1.2, TOP + 4.2, 0)
+	for _, x in { -2.6, 2.6 } do
+		d.block("PressPost", Vector3.new(0.5, 3.4, 0.8), Vector3.new(press.X + x, TOP + 3.2, 0), Palette.woodDark)
+	end
+	d.cyl("TopRoller", 4.6, 1.2, CFrame.new(press + Vector3.new(0, 0.9, 0)), Palette.metal)
+	d.block("Sheet", Vector3.new(4.2, 0.15, 2.6), press + Vector3.new(0, 0.2, -1.2), Palette.tire, { shadow = false })
+	local anim = animFolder(model)
+	b.into(anim, false).cyl("Roller", 4.6, 1.2, CFrame.new(press + Vector3.new(0, -0.45, 0)), Palette.stoneDark)
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofTeal, Palette.cream)
+	-- Tyres stacked by the door
+	for i = 0, 2 do
+		d.cyl(
+			"Tyre",
+			0.6,
+			1.6,
+			CFrame.new(4.6, 0.3 + i * 0.62, FRONT - 1.6) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.tire
+		)
+	end
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("RubberBall", 1.2, at, Palette.tire:Lerp(Palette.cream, 0.15), { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
+-- Prep Kitchen (content bank, level 31): a cream kitchen block under a red gable, a giant
+-- mixing bowl on the roof with a dough paddle that turns while it works, and flour sacks by
+-- the door.
+local function prepKitchen(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cream, Palette.stoneLight)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 13.4, 3, Palette.roofRed, Palette.cream)
+	local chimney = d.block("Chimney", Vector3.new(1.4, 3, 1.4), Vector3.new(-3.6, TOP + 2.4, 3.6), Palette.brick)
+	-- The giant bowl on its stand, with a ball of dough and the paddle turning above it
+	local bowl = Vector3.new(1.6, TOP + 3.4, 0)
+	d.post("BowlStand", 1.6, 1.4, bowl + Vector3.new(0, -1.3, 0), Palette.woodDark)
+	d.post("Bowl", 1.8, 3.6, bowl, Palette.sky:Lerp(Palette.cream, 0.4))
+	d.ball("Dough", 2.4, bowl + Vector3.new(0, 0.9, 0), Palette.bread:Lerp(Palette.cream, 0.5), { shadow = false })
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.post("Paddle", 3, 0.3, bowl + Vector3.new(0, 1.8, 0), Palette.woodLight)
+	a.block("Blade", Vector3.new(2.2, 0.6, 0.2), bowl + Vector3.new(0, 1.2, 0), Palette.woodLight, { shadow = false })
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofRed, Palette.cream)
+	for i, x in { 4.4, 5.2 } do
+		d.block("Sack", Vector3.new(0.9, 1.3, 0.8), CFrame.new(x, 0.65, FRONT - 1.4) * Kit.yaw(i * 15), Palette.sack)
+	end
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("DoughBall", 1.2, at, Palette.bread:Lerp(Palette.cream, 0.5), { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 4.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -702,6 +769,8 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	IceCreamParlor = iceCreamParlor,
 	PastryShop = pastryShop,
 	JamKitchen = jamKitchen,
+	RubberWorks = rubberWorks,
+	PrepKitchen = prepKitchen,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
