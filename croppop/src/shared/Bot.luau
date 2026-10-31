@@ -2,7 +2,7 @@
 	A simple test player for tuning levels. It plays a level on many seeds
 	and reports how often it wins. Its moves are random, but it prefers
 	setting off power-ups, matching under a pumpkin or next to a pumpkin
-	basket, and matching on clover
+	basket, matching on goo, and matching on clover
 	that still has bare cells to spread to, so its win rate is a
 	rough lower bound on a person's. Use it to compare levels, not as the
 	final word on difficulty.
@@ -85,6 +85,33 @@ local function shakesBaskets(pop, moves)
 	return out
 end
 
+-- Moves whose match takes in a goo cell.
+local function clearsGoo(board, moves)
+	local any = false
+	board:eachCell(function(cell)
+		any = any or cell.goo == true
+	end)
+	if not any then
+		return nil
+	end
+	local out = {}
+	for _, m in moves do
+		local a, b = board:get(m[1], m[2]), board:get(m[3], m[4])
+		a.piece, b.piece = b.piece, a.piece
+		local clears = false
+		for _, group in Matcher.findGroups(board, {}) do
+			for _, cell in group.cells do
+				clears = clears or cell.goo == true
+			end
+		end
+		a.piece, b.piece = b.piece, a.piece
+		if clears then
+			table.insert(out, m)
+		end
+	end
+	return out
+end
+
 -- Moves whose match takes in a clover cell and a bare one (so clover spreads).
 local function spreadsClover(board, moves)
 	local any, bare = false, false
@@ -139,6 +166,10 @@ local function chooseMove(pop, rng)
 	local basketMoves = shakesBaskets(pop, moves)
 	if basketMoves and #basketMoves > 0 and rng:int(1, 3) > 1 then
 		return rng:pick(basketMoves)
+	end
+	local gooMoves = clearsGoo(board, moves)
+	if gooMoves and #gooMoves > 0 and rng:int(1, 3) > 1 then
+		return rng:pick(gooMoves)
 	end
 	local cloverMoves = spreadsClover(board, moves)
 	if cloverMoves and #cloverMoves > 0 and rng:int(1, 3) > 1 then

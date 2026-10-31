@@ -46,6 +46,7 @@ export type Cell = {
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
+	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
 	portalOut: Cell?, -- a portal entrance: pieces falling out of here land in this cell
 	portalIn: Cell?, -- a portal exit: the entrance that feeds it
 }
@@ -149,6 +150,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					self.startPumpkins[cell] = true
 				elseif ch == "c" then
 					cell.clover = true
+				elseif ch == "g" then
+					cell.goo = true
 				elseif ch == "s" or ch == "S" then
 					cell.bale = if ch == "S" then 2 else 1
 					cell.stone = true
@@ -553,6 +556,9 @@ function Board.hash(self): string
 				if cell.frost > 0 then
 					code ..= "f" .. cell.frost
 				end
+				if cell.goo then
+					code ..= "g"
+				end
 				table.insert(row, code .. clover)
 			end
 		end
@@ -583,6 +589,7 @@ function Board.snapshot(self)
 			mud = cell.mud,
 			frost = cell.frost,
 			clover = cell.clover,
+			goo = cell.goo,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})
 	end)

@@ -240,6 +240,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.mud.Visible = cell.mud > 0
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
 	guis.clover.Visible = cell.clover == true
+	guis.goo.Visible = cell.goo == true
 	styleBale(guis.bale, cell.bale, cell.weed, cell.stone)
 	styleFrost(guis, cell.frost or 0)
 end
@@ -310,6 +311,20 @@ function BoardView.load(self, game)
 		leaf.TextScaled = true
 		leaf.Parent = clover
 
+		-- Goo: a green film over the cell, under the tile, with rounded blobs.
+		local goo = Instance.new("Frame")
+		goo.Name = "Goo"
+		goo.AnchorPoint = Vector2.new(0.5, 0.5)
+		goo.Position = UDim2.fromScale(0.5, 0.5)
+		goo.Size = UDim2.fromScale(1, 1)
+		goo.BorderSizePixel = 0
+		goo.BackgroundColor3 = TileStyle.Board.goo
+		goo.BackgroundTransparency = 0.1
+		goo.Parent = bg
+		local gooCorner = Instance.new("UICorner")
+		gooCorner.CornerRadius = UDim.new(0.35, 0)
+		gooCorner.Parent = goo
+
 		local bale = Instance.new("TextLabel")
 		bale.Name = "Bale"
 		bale.Size = self:_cellSize()
@@ -373,7 +388,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -558,6 +573,9 @@ function BoardView._effect(self, effect): number
 		end
 		self:_flash(self:_centerOf(effect.toX, effect.toY), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Pumpkin.color, true)
 		return FX_TIME
+	elseif effect.type == "Ooze" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.goo, true)
+		return FX_TIME
 	elseif effect.type == "Grow" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.weed, true)
 		return FX_TIME
@@ -634,6 +652,12 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[c.y] and self.cellGuis[c.y][c.x]
 		if guis then
 			guis.clover.Visible = true
+		end
+	end
+	for _, g in phase.goo or {} do
+		local guis = self.cellGuis[g.y] and self.cellGuis[g.y][g.x]
+		if guis then
+			guis.goo.Visible = g.on
 		end
 	end
 	for _, f in phase.fences or {} do

@@ -10,6 +10,8 @@
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
 	  s  stone wall, 1 layer   S  stone wall, 2 layers (only blasts break stone)
+	  g  goo over the tile (a match or blast on it clears it; after a swap that
+	     clears none, it spreads to a neighbouring tile; covering the board loses)
 	  d  pumpkin basket: not a cell (pieces fall past it); a match next to it or
 	     a blast on it drops a pumpkin into the cell below. Needs a Pumpkins goal,
 	     and then pumpkins come only from baskets, not from refills.
@@ -32,7 +34,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -64,6 +66,7 @@ local VALID_CHARS = {
 	["."] = true,
 	["#"] = true,
 	d = true,
+	g = true,
 	m = true,
 	M = true,
 	f = true,
@@ -211,7 +214,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets = 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -233,6 +236,8 @@ function Levels.validate(level): string?
 				clover += 1
 			elseif ch == "s" or ch == "S" then
 				stones += 1
+			elseif ch == "g" then
+				goo += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -297,6 +302,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Stones" then
 			if stones == 0 then
 				return "stones goal but no stone walls in the layout"
+			end
+		elseif goal.kind == "Goo" then
+			if goo == 0 then
+				return "goo goal but no goo in the layout"
 			end
 		elseif goal.kind == "Fences" then
 			if not level.fences or #level.fences == 0 then
