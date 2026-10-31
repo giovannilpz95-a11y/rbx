@@ -46,10 +46,13 @@ local crates: { [string]: Range } = {
 	Paper = { 1, 4 }, PaperTowel = { 1, 4 }, Wallpaper = { 1, 2 },
 	-- Pastry Shop
 	Muffin = { 2, 7 }, Brownie = { 2, 5 }, Cupcake = { 2, 3 }, Donut = { 2, 3 }, Cheesecake = { 1, 2 },
+	HoneyGingerbread = { 1, 4 },
 	-- Prep Kitchen, Molding Works
-	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 },
+	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 }, Ball = { 1, 2 },
 	-- Jam Kitchen, Rubber Works
-	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 },
+	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 }, Glue = { 1, 3 },
+	-- Homewares Shop
+	ScrubBrush = { 1, 2 },
 }
 
 return table.freeze({

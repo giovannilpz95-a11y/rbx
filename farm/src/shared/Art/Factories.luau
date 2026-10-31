@@ -750,6 +750,50 @@ local function moldingWorks(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Homewares Shop (content bank, level 37): a mustard workshop under a gabled roof with a
+-- striped awning over the window. A giant scrub brush on a roof frame turns while it works,
+-- and a bucket of suds and a stack of brushes wait by the door.
+local function homewaresShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.roofMustard:Lerp(Palette.cream, 0.45), Palette.wood)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 9.4, 2.4, Palette.roofTeal, Palette.cream)
+	local chimney = d.post("Chimney", 2.4, 1, Vector3.new(-4, TOP + 2.2, 2.6), Palette.brick)
+	-- The roof frame holding the brush: two posts and the brush's axle along X
+	local brush = Vector3.new(1, TOP + 3.6, -1.6)
+	for _, x in { -2.4, 2.4 } do
+		d.block("BrushPost", Vector3.new(0.5, 3.6, 0.5), brush + Vector3.new(x, -1.4, 0), Palette.woodDark)
+	end
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.cyl("Brush", 4.2, 1.2, brush, Palette.wood)
+	for i = 0, 3 do
+		local turn = CFrame.new(brush) * CFrame.Angles(i * math.pi / 2, 0, 0)
+		a.block("Bristles", Vector3.new(3.8, 0.5, 0.5), turn * CFrame.new(0, 0.75, 0), Palette.cream)
+	end
+	-- Awning over the window, in two colours
+	for i = 0, 3 do
+		d.block(
+			"Awning",
+			Vector3.new(1, 0.2, 1.4),
+			CFrame.new(-3.5 + i, PLINTH + 5, FRONT - 0.6) * CFrame.Angles(math.rad(-18), 0, 0),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream,
+			{ shadow = false }
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2, PLINTH + 3.4, FRONT), 3.4, 2.4, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.4, Palette.roofRed, Palette.cream)
+	-- A bucket of suds and a stack of brushes by the door
+	d.post("Bucket", 0.9, 1, Vector3.new(4.9, 0.45, FRONT - 1.4), Palette.sky)
+	d.ball("Suds", 1, Vector3.new(4.9, 1, FRONT - 1.4), Palette.cream, { shadow = false })
+	d.block("Brushes", Vector3.new(1.4, 0.6, 0.8), Vector3.new(4.9, 0.3, FRONT - 2.8), Palette.wood)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("BrushIcon", Vector3.new(1.2, 0.5, 0.2), at, Palette.roofMustard, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 3.6), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -878,6 +922,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	RubberWorks = rubberWorks,
 	PrepKitchen = prepKitchen,
 	MoldingWorks = moldingWorks,
+	HomewaresShop = homewaresShop,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

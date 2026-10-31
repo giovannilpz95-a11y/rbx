@@ -954,6 +954,49 @@ TYPES.LoopCoaster = function(b, s)
 	return body
 end
 
+-- Sports Arena (content bank, level 37): an open oval stand of seats around a green pitch,
+-- floodlights on two masts, and a ticket gate at the front.
+TYPES.SportsArena = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.7, 2.4, 1.6),
+		Vector3.new(0, PLINTH + 1.2, z0 + s * 0.2),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	-- The pitch, with the side stands and the low front wall
+	t.block(
+		"Pitch",
+		Vector3.new(s * 0.56, 0.2, s * 0.3),
+		Vector3.new(0, PLINTH + 0.1, z0 - s * 0.02),
+		Palette.grassLight
+	)
+	t.block("Stripe", Vector3.new(0.3, 0.22, s * 0.3), Vector3.new(0, PLINTH + 0.12, z0 - s * 0.02), Palette.cream)
+	for _, x in { -1, 1 } do
+		t.wedge(
+			"Stand",
+			Vector3.new(s * 0.32, 2, 1.6),
+			CFrame.new(x * s * 0.35, PLINTH + 1, z0 - s * 0.02) * Kit.yaw(x * 90),
+			Palette.roofTeal
+		)
+		t.block("Mast", Vector3.new(0.4, 6, 0.4), Vector3.new(x * s * 0.38, PLINTH + 3, z0 + s * 0.22), Palette.metal)
+		t.block(
+			"Lights",
+			Vector3.new(1.6, 0.8, 0.4),
+			Vector3.new(x * s * 0.38, PLINTH + 6.2, z0 + s * 0.2),
+			Palette.cream
+		)
+	end
+	t.block("FrontWall", Vector3.new(s * 0.56, 0.8, 0.3), Vector3.new(0, PLINTH + 0.4, z0 - s * 0.2), Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, z0 - s * 0.21), 1.4, 2, Palette.roofMustard, Palette.cream)
+	t.ball("Ball", 0.6, Vector3.new(s * 0.08, PLINTH + 0.5, z0), Palette.cream)
+	Kit.sproutTag(t, Vector3.new(s * 0.3, PLINTH + 3.2, z0 + s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Sky Wheel (content bank, level 35): a big wheel on two splayed legs over a ticket booth,
 -- its rim ringed with coloured gondolas.
 TYPES.SkyWheel = function(b, s)

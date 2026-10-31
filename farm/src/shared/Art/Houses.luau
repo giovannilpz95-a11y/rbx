@@ -522,6 +522,45 @@ TYPES.CourtyardFlats = {
 	end,
 }
 
+-- Garden Co-op (content bank, level 37): a three-storey shared block with a planted roof
+-- garden behind a rail, a window box and a vegetable bed by the front door.
+TYPES.GardenCoop = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.82, s * 0.6, STORY * 3
+		local body = walls(b, w, d, h, Palette.cream:Lerp(Palette.leaf, 0.15), 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.3), roof)
+		-- The roof garden: a green bed, two bushes and a rail along the front
+		t.block("RoofGarden", Vector3.new(w * 0.8, 0.4, d * 0.6), Vector3.new(0, PLINTH + h + 0.7, 0.3), Palette.leaf)
+		t.ball("RoofBush", 1.4, Vector3.new(-w / 4, PLINTH + h + 1.3, 0.3), Palette.treeTop)
+		t.block("Rail", Vector3.new(w, 0.6, 0.2), Vector3.new(0, PLINTH + h + 0.8, face + 0.2), Palette.wood)
+		-- Windows on the upper floors, one long window box under the top one
+		for i = 1, 2 do
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(-w / 4, PLINTH + STORY * i + 1.6, face),
+				1.4,
+				1.6,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		t.block(
+			"WindowBox",
+			Vector3.new(1.6, 0.4, 0.4),
+			Vector3.new(-w / 4, PLINTH + STORY * 2 + 0.6, face - 0.2),
+			Palette.flowerPink
+		)
+		Kit.door(t, "Door", CFrame.new(w / 6, PLINTH, face), 1.8, 3.4, roof, Palette.cream)
+		t.block("VegBed", Vector3.new(w / 4, 0.5, 1), Vector3.new(-w / 4, PLINTH + 0.25, face - 1), Palette.soil)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 0.6, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {
