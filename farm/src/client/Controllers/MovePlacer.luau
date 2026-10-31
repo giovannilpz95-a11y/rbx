@@ -28,6 +28,8 @@ local editing = false -- Move mode is on: a tap picks a building up
 local active: string? = nil -- the key of the building being moved
 local moving: Instance? = nil -- its model, faded while it's picked up
 local turns = 0
+local offered = false -- Move mode came on to place a building the player just started
+local hint: TextLabel
 local spot: { x: number, z: number, ok: boolean, reason: string? } = { x = 0, z = 0, ok = false, reason = nil }
 
 local function fade(model: Instance?, amount: number)
@@ -97,7 +99,12 @@ local function stopMoving()
 	active = nil
 	moving = nil
 	bar.Visible = false
+	hint.Visible = false
 	ghost.Parent = nil
+	if offered then
+		offered = false
+		editing = false -- it came on just for this building
+	end
 	banner.Visible = editing
 end
 
@@ -131,6 +138,22 @@ local function buildingAt(instance: Instance?): (string?, Instance?)
 end
 
 -- Called with whatever a tap hit while Move mode is on. Returns true when it used the tap.
+local function pickUp(key: string, model: Instance)
+	active = key
+	moving = model
+	turns = 0
+	local state = ClientStore.state
+	local saved = state and state.layout and state.layout[key]
+	if saved then
+		turns = (saved.r // 90) % 4
+	end
+	fade(model, 0.6)
+	banner.Visible = false
+	bar.Visible = true
+	hint.Visible = true
+	update()
+end
+
 function MovePlacer.tap(instance: Instance?): boolean
 	if not editing then
 		return false
@@ -143,19 +166,37 @@ function MovePlacer.tap(instance: Instance?): boolean
 		Hud.toast("Tap one of your buildings to move it")
 		return true
 	end
-	active = key
-	moving = model
-	turns = 0
-	local state = ClientStore.state
-	local saved = state and state.layout and state.layout[key]
-	if saved then
-		turns = (saved.r // 90) % 4
-	end
-	fade(model, 0.6)
-	banner.Visible = false
-	bar.Visible = true
-	update()
+	pickUp(key, model :: Instance)
 	return true
+end
+
+-- The server offers to let the player place a building they just started: pick it up as
+-- soon as it stands on the plot (Cancel leaves it where it went up)
+function MovePlacer.offer(payload: { [string]: any })
+	local key = payload.key
+	if type(key) ~= "string" or active ~= nil then
+		return
+	end
+	task.spawn(function()
+		for _ = 1, 50 do
+			local found: Instance? = nil
+			if plot then
+				for _, d in (plot :: Model):GetDescendants() do
+					if d:GetAttribute("LayoutKey") == key then
+						found = d
+						break
+					end
+				end
+			end
+			if found and active == nil then
+				editing = true
+				offered = true
+				pickUp(key, found)
+				return
+			end
+			task.wait(0.1)
+		end
+	end)
 end
 
 function MovePlacer.setPlot(model: Model)
@@ -212,6 +253,17 @@ function MovePlacer.init()
 	Ui.button("Turn", function()
 		turns = (turns + 1) % 4
 	end, { Size = UDim2.fromOffset(100, 40), LayoutOrder = 2, BackgroundColor3 = Ui.colors.selected, Parent = bar })
+	hint = Ui.label("Walk it where you want it, then Place. Cancel leaves it where it is.", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -226),
+		Size = UDim2.fromOffset(420, 30),
+		TextSize = 14,
+		TextWrapped = true,
+		BackgroundTransparency = 0.15,
+		BackgroundColor3 = Ui.colors.panel,
+		Visible = false,
+		Parent = gui,
+	})
 	Ui.button("Cancel", stopMoving, {
 		Size = UDim2.fromOffset(100, 40),
 		LayoutOrder = 3,

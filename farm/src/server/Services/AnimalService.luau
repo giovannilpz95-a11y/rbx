@@ -8,11 +8,11 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local Balance = require(Shared.Config.Balance)
 local Items = require(Shared.Items)
-local Land = require(Shared.Config.Land)
 local Net = require(Shared.Net)
 local Pen = require(Shared.Pen)
 local Speedup = require(Shared.Speedup)
 local TownRules = require(Shared.TownRules)
+local Layout = require(Shared.Layout)
 local Tutorial = require(Shared.Tutorial)
 
 local DataService = require(script.Parent.DataService)
@@ -58,13 +58,11 @@ function AnimalService.build(player: Player, penId: any): (boolean, string?)
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
 	end
-	if def.land and not TownRules.landDone(data, def.land, Clock.now()) then
-		return false,
-			string.format(
-				"The %s's spot is in the %s. Clear it first.",
-				def.displayName,
-				Land.expansions[def.land].displayName
-			)
+	-- Its usual spot waits for its land; otherwise it goes up at the nearest open spot (and the
+	-- player can place it anywhere after)
+	local spot, noRoom = PlotService.prepareBuild(player, data, "pen", def.id, def.land)
+	if noRoom then
+		return false, noRoom
 	end
 	if not EconomyService.spend(player, "Coins", def.buildCost, "build_" .. def.id) then
 		return false, string.format("Building the %s costs %d Coins", def.displayName, def.buildCost)
@@ -77,7 +75,14 @@ function AnimalService.build(player: Player, penId: any): (boolean, string?)
 	end
 	EconomyService.add(player, "XP", def.xp, "build_" .. def.id)
 	DataService.markDirty(player, true)
-	PlotService.refresh(player)
+	local key = Layout.key("pen", def.id)
+	if spot then
+		data.layout[key] = spot
+		PlotService.relocate(player, key)
+	else
+		PlotService.refresh(player)
+	end
+	PlotService.offerPlace(player, data, key)
 	return true
 end
 
