@@ -14,6 +14,8 @@ local Blimp = require("../src/shared/Blimp")
 local BlimpConfig = require("../src/shared/Config/Blimp")
 local Express = require("../src/shared/Express")
 local ExpressConfig = require("../src/shared/Config/Express")
+local Market = require("../src/shared/Market")
+local MarketConfig = require("../src/shared/Config/Market")
 local BarnRules = require("../src/shared/BarnRules")
 local Crops = require("../src/shared/Config/Crops")
 local DailyRules = require("../src/shared/Daily")
@@ -782,6 +784,82 @@ test("Airship Freight: repair, dock, load, send, expire", function()
 	ok(Blimp.finishRepair(fresh, 100), "finish early")
 	eq(Blimp.tick(fresh, 100), "docked", "first blimp docks")
 	ok(#fresh.blimp.load.rows[1] >= 2, "a load from crops alone")
+end)
+
+test("Market stall: slots by level, price band, tax, buy caps, the passing trader and featuring", function()
+	eq(Market.slotCount(12), 0, "no stall before level 13")
+	eq(Market.slotCount(13), 4, "4 slots at level 13")
+	eq(Market.slotCount(22), 7, "+1 at 16, 19 and 22")
+	eq(Market.slotCount(40), 9, "9 at most")
+	ok(Market.tradeable("Wheat") and Market.tradeable("Milk") and Market.tradeable("Bread"), "goods trade")
+	ok(
+		not Market.tradeable("Nails") and not Market.tradeable("Shovel") and not Market.tradeable(5),
+		"materials and tools don't"
+	)
+	for id, def in Items do
+		if Market.tradeable(id) then
+			ok(def.sellPrice > 0 and def.kind ~= "Material", id .. " has a Barn price and isn't a material")
+		end
+	end
+	local low, high, default = Market.priceRange("Wheat", 10)
+	local base = Items.Wheat.sellPrice * 10
+	eq(low, math.ceil(base * 0.5), "floor 50%")
+	eq(high, math.floor(base * 2), "ceiling 200%")
+	ok(default >= low and default <= high and math.abs(default - base * 1.2) <= 1, "default 120%")
+
+	local seller = Profile.migrate(nil) :: any
+	local buyer = Profile.migrate(nil) :: any
+	seller.level, buyer.level = 13, 13
+	buyer.currencies.Coins = 10000
+	ok(not Market.canList(seller, 1, "Wheat", 10, default, 5), "can't list more than you have")
+	ok(not Market.canList(seller, 1, "Wheat", 11, default, 20), "10 a slot at most")
+	ok(not Market.canList(seller, 1, "Wheat", 10, high + 1, 20), "price above the band")
+	ok(not Market.canList(seller, 1, "Wheat", 10, low - 1, 20), "price below the band")
+	ok(not Market.canList(seller, 5, "Wheat", 10, default, 20), "slot 5 isn't open at 13")
+	ok(not Market.canList(seller, 1, "Nails", 1, 1, 20), "materials can't be listed")
+	ok(Market.canList(seller, 1, "Wheat", 10, default, 20), "a fair listing")
+	Market.list(seller, 1, "Wheat", 10, default, 1000)
+	ok(not Market.canList(seller, 1, "Milk", 1, Market.priceRange("Milk", 1), 5), "one listing a slot")
+
+	ok(Market.canBuy(seller, seller, "1", 1, 1001) == nil, "not from your own stall")
+	local young = Profile.migrate(nil) :: any
+	young.level, young.currencies.Coins, young.meta.createdAt = 13, 10000, 900
+	Market.list(seller, 2, "Wheat", 10, high, 1000)
+	ok(Market.canBuy(young, seller, "1", 2, 1001) == nil, "a day-old farm can't pay 200%")
+	ok(Market.canBuy(young, seller, "1", 1, 1001) ~= nil, "but can pay 120%")
+	local listing, proceeds, tax = Market.buy(buyer, seller, "1", 1, 1001)
+	eq(listing.qty, 10, "bought the listing")
+	eq(proceeds + tax, default, "proceeds and tax add up to the price")
+	eq(tax, math.floor(default * 0.1 + 0.5), "10% tax")
+	ok(Market.listing(seller, 1) == nil, "the slot is free again")
+	eq(Market.buysThisHour(buyer, "1", 1002), 1, "buy counted")
+	buyer.market.buys["1"].n = MarketConfig.buysPerSellerPerHour
+	ok(Market.canBuy(buyer, seller, "1", 2, 1003) == nil, "20 an hour from one seller")
+	ok(Market.canBuy(buyer, seller, "1", 2, 1001 + 3600) ~= nil, "a new hour")
+
+	-- The passing trader: after 2 hours, at the Barn price or the listing's if lower
+	eq(Market.botPrice(Market.listing(seller, 2) :: any), base, "trader pays the Barn price for a 200% listing")
+	Market.list(seller, 3, "Wheat", 10, low, 1000)
+	eq(#Market.botTick(seller, 1000 + 7199), 0, "not before 2 hours")
+	local sold = Market.botTick(seller, 1000 + 7200)
+	eq(#sold, 2, "both old listings go")
+	eq(#seller.market.listings, 0, "stall empty")
+	for _, sale in sold do
+		ok(sale.price <= base, "never above the Barn price")
+	end
+	eq(#Market.botTick(seller, 0, 0.01), 0, "nothing left")
+	Market.list(seller, 1, "Wheat", 1, Market.priceRange("Wheat", 1), 0)
+	eq(#Market.botTick(seller, 72, 0.01), 1, "the Studio time scale shortens the wait")
+
+	-- Featuring: once every 5 minutes, cleared when the listing goes
+	Market.list(seller, 1, "Wheat", 1, Market.priceRange("Wheat", 1), 0)
+	Market.list(seller, 2, "Milk", 1, Market.priceRange("Milk", 1), 0)
+	ok(not Market.feature(seller, 3, 0), "an empty slot can't be featured")
+	ok(Market.feature(seller, 1, 100), "feature slot 1")
+	ok(not Market.feature(seller, 2, 200), "cooldown")
+	ok(Market.feature(seller, 2, 100 + MarketConfig.featureCooldown), "after 5 minutes")
+	Market.remove(seller, 2)
+	eq(seller.market.featured, 0, "taking the listing down clears the feature")
 end)
 
 test("Town Express: the 2-hour clock, crates scaled to players, NPC help and reward tiers", function()
