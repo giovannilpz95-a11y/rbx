@@ -55,6 +55,16 @@ local Decor: { [string]: DecorDef } = {
 	Treehouse = { id = "Treehouse", displayName = "Treehouse", category = "Landmarks", unlockLevel = 26, coinCost = 2300, xp = 15, size = { 1, 1 }, order = 34 },
 	TieredFountain = { id = "TieredFountain", displayName = "Tiered Fountain", category = "Lights & furniture", unlockLevel = 27, coinCost = 400, xp = 5, size = { 1, 1 }, order = 35 },
 	WeepingWillow = { id = "WeepingWillow", displayName = "Weeping Willow", category = "Nature", unlockLevel = 28, coinCost = 2700, xp = 16, size = { 1, 1 }, order = 36 },
+	-- Level 29-32 set, the same way
+	PoppyPatch = { id = "PoppyPatch", displayName = "Poppy Patch", category = "Nature", unlockLevel = 29, coinCost = 950, xp = 9, size = { 1, 1 }, order = 37 },
+	HedgeBunny = { id = "HedgeBunny", displayName = "Hedge Bunny", category = "Nature", unlockLevel = 30, coinCost = 1300, xp = 11, size = { 1, 1 }, order = 38 },
+	FootBridge = { id = "FootBridge", displayName = "Stone Footbridge", category = "Landmarks", unlockLevel = 30, coinCost = 2400, xp = 15, size = { 1, 1 }, order = 39 },
+	RoseArbor = { id = "RoseArbor", displayName = "Rose Arbor", category = "Nature", unlockLevel = 30, coinCost = 550, xp = 6, size = { 1, 1 }, order = 40 },
+	BullStatue = { id = "BullStatue", displayName = "Bull Statue", category = "Landmarks", unlockLevel = 31, coinCost = 2000, xp = 14, size = { 1, 1 }, order = 41 },
+	Gazebo = { id = "Gazebo", displayName = "Garden Gazebo", category = "Lights & furniture", unlockLevel = 31, coinCost = 1800, xp = 13, size = { 1, 1 }, order = 42 },
+	LemonadeStand = { id = "LemonadeStand", displayName = "Lemonade Stand", category = "Lights & furniture", unlockLevel = 31, coinCost = 1600, xp = 12, size = { 1, 1 }, order = 43 },
+	BeachKit = { id = "BeachKit", displayName = "Beach Kit", category = "Lights & furniture", unlockLevel = 32, coinCost = 1000, xp = 10, size = { 1, 1 }, order = 44 },
+	MagnoliaTree = { id = "MagnoliaTree", displayName = "Magnolia Tree", category = "Nature", unlockLevel = 32, coinCost = 1300, xp = 11, size = { 1, 1 }, order = 45 },
 }
 
 for _, def in Decor do

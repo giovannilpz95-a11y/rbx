@@ -432,6 +432,25 @@ SCENES.trophies = function(root)
 	end
 end
 
+SCENES.decor4 = function(root)
+	ground(root, 60)
+	local row = {
+		{ "PoppyPatch", -15, -8 },
+		{ "HedgeBunny", -9, -8 },
+		{ "FootBridge", -3, -8 },
+		{ "RoseArbor", 3, -8 },
+		{ "BullStatue", 9, -8 },
+		{ "Gazebo", -12, 6 },
+		{ "LemonadeStand", -4, 6 },
+		{ "BeachKit", 4, 6 },
+		{ "MagnoliaTree", 12, 6 },
+	}
+	for _, d in row do
+		local m = Kit.model(d[1], root)
+		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
+	end
+end
+
 SCENES.items = function(root)
 	ground(root, 40)
 	local ids = {}
