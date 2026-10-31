@@ -398,6 +398,33 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Band", 0.3, 0.92, at(0, 0.45, 0), Palette.carrot:Lerp(Palette.flowerPink, 0.4), QUIET)
 		b.ball("Peach", 0.45, at(0.1, 1, 0), Palette.carrot:Lerp(Palette.flowerPink, 0.4), QUIET)
 	end,
+	Lollipop = function(b)
+		-- A swirled disc on a white stick
+		b.post("Stick", 1.2, 0.15, at(0, 0.6, 0), Palette.cream, QUIET)
+		b.cyl("Pop", 0.25, 1, at(0, 1.5, 0) * Kit.yaw(90), Palette.flowerPink, QUIET)
+		b.block("Swirl", Vector3.new(0.27, 0.9, 0.2), at(0, 1.5, 0), Palette.cream, QUIET)
+	end,
+	Couch = function(b)
+		-- A little sofa with a back and two arms
+		b.block("Seat", Vector3.new(1.8, 0.4, 0.8), at(0, 0.3, 0), Palette.roofTeal, QUIET)
+		b.block("Back", Vector3.new(1.8, 0.7, 0.25), at(0, 0.7, 0.3), Palette.roofTeal, QUIET)
+		for _, x in { -0.85, 0.85 } do
+			b.block("Arm", Vector3.new(0.25, 0.6, 0.8), at(x, 0.5, 0), Palette.glassDeep, QUIET)
+		end
+	end,
+	BulletinBoard = function(b)
+		-- A cork board in a wooden frame with two pinned notes
+		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
+		b.block("Cork", Vector3.new(1.4, 1, 0.17), at(0, 0.7, 0), Palette.trunk:Lerp(Palette.bread, 0.5), QUIET)
+		b.block("Note", Vector3.new(0.4, 0.4, 0.05), at(-0.3, 0.8, -0.1), Palette.flowerYellow, QUIET)
+		b.block("Note", Vector3.new(0.4, 0.3, 0.05), at(0.35, 0.55, -0.1), Palette.sky, QUIET)
+	end,
+	Taco = function(b)
+		-- A folded shell with lettuce, tomato and cheese peeking out
+		b.cyl("Shell", 0.5, 1.2, at(0, 0.6, 0) * Kit.yaw(90), Palette.corn, QUIET)
+		b.block("Lettuce", Vector3.new(1, 0.2, 0.45), at(0, 1.15, 0), Palette.leaf, QUIET)
+		b.ball("Tomato", 0.3, at(0.25, 1.2, 0), Palette.roofRed, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)
