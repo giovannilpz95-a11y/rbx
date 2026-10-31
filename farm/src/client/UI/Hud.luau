@@ -46,6 +46,9 @@ Hud.sprintButton = nil :: TextButton?
 local MAX_TOASTS = 3
 local toastCount = 0
 
+-- Set by Move mode (MovePlacer): the Move button toggles it
+Hud.onMove = function() end
+
 function Hud.toast(message: string, variant: string?)
 	toastCount += 1
 	Kit.toast(toastStack, message, variant).LayoutOrder = toastCount
@@ -297,6 +300,7 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 		{ "🧺", "Barn", "B", "Barn" },
 		{ "🏠", "Build", "F", "Buildings" },
 		{ "🏘️", "Town", "T", "Town" },
+		{ "✋", "Move", "M", "Move" },
 		{ "💎", "Shop", "G", "Shop" },
 	}
 	if RunService:IsStudio() then
@@ -304,8 +308,13 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 	end
 	for i, spec in buttons do
 		hudButton(spec[1], spec[2], spec[3], i, function()
-			openPanel(spec[4])
-		end).Parent = row
+			if spec[4] == "Move" then
+				Hud.onMove() -- Move mode isn't a panel (MovePlacer)
+			else
+				openPanel(spec[4])
+			end
+		end).Parent =
+			row
 	end
 
 	-- Bottom-right: the context action button (hold to sweep) and Sprint, mainly for touch

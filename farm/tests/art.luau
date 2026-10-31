@@ -41,6 +41,7 @@ local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtQuarry = require("../src/shared/Art/Quarry")
 local ArtBlimp = require("../src/shared/Art/Blimp")
 local ArtTown = require("../src/shared/Art/Town")
+local Land = require("../src/shared/Config/Land")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
 local Animals = require("../src/shared/Config/Animals")
 local Crops = require("../src/shared/Config/Crops")
@@ -1138,6 +1139,21 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			unmerged += Kit.countParts(m)
 		end
 		total += merged
+		-- The outer ring (expansions 5+) still wild: a level-cap farm may not have cleared it,
+		-- so count its sparse obstacles and signposts too
+		local wild = 0
+		for _, rect in Land.rects do
+			if rect.stage >= Land.outerRingStage then
+				local spots = ArtTown.scatter(
+					Vector3.new(rect.minX, 0, rect.minZ),
+					Vector3.new(rect.maxX, 0, rect.maxZ),
+					Land.outerRingSpacing
+				)
+				wild += #spots * ArtTown.OBSTACLE_PARTS_MAX + ArtTown.SIGNPOST_PARTS_MAX + 1
+			end
+		end
+		total += wild
+		print(string.format("      outer ring still wild: %d parts", wild))
 		print(
 			string.format(
 				"      town buildings: %d parts once merged (%d as built); decorations: %d",

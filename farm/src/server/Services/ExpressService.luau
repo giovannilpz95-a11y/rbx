@@ -34,7 +34,8 @@ local Clock = require(script.Parent.Parent.Util.Clock)
 local ExpressService = {}
 
 -- The station stands north of the Town Square, its track side facing the square, so the train
--- stops between the two. (Station-local +X runs east to west here; the train heads that way.)
+-- stops between the two. (Station-local +X runs east to west here; the train always rolls
+-- forward that way: in from the east, out to the west.)
 ExpressService.STATION = CFrame.new(0, 0, -100) * Kit.yaw(180)
 local SCALE = ArtRail.EXPRESS_SCALE
 local TRACK_Z = -9.2 -- station-local: the track's centre line, clear of the platform edge
@@ -301,15 +302,16 @@ local function refreshBoard(now: number)
 	if boardText == nil then
 		return
 	end
+	-- The title has its own line; the status gets two short lines so neither wraps or shrinks
 	if train then
 		boardText.Text = string.format(
-			"TOWN EXPRESS\n%d / %d crates   ·   %s left",
+			"%d / %d crates\n%s left",
 			Express.filled(train),
 			#train.crates,
 			Timer.format(math.max(0, train.leavesAt - now))
 		)
 	else
-		boardText.Text = "TOWN EXPRESS\nNext train in " .. Timer.format(Express.nextArrival(now) - now)
+		boardText.Text = "Next train in\n" .. Timer.format(Express.nextArrival(now) - now)
 	end
 end
 
@@ -320,7 +322,7 @@ local function tick()
 			depart()
 		else
 			local index
-			index, seed = Express.npcTick(train, now, seed)
+			index, seed = Express.npcTick(train, now, seed, Clock.getTimeScale())
 			if index then
 				payEveryone()
 				publish()
@@ -352,6 +354,42 @@ function ExpressService.debugArrive(player: Player): (boolean, string?)
 	return true
 end
 
+-- Studio: the train leaves now, the way it does when its window ends
+function ExpressService.debugLeave(player: Player): (boolean, string?)
+	if not RunService:IsStudio() then
+		return false
+	end
+	if train == nil then
+		return false, "Dev: no Town Express in the station"
+	end
+	train.leavesAt = Clock.now()
+	depart()
+	NetService.toast(player, "Dev: the Town Express left")
+	return true
+end
+
+-- Studio: goods in the Barn for the next 3 crates still to load
+function ExpressService.debugGoods(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	if train == nil then
+		return false, "Dev: bring a Town Express in first"
+	end
+	local given = 0
+	for _, crate in train.crates do
+		if crate.by == nil and given < 3 then
+			data.inventory.items[crate.item] = (data.inventory.items[crate.item] or 0) + crate.qty
+			given += 1
+		end
+	end
+	DataService.markDirty(player, true)
+	NetService.pushState(player)
+	NetService.toast(player, string.format("Dev: goods for %d Town Express crates in your Barn", given))
+	return true
+end
+
 local function buildStation()
 	local map = workspace:WaitForChild("FarmMap") -- PlotService builds the shared world first
 	local model, board = ArtRail.expressStation(map, ExpressService.STATION)
@@ -366,13 +404,23 @@ local function buildStation()
 	surface.Face = Enum.NormalId.Front
 	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	surface.PixelsPerStud = 30
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.fromScale(0.94, 0.34)
+	title.Position = UDim2.fromScale(0.03, 0.04)
+	title.BackgroundTransparency = 1
+	title.TextScaled = true
+	title.Font = Enum.Font.GothamBlack
+	title.TextColor3 = Palette.coins
+	title.Text = "TOWN EXPRESS"
+	title.Parent = surface
 	local text = Instance.new("TextLabel")
-	text.Size = UDim2.fromScale(1, 1)
+	text.Size = UDim2.fromScale(0.94, 0.58)
+	text.Position = UDim2.fromScale(0.03, 0.4)
 	text.BackgroundTransparency = 1
 	text.TextScaled = true
 	text.Font = Enum.Font.GothamBold
 	text.TextColor3 = Palette.cream
-	text.Text = "TOWN EXPRESS"
+	text.Text = ""
 	text.Parent = surface
 	surface.Parent = board
 	boardText = text
@@ -395,6 +443,8 @@ end
 function ExpressService.init()
 	NetService.on(Net.Express_Load, 3, 6, ExpressService.load)
 	NetService.on(Net.Debug_Express, 1, 2, ExpressService.debugArrive)
+	NetService.on(Net.Debug_ExpressLeave, 1, 2, ExpressService.debugLeave)
+	NetService.on(Net.Debug_ExpressGoods, 1, 2, ExpressService.debugGoods)
 	seed = Random.new():NextInteger(1, 2147483646)
 	-- A train already in its window when the server starts runs for what's left of it
 	task.spawn(function()

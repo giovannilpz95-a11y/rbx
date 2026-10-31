@@ -70,6 +70,7 @@ return table.freeze({
 	Blimp_Flag = "Blimp_Flag", -- row, slot: ask for help with a crate (one per row; again to take it off)
 	Blimp_Send = "Blimp_Send", -- (send the Cargo Blimp off with the rows loaded so far)
 	Blimp_Skip = "Blimp_Skip", -- (call the next blimp now, Gems)
+	Layout_Move = "Layout_Move", -- key, x, z, r: move one of your buildings (shared/Layout)
 	Express_Load = "Express_Load", -- index: load a Town Express crate from the Barn (at the hub station)
 	Debug_SetTimeScale = "Debug_SetTimeScale", -- scale (Studio only)
 	Debug_RestartTutorial = "Debug_RestartTutorial", -- (Studio only)
@@ -82,6 +83,8 @@ return table.freeze({
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
 	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)
 	Debug_Express = "Debug_Express", -- the Town Express in the station now, for a full window (Studio only)
+	Debug_ExpressLeave = "Debug_ExpressLeave", -- the Town Express leaves now (Studio only)
+	Debug_ExpressGoods = "Debug_ExpressGoods", -- goods for the next 3 Town Express crates (Studio only)
 	Debug_Records = "Debug_Records", -- raise Town Records to their next medal (Studio only)
 	Client_Ready = "Client_Ready",
 

@@ -16,6 +16,7 @@ local WorldLabels = require(script.Parent.UI.WorldLabels)
 local ReachController = require(script.Parent.Controllers.ReachController)
 local MovementController = require(script.Parent.Controllers.MovementController)
 local DecorPlacer = require(script.Parent.Controllers.DecorPlacer)
+local MovePlacer = require(script.Parent.Controllers.MovePlacer)
 local FactoryMotion = require(script.Parent.Controllers.FactoryMotion)
 local AnimalMotion = require(script.Parent.Controllers.AnimalMotion)
 local CropMotion = require(script.Parent.Controllers.CropMotion)
@@ -47,6 +48,13 @@ Guide.init()
 ReachController.init()
 MovementController.init()
 DecorPlacer.init()
+MovePlacer.init()
+Hud.onMove = MovePlacer.toggle
+Hud.handlers.Place = function(payload) -- place a building you just started
+	Panels.close()
+	MovePlacer.offer(payload)
+end
+ReachController.tapOverride = MovePlacer.tap
 task.spawn(FactoryMotion.init)
 task.spawn(AnimalMotion.init)
 task.spawn(CropMotion.init)
@@ -103,7 +111,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		return
 	end
 	local panel = SHORTCUTS[input.KeyCode]
-	if panel and Panels.isShowing(panel) then
+	if input.KeyCode == Enum.KeyCode.M then
+		Panels.close()
+		MovePlacer.toggle()
+	elseif panel and Panels.isShowing(panel) then
 		Panels.close() -- the same key again closes it (Escape also opens Roblox's menu)
 	elseif panel then
 		Panels.open(panel)
@@ -137,6 +148,7 @@ local function usePlot(model: Model)
 	WorldLabels.setPlot(model)
 	Guide.setPlot(model)
 	DecorPlacer.setPlot(model)
+	MovePlacer.setPlot(model)
 end
 for _, child in plots:GetChildren() do
 	if isMine(child) then
