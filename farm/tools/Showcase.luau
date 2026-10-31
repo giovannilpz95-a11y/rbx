@@ -16,6 +16,7 @@ local ArtMotion = require("../src/shared/Art/Motion")
 local ArtFolk = require("../src/shared/Art/Folk")
 local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtTown = require("../src/shared/Art/Town")
+local ArtBlimp = require("../src/shared/Art/Blimp")
 local Items = require("../src/shared/Items")
 
 local Showcase = {}
@@ -404,6 +405,21 @@ SCENES.decor3 = function(root)
 		local m = Kit.model(d[1], root)
 		ArtDecor.build(d[1], m, CFrame.new(d[2], 0, d[3]))
 	end
+end
+
+SCENES.blimp = function(root)
+	ground(root, 70)
+	local docked = Kit.model("Docked", root)
+	ArtBlimp.build(docked, CFrame.new(-12, 0, 0))
+	ArtBlimp.setCargo(docked, {
+		{ { filled = true }, { filled = true }, { flagged = true } },
+		{ { filled = true }, {}, {} },
+		{ { flagged = true }, {}, {} },
+	})
+	ArtBlimp.setState(docked, "Docked")
+	local broken = Kit.model("Broken", root)
+	ArtBlimp.build(broken, CFrame.new(22, 0, 0))
+	ArtBlimp.setState(broken, "Broken")
 end
 
 SCENES.items = function(root)
