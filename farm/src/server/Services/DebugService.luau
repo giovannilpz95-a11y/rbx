@@ -81,7 +81,7 @@ function DebugService.fillLots(player: Player): (boolean, string?)
 	end
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
-	NetService.toast(player, string.format("Dev: %d Cottages fill all %d open House lots", added, open))
+	NetService.toast(player, string.format("Dev: added %d Cottages. All %d open House lots are taken now", added, open))
 	return true
 end
 

@@ -1864,6 +1864,7 @@ end
 -- is (moved there, or its usual spot on land the farm owns), a new spot to save when it has no
 -- usual spot or that spot's land (`land`) isn't cleared yet (the nearest open spot to the
 -- player), or an error when there's no room.
+local buildTrace = 0
 function PlotService.prepareBuild(
 	player: Player,
 	data: { [string]: any },
@@ -1879,9 +1880,12 @@ function PlotService.prepareBuild(
 	local usual = PlotService.usualSpot(kind, id)
 	local landOk = land == nil or land == 0 or TownRules.landDone(data, land, now)
 	if RunService:IsStudio() then
+		-- Numbered, so a line shown twice by the log can't be mistaken for two build calls
+		buildTrace += 1
 		print(
 			string.format(
-				"[Layout] build %s:%s usual=%s land=%s cleared=%s",
+				"[Layout] #%d build %s:%s usual=%s land=%s cleared=%s",
+				buildTrace,
 				kind,
 				id,
 				tostring(usual),
