@@ -17,6 +17,8 @@ ArtFactories.WIDTH = 10
 ArtFactories.DEPTH = 12
 ArtFactories.TABLE_Z = -10
 ArtFactories.QUEUE_SHOWN = 6 -- queued jobs show as crates by the table, two layers of three
+-- Finished goods shown as props along the output table; past this the last one says "+N"
+ArtFactories.GOODS_SHOWN = 4
 
 -- What the server's merge of a working factory (Art/Merge) leaves out: the moving gimmick,
 -- the queue crates and goods that come and go, the output table (a tap target of its own)

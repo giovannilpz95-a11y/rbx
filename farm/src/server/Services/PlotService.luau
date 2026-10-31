@@ -1269,8 +1269,9 @@ local function refreshFactory(
 		end
 	end
 
-	-- Each finished item stands on the output table as its own prop (FarmShared.Art.ItemProps):
-	-- four along the table, then a second layer on top.
+	-- Each finished item stands on the output table as its own prop (FarmShared.Art.ItemProps),
+	-- up to GOODS_SHOWN along the table; when there are more, the last one carries "+N more"
+	-- (a full Guild-upgraded tray would otherwise cost a dozen props per factory).
 	for _, child in building:GetChildren() do
 		if child.Name == "Goods" then
 			child:Destroy()
@@ -1286,14 +1287,27 @@ local function refreshFactory(
 	end
 	table.sort(ids)
 	local tableTop = outputTable.Size.Y / 2 + 0.3
+	local total = 0
+	for _, itemId in ids do
+		total += output[itemId]
+	end
 	local i = 0
 	for _, itemId in ids do
 		for _ = 1, output[itemId] do
-			local row = i % 4
-			local layer = i // 4
-			local at = outputTable.CFrame * CFrame.new(0, tableTop + layer * 2.2, -3 + row * 2)
-			ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods").Parent = building
+			if i >= ArtFactories.GOODS_SHOWN then
+				break
+			end
+			local at = outputTable.CFrame * CFrame.new(0, tableTop, -3 + i * 2)
+			local prop = ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods")
+			prop.Parent = building
 			i += 1
+			local extra = total - ArtFactories.GOODS_SHOWN
+			if i == ArtFactories.GOODS_SHOWN and extra > 0 then
+				local anchor = if prop:IsA("BasePart") then prop else prop:FindFirstChildWhichIsA("BasePart", true)
+				if anchor then
+					label(anchor, string.format("+%d more", extra), 2.4, UDim2.fromOffset(90, 28), 60)
+				end
+			end
 		end
 	end
 end

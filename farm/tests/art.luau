@@ -1132,8 +1132,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			total += ArtMerge.countTemplate(ArtAnimals.animal(kind, CFrame.new()), ArtAnimals.MERGE_SKIP) * 6
 			add(ArtAnimals.product(kind, CFrame.new()), 6)
 		end
-		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest
-		-- prop it makes
+		-- Every factory with a full output tray of the biggest prop it makes (the table shows
+		-- GOODS_SHOWN of them; the rest are a "+N more" label)
 		for _, id in FACTORIES do
 			local m = Instance.new("Model")
 			local parts = ArtFactories.build(id, m, CFrame.new())
@@ -1148,7 +1148,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				end
 			end
 			ok(biggestProp > 0, id .. " makes something with a prop")
-			total += biggestProp * Factories[id].trayCapacity
+			total += biggestProp * math.min(Factories[id].trayCapacity, ArtFactories.GOODS_SHOWN)
 		end
 		-- Barn, board, dock, truck, gate: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
