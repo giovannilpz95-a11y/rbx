@@ -269,4 +269,43 @@ function Merge.countShell(pen: Instance, skip: { [string]: boolean }): number
 	return Merge.count(pen, primary, all)
 end
 
+-- Something that only ever moves as a whole (a pen animal: Art/Motion poses every part with
+-- one transform) can be merged once per kind into a template and cloned. `look` is built at
+-- the origin; every mergeable part but `skip` joins the biggest one, and the union lets taps
+-- and avatars through like the parts did. Yields; returns the union (or nil, nothing merged).
+function Merge.template(look: Model, skip: { [string]: boolean }?, geometry: Geometry?): BasePart?
+	local primary = Merge.leader(look, skip, true)
+	if primary == nil then
+		return nil
+	end
+	local union = Merge.merge(look, primary, { collide = false, query = false, skip = skip }, geometry)
+	return if union ~= primary then union else nil
+end
+
+-- A copy of `template` (built at the origin) standing at `cf`, named `name`. Its BaseCFrame
+-- attribute moves with it, so Art/Motion still knows where its feet are.
+function Merge.place(template: Model, cf: CFrame, name: string): Model
+	local copy = template:Clone()
+	copy.Name = name
+	for _, d in copy:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CFrame = cf * d.CFrame
+		end
+	end
+	local base = copy:GetAttribute("BaseCFrame")
+	if typeof(base) == "CFrame" then
+		copy:SetAttribute("BaseCFrame", cf * base)
+	end
+	return copy
+end
+
+-- How many parts a look comes to once merged as a template (for the plot-estimate test).
+function Merge.countTemplate(look: Model, skip: { [string]: boolean }?): number
+	local primary = Merge.leader(look, skip, true)
+	if primary == nil then
+		return Merge.parts(look)
+	end
+	return Merge.count(look, primary, skip)
+end
+
 return Merge
