@@ -660,6 +660,50 @@ TYPES.AtticTower = {
 	end,
 }
 
+-- Sunburst Flats (content bank, level 50): a sunny yellow block of flats with a flat roof,
+-- a big orange sun disc on the roof edge, a balcony across the middle and a striped door
+-- canopy.
+TYPES.SunburstFlats = {
+	roof = Palette.carrot,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.66, s * 0.56, STORY * 3
+		local body = walls(b, w, d, h, Palette.flowerYellow:Lerp(Palette.cream, 0.45), 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.3), roof)
+		t.cyl("Sun", 0.3, 2.6, CFrame.new(0, PLINTH + h + 1.6, face + 0.4) * Kit.yaw(90), Palette.carrot)
+		t.cyl("SunFace", 0.32, 1.6, CFrame.new(0, PLINTH + h + 1.6, face + 0.35) * Kit.yaw(90), Palette.flowerYellow)
+		-- The balcony across the second storey
+		t.block(
+			"Balcony",
+			Vector3.new(w * 0.8, 0.3, 1.2),
+			Vector3.new(0, PLINTH + STORY + 0.15, face - 0.6),
+			Palette.cream
+		)
+		t.block(
+			"BalconyRail",
+			Vector3.new(w * 0.8, 0.8, 0.15),
+			Vector3.new(0, PLINTH + STORY + 0.7, face - 1.15),
+			Palette.metal
+		)
+		for i = 1, 2 do
+			local x = if i == 1 then -w / 4 else w / 4
+			Kit.window(
+				t,
+				"Window",
+				CFrame.new(x, PLINTH + STORY * 2 + 1.8, face),
+				1.4,
+				1.8,
+				Palette.cream,
+				Palette.glass
+			)
+		end
+		Kit.door(t, "Door", CFrame.new(-w / 4, PLINTH, face), 1.8, 3.2, roof, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 0.8, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

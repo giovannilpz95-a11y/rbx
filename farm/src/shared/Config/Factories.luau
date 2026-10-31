@@ -58,6 +58,8 @@ local Factories: { [string]: FactoryDef } = {
 	-- Township's Stationery Factory (46) and Furniture Factory (47): placed by the player
 	StationeryShop = { id = "StationeryShop", displayName = "Stationery Shop", unlockLevel = 46, population = 4130, buildCost = 40000, buildSeconds = 46 * HOUR, xp = 1655, queueSlots = 2, trayCapacity = 6, order = 24, color = { 120, 160, 230 } },
 	FurnitureWorkshop = { id = "FurnitureWorkshop", displayName = "Furniture Workshop", unlockLevel = 47, population = 4760, buildCost = 48000, buildSeconds = 48 * HOUR, xp = 2892, queueSlots = 2, trayCapacity = 6, order = 25, color = { 180, 130, 90 } },
+	-- Township's Shoe Factory (level 50): placed by the player
+	Cobbler = { id = "Cobbler", displayName = "Cobbler", unlockLevel = 50, population = 5465, buildCost = 60000, buildSeconds = 52 * HOUR, xp = 2480, queueSlots = 2, trayCapacity = 6, order = 26, color = { 150, 100, 70 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

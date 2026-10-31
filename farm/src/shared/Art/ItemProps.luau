@@ -437,6 +437,53 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Puff", 0.9, at(0, 1.5, 0), Palette.leaf, QUIET)
 		b.ball("Puff", 0.6, at(0.25, 1.75, 0.1), Palette.flowerPink, QUIET)
 	end,
+	Mint = function(b)
+		-- A bunch of bright leaves tied with string
+		b.post("Stems", 0.8, 0.4, at(0, 0.4, 0), Palette.leaf, QUIET)
+		b.ball("Leaves", 1, at(-0.25, 1.1, 0), Palette.lime, QUIET)
+		b.ball("Leaves", 0.9, at(0.3, 1.2, 0.1), Palette.lime, QUIET)
+		b.post("Tie", 0.2, 0.45, at(0, 0.6, 0), Palette.cream, QUIET)
+	end,
+	FlipFlops = function(b)
+		-- A pair of soles with a strap each
+		for _, x in { -0.45, 0.45 } do
+			b.block("Sole", Vector3.new(0.7, 0.2, 1.6), at(x, 0.1, 0), Palette.sky, QUIET)
+			b.block("Strap", Vector3.new(0.72, 0.25, 0.15), at(x, 0.3, -0.25), Palette.flowerYellow, QUIET)
+		end
+	end,
+	Sandals = function(b)
+		-- Cork soles with two crossed brown straps
+		b.block("Sole", Vector3.new(1, 0.35, 1.8), at(0, 0.17, 0), Palette.wood, QUIET)
+		b.block("Strap", Vector3.new(1.02, 0.3, 0.25), tilt(0, 0.45, -0.3, 0, 20, 0), Palette.trunk, QUIET)
+		b.block("Strap", Vector3.new(1.02, 0.3, 0.25), tilt(0, 0.45, 0.2, 0, -20, 0), Palette.trunk, QUIET)
+	end,
+	FeatherHat = function(b)
+		-- A green felt hat with a feather in the band
+		b.cyl("Brim", 0.12, 1.9, at(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.treeTopDark, QUIET)
+		b.post("Crown", 0.8, 1.1, at(0, 0.55, 0), Palette.treeTopDark, QUIET)
+		b.post("Band", 0.2, 1.12, at(0, 0.3, 0), Palette.roofRed, QUIET)
+		b.wedge("Feather", Vector3.new(0.1, 1, 0.4), tilt(0.5, 0.9, 0.2, 0, 0, -20), Palette.leaf, QUIET)
+	end,
+	MintChocIceCream = function(b)
+		-- A cone with a scoop of mint dotted with chocolate
+		b.wedge("Cone", Vector3.new(0.7, 1.1, 0.7), tilt(0, 0.55, 0, 180, 0, 0), Palette.wood, QUIET)
+		b.ball("Scoop", 1, at(0, 1.4, 0), Palette.lime:Lerp(Palette.cream, 0.5), QUIET)
+		b.ball("Chip", 0.2, at(0.3, 1.6, -0.35), Palette.trunk, QUIET)
+		b.ball("Chip", 0.2, at(-0.3, 1.4, -0.4), Palette.trunk, QUIET)
+	end,
+	PineappleSorbet = function(b)
+		-- A glass cup of yellow sorbet with a pineapple leaf
+		b.post("Cup", 0.7, 0.9, at(0, 0.35, 0), Palette.glass, QUIET)
+		b.ball("Sorbet", 0.95, at(0, 0.95, 0), Palette.flowerYellow, QUIET)
+		b.wedge("Leaf", Vector3.new(0.1, 0.6, 0.4), at(0.2, 1.5, 0), Palette.leaf, QUIET)
+	end,
+	HoneyMarshmallow = function(b)
+		-- Three soft cubes, one dipped in honey
+		b.block("Cube", Vector3.new(0.7, 0.7, 0.7), at(-0.4, 0.35, 0), Palette.cream, QUIET)
+		b.block("Cube", Vector3.new(0.7, 0.7, 0.7), at(0.4, 0.35, 0.1), Palette.cream, QUIET)
+		b.block("Cube", Vector3.new(0.7, 0.7, 0.7), tilt(0, 1, 0, 0, 30, 0), Palette.cream, QUIET)
+		b.block("Honey", Vector3.new(0.72, 0.25, 0.72), tilt(0, 1.25, 0, 0, 30, 0), Palette.roofMustard, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
