@@ -58,6 +58,7 @@ local function fakeRoblox()
 			delay = function(t, fn, ...) table.insert(delayed, { t = t, fn = fn, args = { ... } }) end,
 		},
 		warn = function() end,
+		Enum = { RollOffMode = { InverseTapered = "InverseTapered" } },
 	}
 	local function find(pred)
 		local out = {}
@@ -206,4 +207,48 @@ test("delayed cues wait their turn", function()
 	expect.eq(GameAudio.stats.Harvest, 1)
 	runDelayed()
 	expect.eq(GameAudio.stats.Harvest, 2)
+end)
+
+test("the world's music follows the player, and waits while Crop Pop is open", function()
+	local GameAudio = fresh()
+	GameAudio.setWorld("Visit")
+	expect.eq(GameAudio.getMusic(), "Visit")
+	GameAudio.cropPopEvent("Open")
+	GameAudio.setWorld("Farm") -- walked home with the puzzle open
+	expect.eq(GameAudio.getMusic(), "Puzzle", "the puzzle keeps its music")
+	GameAudio.cropPopEvent("Close")
+	expect.eq(GameAudio.getMusic(), "Farm", "back to where the player is")
+	GameAudio.setWorld("Visit")
+	GameAudio.cropPopEvent("Open")
+	GameAudio.cropPopEvent("Close")
+	expect.eq(GameAudio.getMusic(), "Visit")
+end)
+
+test("a positional loop plays from its part and fades out when stopped", function()
+	local GameAudio, find = fresh()
+	local part = { Name = "Part" }
+	local handle = GameAudio.attachLoop("AmbienceFarm", part)
+	local loops = find(function(i) return i.Name == "Loop_AmbienceFarm" end)
+	expect.eq(#loops, 1)
+	local s = loops[1]
+	expect.eq(s.Parent, part, "plays from the part")
+	expect.truthy(s.Looped and s.IsPlaying)
+	expect.eq(s.RollOffMode, "InverseTapered")
+	expect.truthy(s.RollOffMaxDistance > s.RollOffMinDistance)
+	expect.eq(s.Volume, 0.5)
+	handle.stop()
+	handle.stop() -- twice is fine
+	expect.eq(s.Volume, 0, "faded out")
+end)
+
+test("a loop without an asset yet is a silent handle", function()
+	local GameAudio, find = fresh()
+	if GameAudio.Sounds.assetFor(GameAudio.Sounds.list.FactoryHum) then
+		return -- uploaded since; the test above covers a loop that plays
+	end
+	local handle = GameAudio.attachLoop("FactoryHum", { Name = "Part" })
+	expect.eq(#find(function(i) return i.Name == "Loop_FactoryHum" end), 0)
+	handle.stop()
+	expect.eq(GameAudio.stats.FactoryHum, 1)
+	GameAudio.attachLoop("NoSuchLoop", { Name = "Part" }).stop()
 end)

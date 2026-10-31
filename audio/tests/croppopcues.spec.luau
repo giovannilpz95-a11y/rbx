@@ -19,7 +19,7 @@ end
 test("swaps: a good one swooshes, a bad one wobbles", function()
 	expect.eq(names(CropPopCues.phase({ kind = "Swap", ok = true }, 0)), "PopSwap")
 	expect.eq(names(CropPopCues.phase({ kind = "Swap", ok = false }, 0)), "PopBad")
-	expect.eq(names(CropPopCues.phase({ kind = "Swap", ok = true, combo = true }, 0)), "PopSwap")
+	expect.eq(names(CropPopCues.phase({ kind = "Swap", ok = true, combo = true }, 0)), "PopSwap,PopPowerMade")
 end)
 
 test("each cascade pops higher, up to an octave", function()
@@ -73,4 +73,35 @@ test("frost cracks, weeds pull and spread", function()
 	expect.eq(names(CropPopCues.phase(grow, 2)), "PopWeedGrow")
 	expect.eq(names(CropPopCues.event("FrostBreak")), "PopFrost")
 	expect.eq(names(CropPopCues.event("WeedSpread")), "PopWeedGrow")
+end)
+
+test("long chains get a combo fanfare at the 3rd, 5th and 7th pop", function()
+	local p = pop({ removed = { { id = 1, x = 1, y = 1 } } })
+	local heard = {}
+	for i = 1, 9 do
+		for _, c in CropPopCues.phase(p, i) do
+			if c.sound == "PopCombo" then
+				table.insert(heard, i .. ":" .. c.pitch)
+			end
+		end
+	end
+	expect.eq(table.concat(heard, ","), "3:0,5:3,7:6")
+	-- A weed spreading isn't a match, so it never counts as a combo
+	local grow = pop({ removed = { { id = 1, cause = "weed" } }, effects = { { type = "Grow" } } })
+	expect.eq(names(CropPopCues.phase(grow, 3)), "PopWeedGrow")
+end)
+
+test("the bonus round pays out with the big Coin sound, not a combo", function()
+	local p = pop({ removed = { { id = 1 } }, effects = { { type = "Spray" } }, bonus = { moves = 3, coins = 30 } })
+	expect.eq(names(CropPopCues.phase(p, 3)), "PopSprayer,PopMatch,CoinBig")
+end)
+
+test("goo, fences, clover, statues and pumpkins have sounds", function()
+	expect.eq(names(CropPopCues.phase(pop({ goo = { { x = 1, y = 1, on = false } } }), 1)), "PopMud")
+	expect.eq(names(CropPopCues.phase(pop({ goo = { { x = 1, y = 1, on = true } } }), 1)), "")
+	expect.eq(names(CropPopCues.phase(pop({ effects = { { type = "Ooze" } } }), 1)), "PopMud")
+	expect.eq(names(CropPopCues.phase(pop({ fences = { { x = 1, y = 1, side = "E" } } }), 1)), "PopBale")
+	expect.eq(names(CropPopCues.phase(pop({ clover = { { x = 1, y = 1 } } }), 1)), "PopGoal")
+	expect.eq(names(CropPopCues.phase(pop({ statues = { { x = 1, y = 1 } } }), 1)), "PopFrost")
+	expect.eq(names(CropPopCues.phase(pop({ effects = { { type = "Pumpkin" } } }), 1)), "PopGoal")
 end)

@@ -139,6 +139,11 @@ local Sounds: { [string]: Sound } = {
 	DecorPlace = original("decor_place", "Effects", 0.55, { cooldown = 0.1, length = 0.4 }),
 	DecorRotate = original("decor_rotate", "Effects", 0.45, { cooldown = 0.08, length = 0.12 }),
 	Sell = original("sell", "Effects", 0.6, { cooldown = 0.1, length = 0.41 }),
+	Dig = original("quarry_dig", "Effects", 0.6, { cooldown = 0.08, voices = 2, length = 0.32 }),
+	AirshipHorn = original("airship_horn", "Effects", 0.55, { cooldown = 3, voices = 1, duck = true, length = 1.2 }),
+	-- A busy factory's work loop, played from the building itself (client/FactoryHum), so it
+	-- fades with distance; GameAudio.attachLoop starts and stops it.
+	FactoryHum = original("factory_loop", "Effects", 0.22, { looped = true, voices = 1, length = 2 }),
 
 	-- Crop Pop -----------------------------------------------------------------
 	PopSwap = original("pop_swap", "Effects", 0.45, { cooldown = 0.03, length = 0.11 }),
@@ -162,6 +167,7 @@ local Sounds: { [string]: Sound } = {
 	PopShuffle = original("pop_shuffle", "Effects", 0.5, { cooldown = 0.5, length = 0.47 }),
 	PopBooster = original("pop_booster", "Effects", 0.55, { cooldown = 0.1, length = 0.3 }),
 	PopMoreMoves = original("pop_more_moves", "Effects", 0.65, { cooldown = 0.5, length = 0.53 }),
+	PopCombo = original("pop_combo", "Effects", 0.6, { cooldown = 0.25, voices = 1, length = 0.68 }),
 	PopGoal = original("pop_goal", "Effects", 0.45, { cooldown = 0.06, length = 0.25 }),
 	PopWin = original("pop_win", "Effects", 0.8, {
 		fallback = "rbxassetid://1841390412", -- APM "Bouncy Bouncy Sting 1"

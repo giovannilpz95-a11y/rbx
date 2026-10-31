@@ -209,3 +209,120 @@ test("shop purchases", function()
 	expect.eq(names(FarmCues.popup({ kind = "Purchase", key = "Gems100", name = "Pile of Gems", gems = 100 })), "Purchase,Gem")
 	expect.eq(names(FarmCues.popup({ kind = "Purchase", key = "VIP", name = "Farm Pass" })), "Purchase")
 end)
+
+local function has(cues, sound)
+	for _, c in cues do
+		if c.sound == sound then
+			return c
+		end
+	end
+	return nil
+end
+
+test("moving a building sets it down with a thunk", function()
+	local before = state({ layout = {} })
+	local after = state({ layout = { ["factory:Bakery"] = { x = 10, z = 4, r = 0 } } })
+	expect.eq(names(FarmCues.diff(before, after)), "DecorPlace")
+	local turned = state({ layout = { ["factory:Bakery"] = { x = 10, z = 4, r = 90 } } })
+	expect.eq(names(FarmCues.diff(after, turned)), "DecorPlace")
+	expect.eq(names(FarmCues.diff(turned, turned)), "")
+end)
+
+test("a Tinker's Guild upgrade plays the unlock sound", function()
+	local before = state({ buildingLevels = { Bakery = { time = 1 } } })
+	local after = state({ buildingLevels = { Bakery = { time = 1, shelves = 1 } } })
+	expect.eq(names(FarmCues.diff(before, after)), "Unlock")
+	expect.eq(names(FarmCues.diff(state({ buildingLevels = {} }), state({ buildingLevels = {} }))), "")
+end)
+
+test("the Quarry: digging a cell, a Stone block taking a hit, and ore turning up", function()
+	local before = state({ quarry = { rows = { ["1"] = 1 }, hits = {} }, oreShed = {} })
+	local dug = state({ quarry = { rows = { ["1"] = 3 }, hits = {} }, oreShed = { Copper = 1 } })
+	local cues = FarmCues.diff(before, dug)
+	expect.eq(names(cues), "Dig,Gem")
+	expect.eq(cues[1].pitch, nil)
+	expect.eq(cues[2].pitch, -5, "a lower shimmer than Gems")
+	local hit = state({ quarry = { rows = { ["1"] = 1 }, hits = { ["2:3"] = 1 } }, oreShed = {} })
+	cues = FarmCues.diff(before, hit)
+	expect.eq(names(cues), "Dig")
+	expect.eq(cues[1].pitch, 3, "the clink of a Stone block that stays")
+end)
+
+test("Airship Freight: the horn on docking and leaving, a collect for each crate loaded", function()
+	local away = state({ blimp = { arrivesAt = 500 } })
+	local load = { rows = { { { item = "Wheat", qty = 5 }, { item = "Bread", qty = 2 } } }, chest = {} }
+	local docked = state({ blimp = { leavesAt = 900, load = load } })
+	expect.eq(names(FarmCues.diff(away, docked)), "AirshipHorn")
+	local filledLoad = { rows = { { { item = "Wheat", qty = 5, filledBy = 1 }, { item = "Bread", qty = 2 } } }, chest = {} }
+	local filled = state({ blimp = { leavesAt = 900, load = filledLoad }, inventory = { Wheat = 0 } })
+	expect.eq(names(FarmCues.diff(docked, filled)), "FactoryCollect")
+	local left = FarmCues.diff(filled, state({ blimp = { arrivesAt = 2000 } }))
+	expect.eq(names(left), "AirshipHorn")
+	expect.eq(left[1].pitch, -2)
+end)
+
+test("the Market stall: listing, a sale, and taking goods back", function()
+	local empty = state({ market = { listings = {} } })
+	local listed = state({ market = { listings = { { slot = 1, item = "Wheat", qty = 2, price = 10 } } }, inventory = { Wheat = 2 } })
+	expect.eq(names(FarmCues.diff(empty, listed)), "DecorPlace")
+	local sold = state({ market = { listings = {} }, inventory = { Wheat = 2 }, currencies = { Coins = 510, Gems = 30, XP = 0 } })
+	expect.eq(names(FarmCues.diff(listed, sold)), "Sell")
+	local back = state({ market = { listings = {} }, inventory = { Wheat = 4 } })
+	expect.eq(names(FarmCues.diff(listed, back)), "DecorRotate")
+end)
+
+test("the Quarry reopening and the mast's repair finish like builds", function()
+	local s = state({ factories = {}, quarry = { readyAt = 150 }, blimp = { readyAt = 400 } })
+	expect.eq(names(FarmCues.timed(s, 100, 160)), "BuildDone")
+	expect.eq(names(FarmCues.timed(s, 390, 410)), "BuildDone")
+	expect.eq(names(FarmCues.timed(s, 160, 390)), "")
+end)
+
+test("newer popups: quests, records, the daily gift and news", function()
+	expect.eq(names(FarmCues.popup({ kind = "Quest", text = "Harvest 10 Wheat" })), "Notify")
+	expect.eq(names(FarmCues.popup({ kind = "QuestClaim", coins = 50, xp = 10 })), "OrderComplete,Coin")
+	expect.eq(names(FarmCues.popup({ kind = "QuestChest", gems = 3 })), "Unlock,Gem")
+	expect.eq(names(FarmCues.popup({ kind = "RecordClaim", gems = 5 })), "PrizeHeirloom,Gem")
+	expect.eq(names(FarmCues.popup({ kind = "Daily", day = 2 })), "Unlock")
+	expect.eq(names(FarmCues.popup({ kind = "WelcomeBoost", name = "Pat" })), "Unlock")
+	expect.eq(names(FarmCues.popup({ kind = "Away", lines = {} })), "Notify")
+	expect.eq(names(FarmCues.popup({ kind = "HelpedYou", name = "Pat" })), "Notify")
+	expect.eq(names(FarmCues.popup({ kind = "Visitor", name = "Pat" })), "Notify")
+	expect.eq(names(FarmCues.popup({ kind = "Helped", owner = "Pat" })), "Xp")
+	expect.eq(names(FarmCues.popup({ kind = "Place", key = "factory:Bakery" })), "UiOpen")
+end)
+
+test("news popups leave the next snapshot's Coins their own sound", function()
+	for _, kind in { "Crier", "Quest", "Away", "HelpedYou", "Visitor", "Place" } do
+		expect.falsy(FarmCues.isReward({ kind = kind }), kind)
+	end
+	for _, kind in { "Order", "LevelUp", "QuestClaim", "QuestChest", "RecordClaim", "Daily", "Purchase", "Helped" } do
+		expect.truthy(FarmCues.isReward({ kind = kind }), kind)
+	end
+	expect.falsy(FarmCues.isReward(nil))
+end)
+
+test("every popup kind the farm server sends has a sound", function()
+	-- Reads the farm server's popup kinds, so a new kind without a sound fails here.
+	local kinds = {}
+	local function scan(path)
+		for _, e in listdir(path) do
+			local child = path .. "/" .. e.name
+			if e.dir then
+				scan(child)
+			elseif string.sub(e.name, -5) == ".luau" then
+				for kind in string.gmatch(readfile(child), 'kind = "(%w+)"') do
+					kinds[kind] = true
+				end
+			end
+		end
+	end
+	scan(ROOT .. "/../farm/src/server")
+	local count = 0
+	for kind in kinds do
+		count += 1
+		local payload = { kind = kind, tool = "Shovel" }
+		expect.truthy(#FarmCues.popup(payload) > 0, kind .. " has no sound")
+	end
+	expect.truthy(count >= 15, "found the popup kinds")
+end)

@@ -84,6 +84,8 @@ test("every sound name the code asks for exists", function()
 		ROOT .. "/src/client/UiTaps.luau",
 		ROOT .. "/src/client/FarmHooks.luau",
 		ROOT .. "/src/client/Main.client.luau",
+		ROOT .. "/src/client/FactoryHum.luau",
+		ROOT .. "/src/client/WorldMusic.luau",
 	}
 	local count = 0
 	for _, path in files do
@@ -98,6 +100,10 @@ test("every sound name the code asks for exists", function()
 		end
 		for name in string.gmatch(source, 'play%("(%w+)"') do
 			expect.truthy(Sounds.list[name], path .. " plays " .. name)
+			count += 1
+		end
+		for name in string.gmatch(source, 'attachLoop%("(%w+)"') do
+			expect.truthy(Sounds.list[name] and Sounds.list[name].looped, path .. " loops " .. name)
 			count += 1
 		end
 		for name in string.gmatch(source, 'setAmbience%("(%w+)"') do

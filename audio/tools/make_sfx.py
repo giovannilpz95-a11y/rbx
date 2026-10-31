@@ -6,6 +6,7 @@ audio/ folder:
 
     python3 tools/make_sfx.py            # writes sfx/*.ogg (needs numpy and ffmpeg)
     python3 tools/make_sfx.py --wav      # also keeps the .wav files
+    python3 tools/make_sfx.py pop_combo  # only the named sounds
 
 The output is deterministic (each sound seeds its own noise from its name), so a
 file only changes when its own function does. Upload the .ogg files to Roblox and
@@ -498,6 +499,54 @@ def pop_lose():
     return sequence([(at, marimba(note(n), 0.7 if i == 3 else 0.4) * (0.9 - i * 0.1)) for i, (n, at) in enumerate(melody)])
 
 
+# Added in the third audio pass (2026-10-31) -------------------------------------
+
+
+def factory_loop():
+    # A factory at work, as a seamless 2 s loop (looped in game, so no fades): a soft
+    # motor hum (whole cycles only, so the ends meet), a gentle 4-beat chug and a wooden
+    # tick between chugs. Every chug and tick dies away inside the loop.
+    s = 2.0
+    t = t_axis(s)
+    hum = sum(np.sin(2 * np.pi * 110 * k * t) / k ** 1.6 for k in range(1, 5)) * 0.25
+    hum *= 1 + 0.25 * np.sin(2 * np.pi * 4 * t)  # 8 whole wobbles over the loop
+    out = hum
+    for i in range(4):
+        chuff = bandpass(noise(0.3), 420, 1.5) * attack_decay(0.3, 0.02, 18) * 1.6
+        out = place(out, chuff, 0.08 + i * 0.5)
+        tick = bandpass(noise(0.05), 1700, 8) * decay(0.05, 90) * 2.2
+        out = place(out, tick, 0.33 + i * 0.5)
+    return out[: len(t)]
+
+
+def quarry_dig():
+    # A pick biting into rock: a short metal clink over a crumble of gravel.
+    clink = place(bell(2350, 0.25, 22, ratio=3.1, index=0.8), bell(3500, 0.18, 30, ratio=2.3, index=0.5) * 0.5, 0) * 0.6
+    thud = glide(160, 70, 0.12) * decay(0.12, 30) * 0.8
+    gravel = one_pole_lowpass(noise(0.3), 2600) * attack_decay(0.3, 0.01, 14) * 1.4
+    grains = sum(
+        place(silence(0.3), bandpass(noise(0.03), 1800 + 300 * i, 4) * decay(0.03, 120) * 1.2, 0.05 + 0.045 * i)[: int(RATE * 0.3)]
+        for i in range(5)
+    )
+    return sequence([(0, thud), (0, clink), (0.02, gravel), (0, grains)])
+
+
+def airship_horn():
+    # The airship's friendly two-note horn as it docks or leaves.
+    low = soft_brass(note("G3"), 0.55, attack=0.06)
+    high = soft_brass(note("C4"), 0.75, attack=0.06)
+    fifth = soft_brass(note("G4"), 0.75, attack=0.06) * 0.35
+    return sequence([(0, low), (0.45, high), (0.45, fifth)])
+
+
+def pop_combo():
+    # A long cascade: a quick plucked run up and a sparkle on top. The game raises it a
+    # little more for even longer chains.
+    run = [(i * 0.05, pluck(note(n), 0.35) * 0.8) for i, n in enumerate(["G5", "B5", "D6", "G6"])]
+    sparkle = [(0.2 + i * 0.04, bell(note(n), 0.4, 8) * 0.3) for i, n in enumerate(["D7", "G7", "B7"])]
+    return sequence(run + sparkle)
+
+
 SOUNDS = {
     "ui_tap": ui_tap,
     "ui_open": ui_open,
@@ -547,7 +596,14 @@ SOUNDS = {
     "pop_goal": pop_goal,
     "pop_win": pop_win,
     "pop_lose": pop_lose,
+    "factory_loop": factory_loop,
+    "quarry_dig": quarry_dig,
+    "airship_horn": airship_horn,
+    "pop_combo": pop_combo,
 }
+
+# Loops play end to end in game, so they skip the fade in and out.
+LOOPS = {"factory_loop"}
 
 
 def write_wav(path, x):
@@ -563,9 +619,15 @@ def main():
     keep_wav = "--wav" in sys.argv
     OUT.mkdir(exist_ok=True)
     global rng
+    only = [a for a in sys.argv[1:] if not a.startswith("--")]
+    for name in only:
+        if name not in SOUNDS:
+            sys.exit(f"no sound named {name}")
     for name, make in SOUNDS.items():
+        if only and name not in only:
+            continue
         rng = np.random.default_rng(zlib.crc32(name.encode()))
-        x = finish(make())
+        x = finish(make(), fade=0) if name in LOOPS else finish(make())
         wav = OUT / f"{name}.wav"
         write_wav(wav, x)
         ogg = OUT / f"{name}.ogg"
