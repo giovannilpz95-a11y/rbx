@@ -1401,6 +1401,49 @@ TYPES.SkydivingSchool = function(b, s)
 	return body
 end
 
+-- Comic Shop (content bank, level 41): a bright yellow corner shop with a big shop window, a
+-- red awning, a starburst speech-bubble sign on the roof and a spinner rack out front.
+TYPES.ComicShop = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.56, 5, s * 0.34),
+		Vector3.new(0, PLINTH + 2.5, z0 + s * 0.08),
+		Palette.flowerYellow,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + s * 0.08 - s * 0.17
+	t.block("Roof", Vector3.new(s * 0.6, 0.5, s * 0.38), Vector3.new(0, PLINTH + 5.25, z0 + s * 0.08), Palette.roofPlum)
+	-- The shop front: a wide window under a striped awning, the door to one side
+	t.block(
+		"ShopWindow",
+		Vector3.new(s * 0.3, 2.4, 0.2),
+		Vector3.new(-s * 0.08, PLINTH + 1.9, face - 0.05),
+		Palette.glass
+	)
+	for i = 0, 3 do
+		t.block(
+			"Awning",
+			Vector3.new(s * 0.08, 0.2, 1.4),
+			CFrame.new(-s * 0.2 + i * s * 0.08, PLINTH + 3.6, face - 0.6) * CFrame.Angles(math.rad(-18), 0, 0),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream,
+			{ shadow = false }
+		)
+	end
+	Kit.door(t, "Door", CFrame.new(s * 0.18, PLINTH, face), 1.4, 2.8, Palette.roofPlum, Palette.cream)
+	-- The roof sign: a starburst bubble with a little tail
+	t.ball("Bubble", 2.6, Vector3.new(0, PLINTH + 7, face + 0.8), Palette.cream)
+	t.block("Burst", Vector3.new(3.2, 0.9, 0.3), Vector3.new(0, PLINTH + 7, face - 0.4), Palette.roofRed)
+	t.wedge("BubbleTail", Vector3.new(0.3, 0.8, 0.8), CFrame.new(0.9, PLINTH + 5.7, face + 0.8), Palette.cream)
+	-- A spinner rack of comics by the door
+	t.post("Rack", 2, 0.25, Vector3.new(s * 0.3, PLINTH + 1, face - 1.2), Palette.stoneDark)
+	t.block("Comics", Vector3.new(0.9, 1, 0.9), Vector3.new(s * 0.3, PLINTH + 1.4, face - 1.2), Palette.sky)
+	Kit.sproutTag(t, Vector3.new(-s * 0.22, PLINTH + 6, z0 + s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end
