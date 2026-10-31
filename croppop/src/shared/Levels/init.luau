@@ -12,6 +12,8 @@
 	  s  stone wall, 1 layer   S  stone wall, 2 layers (only blasts break stone)
 	  g  goo over the tile (a match or blast on it clears it; after a swap that
 	     clears none, it spreads to a neighbouring tile; covering the board loses)
+	  x  surprise crate: blocks like a 1-layer bale; a match next to it or a blast
+	     opens it, and it leaves a power-up (or now and then a hay bale)
 	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
 	     into the cell below whenever that cell is empty, every other one an
 	     Egg (needs Egg in the colours)
@@ -37,7 +39,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -71,6 +73,7 @@ local VALID_CHARS = {
 	d = true,
 	g = true,
 	h = true,
+	x = true,
 	m = true,
 	M = true,
 	f = true,

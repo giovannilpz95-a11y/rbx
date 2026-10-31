@@ -35,6 +35,10 @@
 	an "Ooze" effect, and one more for the Goo goal). If goo covers every tile
 	the level is lost (`flooded`).
 
+	Surprise crates: open like a 1-layer bale (a match next to one, or a
+	blast). An opened crate leaves a random power-up in its cell (a "Crate"
+	effect), or one time in four a 1-layer hay bale.
+
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
 	it (matches don't), for the Fences goal.
 
@@ -66,6 +70,8 @@ local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
 
 local NEIGHBORS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
+-- What a surprise crate can hold.
+local CRATE_POWERS = { Power.SprayerRow, Power.SprayerColumn, Power.HayBomb, Power.Bumblebee }
 
 local Engine = {}
 Engine.__index = Engine
@@ -205,6 +211,23 @@ end
 
 function Engine._damageBale(self, wave, cell)
 	cell.bale -= 1
+	if cell.crate then
+		cell.crate = false
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, crate = true })
+		table.insert(wave.effects, { type = "Crate", x = cell.x, y = cell.y })
+		if self.rng:int(1, 4) == 4 then
+			cell.bale = 1
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1 })
+		else
+			local power = CRATE_POWERS[self.rng:int(1, #CRATE_POWERS)]
+			table.insert(wave.pendingCreates, {
+				power = power,
+				color = self.colors[self.rng:int(1, #self.colors)],
+				cell = cell,
+			})
+		end
+		return
+	end
 	if cell.stone then
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, stone = true })
 		if cell.bale == 0 then
