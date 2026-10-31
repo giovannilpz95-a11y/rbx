@@ -1269,8 +1269,8 @@ local function refreshFactory(
 		end
 	end
 
-	-- Each finished item stands on the output table as its own prop (FarmShared.Art.ItemProps):
-	-- four along the table, then a second layer on top.
+	-- Finished items stand on the output table as props (FarmShared.Art.ItemProps), up to
+	-- ArtFactories.GOODS_SHOWN in a row along the table: a mix of each kind waiting.
 	for _, child in building:GetChildren() do
 		if child.Name == "Goods" then
 			child:Destroy()
@@ -1286,15 +1286,10 @@ local function refreshFactory(
 	end
 	table.sort(ids)
 	local tableTop = outputTable.Size.Y / 2 + 0.3
-	local i = 0
-	for _, itemId in ids do
-		for _ = 1, output[itemId] do
-			local row = i % 4
-			local layer = i // 4
-			local at = outputTable.CFrame * CFrame.new(0, tableTop + layer * 2.2, -3 + row * 2)
-			ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods").Parent = building
-			i += 1
-		end
+	local shown = ArtFactories.goodsShown(ids, output)
+	for i, itemId in shown do
+		local at = outputTable.CFrame * CFrame.new(0, tableTop, -2 + (i - 1) * 2)
+		ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods").Parent = building
 	end
 end
 
