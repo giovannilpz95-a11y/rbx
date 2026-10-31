@@ -52,6 +52,7 @@ local Pens: { [string]: PenDef } = {
 	ChickenCoop3 = { id = "ChickenCoop3", displayName = "Third Chicken Coop", animalName = "Chicken", animalPlural = "Chickens", unlockLevel = 39, given = false, buildCost = 15000, buildSeconds = 40 * HOUR, xp = 623, feed = "ChickenFeed", product = "Eggs", productName = "Eggs", produceSeconds = 1 * HOUR, sellPrice = 10, productXP = 4, startAnimals = 3, extraAnimalCosts = { 2250, 2400, 2550 }, order = 9, color = { 250, 240, 220 }, productColor = { 240, 220, 170 }, copyOf = "ChickenCoop" },
 	-- Township's Pig Farm (level 42): placed by the player once it's built
 	PigPen = { id = "PigPen", displayName = "Pig Pen", animalName = "Pig", animalPlural = "Pigs", unlockLevel = 42, given = false, buildCost = 12000, buildSeconds = 43 * HOUR, xp = 500, feed = "PigFeed", product = "Bacon", productName = "Bacon", produceSeconds = 7 * HOUR, sellPrice = 32, productXP = 14, startAnimals = 3, extraAnimalCosts = { 2100, 2400, 3150 }, order = 10, color = { 245, 180, 180 }, productColor = { 220, 110, 100 } },
+	PigPen2 = { id = "PigPen2", displayName = "Second Pig Pen", animalName = "Pig", animalPlural = "Pigs", unlockLevel = 54, given = false, buildCost = 35000, buildSeconds = 57 * HOUR, xp = 1448, feed = "PigFeed", product = "Bacon", productName = "Bacon", produceSeconds = 7 * HOUR, sellPrice = 32, productXP = 14, startAnimals = 3, extraAnimalCosts = { 12600, 14000, 15400 }, order = 12, color = { 245, 180, 180 }, productColor = { 220, 110, 100 }, copyOf = "PigPen" },
 }
 
 for _, pen in Pens do

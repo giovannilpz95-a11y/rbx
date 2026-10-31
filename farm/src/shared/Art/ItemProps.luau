@@ -509,6 +509,35 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("ChainR", Vector3.new(0.1, 1, 0.1), tilt(0.5, 1.15, 0, 0, 0, 25), Palette.stoneLight, QUIET)
 		b.block("Stone", Vector3.new(0.6, 0.6, 0.3), tilt(0, 0.45, 0, 0, 0, 45), Palette.sky, QUIET)
 	end,
+	Bed = function(b)
+		-- A little bed with a headboard, a pillow and a blue quilt
+		b.block("Frame", Vector3.new(1.4, 0.5, 2), at(0, 0.35, 0), Palette.wood, QUIET)
+		b.block("Headboard", Vector3.new(1.4, 1, 0.2), at(0, 0.7, 0.95), Palette.woodDark, QUIET)
+		b.block("Quilt", Vector3.new(1.42, 0.2, 1.3), at(0, 0.65, -0.3), Palette.sky, QUIET)
+		b.block("Pillow", Vector3.new(1, 0.25, 0.45), at(0, 0.7, 0.6), Palette.cream, QUIET)
+	end,
+	MintCandy = function(b)
+		-- Two striped mint discs in twisted wrappers
+		for _, x in { -0.4, 0.45 } do
+			b.cyl("Mint", 0.3, 0.8, at(x, 0.4, 0) * Kit.yaw(90), Palette.lime:Lerp(Palette.cream, 0.4), QUIET)
+			b.block("Stripe", Vector3.new(0.12, 0.7, 0.32), at(x, 0.4, 0), Palette.cream, QUIET)
+		end
+	end,
+	SeafoodPizza = function(b)
+		-- A pizza topped with shrimp and fish
+		b.cyl("Base", 0.2, 1.9, at(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.cyl("Sauce", 0.22, 1.6, at(0, 0.12, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.roofRed, QUIET)
+		b.ball("Shrimp", 0.4, at(-0.4, 0.3, 0.2), Palette.carrot, QUIET)
+		b.ball("Shrimp", 0.4, at(0.35, 0.3, -0.3), Palette.carrot, QUIET)
+		b.block("Fish", Vector3.new(0.5, 0.15, 0.3), at(0.2, 0.28, 0.4), Palette.cream, QUIET)
+	end,
+	Sneakers = function(b)
+		-- A white sneaker with a coloured sole and swoosh
+		b.block("Sole", Vector3.new(0.9, 0.25, 1.8), at(0, 0.12, 0), Palette.roofRed, QUIET)
+		b.block("Upper", Vector3.new(0.85, 0.6, 1.3), at(0, 0.55, 0.2), Palette.cream, QUIET)
+		b.wedge("Toe", Vector3.new(0.85, 0.45, 0.5), tilt(0, 0.45, -0.7, 0, 180, 0), Palette.cream, QUIET)
+		b.block("Stripe", Vector3.new(0.88, 0.15, 0.7), at(0, 0.5, 0.1), Palette.sky, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
