@@ -13,6 +13,7 @@ local DecorRules = require(Shared.DecorRules)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
+local Hud = require(script.Parent.Parent.UI.Hud)
 local Ui = require(script.Parent.Parent.UI.Ui)
 
 local DecorPlacer = {}
@@ -24,7 +25,7 @@ local bar: Frame
 local ghost: Part
 local active: string? = nil
 local turns = 0
-local spot = { x = 0, z = 0, ok = false }
+local spot: { x: number, z: number, ok: boolean, reason: string? } = { x = 0, z = 0, ok = false, reason = nil }
 local AHEAD = 8 -- studs in front of the avatar
 
 local function blockedHere(origin: CFrame, w: number, d: number): boolean
@@ -61,9 +62,11 @@ local function update()
 	local w, d = DecorRules.footprint(id, turns)
 	local p = { id = id, x = x, z = z, r = turns }
 	local at = origin * CFrame.new(x, 0.25, z)
-	local fits = DecorRules.canPlace(state, p, ClientStore.now())
-		and not blockedHere(at, w * Decor.tile, d * Decor.tile)
-	spot.x, spot.z, spot.ok = x, z, fits
+	local fits, reason = DecorRules.canPlace(state, p, ClientStore.now())
+	if fits and blockedHere(at, w * Decor.tile, d * Decor.tile) then
+		fits, reason = false, "Something is already there"
+	end
+	spot.x, spot.z, spot.ok, spot.reason = x, z, fits, reason
 	ghost.Size = Vector3.new(w * Decor.tile - 0.2, 0.3, d * Decor.tile - 0.2)
 	ghost.CFrame = at * CFrame.new(0, 0.2, 0)
 	ghost.Color = if fits then Ui.colors.ready else Ui.colors.danger
@@ -112,6 +115,9 @@ function DecorPlacer.init()
 		if active and spot.ok then
 			Remotes.fire("Decor_Place", active, spot.x, spot.z, turns)
 			DecorPlacer.stop()
+		elseif active then
+			-- The ghost is red: say why instead of doing nothing (Studio check)
+			Hud.toast(string.format("Can't place here. %s.", spot.reason or "Walk to an open spot on your land"))
 		end
 	end, { Size = UDim2.fromOffset(100, 40), LayoutOrder = 1, Parent = bar })
 	Ui.button("Turn", function()
