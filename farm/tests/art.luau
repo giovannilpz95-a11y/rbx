@@ -2,6 +2,7 @@
 -- (Design/15 3D World & Avatar Play §5, Design/16 Model Catalog), and follows the palette
 -- rules (no pure black or white). Called from tests/run.luau.
 
+local fs = require("@lune/fs")
 local roblox = require("@lune/roblox")
 
 -- The Art modules use Roblox's globals; Lune keeps them in @lune/roblox.
@@ -167,6 +168,23 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			local c = p.CFrame.Position
 			ok(p == root or (math.abs(c.X) <= 2 and math.abs(c.Z) <= 2), "gold fence: " .. p.Name .. " inside its tile")
 		end)
+	end)
+
+	-- A Luau table literal with a repeated key keeps the last one silently, so an id reused for
+	-- a new decoration would replace the older one's entry and model. Scan the sources instead.
+	test("art: decoration ids and builders are never defined twice", function()
+		for _, file in
+			{
+				{ "src/shared/Config/Decor.luau", "\n\t([%w_]+) = {" },
+				{ "src/shared/Art/Decor.luau", "\n\t([%w_]+) = function" },
+			}
+		do
+			local seen = {}
+			for id in string.gmatch(fs.readFile(file[1]), file[2]) do
+				ok(not seen[id], file[1] .. " defines " .. id .. " twice")
+				seen[id] = true
+			end
+		end
 	end)
 
 	test("art: every decoration builds inside its footprint and budget", function()
