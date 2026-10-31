@@ -190,6 +190,7 @@ local function missingButton(
 	end, props)
 	return button, "Missing: " .. Missing.describe(lines)
 end
+Panels.missingButton = missingButton -- for registered panels (the Blimp Mast's crates)
 
 -- A small red line under a row's text, naming what's missing
 local function missingLine(parent: Instance, text: string, y: number, rightInset: number)
@@ -2299,6 +2300,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("+1 level (opens the content bank past the cap)", "Debug_LevelUp", 380, 10)
 	devButton("Reach the next Town Record medals", "Debug_Records", 320, 11)
 	devButton("+Bars, Barn room, ore, Pickaxes, open Quarry, Population 1,200", "Debug_Quarry", 380, 12)
+	devButton("Airship Freight: mast repaired, Cargo Blimp docked now", "Debug_Blimp", 380, 13)
 end
 
 ---------------------------------------------------------------------------------------------

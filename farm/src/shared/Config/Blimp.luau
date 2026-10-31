@@ -55,6 +55,7 @@ return table.freeze({
 	repairCoins = 1500,
 	repairSeconds = 24 * HOUR,
 	repairXp = 66,
+	land = 1, -- the mast stands in the West Meadow (land expansion 1)
 
 	loadSeconds = 15 * HOUR, -- docked: fill and send before this runs out
 	gapSeconds = 5 * HOUR, -- from leaving to the next arrival
