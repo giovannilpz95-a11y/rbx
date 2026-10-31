@@ -333,6 +333,21 @@ READY.RubberTrees = function(b, color)
 	end
 end
 
+-- Silk (level 31): rows of low mulberry bushes, then the bushes hung with plump white cocoons.
+GROWING.Silk = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Bushes", Vector3.new(6.2, 1.1, 1.4), Vector3.new(0, 0.85, z), Palette.leaf)
+	end
+end
+READY.Silk = function(b, color)
+	for i, z in ArtCrops.ROWS do
+		b.block("Bushes", Vector3.new(6.2, 1.4, 1.5), Vector3.new(0, 1, z), Palette.leafLight)
+		for j, x in { -1.8, 0.2, 2.1 } do
+			b.ball("Cocoon", if (i + j) % 2 == 0 then 0.9 else 0.75, Vector3.new(x, 1.9, z - 0.3), color)
+		end
+	end
+end
+
 -- Crops past the content bank: green rows, then rows of fruit in the crop's own color.
 local function genericGrowing(b: Kit.Builder, _color: Color3)
 	for _, z in ArtCrops.ROWS do

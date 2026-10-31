@@ -45,6 +45,8 @@ local Recipes: { [string]: RecipeDef } = {
 	CottonFabric = { id = "CottonFabric", displayName = "Cotton Fabric", factory = "TextileMill", unlockLevel = 9, inputs = { Cotton = 2 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 37, xp = 16 },
 	Yarn = { id = "Yarn", displayName = "Yarn", factory = "TextileMill", unlockLevel = 10, inputs = { Wool = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 61, xp = 26 },
 	Shirt = { id = "Shirt", displayName = "Shirt", factory = "TextileMill", unlockLevel = 12, inputs = { CottonFabric = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 45, xp = 19 },
+	SilkFabric = { id = "SilkFabric", displayName = "Silk Fabric", factory = "TextileMill", unlockLevel = 31, inputs = { Silk = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 140, xp = 60 }, -- content bank
+	SunHat = { id = "SunHat", displayName = "Sun Hat", factory = "TextileMill", unlockLevel = 31, inputs = { CottonFabric = 1, SilkFabric = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 231, xp = 99 }, -- content bank
 	PatchworkQuilt = { id = "PatchworkQuilt", displayName = "Patchwork Quilt", factory = "TextileMill", unlockLevel = 20, inputs = { CottonFabric = 1, Yarn = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 125, xp = 54 }, -- content bank
 	WoolScarf = { id = "WoolScarf", displayName = "Wool Scarf", factory = "TextileMill", unlockLevel = 14, inputs = { Yarn = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 76, xp = 33 }, -- content bank
 	-- Snack Factory (content bank)
@@ -70,6 +72,8 @@ local Recipes: { [string]: RecipeDef } = {
 	Muffin = { id = "Muffin", displayName = "Muffin", factory = "PastryShop", unlockLevel = 24, inputs = { Wheat = 3, Sugar = 1, Eggs = 4 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 68, xp = 29 },
 	Cupcake = { id = "Cupcake", displayName = "Cupcake", factory = "PastryShop", unlockLevel = 30, inputs = { Sugar = 1, Eggs = 5, Cream = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 93, xp = 40 },
 	Brownie = { id = "Brownie", displayName = "Brownie", factory = "PastryShop", unlockLevel = 27, inputs = { Cocoa = 2, CaneSyrup = 1, Butter = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 128, xp = 55 },
+	-- Prep Kitchen (content bank)
+	Dough = { id = "Dough", displayName = "Dough", factory = "PrepKitchen", unlockLevel = 31, inputs = { Wheat = 3 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 4, xp = 2 },
 	-- Rubber Works (content bank)
 	Rubber = { id = "Rubber", displayName = "Rubber", factory = "RubberWorks", unlockLevel = 29, inputs = { RubberTrees = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 35, xp = 15 },
 	-- Smelter (Township's Foundry: 5 ore -> 1 ingot, all at level 21). Bars go to the Barn.
