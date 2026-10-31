@@ -15,6 +15,10 @@
 	     and then pumpkins come only from baskets, not from refills.
 	  1 2 3  hay bale with that many layers
 
+	Fences sit outside the layout too, as `fences = { { x, y, "r" | "d" } }`: a
+	fence on the edge right of (x, y) ("r") or below it ("d"). Nothing swaps
+	across a fence; only blasts break it (the Fences goal).
+
 	Portals sit outside the layout, as `portals = { { from = { x, y }, to = { x, y } } }`:
 	pieces falling out of `from` land in `to` instead of the cell below.
 
@@ -28,7 +32,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -81,6 +85,39 @@ Levels.MAX_SIZE = 10
 	portal's entrance and one portal's exit at most, and falling must never
 	loop (following portals and cells below from any cell ends).
 ]]
+-- Checks a level's fences: each one on the edge between two board cells, once.
+function Levels.checkFences(level): string?
+	local fences = level.fences
+	if fences == nil then
+		return nil
+	end
+	if type(fences) ~= "table" then
+		return "fences must be a list"
+	end
+	local layout = level.layout
+	local function isCell(x, y)
+		local row = layout[y]
+		return row ~= nil and type(x) == "number" and x >= 1 and x <= #row and x == math.floor(x) and not HOLES[string.sub(row, x, x)]
+	end
+	local seen = {}
+	for i, f in fences do
+		if type(f) ~= "table" or (f[3] ~= "r" and f[3] ~= "d") then
+			return "fence " .. i .. " must be { x, y, \"r\" or \"d\" }"
+		end
+		local x, y = f[1], f[2]
+		local ox, oy = if f[3] == "r" then x + 1 else x, if f[3] == "d" then (y or 0) + 1 else y
+		if not (isCell(x, y) and isCell(ox, oy)) then
+			return "fence " .. i .. " must sit between two board cells"
+		end
+		local key = string.format("%d,%d,%s", x, y, f[3])
+		if seen[key] then
+			return "fence " .. i .. " is listed twice"
+		end
+		seen[key] = true
+	end
+	return nil
+end
+
 function Levels.checkPortals(level): string?
 	local portals = level.portals
 	if portals == nil then
@@ -217,7 +254,7 @@ function Levels.validate(level): string?
 			end
 		end
 	end
-	local portalError = Levels.checkPortals(level)
+	local portalError = Levels.checkPortals(level) or Levels.checkFences(level)
 	if portalError then
 		return portalError
 	end
@@ -260,6 +297,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Stones" then
 			if stones == 0 then
 				return "stones goal but no stone walls in the layout"
+			end
+		elseif goal.kind == "Fences" then
+			if not level.fences or #level.fences == 0 then
+				return "fences goal but no fences"
 			end
 		elseif goal.kind == "Clover" then
 			if clover == 0 then

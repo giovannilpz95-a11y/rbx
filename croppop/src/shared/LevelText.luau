@@ -47,6 +47,13 @@ function LevelText.write(level): string
 		end
 		table.insert(lines, "\t},")
 	end
+	if level.fences and #level.fences > 0 then
+		table.insert(lines, "\tfences = {")
+		for _, f in level.fences do
+			table.insert(lines, string.format("\t\t{ %d, %d, %q },", f[1], f[2], f[3]))
+		end
+		table.insert(lines, "\t},")
+	end
 	table.insert(lines, "\tgoals = {")
 	for _, goal in level.goals do
 		table.insert(lines, "\t\t" .. goalText(goal) .. ",")

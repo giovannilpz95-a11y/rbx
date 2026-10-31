@@ -869,6 +869,31 @@ test("clover shows on the board and spreads as the level plays", function()
 	PuzzleScreen.close()
 end)
 
+test("fences show on their edges and go when blasts break them", function()
+	local level = table.clone(CropPop.Levels.get(1))
+	level.id = 996
+	level.layout = { "........", "........", "........", "........", "........", "........", "........" }
+	level.fences = { { 2, 2, "r" }, { 5, 3, "d" }, { 6, 6, "r" } }
+	level.goals = { { kind = "Fences" } }
+	level.moves = 60
+	PuzzleScreen.playTest(level, function() end)
+	local run = PuzzleScreen.currentRun()
+	local bars = 0
+	for _ in run.view.fenceGuis do
+		bars += 1
+	end
+	eq(bars, 3)
+	falsy(run.game:canSwap(2, 2, 3, 2), "no swap across a fence")
+	run = playToEnd(60, false)
+	local left = 0
+	for _ in run.view.fenceGuis do
+		left += 1
+	end
+	eq(left, run.game.board.fenceCount, "the view drops the fences the engine broke")
+	eq(mismatches, 0, "tiles out of step before sync")
+	PuzzleScreen.close()
+end)
+
 test("the Trail's Dev: Editor button opens the level editor", function()
 	PuzzleScreen.open()
 	playerGui.CropPop.Backdrop.LevelSelect.DevEditor.Activated:Fire()
@@ -949,6 +974,27 @@ test("test play runs the level offline and goes back to the editor", function()
 	endPanel.Secondary.Activated:Fire() -- Editor
 	truthy(LevelEditor.isOpen())
 	eq(PuzzleScreen.isOpen(), false)
+end)
+
+test("the fence brush adds and removes the fence between two cells", function()
+	local panel = playerGui.CropPopEditor.Backdrop.Panel
+	local grid = playerGui.CropPopEditor.Backdrop.GridArea.Grid
+	panel.MoreBrushes["Brush|"].Activated:Fire()
+	grid.Cell2_2.Activated:Fire()
+	grid.Cell3_2.Activated:Fire()
+	local level = LevelEditor.current()
+	eq(#level.fences, 1)
+	eq(table.concat(level.fences[1], ","), "2,2,r")
+	truthy(string.find(grid.Cell2_2.Text, "|", 1, true))
+	grid.Cell2_3.Activated:Fire()
+	grid.Cell2_2.Activated:Fire()
+	eq(#LevelEditor.current().fences, 2)
+	eq(table.concat(LevelEditor.current().fences[2], ","), "2,2,d")
+	grid.Cell2_2.Activated:Fire()
+	grid.Cell3_2.Activated:Fire()
+	eq(#LevelEditor.current().fences, 1, "tapping the same pair again removes it")
+	truthy(string.find(CropPop.LevelText.write(LevelEditor.current()), 'fences = {', 1, true))
+	panel.Brushes["Brush."].Activated:Fire()
 end)
 
 test("loading a Trail level fills the editor with it", function()

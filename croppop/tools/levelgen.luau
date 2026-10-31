@@ -1,11 +1,11 @@
 --[[
-	Crop Pop level generator. Builds levels 6..225 from original shape and
+	Crop Pop level generator. Builds levels 6..250 from original shape and
 	obstacle patterns, then tunes each level's moves with the test bot until
 	its win rate is near the target for its place in the game.
 
 	Run from the croppop/ folder (prints Luau text for each level):
 
-		luaurun tools/levelgen.luau 6 225 > /tmp/levels.txt
+		luaurun tools/levelgen.luau 6 250 > /tmp/levels.txt
 
 	The output is pasted into src/shared/Levels/SetNN.luau. Levels are fixed
 	once they ship, so this tool is for making new ones and retuning drafts;
@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 225
+local LAST = tonumber(ARGS[2]) or 250
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -73,6 +73,11 @@ local NAMES = {
 	"Pea Shoots", "Cherry Ladder", "Lazy River", "Haymakers", "Sunny Hamper",
 	"Picking Season", "Watering Can", "Gooseberry Fool", "Cart Track", "Long Meadow",
 	"Garden Party", "Cucumber Frame", "Lark Rise", "Hamper Hill", "Summer Show",
+	"Split Rail", "Paddock Fence", "Gate Latch", "Stile Steps", "Hurdle Run",
+	"Pony Ring", "Fence Mending", "Hedge Gap", "Sheep Pen", "Rail Yard Farm",
+	"Post and Rail", "Calf Pen", "Wattle Hurdles", "Cattle Grid", "Kissing Gate",
+	"Goat Pen", "Corral Corner", "Field Boundary", "Picket Path", "County Show",
+	"Fence Painting", "Pig Sty", "Fold Yard", "Boundary Walk", "Grand Gate",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -85,7 +90,8 @@ local CLOVER_INTRO = 126 -- first level with clover
 local STONE_INTRO = 151 -- first level with stone walls
 local PORTAL_INTRO = 176 -- first level with portals
 local BASKET_INTRO = 201 -- first level with pumpkin baskets
-local INTROS = { [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local FENCE_INTRO = 226 -- first level with fences
+local INTROS = { [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -406,6 +412,7 @@ local function mechanics(id)
 		thickStones = id >= 160, -- "S"
 		portals = id >= PORTAL_INTRO, -- level.portals
 		baskets = id >= BASKET_INTRO, -- "d"
+		fences = id >= FENCE_INTRO, -- level.fences
 	}
 end
 
@@ -413,6 +420,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_FENCES = { "Fences", "Baskets", "Collect", "Stones", "Fences", "Clover", "Weeds", "Mud", "Fences", "Frost", "HayBale", "Mix" }
 local FOCUS_BASKETS = { "Baskets", "Stones", "Collect", "Clover", "Baskets", "Weeds", "Mud", "Frost", "Baskets", "HayBale", "Mix", "Pumpkins" }
 local FOCUS_STONES = { "Stones", "Clover", "Collect", "Pumpkins", "Stones", "Weeds", "Mud", "Frost", "Stones", "HayBale", "Mix", "Clover" }
 local FOCUS_CLOVER = { "Clover", "Pumpkins", "Collect", "Weeds", "Clover", "Mud", "Frost", "HayBale", "Clover", "Mix", "Pumpkins", "Collect" }
@@ -428,6 +436,7 @@ local NAME_HINTS = {
 	{ words = { "Clover", "Shamrock", "Green" }, focus = "Clover", needs = "clover" },
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
+	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
 }
 
 local function focusOf(id, name)
@@ -446,6 +455,8 @@ local function focusOf(id, name)
 		return "Collect" -- portals have no goal of their own
 	elseif id == BASKET_INTRO then
 		return "Baskets"
+	elseif id == FENCE_INTRO then
+		return "Fences"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -457,7 +468,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -625,6 +636,59 @@ local function placeBaskets(g, rng, id, portals)
 	return if id == BASKET_INTRO then 3 else rng:int(3, 4 + id // 60) + (if pair then 1 else 0)
 end
 
+-- Fences on edges between cells, mirrored left to right: a wall down the
+-- middle, a pen around the centre, or rails under a row.
+local FENCE_PATTERNS = { "wall", "pen", "rails" }
+
+local function placeFences(g, rng, id)
+	local fences, seen = {}, {}
+	local function plain(x, y)
+		return isCell(g, x, y) and g[y][x] ~= "d"
+	end
+	local function add(x, y, side)
+		local ox, oy = if side == "r" then x + 1 else x, if side == "d" then y + 1 else y
+		local key = x .. "," .. y .. side
+		if plain(x, y) and plain(ox, oy) and not seen[key] then
+			seen[key] = true
+			table.insert(fences, { x, y, side })
+		end
+	end
+	local function addSym(x, y, side)
+		add(x, y, side)
+		if side == "r" then
+			add(g.w - x, y, "r")
+		else
+			add(g.w - x + 1, y, "d")
+		end
+	end
+	local name = if id == FENCE_INTRO then "wall" else rng:pick(FENCE_PATTERNS)
+	local cx, cy = g.w // 2, g.h // 2
+	if name == "wall" then
+		local x = if id == FENCE_INTRO or rng:int(1, 2) == 1 then cx else rng:int(2, cx)
+		local top = rng:int(2, math.max(2, cy - 1))
+		for y = top, math.min(g.h - 1, top + (if id == FENCE_INTRO then 3 else rng:int(3, 5))) do
+			addSym(x, y, "r")
+		end
+	elseif name == "pen" then
+		local x0, y0 = cx, cy
+		for x = x0, g.w - x0 + 1 do
+			addSym(x, y0 - 1, "d")
+			addSym(x, y0 + 1, "d")
+		end
+		for y = y0, y0 + 1 do
+			addSym(x0 - 1, y, "r")
+		end
+	else
+		local y = rng:int(3, g.h - 2)
+		for x = 1, cx do
+			if (x + y) % 2 == 0 or rng:int(1, 3) == 1 then
+				addSym(x, y, "d")
+			end
+		end
+	end
+	return fences
+end
+
 -- Keep a gap in every row so nothing is sealed off: bales, weeds and frozen
 -- tiles all stop falling tiles.
 local function keepRowsOpen(g)
@@ -716,6 +780,13 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	local fences = {}
+	if focus == "Fences" or (focus == "Mix" and mech.fences and rng:int(1, 3) == 1) then
+		fences = placeFences(g, rng, id)
+		if #fences < 3 then
+			return nil
+		end
+	end
 	if #portals > 0 or pumpkins > 0 then
 		for y = 1, g.h do
 			local open = false
@@ -761,11 +832,14 @@ local function draft(id, variant)
 	if has(g, "sS") > 0 then
 		table.insert(goals, { kind = "Stones" })
 	end
+	if #fences > 0 then
+		table.insert(goals, { kind = "Fences" })
+	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most
 	end
 	-- Frost and bales can leave too few swappable tiles: the board must deal playable.
-	local probe = { layout = layoutText(g), portals = portals, colors = colors, goals = { { kind = "Collect", tile = colors[1], count = 1 } }, moves = 1 }
+	local probe = { layout = layoutText(g), portals = portals, fences = fences, colors = colors, goals = { { kind = "Collect", tile = colors[1], count = 1 } }, moves = 1 }
 	for seed = 1, 10 do
 		if not Matcher.hasPossibleMove(Engine.new(probe, seed).board) then
 			return nil
@@ -797,6 +871,7 @@ local function draft(id, variant)
 		colors = colors,
 		layout = layoutText(g),
 		portals = if #portals > 0 then portals else nil,
+		fences = if #fences > 0 then fences else nil,
 		goals = goals,
 		rewards = table.clone(REWARDS[difficulty]),
 	}

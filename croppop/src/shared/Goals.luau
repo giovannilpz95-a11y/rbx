@@ -9,6 +9,7 @@
 	  { kind = "Pumpkins", count = 3 }                   -- bring N pumpkins down to the bottom row
 	  { kind = "Clover" }                                -- grow clover on every cell
 	  { kind = "Stones" }                                -- break every stone wall (blasts only)
+	  { kind = "Fences" }                                -- break every fence (blasts only)
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -64,6 +65,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Pumpkins", target = def.count, progress = 0 })
 		elseif def.kind == "Stones" then
 			table.insert(list, { kind = "Stones", target = def.count or stones, progress = 0 })
+		elseif def.kind == "Fences" then
+			table.insert(list, { kind = "Fences", target = def.count or board.fenceCount, progress = 0 })
 		elseif def.kind == "Clover" then
 			table.insert(list, { kind = "Clover", target = def.count or bare, progress = 0 })
 		else
@@ -109,6 +112,10 @@ end
 
 function Goals.onStone(self)
 	bump(self, "Stones", nil)
+end
+
+function Goals.onFence(self)
+	bump(self, "Fences", nil)
 end
 
 function Goals.onClover(self)

@@ -316,7 +316,7 @@ function Matcher.listPossibleMoves(board, limit: number?): { { number } }
 			if isMovable(cell) then
 				for _, d in { { 1, 0 }, { 0, 1 } } do
 					local other = board:get(x + d[1], y + d[2])
-					if isMovable(other) and Matcher.isUsefulSwap(board, cell, other) then
+					if isMovable(other) and not board:fenceBetween(x, y, x + d[1], y + d[2]) and Matcher.isUsefulSwap(board, cell, other) then
 						table.insert(moves, { x, y, x + d[1], y + d[2] })
 						if limit and #moves >= limit then
 							return moves

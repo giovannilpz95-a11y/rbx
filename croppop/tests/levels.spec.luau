@@ -10,10 +10,10 @@ test("every level validates", function()
 		truthy(not seen[level.id], "duplicate id " .. level.id)
 		seen[level.id] = true
 	end
-	eq(#Levels.List, 225)
+	eq(#Levels.List, 250)
 end)
 
-test("levels run 1 to 225 in order, with unique names and the difficulty pattern", function()
+test("levels run 1 to 250 in order, with unique names and the difficulty pattern", function()
 	local names = {}
 	for i, level in Levels.List do
 		eq(level.id, i)
@@ -115,4 +115,17 @@ test("pumpkin baskets first show up on level 201, alone with a Pumpkins goal", f
 	eq(#first.goals, 1)
 	eq(first.goals[1].kind, "Pumpkins")
 	eq(first.portals, nil)
+end)
+
+test("fences first show up on level 226, alone with their goal", function()
+	local first
+	for _, level in Levels.List do
+		if level.fences then
+			first = first or level
+			eq(Levels.checkFences(level), nil, level.name)
+		end
+	end
+	eq(first and first.id, 226)
+	eq(#first.goals, 1)
+	eq(first.goals[1].kind, "Fences")
 end)
