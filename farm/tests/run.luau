@@ -1457,6 +1457,23 @@ test("records: counters, read stats, claiming tiers in order", function()
 	assert(Records.value(data, "houses", 0) >= 1, "starter houses count")
 end)
 
+test("records: the public card others see has stars and the card's six numbers", function()
+	local data = Profile.template()
+	Records.add(data, "harvest", 640)
+	data.orders.delivered = 120
+	Records.claim(data, "Orders", 0)
+	local card = Records.publicCard(data, 0)
+	eq(card.stars, 1, "one star")
+	eq(card.stats.Harvest, 640, "harvest")
+	eq(card.stats.Orders, 120, "orders")
+	eq(card.stats.Coins, nil, "only the card's stats")
+	local n = 0
+	for _ in card.stats do
+		n += 1
+	end
+	eq(n, 6, "six numbers")
+end)
+
 test("records: the Studio fill reaches each counted record's next medal", function()
 	local data = Profile.template()
 	local ready = Records.debugFill(data, 0)
