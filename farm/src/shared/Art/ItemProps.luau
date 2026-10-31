@@ -307,6 +307,18 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			b.block("Rasher", Vector3.new(1.3, 0.15, 0.3), tilt(0, 0.22 + i * 0.03, z, 0, 8, 0), Palette.bread, QUIET)
 		end
 	end,
+	Burrito = function(b)
+		-- A rolled tortilla, its open end showing the filling
+		b.cyl("Wrap", 1.6, 0.8, at(0, 0.4, 0), Palette.wheatHead, QUIET)
+		b.cyl("Filling", 0.1, 0.6, at(0.81, 0.4, 0), Palette.roofRed, QUIET)
+		b.block("Fold", Vector3.new(0.6, 0.1, 0.7), at(-0.3, 0.8, 0), Palette.bread, QUIET)
+	end,
+	Chocolate = function(b)
+		-- A bar of chocolate half out of its gold-foil wrapper
+		b.block("Bar", Vector3.new(1.6, 0.25, 0.9), at(0, 0.13, 0), Palette.cocoa, QUIET)
+		b.block("Wrapper", Vector3.new(0.9, 0.3, 0.95), at(0.4, 0.15, 0), Palette.roofRed, QUIET)
+		b.block("Foil", Vector3.new(0.12, 0.31, 0.96), at(-0.05, 0.15, 0), Palette.coins, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)

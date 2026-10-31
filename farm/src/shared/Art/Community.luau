@@ -1535,6 +1535,104 @@ TYPES.GroceryStore = function(b, s)
 	return body
 end
 
+-- Glasshouse (content bank, level 44): a big glass-paned conservatory on a brick base, a
+-- glass lantern roof along its ridge, tall palms inside and planters at the door.
+TYPES.Glasshouse = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.62, 1.2, s * 0.4),
+		Vector3.new(0, PLINTH + 0.6, z0 + s * 0.05),
+		Palette.brick,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + s * 0.05 - s * 0.2
+	t.block("Glass", Vector3.new(s * 0.6, 3.6, s * 0.38), Vector3.new(0, PLINTH + 3, z0 + s * 0.05), Palette.glass)
+	t.block("Frame", Vector3.new(s * 0.62, 0.3, s * 0.4), Vector3.new(0, PLINTH + 4.95, z0 + s * 0.05), Palette.cream)
+	Kit.gableRoof(
+		t,
+		"Roof",
+		Vector3.new(0, PLINTH + 5.1, z0 + s * 0.05),
+		s * 0.62,
+		s * 0.4,
+		2,
+		Palette.glassDeep,
+		Palette.cream
+	)
+	for _, x in { -s * 0.15, 0, s * 0.15 } do
+		t.block("Mullion", Vector3.new(0.25, 3.6, 0.25), Vector3.new(x, PLINTH + 3, face - 0.02), Palette.cream)
+	end
+	-- Palms growing inside, poking up toward the roof
+	for _, x in { -s * 0.18, s * 0.18 } do
+		t.ball("Palm", 2.4, Vector3.new(x, PLINTH + 4.2, z0 + s * 0.08), Palette.treeTop)
+	end
+	Kit.door(t, "Door", CFrame.new(s * 0.08, PLINTH + 1.2, face), 1.6, 2.6, Palette.cream, Palette.glass)
+	for _, x in { -s * 0.3, s * 0.3 } do
+		t.block("Planter", Vector3.new(1.4, 0.7, 1), Vector3.new(x, PLINTH + 0.35, face - 1), Palette.wood)
+		t.ball("Bloom", 1.1, Vector3.new(x, PLINTH + 0.95, face - 1), Palette.flowerPink)
+	end
+	Kit.sproutTag(t, Vector3.new(-s * 0.26, PLINTH + 6, z0 + s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Splash Park (content bank, level 45): a pool deck with a blue pool, a tall slide tower
+-- whose tube curls down into the water, a mushroom fountain and a ticket hut.
+TYPES.SplashPark = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.26, 3, s * 0.2),
+		Vector3.new(-s * 0.26, PLINTH + 1.5, z0 - s * 0.12),
+		Palette.cream,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block(
+		"HutRoof",
+		Vector3.new(s * 0.3, 0.4, s * 0.24),
+		Vector3.new(-s * 0.26, PLINTH + 3.2, z0 - s * 0.12),
+		Palette.roofTeal
+	)
+	Kit.door(t, "Door", CFrame.new(-s * 0.26, PLINTH, z0 - s * 0.22), 1.4, 2.4, Palette.roofTeal, Palette.cream)
+	-- The pool and its rim
+	t.block(
+		"PoolRim",
+		Vector3.new(s * 0.5, 0.4, s * 0.34),
+		Vector3.new(s * 0.12, PLINTH + 0.2, z0 + s * 0.06),
+		Palette.cream
+	)
+	t.block(
+		"Water",
+		Vector3.new(s * 0.44, 0.42, s * 0.28),
+		Vector3.new(s * 0.12, PLINTH + 0.22, z0 + s * 0.06),
+		Palette.glassDeep
+	)
+	-- The slide tower, its platform and the tube sloping down into the pool
+	local tx, tz = -s * 0.26, z0 + s * 0.16
+	t.block("SlideTower", Vector3.new(2, 6, 2), Vector3.new(tx, PLINTH + 3, tz), Palette.flowerYellow)
+	t.block("SlideTop", Vector3.new(2.4, 0.4, 2.4), Vector3.new(tx, PLINTH + 6.2, tz), Palette.roofRed)
+	t.block(
+		"Slide",
+		Vector3.new(1.2, 0.5, 8),
+		CFrame.new(tx + 3.4, PLINTH + 3.4, tz) * Kit.yaw(90) * CFrame.Angles(math.rad(-38), 0, 0),
+		Palette.roofRed
+	)
+	-- A mushroom fountain in the shallow end
+	t.post("Stem", 2.2, 0.4, Vector3.new(s * 0.26, PLINTH + 1.1, z0 - s * 0.02), Palette.cream)
+	t.cyl(
+		"Cap",
+		0.4,
+		2.4,
+		CFrame.new(s * 0.26, PLINTH + 2.3, z0 - s * 0.02) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.flowerPink
+	)
+	Kit.sproutTag(t, Vector3.new(tx, PLINTH + 7.4, tz), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end
