@@ -17,6 +17,9 @@ ArtFactories.WIDTH = 10
 ArtFactories.DEPTH = 12
 ArtFactories.TABLE_Z = -10
 ArtFactories.QUEUE_SHOWN = 6 -- queued jobs show as crates by the table, two layers of three
+-- Finished goods show on the output table up to this many (the part-cut pass: a full tray of
+-- 6-8 props on every factory cost ~450 parts a plot); the panel still counts them all
+ArtFactories.GOODS_SHOWN = 3
 
 -- What the server's merge of a working factory (Art/Merge) leaves out: the moving gimmick,
 -- the queue crates and goods that come and go, the output table (a tap target of its own)
@@ -1051,6 +1054,27 @@ function ArtFactories.setQueue(model: Model, waiting: number)
 			if layer == 0 then Palette.crate else Palette.crate:Lerp(Palette.cream, 0.2)
 		)
 	end
+end
+
+-- Which finished goods stand on the output table, at most GOODS_SHOWN: one of each kind
+-- waiting first (in `ids` order), then more of them in turn, so a mixed tray shows its mix.
+function ArtFactories.goodsShown(ids: { string }, output: { [string]: number }): { string }
+	local shown = {}
+	local round = 1
+	while #shown < ArtFactories.GOODS_SHOWN do
+		local added = false
+		for _, id in ids do
+			if (output[id] or 0) >= round and #shown < ArtFactories.GOODS_SHOWN then
+				table.insert(shown, id)
+				added = true
+			end
+		end
+		if not added then
+			break
+		end
+		round += 1
+	end
+	return shown
 end
 
 return ArtFactories

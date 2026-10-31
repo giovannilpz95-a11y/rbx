@@ -605,6 +605,17 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: an output table shows at most GOODS_SHOWN goods, each kind first", function()
+		local max = ArtFactories.GOODS_SHOWN
+		eq(#ArtFactories.goodsShown({}, {}), 0, "an empty tray shows nothing")
+		eq(#ArtFactories.goodsShown({ "Bread" }, { Bread = 1 }), 1, "one waiting, one shown")
+		eq(#ArtFactories.goodsShown({ "Bread" }, { Bread = 9 }), max, "a full tray shows the cap")
+		local mix = ArtFactories.goodsShown({ "Bread", "Cookie" }, { Bread = 5, Cookie = 1 })
+		eq(#mix, max, "a mixed tray shows the cap")
+		eq(mix[1], "Bread", "one of each kind first")
+		eq(mix[2], "Cookie", "one of each kind first")
+	end)
+
 	test("art: pen animals merge once per kind and every copy is a union", function()
 		local stub = {
 			UnionAsync = function(_self, primary: BasePart, _parts: { BasePart }, _options)
@@ -1148,7 +1159,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				end
 			end
 			ok(biggestProp > 0, id .. " makes something with a prop")
-			total += biggestProp * Factories[id].trayCapacity
+			total += biggestProp * math.min(Factories[id].trayCapacity, ArtFactories.GOODS_SHOWN)
 		end
 		-- Barn, board, dock, truck, gate: use their budgets
 		total += ArtBuildings.BARN_PARTS_MAX + ArtBuildings.BOARD_PARTS_MAX + 4 + ArtBuildings.TRUCK_PARTS_MAX + 25
