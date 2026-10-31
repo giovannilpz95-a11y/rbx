@@ -561,6 +561,43 @@ TYPES.GardenCoop = {
 	end,
 }
 
+-- Sky Garden Tower (content bank, level 39): a slim three-storey tower with a flat roof
+-- garden of two round trees behind a rail, and a planted balcony on the middle floor.
+TYPES.SkyGardenTower = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.66, s * 0.58, STORY * 3
+		local body = walls(b, w, d, h, Palette.cream:Lerp(Palette.sky, 0.2), 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.3), roof)
+		-- The roof garden: a green bed, two round trees and a rail along the front
+		t.block("RoofGarden", Vector3.new(w * 0.8, 0.4, d * 0.7), Vector3.new(0, PLINTH + h + 0.7, 0.3), Palette.leaf)
+		for _, x in { -w / 4, w / 4 } do
+			t.ball("RoofTree", 2, Vector3.new(x, PLINTH + h + 2, 0.6), Palette.treeTop)
+		end
+		t.block("Rail", Vector3.new(w, 0.6, 0.2), Vector3.new(0, PLINTH + h + 0.8, face + 0.2), Palette.wood)
+		-- The middle-floor balcony with its planter
+		t.block(
+			"Balcony",
+			Vector3.new(w * 0.6, 0.3, 1.2),
+			Vector3.new(0, PLINTH + STORY + 0.15, face - 0.6),
+			Palette.stone
+		)
+		t.block(
+			"Planter",
+			Vector3.new(w * 0.6, 0.5, 0.4),
+			Vector3.new(0, PLINTH + STORY + 0.55, face - 1),
+			Palette.leaf:Lerp(Palette.flowerPink, 0.3)
+		)
+		Kit.window(t, "Window", CFrame.new(0, PLINTH + STORY + 1.8, face), 1.6, 1.6, Palette.cream, Palette.glass)
+		Kit.window(t, "Window", CFrame.new(0, PLINTH + STORY * 2 + 1.8, face), 1.6, 1.6, Palette.cream, Palette.glass)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 3.4, roof, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 0.6, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {
