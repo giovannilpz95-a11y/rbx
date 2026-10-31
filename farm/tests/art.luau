@@ -27,6 +27,8 @@ local ArtMerge = require("../src/shared/Art/Merge")
 local MERGE_AT_LOAD = { ArtMerge.leader, ArtMerge.mergeShell, ArtMerge.countShell, ArtMerge.parts }
 local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
+local Records = require("../src/shared/Config/Records")
+local Trophies = require("../src/shared/Config/Trophies")
 local ArtFactories = require("../src/shared/Art/Factories")
 local Palette = require("../src/shared/Art/Palette")
 local ArtFolk = require("../src/shared/Art/Folk")
@@ -183,6 +185,32 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 					local c = p.CFrame.Position
 					ok(math.abs(c.X) <= hw and math.abs(c.Z) <= hd, id .. ": " .. p.Name .. " inside its footprint")
 					ok(p.CanQuery, id .. ": " .. p.Name .. " can be tapped")
+				end
+			end)
+		end
+	end)
+
+	test("art: every Town Record has a gold trophy inside its footprint and budget", function()
+		for _, record in Records.list do
+			local def = Trophies.byRecord[record.id]
+			ok(def ~= nil, "trophy for " .. record.id)
+			if def == nil then
+				continue
+			end
+			ok(ArtDecor.has(def.id), "trophy model for " .. def.id)
+			ok(Decor.items[def.id] == nil, def.id .. " is never sold in the shop")
+			local root = Instance.new("Part")
+			root.CanTouch = false
+			ArtDecor.build(def.id, root, CFrame.new())
+			local n = Kit.countParts(root) - 1
+			ok(n > 0 and n <= ArtDecor.PARTS_MAX, string.format("%s has %d parts", def.id, n))
+			paletteRules(root, def.id)
+			local hw, hd = def.size[1] * Decor.tile / 2, def.size[2] * Decor.tile / 2
+			Kit.eachPart(root, function(p)
+				if p ~= root then
+					local c = p.CFrame.Position
+					ok(math.abs(c.X) <= hw and math.abs(c.Z) <= hd, def.id .. ": " .. p.Name .. " inside its footprint")
+					ok(p.CanQuery, def.id .. ": " .. p.Name .. " can be tapped")
 				end
 			end)
 		end
