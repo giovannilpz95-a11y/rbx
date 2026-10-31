@@ -954,6 +954,45 @@ TYPES.LoopCoaster = function(b, s)
 	return body
 end
 
+-- Pet Parlor (content bank, level 38): a pink shop with a big paw-print sign, a bone over
+-- the door, a doghouse beside it and a little fenced run out front.
+TYPES.PetParlor = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.5, 4.2, s * 0.32),
+		Vector3.new(-s * 0.08, PLINTH + 2.1, z0 + s * 0.08),
+		Palette.flowerPink:Lerp(Palette.cream, 0.4),
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local bx, face = -s * 0.08, z0 + s * 0.08 - s * 0.16
+	Kit.gableRoof(
+		t,
+		"Roof",
+		Vector3.new(bx, PLINTH + 4.2, z0 + s * 0.08),
+		s * 0.54,
+		s * 0.36,
+		1.8,
+		Palette.roofPlum,
+		Palette.cream
+	)
+	Kit.door(t, "Door", CFrame.new(bx + s * 0.1, PLINTH, face), 1.4, 2.6, Palette.roofTeal, Palette.cream)
+	Kit.window(t, "Window", CFrame.new(bx - s * 0.1, PLINTH + 2, face), 1.8, 1.4, Palette.cream, Palette.glass)
+	-- The paw sign: a pad and three toes
+	t.ball("Paw", 1.1, Vector3.new(bx, PLINTH + 3.7, face - 0.1), Palette.cocoa)
+	for i = -1, 1 do
+		t.ball("Toe", 0.5, Vector3.new(bx + i * 0.55, PLINTH + 4.4, face - 0.1), Palette.cocoa)
+	end
+	-- Doghouse and the fenced run
+	t.block("Doghouse", Vector3.new(1.6, 1.3, 1.6), Vector3.new(s * 0.28, PLINTH + 0.65, z0 + s * 0.1), Palette.roofRed)
+	t.wedge("DogRoof", Vector3.new(1.8, 0.7, 1.8), CFrame.new(s * 0.28, PLINTH + 1.65, z0 + s * 0.1), Palette.wood)
+	t.block("Fence", Vector3.new(s * 0.7, 0.6, 0.2), Vector3.new(0, PLINTH + 0.3, z0 - s * 0.25), Palette.cream)
+	Kit.sproutTag(t, Vector3.new(bx - s * 0.18, PLINTH + 5.4, z0 + s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Sports Arena (content bank, level 37): an open oval stand of seats around a green pitch,
 -- floodlights on two masts, and a ticket gate at the front.
 TYPES.SportsArena = function(b, s)

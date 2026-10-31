@@ -18,6 +18,7 @@ return table.freeze({
 		"Potatoes",
 		"Cocoa",
 		"RubberTrees",
+		"CorkOak",
 		"Silk",
 	}),
 	enabledFactories = table.freeze({

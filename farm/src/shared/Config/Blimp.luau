@@ -23,7 +23,7 @@ local crates: { [string]: Range } = {
 	-- Crops
 	Wheat = { 18, 99 }, Corn = { 47, 81 }, Carrots = { 19, 40 }, Sugarcane = { 11, 27 },
 	Cotton = { 8, 20 }, Strawberries = { 5, 14 }, Tomatoes = { 6, 15 }, PineTrees = { 6, 11 },
-	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, Silk = { 1, 5 },
+	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, CorkOak = { 2, 3 }, Silk = { 1, 5 },
 	-- Animal goods
 	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 }, Honeycomb = { 1, 7 },
 	-- Bakery
@@ -48,11 +48,11 @@ local crates: { [string]: Range } = {
 	Muffin = { 2, 7 }, Brownie = { 2, 5 }, Cupcake = { 2, 3 }, Donut = { 2, 3 }, Cheesecake = { 1, 2 },
 	HoneyGingerbread = { 1, 4 },
 	-- Prep Kitchen, Molding Works
-	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 }, Ball = { 1, 2 },
+	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 }, Ball = { 1, 2 }, InflatableBoat = { 1, 2 },
 	-- Jam Kitchen, Rubber Works
 	StrawberryJam = { 1, 3 }, Rubber = { 2, 4 }, Plastic = { 2, 3 }, Glue = { 1, 3 },
 	-- Homewares Shop
-	ScrubBrush = { 1, 2 },
+	ScrubBrush = { 1, 2 }, SoapDispenser = { 1, 2 },
 }
 
 return table.freeze({

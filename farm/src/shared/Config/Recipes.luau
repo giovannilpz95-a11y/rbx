@@ -84,6 +84,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Prep Kitchen (content bank)
 	FrozenVegetables = { id = "FrozenVegetables", displayName = "Frozen Vegetables", factory = "PrepKitchen", unlockLevel = 34, inputs = { Tomatoes = 1, Corn = 1, Carrots = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 26, xp = 11 },
 	-- Molding Works (content bank)
+	InflatableBoat = { id = "InflatableBoat", displayName = "Inflatable Boat", factory = "MoldingWorks", unlockLevel = 38, inputs = { Rubber = 2, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 236, xp = 101 },
 	Ball = { id = "Ball", displayName = "Ball", factory = "MoldingWorks", unlockLevel = 37, inputs = { Plastic = 1, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 235, xp = 101 },
 	Toys = { id = "Toys", displayName = "Toys", factory = "MoldingWorks", unlockLevel = 35, inputs = { Plastic = 1, Rubber = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 131, xp = 56 },
 	PlasticBottle = { id = "PlasticBottle", displayName = "Plastic Bottle", factory = "MoldingWorks", unlockLevel = 34, inputs = { Plastic = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 91, xp = 39 },
@@ -91,6 +92,7 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Rubber Works (content bank)
 	Glue = { id = "Glue", displayName = "Glue", factory = "RubberWorks", unlockLevel = 37, inputs = { RubberTrees = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 111, xp = 48 },
 	-- Homewares Shop (content bank)
+	SoapDispenser = { id = "SoapDispenser", displayName = "Soap Dispenser", factory = "HomewaresShop", unlockLevel = 38, inputs = { CorkOak = 1, PlasticBottle = 1 }, outputQty = 1, seconds = 2 * HOUR + 20 * MIN, sellPrice = 154, xp = 66 },
 	ScrubBrush = { id = "ScrubBrush", displayName = "Scrub Brush", factory = "HomewaresShop", unlockLevel = 37, inputs = { Sugarcane = 3, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 169, xp = 72 },
 	Plastic = { id = "Plastic", displayName = "Plastic", factory = "RubberWorks", unlockLevel = 32, inputs = { RubberTrees = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 73, xp = 31 },
 	Rubber = { id = "Rubber", displayName = "Rubber", factory = "RubberWorks", unlockLevel = 29, inputs = { RubberTrees = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 35, xp = 15 },
