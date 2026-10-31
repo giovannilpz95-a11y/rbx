@@ -113,6 +113,29 @@ function Records.viewReady(v: View): boolean
 	return goal ~= nil and v.value >= goal
 end
 
+-- Studio's Debug "Reach the next medals": every counted record (and orders) is raised to its
+-- next tier's goal, so claiming can be tested without playing for hours. Records read from
+-- buildings (population, houses, factories) are left to "Build everything". Returns how
+-- many records are ready to claim afterwards.
+function Records.debugFill(data: { [string]: any }, now: number): number
+	local ready = 0
+	for _, def in Config.list do
+		local goal = def.goals[Records.claimed(data, def.id) + 1]
+		if goal then
+			if def.stat == "orders" then
+				data.orders.delivered = math.max(data.orders.delivered, goal)
+			elseif def.stat ~= "population" and def.stat ~= "houses" and def.stat ~= "factories" then
+				local stats = data.records.stats
+				stats[def.stat] = math.max(stats[def.stat] or 0, goal)
+			end
+		end
+		if Records.ready(data, def.id, now) then
+			ready += 1
+		end
+	end
+	return ready
+end
+
 function Records.title(stars: number): string
 	for _, t in Config.titles do
 		if stars >= t.stars then

@@ -9,10 +9,12 @@ local Levels = require(Shared.Config.Levels)
 local Net = require(Shared.Net)
 local Profile = require(Shared.Profile)
 local Progression = require(Shared.Progression)
+local Records = require(Shared.Records)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 
+local Clock = require(script.Parent.Parent.Util.Clock)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local NetService = require(script.Parent.NetService)
@@ -210,11 +212,24 @@ function DebugService.fuzz(player: Player): (boolean, string?)
 	return true
 end
 
+-- Town Records: raise each counted record to its next medal's goal (shared/Records.debugFill)
+function DebugService.records(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local ready = Records.debugFill(data, Clock.now())
+	DataService.markDirty(player, true)
+	NetService.toast(player, string.format("Dev: %d Town Records ready to claim on the Farmer Card (P)", ready))
+	return true
+end
+
 function DebugService.init()
 	NetService.on(Net.Debug_BuildAll, 1, 2, DebugService.buildAll)
 	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
+	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)
 end
 
 return DebugService
