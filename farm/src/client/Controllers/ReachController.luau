@@ -389,8 +389,19 @@ local function nearestBedWork(root: BasePart): number
 end
 
 -- Standing right at a building (a door, an office, a crate) with beds a few studs off: a fresh
--- press uses the building, not the beds (holding on still sweeps the beds)
-local HANDS_FIRST_STUDS = 4
+-- press uses the building, not the beds (holding on still sweeps the beds). The building wins
+-- within HANDS_FIRST_STUDS unless a bed is nearer by more than HANDS_BONUS_STUDS, so the
+-- strip between a door and the bed row in front of it counts as the door.
+local HANDS_FIRST_STUDS = 6
+local HANDS_BONUS_STUDS = 3.5
+
+local function handsFirst(root: BasePart): BasePart?
+	local hands, handsDistance = nearestHands(root)
+	if hands and handsDistance <= HANDS_FIRST_STUDS and handsDistance - HANDS_BONUS_STUDS < nearestBedWork(root) then
+		return hands
+	end
+	return nil
+end
 
 -- One swing of the context action. Returns true if it did something.
 local function sweep(firstPress: boolean): boolean
@@ -402,8 +413,8 @@ local function sweep(firstPress: boolean): boolean
 	local did = false
 
 	if firstPress then
-		local hands, handsDistance = nearestHands(root)
-		if hands and handsDistance <= HANDS_FIRST_STUDS and handsDistance < nearestBedWork(root) then
+		local hands = handsFirst(root)
+		if hands then
 			act(hands)
 			return true
 		end
@@ -514,8 +525,7 @@ ReachController.setActionHeld = setActionHeld
 ---------------------------------------------------------------------------------------------
 
 local function contextLabel(root: BasePart): string
-	local hands, handsDistance = nearestHands(root)
-	if hands and handsDistance <= HANDS_FIRST_STUDS and handsDistance < nearestBedWork(root) then
+	if handsFirst(root) then
 		return "Use"
 	end
 	local front = root.Position + root.CFrame.LookVector * 3
