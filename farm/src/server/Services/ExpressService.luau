@@ -34,7 +34,8 @@ local Clock = require(script.Parent.Parent.Util.Clock)
 local ExpressService = {}
 
 -- The station stands north of the Town Square, its track side facing the square, so the train
--- stops between the two. (Station-local +X runs east to west here; the train heads that way.)
+-- stops between the two. (Station-local +X runs east to west here; the train always rolls
+-- forward that way: in from the east, out to the west.)
 ExpressService.STATION = CFrame.new(0, 0, -100) * Kit.yaw(180)
 local SCALE = ArtRail.EXPRESS_SCALE
 local TRACK_Z = -9.2 -- station-local: the track's centre line, clear of the platform edge
@@ -301,15 +302,16 @@ local function refreshBoard(now: number)
 	if boardText == nil then
 		return
 	end
+	-- The title has its own line; the status gets two short lines so neither wraps or shrinks
 	if train then
 		boardText.Text = string.format(
-			"TOWN EXPRESS\n%d / %d crates   ·   %s left",
+			"%d / %d crates\n%s left",
 			Express.filled(train),
 			#train.crates,
 			Timer.format(math.max(0, train.leavesAt - now))
 		)
 	else
-		boardText.Text = "TOWN EXPRESS\nNext train in " .. Timer.format(Express.nextArrival(now) - now)
+		boardText.Text = "Next train in\n" .. Timer.format(Express.nextArrival(now) - now)
 	end
 end
 
@@ -402,13 +404,23 @@ local function buildStation()
 	surface.Face = Enum.NormalId.Front
 	surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
 	surface.PixelsPerStud = 30
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.fromScale(0.94, 0.34)
+	title.Position = UDim2.fromScale(0.03, 0.04)
+	title.BackgroundTransparency = 1
+	title.TextScaled = true
+	title.Font = Enum.Font.GothamBlack
+	title.TextColor3 = Palette.coins
+	title.Text = "TOWN EXPRESS"
+	title.Parent = surface
 	local text = Instance.new("TextLabel")
-	text.Size = UDim2.fromScale(1, 1)
+	text.Size = UDim2.fromScale(0.94, 0.58)
+	text.Position = UDim2.fromScale(0.03, 0.4)
 	text.BackgroundTransparency = 1
 	text.TextScaled = true
 	text.Font = Enum.Font.GothamBold
 	text.TextColor3 = Palette.cream
-	text.Text = "TOWN EXPRESS"
+	text.Text = ""
 	text.Parent = surface
 	surface.Parent = board
 	boardText = text

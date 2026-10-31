@@ -5,7 +5,7 @@
 -- Design/09 Roblox Architecture §7 (slots, ownership attributes).
 --
 -- Plot-local axes: +Z is "south" (the gate, facing the hub), -Z is "north" (the fields).
--- Only the 96 x 96 stud start area is built; the rest of the 192 x 192 plot is wild grass.
+-- Only the 96 x 96 stud start area is built; the rest of the 288 x 288 plot is wild grass.
 
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -53,8 +53,8 @@ local DecorModels = require(script.Parent.Parent.Util.DecorModels)
 
 local PlotService = {}
 
-local CELL = 224 -- 192 plot + 32 road (15 §2)
-local PLOT_SIZE = 192
+local CELL = 320 -- 288 plot + 32 road (15 §2; Township-sized land, decided 2026-10-31)
+local PLOT_SIZE = 288
 local START_SIZE = 96
 local HUB_HALF = CELL
 
@@ -107,10 +107,10 @@ local LAYOUT = {
 		end
 		return fields
 	end)(),
-	-- Land expansions 1-4: the plot-local rectangles each one clears (min corner, max corner)
+	-- Land expansions: the plot-local rectangles each one clears (min corner, max corner)
 	land = (function()
 		local rects = {}
-		for _, rect in Land.rects do -- stage 4 clears both corners (rects 4 and 5)
+		for _, rect in Land.rects do -- in Land.rects order (stage 4 clears both north corners)
 			table.insert(rects, { Vector3.new(rect.minX, 0, rect.minZ), Vector3.new(rect.maxX, 0, rect.maxZ) })
 		end
 		return rects
@@ -196,6 +196,9 @@ local LOCKED_ROADS = {
 		Vector3.new(-Lots.northLane.halfWidth, 0, Lots.northLane.z - 4),
 		Vector3.new(Lots.northLane.halfWidth, 0, Lots.northLane.z + 4),
 	},
+	-- The gate road and the truck's lane out to the plot edge, across the Gate Meadows
+	{ Vector3.new(-4, 0, 96), Vector3.new(4, 0, 144) },
+	{ Vector3.new(20, 0, 96), Vector3.new(32, 0, 144) },
 }
 
 -- Decoration spots (plot-local, on the ground), clear of every building, path and lot.
@@ -356,13 +359,14 @@ local function buildWorld()
 
 	-- 12 slots: the outer ring of a 4 x 4 grid of cells; each plot's gate faces the hub.
 	local positions = {}
-	for _, x in { -336, -112, 112, 336 } do
-		table.insert(positions, { x, -336, Vector3.new(0, 0, 1) })
-		table.insert(positions, { x, 336, Vector3.new(0, 0, -1) })
+	local outer, inner = CELL * 1.5, CELL / 2
+	for _, x in { -outer, -inner, inner, outer } do
+		table.insert(positions, { x, -outer, Vector3.new(0, 0, 1) })
+		table.insert(positions, { x, outer, Vector3.new(0, 0, -1) })
 	end
-	for _, z in { -112, 112 } do
-		table.insert(positions, { -336, z, Vector3.new(1, 0, 0) })
-		table.insert(positions, { 336, z, Vector3.new(-1, 0, 0) })
+	for _, z in { -inner, inner } do
+		table.insert(positions, { -outer, z, Vector3.new(1, 0, 0) })
+		table.insert(positions, { outer, z, Vector3.new(-1, 0, 0) })
 	end
 	for index, spec in positions do
 		local center = Vector3.new(spec[1], 0, spec[2])
@@ -627,8 +631,8 @@ local function buildPlot(player: Player, slot: Slot): Model
 	-- Main Street: the gate road down to the Ring Road and the street between the lot rows
 	part({
 		Name = "GateRoad",
-		Size = Vector3.new(8, 0.2, 48),
-		CFrame = at(Vector3.new(0, 0, 72), 0.3),
+		Size = Vector3.new(8, 0.2, PLOT_SIZE / 2 - 48),
+		CFrame = at(Vector3.new(0, 0, (PLOT_SIZE / 2 + 48) / 2), 0.3),
 		Color = COLORS.path,
 		Parent = model,
 	})
@@ -670,10 +674,13 @@ local function buildPlot(player: Player, slot: Slot): Model
 	landFolder.Name = "Land"
 	landFolder.Parent = model
 	for stage, def in Land.expansions do
-		local rects = { LAYOUT.land[stage] }
-		if stage == 4 then
-			table.insert(rects, LAYOUT.land[5])
+		local rects = {}
+		for r, spec in Land.rects do -- an expansion can clear more than one rectangle
+			if spec.stage == stage then
+				table.insert(rects, LAYOUT.land[r])
+			end
 		end
+		local spacing = if stage >= Land.outerRingStage then Land.outerRingSpacing else 16
 		for i, rect in rects do
 			local min, max = rect[1], rect[2]
 			local center = (min + max) / 2
@@ -691,7 +698,7 @@ local function buildPlot(player: Player, slot: Slot): Model
 			local wild = Instance.new("Folder")
 			wild.Name = "Wild"
 			wild.Parent = overlay
-			for _, spot in ArtTown.scatter(min, max, 16, LOCKED_ROADS) do
+			for _, spot in ArtTown.scatter(min, max, spacing, LOCKED_ROADS) do
 				ArtTown.obstacle(spot.id, wild, at(spot.at, 0.3) * Kit.yaw(spot.yaw))
 			end
 			if i == 1 then
@@ -1693,7 +1700,7 @@ function PlotService.squareCFrame(): CFrame
 	return CFrame.lookAt(at, Vector3.new(at.X, 4, -20))
 end
 
--- Whose plot (if anyone's) a world position is on, anywhere inside its 192 x 192 square.
+-- Whose plot (if anyone's) a world position is on, anywhere inside its 288 x 288 square.
 function PlotService.ownerAt(position: Vector3): Player?
 	for _, slot in slots do
 		if slot.owner then
@@ -1748,7 +1755,7 @@ function PlotService.driveTruck(player: Player, returnSeconds: number)
 		return
 	end
 	truckBusy[player] = true
-	local away = home * CFrame.new(0, 0, 70)
+	local away = home * CFrame.new(0, 0, PLOT_SIZE / 2 - LAYOUT.truck.Z) -- out to the plot edge
 	local leg = math.clamp(returnSeconds / 2, 2, 6)
 	task.spawn(function()
 		local out = TweenService:Create(

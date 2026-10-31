@@ -1535,6 +1535,38 @@ test("Population brings fields; later ones need the West Meadow", function()
 	eq(TownRules.fieldsToPlace(data, 50)[1].field, 11, "placed once cleared")
 end)
 
+test("land rectangles tile the 288-stud plot without overlapping, every expansion clears some", function()
+	local half = 144
+	for stage = 1, #Land.expansions do
+		local any = false
+		for _, rect in Land.rects do
+			any = any or rect.stage == stage
+		end
+		ok(any, "expansion " .. stage .. " clears land")
+	end
+	local area = 0
+	for i, a in Land.rects do
+		ok(a.minX >= -half and a.maxX <= half and a.minZ >= -half and a.maxZ <= half, "rect " .. i .. " on the plot")
+		local s = Land.startArea
+		ok(not (a.minX < s and a.maxX > -s and a.minZ < s and a.maxZ > -s), "rect " .. i .. " off the start area")
+		ok(not (a.minX < 96 and a.maxX > -96 and a.minZ < 96 and a.maxZ > 48), "rect " .. i .. " off Main Street")
+		for j, b in Land.rects do
+			if j > i then
+				local overlap = a.minX < b.maxX and b.minX < a.maxX and a.minZ < b.maxZ and b.minZ < a.maxZ
+				ok(not overlap, string.format("rects %d and %d don't overlap", i, j))
+			end
+		end
+		area += (a.maxX - a.minX) * (a.maxZ - a.minZ)
+	end
+	-- Everything but the start area and Main Street is expansion land
+	eq(area, 288 * 288 - 96 * 96 - 192 * 48, "the whole plot is covered")
+	-- Township's table: Population and Coins rise with each expansion
+	for stage = 2, #Land.expansions do
+		local a, b = Land.expansions[stage - 1], Land.expansions[stage]
+		ok(b.population > a.population and b.coinCost > a.coinCost, "expansion " .. stage .. " costs more")
+	end
+end)
+
 test("land expansions go in order and need Population", function()
 	local data = Profile.migrate(nil) :: any
 	eq((TownRules.canExpand(data, 0)), true, "first needs 60")
