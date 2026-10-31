@@ -257,6 +257,18 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Bean", 0.4, at(0, 1.05, -0.15), Palette.flowerYellow, QUIET)
 		b.ball("Bean", 0.4, at(0.05, 1.2, 0.1), Palette.flowerPink, QUIET)
 	end,
+	Toffee = function(b)
+		-- Three golden squares of toffee in twisted wrappers
+		for i, x in { -0.55, 0, 0.55 } do
+			b.block("Toffee", Vector3.new(0.45, 0.35, 0.45), at(x, 0.2 + (i % 2) * 0.1, 0), Palette.bread, QUIET)
+		end
+		b.block("Wrapper", Vector3.new(1.7, 0.12, 0.2), at(0, 0.25, 0), Palette.roofRed, QUIET)
+	end,
+	Plunger = function(b)
+		-- A red rubber cup on a wooden handle
+		b.post("Cup", 0.5, 0.9, at(0, 0.25, 0), Palette.roofRed, QUIET)
+		b.post("Handle", 1.4, 0.2, at(0, 1.2, 0), Palette.wood, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)
