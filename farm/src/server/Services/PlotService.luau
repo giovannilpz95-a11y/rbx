@@ -507,7 +507,7 @@ local function buildPenAt(plot: Model, id: string, facing: CFrame)
 	local height = ArtAnimals.HEIGHT[kind] or 2.5
 	for i, spot in ANIMAL_SPOTS do
 		local stand = facing * CFrame.new(spot) * Kit.yaw(ANIMAL_TURNS[i])
-		local animal = ArtAnimals.animal(kind, stand, "Animal_" .. i)
+		local animal = ArtAnimals.placed(kind, stand, "Animal_" .. i)
 		Kit.fade(animal, 1)
 		animal.Parent = pen
 		local product =
@@ -2094,6 +2094,15 @@ function PlotService.driveTruck(player: Player, returnSeconds: number)
 end
 
 function PlotService.init()
+	-- One merged look per animal kind, cloned into every pen built after it's ready (Art/Merge)
+	local kinds = {}
+	for id, def in Animals.pens do
+		if def.copyOf == nil then
+			table.insert(kinds, id)
+		end
+	end
+	table.sort(kinds)
+	task.spawn(ArtAnimals.mergeLooks, kinds, game:GetService("ServerStorage"))
 	buildWorld()
 
 	-- Visuals that change with time alone (crops ripening, factories finishing goods,

@@ -8,6 +8,7 @@
 -- show, hide and bob it as one piece. Pens are 12 x 12 studs with the front (gate) at local -Z.
 
 local Kit = require("./Kit")
+local Merge = require("./Merge")
 local Palette = require("./Palette")
 
 local ArtAnimals = {}
@@ -118,6 +119,39 @@ function ArtAnimals.animal(penId: string, cf: CFrame, name: string?): Model
 	model:SetAttribute("BaseCFrame", cf)
 	model:SetAttribute("PenId", penId)
 	return model
+end
+
+-- The parts of an animal that stay out of its merged look: a sheep's wool puffs regrow
+-- (Art/Motion setWool resizes them)
+ArtAnimals.MERGE_SKIP = { Wool = true, Fringe = true }
+
+local looks: { [string]: Model } = {}
+
+-- Merges one animal of each kind into a template (server, once; yields per kind). Pens built
+-- afterwards get copies of it: one union per animal instead of ~10 parts (the part-cut pass).
+-- The templates wait in `store` (ServerStorage), since a merge needs its model parented.
+function ArtAnimals.mergeLooks(penIds: { string }, store: Instance, geometry: any?)
+	local holder = Instance.new("Folder")
+	holder.Name = "AnimalLooks"
+	holder.Parent = store
+	for _, penId in penIds do
+		if looks[penId] == nil then
+			local look = ArtAnimals.animal(penId, CFrame.new())
+			look.Parent = holder
+			if Merge.template(look, ArtAnimals.MERGE_SKIP, geometry) then
+				looks[penId] = look
+			end
+		end
+	end
+end
+
+-- An animal standing at `cf`: a copy of the merged template when there is one, else built.
+function ArtAnimals.placed(penId: string, cf: CFrame, name: string): Model
+	local look = looks[penId]
+	if look then
+		return Merge.place(look, cf, name)
+	end
+	return ArtAnimals.animal(penId, cf, name)
 end
 
 -- The product a ready animal shows above its head: a Milk bottle, two Eggs or a Wool puff.
