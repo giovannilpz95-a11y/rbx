@@ -222,6 +222,15 @@ local function act(part: BasePart)
 		Panels.open("Guild")
 	elseif kind == "Harbor" then
 		Panels.open("Harbor")
+	elseif kind == "DuckPond" then
+		-- Waiting feathers are collected straight away; otherwise the panel
+		local pond = ClientStore.state and ClientStore.state.duckPond
+		local visit = pond and pond.visit
+		if visit and ClientStore.now() >= visit.readyAt then
+			Remotes.fire("Pond_Collect")
+		else
+			Panels.open("DuckPond")
+		end
 	elseif kind == "HarborDrift" then
 		Remotes.fire("Harbor_Drift")
 	elseif kind == "HarborBoat" then
