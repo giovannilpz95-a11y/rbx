@@ -60,6 +60,8 @@ local Factories: { [string]: FactoryDef } = {
 	FurnitureWorkshop = { id = "FurnitureWorkshop", displayName = "Furniture Workshop", unlockLevel = 47, population = 4760, buildCost = 48000, buildSeconds = 48 * HOUR, xp = 2892, queueSlots = 2, trayCapacity = 6, order = 25, color = { 180, 130, 90 } },
 	-- Township's Shoe Factory (level 50): placed by the player
 	Cobbler = { id = "Cobbler", displayName = "Cobbler", unlockLevel = 50, population = 5465, buildCost = 60000, buildSeconds = 52 * HOUR, xp = 2480, queueSlots = 2, trayCapacity = 6, order = 26, color = { 150, 100, 70 } },
+	-- Township's Jewelry Store (level 53): cuts Quarry ore into jewellery; placed by the player
+	Jeweler = { id = "Jeweler", displayName = "Jeweler", unlockLevel = 53, population = 5860, buildCost = 70000, buildSeconds = 56 * HOUR, xp = 2892, queueSlots = 1, trayCapacity = 6, order = 27, color = { 120, 200, 220 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

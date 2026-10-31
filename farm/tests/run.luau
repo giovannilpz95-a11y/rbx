@@ -289,7 +289,18 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 51, "levels 17 to 51 are banked")
+	eq(Levels.built, 53, "levels 17 to 53 are banked")
+	eq(Levels.list[52].xpToNext, 149427, "L52 row")
+	eq(Levels.list[53].xpToNext, 159476, "L53 row")
+	eq(Recipes.Book.inputs.Paper, 4, "Book from Paper, Cotton Fabric and Glue")
+	eq(Recipes.HighlighterPen.inputs.Cotton, 3, "Highlighter Pen from Nylon Thread, Cotton and Plastic")
+	eq(Recipes.FishBurger.inputs.Fish, 2, "Fish Burger from Bread, Fish and Peppers")
+	eq(Factories.Jeweler.buildCost, 70000, "Jeweler (Township's Jewelry Store)")
+	eq(Guild.maxLevel("Jeweler"), 33, "the Jeweler has its own Guild table")
+	ok(Recipes.Pendant.fromOreShed and Recipes.Pendant.inputs.SilverOre == 9, "Pendant from 9 Silver Ore")
+	eq(Town.houses.TiledTower.population, 190, "Tiled Tower")
+	eq(Town.community.FitnessClub.capBonus, 310, "Fitness Club")
+	eq(Town.community.DaySpa.capBonus, 330, "Day Spa")
 	eq(Levels.list[50].xpToNext, 130727, "L50 row")
 	eq(Levels.list[51].xpToNext, 139848, "L51 row")
 	ok(table.find(Balance.enabledCrops, "Mint") ~= nil and Crops.Mint.growSeconds == 2 * 3600 + 45 * 60, "Mint, 2 h 45")
@@ -790,7 +801,9 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 	eq(BlimpConfig.gapSeconds, 5 * 3600, "5 h to the next")
 	-- Every crate good is a real, sellable, non-feed item; every sellable crop, animal good
 	-- and factory good is on the list except the Bars and Dough
-	local skip = { CopperBar = true, SilverBar = true, GoldBar = true, PlatinumBar = true, Dough = true }
+	-- (the Jeweler's ore jewellery never flies either)
+	local skip =
+		{ CopperBar = true, SilverBar = true, GoldBar = true, PlatinumBar = true, Dough = true, Pendant = true }
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]
 		ok(def ~= nil and def.sellPrice > 0 and not def.isFeed, id .. " is a sellable good")

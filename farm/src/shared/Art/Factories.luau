@@ -993,6 +993,50 @@ local function cobbler(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Jeweler (level 53, placed by the player): a smart dark-teal shop with a cream cornice, a
+-- big cut gem on a stand on the roof that slowly turns while it works, a display window of
+-- rings and a striped awning.
+local function jeweler(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.glassDeep:Lerp(Palette.stoneDark, 0.3), Palette.cream)
+	local d = b.into(body, true)
+	d.block("Cornice", Vector3.new(11.2, 0.8, 9.2), Vector3.new(0, TOP + 0.4, 0), Palette.cream)
+	d.block("RoofTop", Vector3.new(10.4, 0.6, 8.4), Vector3.new(0, TOP + 1.1, 0), Palette.stoneDark)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(-4, TOP + 2.2, 2.8), Palette.stoneLight)
+	-- The gem on its stand: an upright square prism turned on its corner, spinning on the stand
+	local gemAt = Vector3.new(1.2, TOP + 4.2, 0.4)
+	d.post("GemStand", 2, 0.5, gemAt - Vector3.new(0, 2.2, 0), Palette.coins)
+	local anim = animFolder(model)
+	local a = b.into(anim, false)
+	a.block(
+		"Gem",
+		Vector3.new(1.6, 1.8, 1.8),
+		CFrame.new(gemAt) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(math.rad(45), 0, 0),
+		Palette.sky
+	)
+	a.block(
+		"GemTop",
+		Vector3.new(0.4, 1.2, 1.2),
+		CFrame.new(gemAt + Vector3.new(0, 1, 0)) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(math.rad(45), 0, 0),
+		Palette.cream
+	)
+	Kit.window(d, "Window", CFrame.new(-2.2, PLINTH + 3, FRONT), 3.6, 2.4, Palette.coins, Palette.glass)
+	d.block("Rings", Vector3.new(2.4, 0.3, 0.4), Vector3.new(-2.2, PLINTH + 2.1, FRONT - 0.3), Palette.coins)
+	d.block(
+		"Awning",
+		Vector3.new(4.4, 0.25, 1.4),
+		CFrame.new(-2.2, PLINTH + 4.8, FRONT - 0.6) * CFrame.Angles(math.rad(-15), 0, 0),
+		Palette.cream
+	)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.2, 4.2, Palette.stoneDark, Palette.coins)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("RingIcon", Vector3.new(1, 1, 0.2), at, Palette.coins, { shadow = false })
+		s.block("RingHole", Vector3.new(0.5, 0.5, 0.22), at, Palette.cream, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(-4.2, TOP + 1.8, -3.2), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1127,6 +1171,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	StationeryShop = stationeryShop,
 	FurnitureWorkshop = furnitureWorkshop,
 	Cobbler = cobbler,
+	Jeweler = jeweler,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
