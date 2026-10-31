@@ -1607,9 +1607,11 @@ local function refreshShelf(player: Player, model: Model, data: { [string]: any 
 	end
 end
 
--- A building standing (or going up) on its usual spot while that spot's land is still locked
--- (a save from before free placement, or a Studio shortcut that skipped the build checks):
--- move it to the nearest open spot to the player on the farm's land and remember it there.
+-- A building that's built (or going up) with nowhere proper to stand: on its usual spot while
+-- that spot's land is still locked, or with no usual spot at all (level 34+ content) and no
+-- saved one. That happens with a save from before free placement or a Studio shortcut that
+-- skipped the build checks (Debug "Build everything"). Move it to the nearest open spot to the
+-- player on the farm's land and remember it there.
 local rehoming: { [Player]: boolean } = {}
 local function rehome(player: Player, data: { [string]: any }, now: number)
 	if rehoming[player] then
@@ -1617,11 +1619,12 @@ local function rehome(player: Player, data: { [string]: any }, now: number)
 	end
 	local moves = {}
 	local function check(kind: string, id: string, land: number?)
-		if land == nil or land == 0 or TownRules.landDone(data, land, now) then
+		local key = Layout.key(kind, id)
+		if Layout.spot(data, key) then
 			return
 		end
-		local key = Layout.key(kind, id)
-		if Layout.spot(data, key) or PlotService.usualSpot(kind, id) == nil then
+		local usual = PlotService.usualSpot(kind, id)
+		if usual and (land == nil or land == 0 or TownRules.landDone(data, land, now)) then
 			return
 		end
 		table.insert(moves, { kind = kind, key = key })
@@ -1638,9 +1641,9 @@ local function rehome(player: Player, data: { [string]: any }, now: number)
 	end
 	for id in data.town.community do
 		local lot = Town.community[id] and TownRules.communityLot(id)
-		local def = lot and Lots.community[lot]
-		if def then
-			check("community", id, def.land)
+		if lot then -- not a Town Hall storey
+			local def = Lots.community[lot]
+			check("community", id, if def then def.land else nil)
 		end
 	end
 	if #moves == 0 then
@@ -1842,6 +1845,8 @@ end
 function PlotService.offerPlace(player: Player, data: { [string]: any }, key: string)
 	if (data.tutorial and data.tutorial.step or 0) == 0 then
 		NetService.popup(player, { kind = "Place", key = key })
+	elseif RunService:IsStudio() then
+		print("[Layout] no Place bar for", key, "while the first-session guide runs (step", data.tutorial.step, ")")
 	end
 end
 
