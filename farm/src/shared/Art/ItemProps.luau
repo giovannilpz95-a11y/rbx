@@ -319,6 +319,28 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Wrapper", Vector3.new(0.9, 0.3, 0.95), at(0.4, 0.15, 0), Palette.roofRed, QUIET)
 		b.block("Foil", Vector3.new(0.12, 0.31, 0.96), at(-0.05, 0.15, 0), Palette.coins, QUIET)
 	end,
+	Canape = function(b)
+		-- Three little toasts topped with cheese, an olive and a grape on a slate
+		b.block("Slate", Vector3.new(1.9, 0.12, 0.9), at(0, 0.06, 0), Palette.stoneDark, QUIET)
+		for i, x in { -0.6, 0, 0.6 } do
+			b.block("Toast", Vector3.new(0.45, 0.15, 0.45), at(x, 0.2, 0), Palette.bread, QUIET)
+			b.ball("Topping", 0.3, at(x, 0.4, 0), if i == 2 then Palette.plum else Palette.leaf, QUIET)
+		end
+	end,
+	KeyLimePie = function(b)
+		-- A pale green pie with a cream swirl and a lime slice
+		b.cyl("Crust", 0.4, 1.7, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.bread, QUIET)
+		b.cyl(
+			"Filling",
+			0.1,
+			1.5,
+			at(0, 0.42, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.lime:Lerp(Palette.cream, 0.5),
+			QUIET
+		)
+		b.ball("Cream", 0.4, at(0, 0.55, 0), Palette.cream, QUIET)
+		b.block("Lime", Vector3.new(0.4, 0.3, 0.1), at(0.25, 0.6, 0), Palette.lime, QUIET)
+	end,
 	Toys = function(b)
 		-- A rubber duck beside a stack of building blocks
 		b.ball("Duck", 0.9, at(-0.4, 0.45, 0), Palette.flowerYellow, QUIET)

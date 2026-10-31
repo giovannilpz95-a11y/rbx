@@ -46,7 +46,7 @@ local crates: { [string]: Range } = {
 	Paper = { 1, 4 }, PaperTowel = { 1, 4 }, Wallpaper = { 1, 2 },
 	-- Pastry Shop
 	Muffin = { 2, 7 }, Brownie = { 2, 5 }, Cupcake = { 2, 3 }, Donut = { 2, 3 }, Cheesecake = { 1, 2 },
-	HoneyGingerbread = { 1, 4 },
+	HoneyGingerbread = { 1, 4 }, KeyLimePie = { 1, 2 }, Canape = { 1, 2 },
 	-- Prep Kitchen, Molding Works
 	FrozenVegetables = { 2, 3 }, PlasticBottle = { 2, 3 }, Toys = { 1, 3 }, Ball = { 1, 2 }, InflatableBoat = { 1, 2 },
 	-- Jam Kitchen, Rubber Works
