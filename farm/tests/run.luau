@@ -982,7 +982,7 @@ end)
 test("North Lane opens more lots once the North Fields are cleared", function()
 	eq(Lots.mainStreetHouses, 32, "Main Street House lots")
 	eq(Lots.mainStreetCommunity, 11, "Main Street Community lots")
-	eq(#Lots.houses, 68, "House lots with North Lane, the Far Corners and the last gaps")
+	eq(#Lots.houses, 66, "House lots with North Lane, the Far Corners and the last gap")
 	eq(#Lots.community, 29, "Community lots with North Lane, the Far Corners and the West Meadow")
 	for i = 24, 29 do
 		eq(Lots.community[i].land, Lots.westMeadowLand, "Community lot " .. i .. " in the West Meadow")
