@@ -179,6 +179,17 @@ test("Township baseline rows for animals, factories and recipes", function()
 	eq(Recipes.CowFeed.outputQty, 3, "feed batch")
 	eq(Recipes.Cheese.inputs.Milk, 2, "Cheese milk")
 	eq(Recipes.Shirt.inputs.CottonFabric, 1, "Shirt fabric")
+	-- Township keeps clothing in its own Tailor Shop (level 12), apart from the Textile Mill
+	eq(Factories.Tailor.unlockLevel, 12, "Tailor level")
+	eq(Factories.Tailor.population, 195, "Tailor needs 195")
+	eq(Factories.Tailor.buildCost, 800, "Tailor cost")
+	eq(Factories.Tailor.buildSeconds, 10 * 3600, "Tailor build (10 h)")
+	eq(Factories.Tailor.xp, 38, "Tailor XP")
+	for _, id in { "Shirt", "WoolScarf", "PatchworkQuilt" } do
+		eq(Recipes[id].factory, "Tailor", id .. " made by the Tailor")
+	end
+	ok(table.find(Balance.enabledFactories, "Tailor") ~= nil, "Tailor enabled")
+	eq(Guild.maxLevel("Tailor"), 53, "the Tailor has its own Guild table")
 end)
 
 test("item production time includes everything upstream", function()

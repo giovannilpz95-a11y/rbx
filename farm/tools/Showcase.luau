@@ -172,9 +172,9 @@ end
 
 SCENES.factories = function(root)
 	ground(root, 90)
-	for i, id in { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill" } do
+	for i, id in { "Bakery", "FeedMill", "Dairy", "SugarMill", "TextileMill", "Tailor" } do
 		local m = Kit.model(id, root)
-		ArtFactories.build(id, m, CFrame.new((i - 3) * 14, 0, 0))
+		ArtFactories.build(id, m, CFrame.new((i - 3.5) * 14, 0, 0))
 	end
 end
 
