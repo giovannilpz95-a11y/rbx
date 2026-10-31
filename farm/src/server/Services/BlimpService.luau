@@ -26,11 +26,34 @@ local Clock = require(script.Parent.Parent.Util.Clock)
 
 local BlimpService = {}
 
+-- The flagged crates still to load, for the Help Board in the Neighbors panel: "12 Milk, 5
+-- Bread" on the owner's BlimpHelp attribute ("" when there's nothing to help with)
+function BlimpService.helpText(data: { [string]: any }): string
+	local blimp = data.blimp
+	if blimp.leavesAt == nil or blimp.load == nil then
+		return ""
+	end
+	local asks = {}
+	for _, row in blimp.load.rows do
+		for _, crate in row do
+			if crate.flagged and crate.filledBy == nil then
+				table.insert(asks, string.format("%d %s", crate.qty, Items[crate.item].displayName))
+			end
+		end
+	end
+	return table.concat(asks, ", ")
+end
+
 local function changed(player: Player)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	NetService.pushState(player)
+	local data = DataService.get(player)
+	if data and typeof(player) == "Instance" then
+		player:SetAttribute("BlimpHelp", BlimpService.helpText(data))
+	end
 end
+BlimpService.changed = changed
 
 function BlimpService.repair(player: Player): (boolean, string?)
 	local data = DataService.get(player) :: { [string]: any }
@@ -208,6 +231,12 @@ function BlimpService.init()
 			task.wait(1)
 			for _, player in Players:GetPlayers() do
 				BlimpService.tick(player)
+				-- Keep the Help Board's line in step (it isn't saved, so set it after a join too)
+				local data = DataService.get(player)
+				local help = if data then BlimpService.helpText(data) else ""
+				if player:GetAttribute("BlimpHelp") ~= help then
+					player:SetAttribute("BlimpHelp", help)
+				end
 			end
 		end
 	end)

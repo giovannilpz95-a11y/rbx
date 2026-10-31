@@ -715,6 +715,11 @@ test("Airship Freight: repair, dock, load, send, expire", function()
 	ok(not load.rows[1][1].flagged and load.rows[1][2].flagged, "one flag a row")
 	Blimp.flag(data, 1, 2, 1000 + 24 * H)
 	ok(not load.rows[1][2].flagged, "flag off")
+	ok(Blimp.flag(data, 2, 1, 1000 + 24 * H), "flag a row 2 crate")
+	Blimp.fill(load.rows[2][1], 99)
+	ok(not load.rows[2][1].flagged, "loading takes the flag down")
+	ok(not Blimp.flag(data, 2, 1, 1000 + 24 * H), "a loaded crate can't be flagged")
+	load.rows[2][1].filledBy = nil
 	-- Fill row 1 only and send: row 1 pays, no chest
 	local now = 1000 + 25 * H
 	for slot in load.rows[1] do

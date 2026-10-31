@@ -19,6 +19,7 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
+local Items = require(Shared.Items)
 local Social = require(Shared.Config.Social)
 local SocialRules = require(Shared.Social)
 local Timer = require(Shared.Timer)
@@ -194,6 +195,26 @@ local function helpAt(part: BasePart, owner: number)
 		HeldTools.flash("Tool_WateringCan")
 		Remotes.fire("Help_Water", owner, fieldId)
 	end
+end
+
+-- A tap on a crate under a neighbor's Cargo Blimp: load it from our Barn if they asked for help
+-- with it (Features/F04 help flags)
+local function helpBlimp(part: BasePart, owner: number)
+	local item, qty = part:GetAttribute("Item"), part:GetAttribute("Qty")
+	if part:GetAttribute("Filled") then
+		Hud.toast("That crate is already loaded")
+		return
+	elseif not part:GetAttribute("Flagged") or type(item) ~= "string" or type(qty) ~= "number" then
+		Hud.toast("Only crates with a help flag can be loaded by neighbors")
+		return
+	end
+	local have = ClientStore.itemCount(item)
+	local name = if Items[item] then Items[item].displayName else item
+	if have < qty then
+		Hud.toast(string.format("That crate needs %d %s. You have %d.", qty, name, have))
+		return
+	end
+	Remotes.fire("Help_Blimp", owner, part:GetAttribute("Row"), part:GetAttribute("Slot"))
 end
 
 -- Status bubbles over the fields of the farm we're visiting, so a helper can see what's ripe
@@ -478,6 +499,42 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		whereLabel.Size = UDim2.new(1, right - 16, 0, 20)
 	end
 
+	-- The Help Board for Cargo Blimps (Features/F04): neighbors' flagged crates, to walk over
+	-- and load from our own Barn
+	local asks = {}
+	for _, other in others do
+		local help = other:GetAttribute("BlimpHelp")
+		if type(help) == "string" and help ~= "" then
+			table.insert(asks, { player = other, help = help })
+		end
+	end
+	if #asks > 0 then
+		heading(body, "Cargo Blimps asking for help", nextOrder())
+		for _, ask in asks do
+			local line = card(body, 52, nextOrder())
+			Ui.label(ask.player.DisplayName, {
+				Font = Enum.Font.GothamBold,
+				Position = UDim2.fromOffset(10, 4),
+				Size = UDim2.new(1, -120, 0, 22),
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				Parent = line,
+			})
+			Ui.label("Needs " .. ask.help, {
+				TextColor3 = Ui.colors.muted,
+				TextSize = Type.size.small,
+				Position = UDim2.fromOffset(10, 26),
+				Size = UDim2.new(1, -120, 0, 20),
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				Parent = line,
+			})
+			smallButton("Visit", function()
+				Panels.close()
+				Remotes.fire("Visit_Go", ask.player.UserId)
+			end).Parent =
+				line
+		end
+	end
+
 	heading(body, "Your farm", nextOrder())
 	local social = state.social or {}
 	optionRow(
@@ -701,6 +758,13 @@ function SocialUi.init()
 			if owner and owner ~= player.UserId then
 				return function()
 					helpAt(part, owner)
+				end, true
+			end
+		elseif kind == "BlimpCrate" then
+			local owner = plotOwner(part)
+			if owner and owner ~= player.UserId then
+				return function()
+					helpBlimp(part, owner)
 				end, true
 			end
 		elseif kind == "PuzzlePorch" then

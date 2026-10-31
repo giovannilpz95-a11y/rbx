@@ -1,7 +1,8 @@
 --!strict
 -- Helping Hands (Design/14 Multiplayer Features B1, MVP scope: water + harvest): a visitor
 -- standing on a neighbor's plot can water a growing field (10% off its time left, once per
--- crop) or harvest a ready one into the OWNER's Barn. Helping never costs the owner anything
+-- crop) or harvest a ready one into the OWNER's Barn, and load a crate the owner flagged on
+-- their Cargo Blimp (Features/F04) from the HELPER's own Barn. Helping never costs the owner anything
 -- and the game, not the owner, pays the helper: Coins, XP and now and then a tool. One daily
 -- budget per helper (40 actions, 15 on any one farm), and the owner's Helpers setting and
 -- both players' block lists decide who may help.
@@ -11,17 +12,21 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Balance = require(Shared.Config.Balance)
+local Blimp = require(Shared.Blimp)
 local Crops = require(Shared.Config.Crops)
 local Drops = require(Shared.Drops)
+local Items = require(Shared.Items)
 local Records = require(Shared.Records)
 local Net = require(Shared.Net)
 local Social = require(Shared.Config.Social)
 local SocialRules = require(Shared.Social)
 local Timer = require(Shared.Timer)
 
+local BlimpService = require(script.Parent.BlimpService)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
 local FarmService = require(script.Parent.FarmService)
+local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
 local SocialService = require(script.Parent.SocialService)
@@ -45,14 +50,11 @@ local function ownerWorking(owner: Player): boolean
 	return owner:GetAttribute("OnPlot") == owner.UserId and NetService.idleSeconds(owner) <= Social.teamworkSeconds
 end
 
--- Everything a helping action needs checked before it happens. Returns the owner, their data
--- and the field, or a reason.
-local function prepare(
-	helper: Player,
-	ownerUserId: any,
-	fieldId: any
-): (Player?, { [string]: any }?, { [string]: any }?, string?)
-	if type(ownerUserId) ~= "number" or ownerUserId ~= ownerUserId or not NetService.check.id(fieldId) then
+-- The checks every helping action shares: the owner is here and lets this helper help, the
+-- helper is far enough in, and both daily budgets have room. Returns the owner and their data,
+-- or a reason.
+local function checkHelper(helper: Player, ownerUserId: any): (Player?, { [string]: any }?, string?)
+	if type(ownerUserId) ~= "number" or ownerUserId ~= ownerUserId then
 		return nil
 	end
 	local owner = SocialService.playerByUserId(ownerUserId)
@@ -61,27 +63,44 @@ local function prepare(
 	if owner == nil or owner == helper or data == nil or helperData == nil then
 		return nil
 	end
+	-- (Studio skips the level gate so a fresh test farm can try helping right away)
+	if helperData.level < Social.helpUnlockLevel and not RunService:IsStudio() then
+		return nil, nil, string.format("Helping Hands opens at level %d", Social.helpUnlockLevel)
+	end
+	local ok, reason = SocialService.canHelp(helper, owner)
+	if not ok then
+		return nil, nil, reason
+	end
+	local total, onOwner = SocialRules.helpLeft(helperData.social, owner.UserId, SocialRules.utcDay(Clock.now()))
+	if total <= 0 then
+		return nil, nil, "You've helped all you can today. Thank you! More tomorrow."
+	elseif onOwner <= 0 then
+		return nil, nil, string.format("You've helped %s all you can today", owner.DisplayName)
+	end
+	return owner, data
+end
+
+-- Everything a field helping action needs checked before it happens. Returns the owner, their
+-- data and the field, or a reason.
+local function prepare(
+	helper: Player,
+	ownerUserId: any,
+	fieldId: any
+): (Player?, { [string]: any }?, { [string]: any }?, string?)
+	if not NetService.check.id(fieldId) then
+		return nil
+	end
+	local owner, data, reason = checkHelper(helper, ownerUserId)
+	if owner == nil or data == nil then
+		return nil, nil, nil, reason
+	end
 	local field = data.fields[fieldId]
 	if field == nil or field.crop == nil then
 		return nil
 	end
-	-- (Studio skips the level gate so a fresh test farm can try helping right away)
-	if helperData.level < Social.helpUnlockLevel and not RunService:IsStudio() then
-		return nil, nil, nil, string.format("Helping Hands opens at level %d", Social.helpUnlockLevel)
-	end
-	local ok, reason = SocialService.canHelp(helper, owner)
-	if not ok then
-		return nil, nil, nil, reason
-	end
 	local pos = PlotService.fieldPosition(owner, fieldId)
 	if pos == nil or not NetService.isNear(helper, pos, Balance.serverReachStuds) then
 		return nil, nil, nil, "Walk closer to that field"
-	end
-	local total, onOwner = SocialRules.helpLeft(helperData.social, owner.UserId, SocialRules.utcDay(Clock.now()))
-	if total <= 0 then
-		return nil, nil, nil, "You've helped all you can today. Thank you! More tomorrow."
-	elseif onOwner <= 0 then
-		return nil, nil, nil, string.format("You've helped %s all you can today", owner.DisplayName)
 	end
 	return owner, data, field
 end
@@ -161,9 +180,46 @@ function HelpService.harvest(helper: Player, ownerUserId: any, fieldId: any): (b
 	return true
 end
 
+-- Load a crate the owner flagged for help on their docked Cargo Blimp, from the helper's own
+-- Barn. The crate counts as loaded for the owner (filled by the helper's UserId); the game pays
+-- the helper the crate's Coins and XP and its Sky Miles go on the helper's own tally.
+function HelpService.blimp(helper: Player, ownerUserId: any, row: any, slot: any): (boolean, string?)
+	if not NetService.check.int(row, 1, 3) or not NetService.check.int(slot, 1, 3) then
+		return false
+	end
+	local owner, data, reason = checkHelper(helper, ownerUserId)
+	if owner == nil or data == nil then
+		return false, reason
+	end
+	local crate, why = Blimp.canFill(data, row, slot, Clock.now())
+	if crate == nil then
+		return false, why
+	elseif not crate.flagged then
+		return false, string.format("%s hasn't asked for help with that crate", owner.DisplayName)
+	end
+	local pos = PlotService.blimpCratePosition(owner, row, slot)
+	if pos == nil or not NetService.isNear(helper, pos, Balance.serverReachStuds) then
+		return false, "Walk closer to the Cargo Blimp"
+	end
+	local name = Items[crate.item].displayName
+	if not InventoryService.remove(helper, { [crate.item] = crate.qty }) then
+		return false, string.format("That crate needs %d %s from your Barn", crate.qty, name)
+	end
+	Blimp.fill(crate, helper.UserId)
+	local coins, xp, miles = Blimp.crateRewards(crate)
+	local helperData = DataService.get(helper) :: { [string]: any }
+	if rewardsAllowed(helper) then
+		helperData.blimp.skyMiles = (helperData.blimp.skyMiles or 0) + miles
+	end
+	BlimpService.changed(owner)
+	finish(helper, owner, "loaded", string.format("crate of %d %s", crate.qty, name), coins, xp)
+	return true
+end
+
 function HelpService.init()
 	NetService.on(Net.Help_Water, 4, 6, HelpService.water)
 	NetService.on(Net.Help_Harvest, 4, 6, HelpService.harvest)
+	NetService.on(Net.Help_Blimp, 2, 4, HelpService.blimp)
 	Players.PlayerRemoving:Connect(function(player)
 		lastNotified[player] = nil
 		for _, byHelper in lastNotified do
