@@ -69,6 +69,7 @@ return table.freeze({
 	Debug_TestNeighbor = "Debug_TestNeighbor", -- make (or go to) a test neighbor's farm (Studio only)
 	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
+	Debug_Quarry = "Debug_Quarry", -- Bars, ore, Pickaxes, an open Quarry and Population (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
 	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)
 	Debug_Records = "Debug_Records", -- raise Town Records to their next medal (Studio only)

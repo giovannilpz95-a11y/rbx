@@ -8,6 +8,8 @@ local Animals = require(Shared.Config.Animals)
 local Levels = require(Shared.Config.Levels)
 local Net = require(Shared.Net)
 local Profile = require(Shared.Profile)
+local Quarry = require(Shared.Quarry)
+local QuarryConfig = require(Shared.Config.Quarry)
 local Progression = require(Shared.Progression)
 local Records = require(Shared.Records)
 local Tools = require(Shared.Config.Tools)
@@ -57,6 +59,63 @@ function DebugService.buildAll(player: Player): (boolean, string?)
 end
 
 DebugService.GRANT = { gems = 500, coins = 5000, tools = 5 }
+
+-- For testing the Quarry, Smelters and Tinker's Guild (Features/F01) without digging or
+-- smelting: Bars in the Barn (past its cap), ore in the Ore Shed, Pickaxes, the Quarry open,
+-- and finished House copies until Population reaches POPULATION.
+DebugService.QUARRY = { bars = 20, ore = 50, pickaxes = 50, population = 1200 }
+local BARS = { "CopperBar", "SilverBar", "GoldBar", "PlatinumBar" }
+
+function DebugService.quarry(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	local give = DebugService.QUARRY
+	local items = data.inventory.items
+	for _, bar in BARS do
+		items[bar] = (items[bar] or 0) + give.bars
+	end
+	for id in QuarryConfig.ores do
+		data.oreShed[id] = (data.oreShed[id] or 0) + give.ore
+	end
+	local tools = data.toolShed.items
+	tools[QuarryConfig.pickaxe] = (tools[QuarryConfig.pickaxe] or 0) + give.pickaxes
+	if data.quarry.readyAt == nil then
+		Quarry.restore(data, now, Random.new():NextInteger(1, 2147483646))
+	elseif data.quarry.readyAt > now then
+		data.quarry.readyAt = now
+	end
+	-- More House copies, cycling through the types, until Population is high enough
+	local types = {}
+	for id in Town.houses do
+		table.insert(types, id)
+	end
+	table.sort(types)
+	local i = 0
+	while TownRules.population(data, now) < give.population and i < 200 do
+		local lot = TownRules.freeLot(data, #PlotService.LAYOUT.houseLots)
+		if lot == nil then
+			break
+		end
+		table.insert(data.town.houses, { type = types[i % #types + 1], lot = lot })
+		i += 1
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.toast(
+		player,
+		string.format(
+			"Dev: +%d of each Bar, +%d of each ore, +%d Pickaxes, Quarry open, Population %d",
+			give.bars,
+			give.ore,
+			give.pickaxes,
+			TownRules.population(data, now)
+		)
+	)
+	return true
+end
 
 -- Gems, Coins and a few of each tool, for checking speed-ups, the Shop's paid paths and
 -- anything that costs more than a test farm has. Logged under the "debug" reason.
@@ -227,6 +286,7 @@ end
 function DebugService.init()
 	NetService.on(Net.Debug_BuildAll, 1, 2, DebugService.buildAll)
 	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
+	NetService.on(Net.Debug_Quarry, 1, 2, DebugService.quarry)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)
