@@ -2236,7 +2236,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Fuzz every remote with junk (farm restored after)", "Debug_Fuzz", 380, 9)
 	devButton("+1 level (opens the content bank past the cap)", "Debug_LevelUp", 380, 10)
 	devButton("Reach the next Town Record medals", "Debug_Records", 320, 11)
-	devButton("+Bars, ore, Pickaxes, open Quarry, Population 1,200", "Debug_Quarry", 380, 12)
+	devButton("+Bars, Barn room, ore, Pickaxes, open Quarry, Population 1,200", "Debug_Quarry", 380, 12)
 end
 
 ---------------------------------------------------------------------------------------------

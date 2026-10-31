@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
+local BarnRules = require(Shared.BarnRules)
 local Levels = require(Shared.Config.Levels)
 local Net = require(Shared.Net)
 local Profile = require(Shared.Profile)
@@ -12,6 +13,7 @@ local Quarry = require(Shared.Quarry)
 local QuarryConfig = require(Shared.Config.Quarry)
 local Progression = require(Shared.Progression)
 local Records = require(Shared.Records)
+local Shop = require(Shared.Shop)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
@@ -19,6 +21,7 @@ local TownRules = require(Shared.TownRules)
 local Clock = require(script.Parent.Parent.Util.Clock)
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
+local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
 
@@ -61,9 +64,10 @@ end
 DebugService.GRANT = { gems = 500, coins = 5000, tools = 5 }
 
 -- For testing the Quarry, Smelters and Tinker's Guild (Features/F01) without digging or
--- smelting: Bars in the Barn (past its cap), ore in the Ore Shed, Pickaxes, the Quarry open,
--- and finished House copies until Population reaches POPULATION.
-DebugService.QUARRY = { bars = 20, ore = 50, pickaxes = 50, population = 1200 }
+-- smelting: Bars in the Barn, Barn upgrades until it has `barnRoom` free (so the Bars don't
+-- block collecting), ore in the Ore Shed, Pickaxes, the Quarry open, and finished House copies
+-- until Population reaches POPULATION.
+DebugService.QUARRY = { bars = 20, ore = 50, pickaxes = 50, population = 1200, barnRoom = 150 }
 local BARS = { "CopperBar", "SilverBar", "GoldBar", "PlatinumBar" }
 
 function DebugService.quarry(player: Player): (boolean, string?)
@@ -76,6 +80,14 @@ function DebugService.quarry(player: Player): (boolean, string?)
 	local items = data.inventory.items
 	for _, bar in BARS do
 		items[bar] = (items[bar] or 0) + give.bars
+	end
+	-- Free Barn upgrades until there's room again (capped, in case the steps run out)
+	local inv = data.inventory
+	local upgrades = 0
+	while Shop.barnCapacity(data) - InventoryService.used(data) < give.barnRoom and upgrades < 200 do
+		inv.upgrades = (inv.upgrades or 0) + 1
+		inv.barnCapacity = BarnRules.capacity(inv.upgrades)
+		upgrades += 1
 	end
 	for id in QuarryConfig.ores do
 		data.oreShed[id] = (data.oreShed[id] or 0) + give.ore
