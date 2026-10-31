@@ -157,6 +157,12 @@ function Profile.template(): { [string]: any }
 		},
 		oreShed = {}, -- ore id -> qty; no cap and no Barn space (shared/Quarry)
 		guild = {}, -- the Tinker's Guild (shared/Guild); readyAt is set when building starts
+		blimp = { -- Airship Freight (shared/Blimp); readyAt is set when the mast's repair starts
+			seed = 0,
+			flights = 0,
+			fullHolds = 0,
+			skyMiles = 0,
+		},
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
