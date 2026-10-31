@@ -1706,6 +1706,105 @@ TYPES.HydroDam = function(b, s)
 	return body
 end
 
+-- Fashion Studio (content bank, level 48): a tall pink boutique with a black awning, big
+-- display windows with two mannequins, and a runway out front lined with lights.
+TYPES.FashionStudio = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.5, 6, s * 0.3),
+		Vector3.new(0, PLINTH + 3, z0 + s * 0.12),
+		Palette.flowerPink:Lerp(Palette.cream, 0.5),
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + s * 0.12 - s * 0.15
+	t.block(
+		"Roof",
+		Vector3.new(s * 0.54, 0.5, s * 0.34),
+		Vector3.new(0, PLINTH + 6.25, z0 + s * 0.12),
+		Palette.stoneDark
+	)
+	t.block(
+		"Awning",
+		Vector3.new(s * 0.5, 0.25, 1.4),
+		CFrame.new(0, PLINTH + 3.9, face - 0.7) * CFrame.Angles(math.rad(-12), 0, 0),
+		Palette.stoneDark
+	)
+	t.block(
+		"Display",
+		Vector3.new(s * 0.36, 2.6, 0.2),
+		Vector3.new(-s * 0.04, PLINTH + 1.9, face - 0.05),
+		Palette.glass
+	)
+	for _, x in { -s * 0.15, s * 0.05 } do
+		t.post("Mannequin", 2, 0.5, Vector3.new(x, PLINTH + 1.4, face + 0.5), Palette.cream)
+		t.block("Gown", Vector3.new(0.9, 1.2, 0.9), Vector3.new(x, PLINTH + 1, face + 0.5), Palette.plum)
+	end
+	Kit.door(t, "Door", CFrame.new(s * 0.18, PLINTH, face), 1.4, 3, Palette.stoneDark, Palette.cream)
+	-- The runway with its lights
+	t.block("Runway", Vector3.new(2, 0.3, s * 0.2), Vector3.new(0, PLINTH + 0.15, face - s * 0.12), Palette.roofRed)
+	for _, x in { -1.1, 1.1 } do
+		t.block(
+			"Lights",
+			Vector3.new(0.2, 0.2, s * 0.2),
+			Vector3.new(x, PLINTH + 0.2, face - s * 0.12),
+			Palette.flowerYellow
+		)
+	end
+	t.block("Upper", Vector3.new(s * 0.3, 1.4, 0.2), Vector3.new(0, PLINTH + 5, face - 0.05), Palette.glass)
+	Kit.sproutTag(t, Vector3.new(-s * 0.2, PLINTH + 6.9, z0 + s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Film Studio (content bank, level 49): a dark sound stage with a curved roof, a big film
+-- camera on a tripod out front, a clapperboard sign and a spotlight on a stand.
+TYPES.FilmStudio = function(b, s)
+	local z0 = s * 0.1
+	b.block("Plinth", Vector3.new(s * 0.85, PLINTH, s * 0.6), Vector3.new(0, PLINTH / 2, z0), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.62, 4.6, s * 0.34),
+		Vector3.new(0, PLINTH + 2.3, z0 + s * 0.1),
+		Palette.stoneDark:Lerp(Palette.sky, 0.25),
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = z0 + s * 0.1 - s * 0.17
+	t.cyl("Roof", s * 0.62, s * 0.34, CFrame.new(0, PLINTH + 4.6, z0 + s * 0.1), Palette.stoneLight)
+	t.block(
+		"StageDoor",
+		Vector3.new(3.2, 3.4, 0.2),
+		Vector3.new(-s * 0.12, PLINTH + 1.7, face - 0.05),
+		Palette.flowerYellow
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.18, PLINTH, face), 1.4, 2.8, Palette.roofRed, Palette.cream)
+	-- The clapperboard sign over the doors
+	t.block("Clapper", Vector3.new(3, 1.2, 0.2), Vector3.new(0, PLINTH + 5.4, face + 0.6), Palette.stoneDark)
+	t.block(
+		"ClapperTop",
+		Vector3.new(3, 0.35, 0.22),
+		CFrame.new(0, PLINTH + 6.2, face + 0.6) * CFrame.Angles(0, 0, math.rad(8)),
+		Palette.cream
+	)
+	-- The camera on its tripod and a spotlight
+	local cx, cz = s * 0.22, z0 - s * 0.16
+	t.post("Tripod", 2, 0.3, Vector3.new(cx, PLINTH + 1, cz), Palette.stoneDark)
+	t.block("Camera", Vector3.new(1.6, 1, 0.9), Vector3.new(cx, PLINTH + 2.4, cz), Palette.stoneDark)
+	t.cyl("Lens", 0.6, 0.6, CFrame.new(cx - 1.1, PLINTH + 2.4, cz), Palette.glassDeep)
+	t.cyl("Reel", 0.2, 1, CFrame.new(cx, PLINTH + 3.3, cz) * Kit.yaw(90), Palette.stoneLight)
+	t.post("LampStand", 3, 0.25, Vector3.new(-s * 0.3, PLINTH + 1.5, z0 - s * 0.18), Palette.stoneLight)
+	t.block(
+		"Spotlight",
+		Vector3.new(1, 1, 1.2),
+		Vector3.new(-s * 0.3, PLINTH + 3.3, z0 - s * 0.18),
+		Palette.flowerYellow
+	)
+	Kit.sproutTag(t, Vector3.new(-s * 0.26, PLINTH + 6.3, z0 + s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end
