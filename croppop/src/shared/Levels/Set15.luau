@@ -2,8 +2,8 @@
 -- Made by tools/levelgen.luau; edit by hand or in the level editor from here.
 
 return {
-	-- Bot wins 43% (target 50%).
 	-- Bot wins 54% (target 50%; 400-game check).
+	{
 		id = 351,
 		name = "Goo Spring",
 		difficulty = "Normal",
