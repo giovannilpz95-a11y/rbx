@@ -54,6 +54,25 @@ local function fade(model: Instance?, amount: number)
 	end
 end
 
+-- Our plot. Main hands it over once it's built (setPlot); if an offer comes before that, or
+-- through another copy of this module (a Studio test harness requiring it fresh), find it
+-- under Workspace.Plots ourselves.
+local function ownPlot(): Model?
+	if plot and plot.Parent then
+		return plot
+	end
+	local plots = Workspace:FindFirstChild("Plots")
+	if plots then
+		for _, child in plots:GetChildren() do
+			if child:IsA("Model") and child:GetAttribute("OwnerUserId") == player.UserId then
+				plot = child
+				return child
+			end
+		end
+	end
+	return nil
+end
+
 -- Is anything of ours in the footprint, other than the building being moved? (The server's
 -- own check, shared/Layout, so the ghost and the server always agree.)
 local function blockedHere(origin: CFrame, kind: string, x: number, z: number, r: number): boolean
@@ -162,7 +181,7 @@ function MovePlacer.tap(instance: Instance?): boolean
 		return true -- one at a time: Place or Cancel first
 	end
 	local key, model = buildingAt(instance)
-	if key == nil or plot == nil or not (model :: Instance):IsDescendantOf(plot :: Model) then
+	if key == nil or ownPlot() == nil or not (model :: Instance):IsDescendantOf(plot :: Model) then
 		Hud.toast("Tap one of your buildings to move it")
 		return true
 	end
@@ -184,8 +203,9 @@ function MovePlacer.offer(payload: { [string]: any })
 	task.spawn(function()
 		for _ = 1, 100 do
 			local found: Instance? = nil
-			if plot then
-				for _, d in (plot :: Model):GetDescendants() do
+			local mine = ownPlot()
+			if mine then
+				for _, d in mine:GetDescendants() do
 					if d:GetAttribute("LayoutKey") == key then
 						found = d
 						break
