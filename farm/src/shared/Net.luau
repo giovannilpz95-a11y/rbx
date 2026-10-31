@@ -87,6 +87,7 @@ return table.freeze({
 	Debug_ExpressGoods = "Debug_ExpressGoods", -- goods for the next 3 Town Express crates (Studio only)
 	Debug_Records = "Debug_Records", -- raise Town Records to their next medal (Studio only)
 	Debug_FillLots = "Debug_FillLots", -- a finished Cottage on every open House lot (Studio only)
+	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client
