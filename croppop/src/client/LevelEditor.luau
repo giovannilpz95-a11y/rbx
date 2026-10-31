@@ -54,6 +54,7 @@ local BRUSH_ROWS = {
 		{ char = "g", label = TileStyle.GoalGlyphs.Goo },
 		{ char = "h", label = TileStyle.HenGlyph },
 		{ char = "x", label = TileStyle.CrateGlyph },
+		{ char = "b", label = TileStyle.GoalGlyphs.Statues },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -64,7 +65,7 @@ local PORTAL = "o" -- the portal brush
 local FENCE = "|" -- the fence brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -76,6 +77,7 @@ local GOAL_BUTTONS = {
 	Stones = "+ 🧱",
 	Fences = "+ 🚧",
 	Goo = "+ 🟢",
+	Statues = "+ 🗿",
 }
 
 local ui = nil
@@ -318,6 +320,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.hen, TileStyle.HenGlyph
 	elseif char == "x" then
 		return TileStyle.Board.crate, TileStyle.CrateGlyph
+	elseif char == "b" then
+		return TileStyle.Board.buried, TileStyle.GoalGlyphs.Statues
 	end
 	return Colors.cellLight, ""
 end
@@ -464,6 +468,8 @@ local function goalLabel(goal): string
 		return "🚧 all fences"
 	elseif goal.kind == "Goo" then
 		return "🟢 all goo"
+	elseif goal.kind == "Statues" then
+		return "🗿 all statues"
 	end
 	return "🌾 all bales"
 end

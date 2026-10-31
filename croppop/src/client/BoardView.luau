@@ -244,6 +244,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
+	guis.buried.Visible = cell.buried == true
 	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate)
 	styleFrost(guis, cell.frost or 0)
 end
@@ -328,6 +329,26 @@ function BoardView.load(self, game)
 		gooCorner.CornerRadius = UDim.new(0.35, 0)
 		gooCorner.Parent = goo
 
+		-- A buried statue: sandy soil over the cell, under the tile, with a
+		-- statue peeking out of the corner. A blast digs it up.
+		local buried = Instance.new("TextLabel")
+		buried.Name = "Buried"
+		buried.Size = UDim2.fromScale(1, 1)
+		buried.BorderSizePixel = 0
+		buried.BackgroundColor3 = TileStyle.Board.buried
+		buried.BackgroundTransparency = 0.2
+		buried.Text = ""
+		buried.Parent = bg
+		local statueMark = Instance.new("TextLabel")
+		statueMark.Name = "Statue"
+		statueMark.AnchorPoint = Vector2.new(1, 1)
+		statueMark.Position = UDim2.fromScale(1, 1)
+		statueMark.Size = UDim2.fromScale(0.32, 0.32)
+		statueMark.BackgroundTransparency = 1
+		statueMark.Text = TileStyle.GoalGlyphs.Statues
+		statueMark.TextScaled = true
+		statueMark.Parent = buried
+
 		local bale = Instance.new("TextLabel")
 		bale.Name = "Bale"
 		bale.Size = self:_cellSize()
@@ -391,7 +412,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, buried = buried, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -595,6 +616,11 @@ function BoardView._effect(self, effect): number
 	elseif effect.type == "Crate" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), Color3.fromRGB(255, 220, 120), true)
 		return FX_TIME
+	elseif effect.type == "Statue" then
+		for _, c in effect.cells do
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.buried, true)
+		end
+		return FX_TIME
 	elseif effect.type == "Ooze" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.goo, true)
 		return FX_TIME
@@ -680,6 +706,12 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[g.y] and self.cellGuis[g.y][g.x]
 		if guis then
 			guis.goo.Visible = g.on
+		end
+	end
+	for _, d in phase.statues or {} do
+		local guis = self.cellGuis[d.y] and self.cellGuis[d.y][d.x]
+		if guis then
+			guis.buried.Visible = false
 		end
 	end
 	for _, f in phase.fences or {} do

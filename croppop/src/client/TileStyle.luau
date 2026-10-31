@@ -65,6 +65,7 @@ TileStyle.GoalGlyphs = {
 	Stones = "🧱", -- the rock emoji (Unicode 13) does not render in Roblox
 	Fences = "🚧", -- the wood emoji (Unicode 13) does not render in Roblox
 	Goo = "🟢",
+	Statues = "🗿", -- a buried statue
 }
 
 TileStyle.BoosterGlyphs = {
@@ -94,6 +95,7 @@ TileStyle.Board = {
 	goo = Color3.fromRGB(120, 200, 80),
 	hen = Color3.fromRGB(196, 90, 70),
 	crate = Color3.fromRGB(150, 110, 200),
+	buried = Color3.fromRGB(206, 170, 112), -- sandy soil over a buried statue
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream
