@@ -47,24 +47,13 @@ local function fade(model: Instance?, amount: number)
 	end
 end
 
--- Is anything of ours in the footprint, other than the building being moved?
+-- Is anything of ours in the footprint, other than the building being moved? (The server's
+-- own check, shared/Layout, so the ghost and the server always agree.)
 local function blockedHere(origin: CFrame, kind: string, x: number, z: number, r: number): boolean
 	if plot == nil then
 		return true
 	end
-	local cx, cz, w, d = Layout.box(kind, x, z, r)
-	local params = OverlapParams.new()
-	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = { plot :: Model }
-	local hits =
-		Workspace:GetPartBoundsInBox(origin * CFrame.new(cx, 3.3, cz), Vector3.new(w - 0.4, 5.4, d - 0.4), params)
-	for _, hit in hits do
-		local mine = moving ~= nil and (hit == moving or hit:IsDescendantOf(moving :: Instance))
-		if not mine and hit:FindFirstAncestor("Land") == nil and hit:FindFirstAncestor("ScaffoldPop") == nil then
-			return true
-		end
-	end
-	return false
+	return Layout.blocked(plot :: Model, origin, kind, x, z, r, moving)
 end
 
 local function update()
@@ -106,6 +95,10 @@ local function stopMoving()
 		editing = false -- it came on just for this building
 	end
 	banner.Visible = editing
+end
+
+function MovePlacer.isMoving(): boolean
+	return active ~= nil
 end
 
 function MovePlacer.isEditing(): boolean

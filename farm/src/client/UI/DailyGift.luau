@@ -158,11 +158,12 @@ function DailyGift.init()
 		-- The away summary arrives first and shares the window: wait for it to close
 		task.spawn(function()
 			local waited = 0
-			while Panels.isOpen() and waited < 120 do
+			-- ...and for a building or decoration being placed (its Place bar sits under the window)
+			while (Panels.isOpen() or Panels.busy()) and waited < 600 do
 				task.wait(0.5)
 				waited += 0.5
 			end
-			if not Panels.isOpen() then
+			if not Panels.isOpen() and not Panels.busy() then
 				Panels.open("DailyGift")
 			end
 		end)

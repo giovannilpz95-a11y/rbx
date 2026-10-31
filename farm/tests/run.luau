@@ -816,6 +816,19 @@ test("moving buildings: keys, turned footprints, owned land and bad input", func
 	ok(not Layout.canMove(data, "house:999", 0, 0, 0, 0), "a house that isn't there")
 	local lot = data.town.houses[1].lot
 	ok(Layout.canMove(data, "house:" .. lot, 20, 20, 180, 0), "a starter house")
+	-- Reasons for everything the ghost can't do, so the server's refusal always says why
+	local okGrid, why = Layout.canMove(data, "factory:Bakery", 27, 2, 0, 0)
+	ok(not okGrid and why ~= nil, "off the grid says why")
+	local okKey, whyKey = Layout.canMove(data, "barn:1", 0, 0, 0, 0)
+	ok(not okKey and whyKey ~= nil, "an unmovable building says why")
+	-- A moved building survives a save round trip (DataStore JSON, then load + reconcile)
+	local saved = Profile.deepCopy(data)
+	saved.layout["factory:Bakery"] = { x = 10, z = 70, r = 90 }
+	local serde = require("@lune/serde")
+	local loaded = Profile.migrate(serde.decode("json", serde.encode("json", saved))) :: any
+	local spot = Layout.spot(loaded, "factory:Bakery")
+	ok(spot ~= nil and spot.x == 10 and spot.z == 70 and spot.r == 90, "the moved Bakery is still moved after a reload")
+	ok(Layout.spot(loaded, "factory:FeedMill") == nil, "unmoved buildings stay unmoved")
 	-- Clear the West Meadow: it becomes the farm's land
 	data.land[1] = {}
 	ok(Layout.canMove(data, "factory:Bakery", -70, 0, 0, 0), "the cleared West Meadow")
