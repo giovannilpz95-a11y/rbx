@@ -12,6 +12,7 @@ local Players = game:GetService("Players")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Config = require(Shared.Config.Records)
 local Records = require(Shared.Records)
+local TownRules = require(Shared.TownRules)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
@@ -63,6 +64,8 @@ type CardInfo = {
 	level: number?,
 	stars: number,
 	values: { [string]: number },
+	townHall: number, -- Town Hall storeys (TownRules.townHall), 1 at the start
+	upgrading: boolean, -- a storey is going up
 }
 
 local function views(state: { [string]: any }): { Records.View }
@@ -142,11 +145,17 @@ function FarmerCard.otherInfo(other: Player?): CardInfo?
 		level = if type(level) == "number" then level else nil,
 		stars = if type(card.stars) == "number" then card.stars else 0,
 		values = values,
+		townHall = if type(card.townHall) == "number" then card.townHall else 1,
+		upgrading = card.upgrading == true,
 	}
 end
 
 local function ownInfo(state: { [string]: any }): CardInfo
 	local player = Players.LocalPlayer
+	local storeys, upgrading = 1, false
+	if type(state.town) == "table" and type(state.town.community) == "table" then
+		storeys, upgrading = TownRules.townHall(state, ClientStore.now())
+	end
 	local values: { [string]: number } = {}
 	for _, id in Config.card do
 		local v = viewOf(state, id)
@@ -159,6 +168,8 @@ local function ownInfo(state: { [string]: any }): CardInfo
 		level = state.level,
 		stars = Records.stars(views(state)),
 		values = values,
+		townHall = storeys,
+		upgrading = upgrading,
 	}
 end
 
@@ -247,11 +258,30 @@ local function renderCard(info: CardInfo, body: ScrollingFrame, own: boolean)
 			})
 		end
 	end
+	-- The Town Hall's storeys, a town's size at a glance
+	local hall = Ui.card({ Name = "TownHall", Size = UDim2.new(1, -8, 0, 44), LayoutOrder = 4, Parent = body })
+	Ui.label("🏛", { Position = UDim2.fromOffset(8, 0), Size = UDim2.new(0, 30, 1, 0), TextSize = 24, Parent = hall })
+	Ui.label(
+		string.format(
+			"Town Hall: %d %s%s",
+			info.townHall,
+			if info.townHall == 1 then "storey" else "storeys",
+			if info.upgrading then ", another going up" else ""
+		),
+		{
+			Position = UDim2.fromOffset(42, 0),
+			Size = UDim2.new(1, -48, 1, 0),
+			Font = Enum.Font.GothamBold,
+			TextSize = 16,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Parent = hall,
+		}
+	)
 	Ui.label(if own then "Finish Town Records for stars and a new title." else "Press P for your own card.", {
 		Size = UDim2.new(1, -8, 0, 20),
 		TextSize = 14,
 		TextColor3 = Ui.colors.muted,
-		LayoutOrder = 4,
+		LayoutOrder = 5,
 		Parent = body,
 	})
 end
