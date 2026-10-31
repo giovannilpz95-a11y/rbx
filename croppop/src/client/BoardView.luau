@@ -245,6 +245,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
 	guis.buried.Visible = cell.buried == true
+	guis.statueMark.Visible = cell.buried == true
 	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate)
 	styleFrost(guis, cell.frost or 0)
 end
@@ -329,8 +330,9 @@ function BoardView.load(self, game)
 		gooCorner.CornerRadius = UDim.new(0.35, 0)
 		gooCorner.Parent = goo
 
-		-- A buried statue: sandy soil over the cell, under the tile, with a
-		-- statue peeking out of the corner. A blast digs it up.
+		-- A buried statue: sandy soil over the cell, under the tile, and a
+		-- small statue on the cell's corner over the tile (in the bale layer,
+		-- so the tile doesn't hide it). A blast digs it up.
 		local buried = Instance.new("TextLabel")
 		buried.Name = "Buried"
 		buried.Size = UDim2.fromScale(1, 1)
@@ -342,12 +344,13 @@ function BoardView.load(self, game)
 		local statueMark = Instance.new("TextLabel")
 		statueMark.Name = "Statue"
 		statueMark.AnchorPoint = Vector2.new(1, 1)
-		statueMark.Position = UDim2.fromScale(1, 1)
-		statueMark.Size = UDim2.fromScale(0.32, 0.32)
+		statueMark.Position = UDim2.fromScale(x / board.width, y / board.height)
+		statueMark.Size = UDim2.fromScale(0.34 / board.width, 0.34 / board.height)
 		statueMark.BackgroundTransparency = 1
 		statueMark.Text = TileStyle.GoalGlyphs.Statues
 		statueMark.TextScaled = true
-		statueMark.Parent = buried
+		statueMark.ZIndex = 2
+		statueMark.Parent = self.baleLayer
 
 		local bale = Instance.new("TextLabel")
 		bale.Name = "Bale"
@@ -412,7 +415,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, buried = buried, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -453,6 +456,22 @@ function BoardView.load(self, game)
 		label.Parent = self.baleLayer
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0.3, 0)
+		corner.Parent = label
+	end
+
+	-- Goo springs, in the gaps like baskets.
+	for _, spring in board.springs do
+		local label = Instance.new("TextLabel")
+		label.Name = "GooSpring"
+		label.Size = self:_cellSize()
+		label.Position = self:_cellPosition(spring.x, spring.y)
+		label.BackgroundColor3 = TileStyle.Board.spring
+		label.Text = TileStyle.SpringGlyph
+		label.TextScaled = true
+		label.BorderSizePixel = 0
+		label.Parent = self.baleLayer
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
 		corner.Parent = label
 	end
 
@@ -712,6 +731,7 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[d.y] and self.cellGuis[d.y][d.x]
 		if guis then
 			guis.buried.Visible = false
+			guis.statueMark.Visible = false
 		end
 	end
 	for _, f in phase.fences or {} do

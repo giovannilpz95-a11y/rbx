@@ -22,6 +22,8 @@
 	whenever it's empty: every other one is an Egg (so eggs never stack
 	into an endless match), the rest are random like the top of the board.
 	Pumpkin baskets ("d") are not cells: pieces fall past them like a hole.
+	Goo springs ("G") are not cells either (pieces fall past them), and
+	nothing breaks them: the engine spreads goo out of them.
 	The engine counts hits on them and drops pumpkins out of them.
 
 	Everything here is deterministic: loops run in row/column order and all
@@ -78,6 +80,8 @@ function Board.new(width: number, height: number)
 		basketAt = {}, -- y * 100 + x -> basket
 		hens = {}, -- hen houses ("h" in the layout): { x, y } in row order
 		henAt = {}, -- y * 100 + x -> hen house
+		springs = {}, -- goo springs ("G" in the layout): { x, y } in row order
+		springAt = {}, -- y * 100 + x -> goo spring
 		fences = {}, -- edge key -> { x, y, side = "r" | "d" } (the edge right of / below (x, y))
 		fenceCount = 0,
 		-- Buried statues ("b" in the layout; touching "b" cells make one statue):
@@ -144,6 +148,10 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				local hen = { x = x, y = y, laid = 0 }
 				table.insert(self.hens, hen)
 				self.henAt[y * 100 + x] = hen
+			elseif ch == "G" then
+				local spring = { x = x, y = y }
+				table.insert(self.springs, spring)
+				self.springAt[y * 100 + x] = spring
 			elseif ch == "d" then
 				local basket = { x = x, y = y, waiting = 0 }
 				table.insert(self.baskets, basket)
@@ -632,6 +640,8 @@ function Board.hash(self): string
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
 			elseif basket then
 				table.insert(row, "D" .. basket.waiting)
+			elseif self.springAt[y * 100 + x] then
+				table.insert(row, "G")
 			elseif not cell then
 				table.insert(row, "#")
 			elseif cell.crate then

@@ -20,6 +20,8 @@
 	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
 	     into the cell below whenever that cell is empty, every other one an
 	     Egg (needs Egg in the colours)
+	  G  goo spring: not a cell (pieces fall past it) and nothing breaks it;
+	     goo spreads out of it like from goo. Needs a Goo goal (and some goo).
 	  d  pumpkin basket: not a cell (pieces fall past it); a match next to it or
 	     a blast on it drops a pumpkin into the cell below. Needs a Pumpkins goal,
 	     and then pumpkins come only from baskets, not from refills.
@@ -42,7 +44,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -68,7 +70,7 @@ function Levels.get(id: number)
 end
 
 -- Layout characters that aren't cells.
-local HOLES = { ["#"] = true, d = true, h = true }
+local HOLES = { ["#"] = true, d = true, h = true, G = true }
 
 local VALID_CHARS = {
 	["."] = true,
@@ -76,6 +78,7 @@ local VALID_CHARS = {
 	d = true,
 	b = true,
 	g = true,
+	G = true,
 	h = true,
 	x = true,
 	m = true,
@@ -225,7 +228,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -262,6 +265,8 @@ function Levels.validate(level): string?
 				goo += 1
 			elseif ch == "b" then
 				buried += 1
+			elseif ch == "G" then
+				springs += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -297,6 +302,15 @@ function Levels.validate(level): string?
 		end
 		if not wanted then
 			return "pumpkins or baskets in the layout but no pumpkins goal"
+		end
+	end
+	if springs > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Goo"
+		end
+		if not wanted then
+			return "goo springs in the layout but no goo goal"
 		end
 	end
 	for _, goal in level.goals do

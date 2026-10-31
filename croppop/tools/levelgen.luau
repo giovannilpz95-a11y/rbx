@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 350
+local LAST = tonumber(ARGS[2]) or 375
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -98,6 +98,11 @@ local NAMES = {
 	"Moss Statue", "Bell Tower Dig", "Relic Row", "Market Cross", "Weathered Bust",
 	"Statue Garden", "Lost Monument", "Old Well", "Treasure Dig", "Hidden Relic",
 	"Spade Day", "Ancient Arch", "Statue Walk", "Digger's Delight", "Grand Unveiling",
+	"Goo Spring", "Bubbling Well", "Slime Fountain", "Green Geyser", "Seep Hollow",
+	"Mossy Spout", "Fen Spring", "Gurgle Gully", "Murky Fountain", "Spring Clean",
+	"Frogspawn Pool", "Bubble Bog", "Lily Fountain", "Spout Lane", "Burbling Brook",
+	"Sticky Spring", "Swamp Geyser", "Toad Hall Well", "Pond Dipping", "Bog Spring",
+	"Wellspring Farm", "Drizzle Dell", "Fountain Square", "Gushing Gulch", "Grand Spring Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -115,7 +120,8 @@ local GOO_INTRO = 251 -- first level with goo
 local HEN_INTRO = 276 -- first level with hen houses
 local CRATE_INTRO = 301 -- first level with surprise crates
 local STATUE_INTRO = 326 -- first level with buried statues
-local INTROS = { [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local SPRING_INTRO = 351 -- first level with goo springs
+local INTROS = { [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -441,6 +447,7 @@ local function mechanics(id)
 		hens = id >= HEN_INTRO, -- "h"
 		crates = id >= CRATE_INTRO, -- "x"
 		statues = id >= STATUE_INTRO, -- "b"
+		springs = id >= SPRING_INTRO, -- "G"
 	}
 end
 
@@ -448,6 +455,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_SPRINGS = { "Springs", "Statues", "Crates", "Collect", "Springs", "Hens", "Fences", "Baskets", "Springs", "Stones", "Mud", "Mix" }
 local FOCUS_STATUES = { "Statues", "Crates", "Goo", "Collect", "Statues", "Hens", "Fences", "Baskets", "Statues", "Stones", "Mud", "Mix" }
 local FOCUS_CRATES = { "Crates", "Hens", "Goo", "Collect", "Crates", "Fences", "Baskets", "Stones", "Crates", "Mud", "Clover", "Mix" }
 local FOCUS_HENS = { "Hens", "Goo", "Collect", "Fences", "Hens", "Baskets", "Stones", "Mud", "Hens", "Clover", "Weeds", "Mix" }
@@ -469,6 +477,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Spring", "Well", "Fountain", "Geyser", "Seep", "Spout" }, focus = "Springs", needs = "springs" },
 	{ words = { "Statue", "Relic", "Monument", "Bust", "Dig", "Plinth", "Fossil", "Unveiling" }, focus = "Statues", needs = "statues" },
 	{ words = { "Crate", "Box", "Surprise", "Mystery", "Parcel", "Gift", "Prize" }, focus = "Crates", needs = "crates" },
 	{ words = { "Hen", "Coop", "Egg", "Roost", "Chick", "Poultry", "Bantam" }, focus = "Hens", needs = "hens" },
@@ -501,6 +510,8 @@ local function focusOf(id, name)
 		return "Crates"
 	elseif id == STATUE_INTRO then
 		return "Statues"
+	elseif id == SPRING_INTRO then
+		return "Springs"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -512,7 +523,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -749,7 +760,7 @@ local FENCE_PATTERNS = { "wall", "pen", "rails" }
 local function placeFences(g, rng, id)
 	local fences, seen = {}, {}
 	local function plain(x, y)
-		return isCell(g, x, y) and g[y][x] ~= "d" and g[y][x] ~= "h"
+		return isCell(g, x, y) and g[y][x] ~= "d" and g[y][x] ~= "h" and g[y][x] ~= "G"
 	end
 	local function add(x, y, side)
 		local ox, oy = if side == "r" then x + 1 else x, if side == "d" then y + 1 else y
@@ -823,6 +834,41 @@ local function placeHens(g, rng, id, portals)
 		return 2
 	end
 	g[spot[2]][spot[1]] = "h"
+	return 1
+end
+
+-- Goo springs, each with a goo tile below or beside it to start; the first
+-- spring level has one, later ones one or a mirrored pair.
+local function placeSprings(g, rng, id, portals)
+	local portalEnd = {}
+	for _, portal in portals do
+		portalEnd[portal.from[2] * 100 + portal.from[1]] = true
+		portalEnd[portal.to[2] * 100 + portal.to[1]] = true
+	end
+	local function free(x, y)
+		return isCell(g, x, y) and g[y][x] == "." and not portalEnd[y * 100 + x]
+	end
+	local spots = {}
+	for y = 2, g.h - 1 do
+		for x = 2, (g.w + 1) // 2 do
+			local mx = g.w - x + 1
+			if free(x, y) and free(mx, y) and free(x, y + 1) and free(mx, y + 1) then
+				table.insert(spots, { x, y })
+			end
+		end
+	end
+	if #spots == 0 then
+		return 0
+	end
+	local spot = rng:pick(spots)
+	local x, y = spot[1], spot[2]
+	if id ~= SPRING_INTRO and x * 2 <= g.w and rng:int(1, 2) == 1 then
+		setSym(g, x, y, "G")
+		setSym(g, x, y + 1, "g")
+		return 2
+	end
+	g[y][x] = "G"
+	g[y + 1][x] = "g"
 	return 1
 end
 
@@ -937,6 +983,11 @@ local function draft(id, variant)
 	if henFocus or (focus == "Mix" and mech.hens and rng:int(1, 3) == 1) then
 		hens = placeHens(g, rng, id, portals)
 		if hens == 0 then
+			return nil
+		end
+	end
+	if focus == "Springs" or (focus == "Mix" and mech.springs and rng:int(1, 3) == 1) then
+		if placeSprings(g, rng, id, portals) == 0 then
 			return nil
 		end
 	end

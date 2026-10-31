@@ -34,7 +34,8 @@
 	Goo: covers a tile; a match or blast on the tile clears it. After a swap
 	that clears no goo, goo spreads onto a neighbouring tile (a Pop phase with
 	an "Ooze" effect, and one more for the Goo goal). If goo covers every tile
-	the level is lost (`flooded`).
+	the level is lost (`flooded`). Goo springs (not cells, and unbreakable)
+	count as goo for spreading: goo can ooze out of one onto a tile next to it.
 
 	Surprise crates: open like a 1-layer bale (a match next to one, or a
 	blast). An opened crate leaves a random power-up in its cell (a "Crate"
@@ -729,7 +730,7 @@ end
 -- Covering every tile floods the board (the level is lost).
 function Engine._growGoo(self, phases)
 	local board = self.board
-	local any = false
+	local any = #board.springs > 0
 	board:eachCell(function(cell)
 		any = any or cell.goo == true
 	end)
@@ -737,17 +738,23 @@ function Engine._growGoo(self, phases)
 		return
 	end
 	local candidates, seen = {}, {}
-	board:eachCell(function(cell)
-		if cell.goo then
-			for _, d in NEIGHBORS do
-				local n = board:get(cell.x + d[1], cell.y + d[2])
-				if n and not seen[n] and not n.goo and n.bale == 0 and n.frost == 0 and n.piece and not n.piece.pumpkin then
-					seen[n] = true
-					table.insert(candidates, n)
-				end
+	local function around(x, y)
+		for _, d in NEIGHBORS do
+			local n = board:get(x + d[1], y + d[2])
+			if n and not seen[n] and not n.goo and n.bale == 0 and n.frost == 0 and n.piece and not n.piece.pumpkin then
+				seen[n] = true
+				table.insert(candidates, n)
 			end
 		end
+	end
+	board:eachCell(function(cell)
+		if cell.goo then
+			around(cell.x, cell.y)
+		end
 	end)
+	for _, spring in board.springs do
+		around(spring.x, spring.y)
+	end
 	if #candidates == 0 then
 		return
 	end
