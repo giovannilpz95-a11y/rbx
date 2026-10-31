@@ -914,6 +914,45 @@ TYPES.FillingStation = function(b, s)
 	return body
 end
 
+-- Open-Air Cinema (content bank, level 30): a big white screen on dark posts at the back, a
+-- little ticket booth with a striped roof, and a row of speaker posts out front.
+TYPES.OpenAirCinema = function(b, s)
+	local w = s * 0.85
+	local body = b.block("Body", Vector3.new(w, 0.4, w), Vector3.new(0, 0.2, 0), Palette.grass, { collide = true })
+	local t = b.into(body, true)
+	-- Sign object: the screen, a cream face in a dark frame on two posts
+	local sz = w / 2 - 1
+	for _, x in { -w / 3, w / 3 } do
+		t.post("ScreenPost", 7, 0.5, Vector3.new(x, 3.9, sz), Palette.woodDark)
+	end
+	t.block("ScreenFrame", Vector3.new(w * 0.72, 4.4, 0.4), Vector3.new(0, 5.2, sz), Palette.stoneDark)
+	t.block(
+		"Screen",
+		Vector3.new(w * 0.66, 3.8, 0.2),
+		Vector3.new(0, 5.2, sz - 0.25),
+		Palette.cream,
+		{ shadow = false }
+	)
+	-- The ticket booth at the front corner
+	local booth = Vector3.new(-w / 2 + 2, 0, -w / 2 + 2)
+	t.block("Booth", Vector3.new(2.6, 3, 2.6), booth + Vector3.new(0, 1.9, 0), Palette.roofRed)
+	t.block("BoothRoof", Vector3.new(3.2, 0.5, 3.2), booth + Vector3.new(0, 3.65, 0), Palette.cream)
+	Kit.window(t, "Window", CFrame.new(booth + Vector3.new(0, 2.2, -1.3)), 1.6, 1, Palette.cream, Palette.glass)
+	-- Speaker posts in a row, where the cars park
+	for _, x in { -1, 1.5, 4 } do
+		t.post("Speaker", 1.6, 0.25, Vector3.new(x, 1.2, -0.5), Palette.metal)
+		t.block(
+			"SpeakerBox",
+			Vector3.new(0.6, 0.5, 0.4),
+			Vector3.new(x, 2.2, -0.5),
+			Palette.stoneDark,
+			{ shadow = false }
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(w / 2 - 1, 0.4, -w / 2 + 1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Cab Stand (content bank, level 29): a little dispatch booth under a striped awning, a
 -- yellow cab with a roof light waiting at the kerb, and a tall checkered sign.
 TYPES.CabStand = function(b, s)

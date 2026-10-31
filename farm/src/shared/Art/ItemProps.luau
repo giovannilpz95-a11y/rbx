@@ -134,6 +134,23 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Canopy", 1.3, at(0, 1.55, 0), Palette.leaf, QUIET)
 		b.post("Cup", 0.3, 0.35, at(0, 0.5, -0.3), Palette.cream, QUIET)
 	end,
+	Wallpaper = function(b)
+		-- A roll of patterned paper, unrolled a little at the front
+		b.cyl("Roll", 1.8, 0.9, at(0, 0.45, 0.2), Palette.flowerPink:Lerp(Palette.cream, 0.5), QUIET)
+		b.block(
+			"Sheet",
+			Vector3.new(1.7, 0.06, 0.9),
+			at(0, 0.03, -0.45),
+			Palette.flowerPink:Lerp(Palette.cream, 0.5),
+			QUIET
+		)
+		b.block("Stripe", Vector3.new(0.25, 0.08, 0.9), at(0, 0.05, -0.45), Palette.roofTeal, QUIET)
+	end,
+	Cupcake = function(b)
+		b.post("Case", 0.7, 0.9, at(0, 0.35, 0), Palette.flowerPink, QUIET)
+		b.ball("Frosting", 1, at(0, 0.85, 0), Palette.cream, QUIET)
+		b.ball("Cherry", 0.35, at(0, 1.35, 0), Palette.roofRed, QUIET)
+	end,
 	Rubber = function(b)
 		-- A rolled sheet of rubber with a cream paper band
 		b.cyl("Roll", 1.6, 1, at(0, 0.5, 0), Palette.tire:Lerp(Palette.cream, 0.15), QUIET)
