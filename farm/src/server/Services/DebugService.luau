@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Animals = require(Shared.Config.Animals)
 local BarnRules = require(Shared.BarnRules)
+local Blimp = require(Shared.Blimp)
 local Levels = require(Shared.Config.Levels)
 local Net = require(Shared.Net)
 local Profile = require(Shared.Profile)
@@ -126,6 +127,33 @@ function DebugService.quarry(player: Player): (boolean, string?)
 			TownRules.population(data, now)
 		)
 	)
+	return true
+end
+
+-- Airship Freight (Features/F04): the Blimp Mast repaired and the Cargo Blimp docked now,
+-- ignoring level, land and Coins. Pressed while it's docked, it sends it off (no rewards) and
+-- brings a fresh load in.
+function DebugService.blimp(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	local blimp = data.blimp
+	if blimp.readyAt == nil then
+		Blimp.repair(data, now, Random.new():NextInteger(1, 2147483646))
+	end
+	Blimp.finishRepair(data, now)
+	if blimp.leavesAt ~= nil then
+		blimp.leavesAt = now
+		Blimp.tick(data, now)
+	end
+	blimp.arrivesAt = now
+	Blimp.tick(data, now, Clock.getTimeScale())
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: the Cargo Blimp is docked at your Blimp Mast (West Meadow)")
 	return true
 end
 
@@ -299,6 +327,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_BuildAll, 1, 2, DebugService.buildAll)
 	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
 	NetService.on(Net.Debug_Quarry, 1, 2, DebugService.quarry)
+	NetService.on(Net.Debug_Blimp, 1, 2, DebugService.blimp)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)

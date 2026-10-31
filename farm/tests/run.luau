@@ -673,17 +673,19 @@ end)
 test("Airship Freight: repair, dock, load, send, expire", function()
 	local data = Profile.migrate(nil) :: any
 	data.level = 16
-	local can, why = Blimp.canRepair(data)
+	local can, why = Blimp.canRepair(data, 0)
 	ok(not can and why ~= nil, "not before level 17")
 	data.level = 25
 	for _, id in { "Bakery", "Dairy", "SugarMill", "FeedMill" } do
 		data.factories[id].built = true
 	end
 	data.pens.CowBarn.built = true
-	ok(Blimp.canRepair(data), "can repair at 25")
+	ok(not Blimp.canRepair(data, 0), "not before the West Meadow is cleared")
+	data.land = { { readyAt = 0 } }
+	ok(Blimp.canRepair(data, 0), "can repair at 25")
 	local H = 3600
 	Blimp.repair(data, 1000, 12345)
-	ok(not Blimp.canRepair(data), "only once")
+	ok(not Blimp.canRepair(data, 0), "only once")
 	local load = data.blimp.load
 	eq(#load.rows, 3, "3 rows")
 	local seen = {}
@@ -755,6 +757,13 @@ test("Airship Freight: repair, dock, load, send, expire", function()
 	eq(Blimp.tick(data, leaves), "expired", "leaves when time runs out")
 	eq(data.blimp.arrivesAt, leaves + 5 * H, "gap from when it left")
 	eq(data.blimp.flights, 3, "three flights")
+	-- The Studio time scale shortens every timer
+	local quick = Profile.migrate(nil) :: any
+	quick.level = 17
+	Blimp.repair(quick, 0, 7, 0.05)
+	eq(quick.blimp.readyAt, math.floor(24 * H * 0.05 + 0.5), "scaled repair")
+	Blimp.tick(quick, quick.blimp.readyAt, 0.05)
+	eq(quick.blimp.leavesAt, quick.blimp.readyAt + math.floor(15 * H * 0.05 + 0.5), "scaled window")
 	-- Finishing the repair early brings the first blimp in too
 	local fresh = Profile.migrate(nil) :: any
 	fresh.level = 17

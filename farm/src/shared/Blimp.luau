@@ -15,6 +15,7 @@ local Config = require("./Config/Blimp")
 local Items = require("./Items")
 local OrderGen = require("./OrderGen")
 local Rng = require("./Rng")
+local TownRules = require("./TownRules")
 
 local Blimp = {}
 
@@ -28,6 +29,11 @@ export type Payout = {
 	chest: { Prize }?, -- every crate loaded
 }
 
+-- Seconds a new timer runs for under the Studio time scale (as the server's Clock.duration)
+local function secs(seconds: number, scale: number?): number
+	return math.max(1, math.floor(seconds * (scale or 1) + 0.5))
+end
+
 function Blimp.isRepaired(data: { [string]: any }, now: number): boolean
 	local readyAt = data.blimp.readyAt
 	return readyAt ~= nil and now >= readyAt
@@ -38,11 +44,13 @@ function Blimp.isDocked(data: { [string]: any }): boolean
 end
 
 -- Can the mast's repair start now? (Coins are checked by the caller.)
-function Blimp.canRepair(data: { [string]: any }): (boolean, string?)
+function Blimp.canRepair(data: { [string]: any }, now: number): (boolean, string?)
 	if data.blimp.readyAt ~= nil then
 		return false
 	elseif data.level < Config.unlockLevel then
 		return false, string.format("The Blimp Mast can be repaired at level %d", Config.unlockLevel)
+	elseif not TownRules.landDone(data, Config.land, now) then
+		return false, "The Blimp Mast stands in the West Meadow. Clear that land first."
 	end
 	return true
 end
@@ -141,10 +149,11 @@ function Blimp.newLoad(data: { [string]: any })
 end
 
 -- Start the mast's repair: the first blimp is due the moment it's done, and its load is drawn
--- now so Next Flight can show it during the repair. `seed` is a fresh random number.
-function Blimp.repair(data: { [string]: any }, now: number, seed: number)
+-- now so Next Flight can show it during the repair. `seed` is a fresh random number; `scale`
+-- is the Studio time scale for every timer it starts (1 when left out).
+function Blimp.repair(data: { [string]: any }, now: number, seed: number, scale: number?)
 	local blimp = data.blimp
-	blimp.readyAt = now + Config.repairSeconds
+	blimp.readyAt = now + secs(Config.repairSeconds, scale)
 	blimp.arrivesAt = blimp.readyAt
 	blimp.leavesAt = nil
 	blimp.seed = Rng.normalize(seed)
@@ -164,24 +173,24 @@ function Blimp.finishRepair(data: { [string]: any }, now: number): boolean
 	return true
 end
 
-local function depart(data: { [string]: any }, leftAt: number)
+local function depart(data: { [string]: any }, leftAt: number, scale: number?)
 	local blimp = data.blimp
 	blimp.leavesAt = nil
-	blimp.arrivesAt = leftAt + Config.gapSeconds
+	blimp.arrivesAt = leftAt + secs(Config.gapSeconds, scale)
 	blimp.flights = (blimp.flights or 0) + 1
 	Blimp.newLoad(data)
 end
 
 -- Move the blimp on while the player is in the game: dock it when it's due, and send it away
 -- empty-handed when its loading window has run out. Returns "docked", "expired" or nil.
-function Blimp.tick(data: { [string]: any }, now: number): string?
+function Blimp.tick(data: { [string]: any }, now: number, scale: number?): string?
 	local blimp = data.blimp
 	if not Blimp.isRepaired(data, now) then
 		return nil
 	end
 	if blimp.leavesAt ~= nil then
 		if now >= blimp.leavesAt then
-			depart(data, blimp.leavesAt)
+			depart(data, blimp.leavesAt, scale)
 			return "expired"
 		end
 		return nil
@@ -191,7 +200,7 @@ function Blimp.tick(data: { [string]: any }, now: number): string?
 			Blimp.newLoad(data)
 		end
 		blimp.arrivesAt = nil
-		blimp.leavesAt = now + Config.loadSeconds
+		blimp.leavesAt = now + secs(Config.loadSeconds, scale)
 		return "docked"
 	end
 	return nil
@@ -280,7 +289,7 @@ function Blimp.payout(load: Load): Payout
 end
 
 -- Send a docked blimp: returns what it pays (the caller credits it) and starts the gap
-function Blimp.send(data: { [string]: any }, now: number): Payout?
+function Blimp.send(data: { [string]: any }, now: number, scale: number?): Payout?
 	local blimp = data.blimp
 	if not Blimp.isDocked(data) or now >= blimp.leavesAt then
 		return nil
@@ -290,7 +299,7 @@ function Blimp.send(data: { [string]: any }, now: number): Payout?
 	if payout.chest then
 		blimp.fullHolds = (blimp.fullHolds or 0) + 1
 	end
-	depart(data, now)
+	depart(data, now, scale)
 	return payout
 end
 
