@@ -134,6 +134,31 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Canopy", 1.3, at(0, 1.55, 0), Palette.leaf, QUIET)
 		b.post("Cup", 0.3, 0.35, at(0, 0.5, -0.3), Palette.cream, QUIET)
 	end,
+	CorkOak = function(b)
+		-- A curved slab of cork bark: tan outside, lighter inside
+		b.block("Bark", Vector3.new(1.4, 0.9, 0.35), at(0, 0.45, 0.15), Palette.trunk:Lerp(Palette.bread, 0.5), QUIET)
+		b.block("Inner", Vector3.new(1.3, 0.8, 0.1), at(0, 0.45, -0.07), Palette.bread:Lerp(Palette.cream, 0.4), QUIET)
+	end,
+	InflatableBoat = function(b)
+		-- A little yellow rubber dinghy with a red rim and an oar
+		b.block("Hull", Vector3.new(1.6, 0.4, 0.9), at(0, 0.2, 0), Palette.roofMustard, QUIET)
+		b.cyl("Rim", 1.7, 0.45, at(0, 0.5, 0.4), Palette.roofRed, QUIET)
+		b.cyl("Rim", 1.7, 0.45, at(0, 0.5, -0.4), Palette.roofRed, QUIET)
+		b.block(
+			"Oar",
+			Vector3.new(1.4, 0.1, 0.2),
+			at(0, 0.75, 0) * CFrame.Angles(0, math.rad(30), 0),
+			Palette.wood,
+			QUIET
+		)
+	end,
+	SoapDispenser = function(b)
+		-- A pump bottle of pink soap on a cork base
+		b.post("Base", 0.25, 0.9, at(0, 0.12, 0), Palette.trunk:Lerp(Palette.bread, 0.5), QUIET)
+		b.post("Bottle", 1, 0.7, at(0, 0.75, 0), Palette.flowerPink, QUIET)
+		b.post("Pump", 0.35, 0.2, at(0, 1.42, 0), Palette.cream, QUIET)
+		b.block("Spout", Vector3.new(0.35, 0.12, 0.12), at(-0.15, 1.6, 0), Palette.cream, QUIET)
+	end,
 	Silk = function(b)
 		-- Three white cocoons on a twig
 		b.block("Twig", Vector3.new(1.8, 0.15, 0.15), at(0, 0.9, 0), Palette.woodDark, QUIET)

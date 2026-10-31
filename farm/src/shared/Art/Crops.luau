@@ -333,6 +333,26 @@ READY.RubberTrees = function(b, color)
 	end
 end
 
+-- Cork Oak (level 38): squat oak saplings, then four broad oaks with their thick bark
+-- stripped in a pale band round the trunk, the strip of cork stacked at the foot.
+GROWING.CorkOak = function(b)
+	for _, x in { -2, 2 } do
+		for _, z in { -2, 2 } do
+			b.post("Trunk", 1.2, 0.45, Vector3.new(x, 1, z), Palette.trunk)
+			b.ball("Leaves", 1.5, Vector3.new(x, 1.9, z), Palette.leaf)
+		end
+	end
+end
+READY.CorkOak = function(b, color)
+	for _, x in { -2, 2 } do
+		for _, z in { -2, 2 } do
+			b.post("Trunk", 2.6, 0.8, Vector3.new(x, 1.7, z), Palette.trunk)
+			b.post("Stripped", 0.8, 0.85, Vector3.new(x, 1.1, z), color, { shadow = false })
+			b.ball("Canopy", 2.8, Vector3.new(x, 3.6, z), Palette.leaf)
+		end
+	end
+end
+
 -- Silk (level 31): rows of low mulberry bushes, then the bushes hung with plump white cocoons.
 GROWING.Silk = function(b)
 	for _, z in ArtCrops.ROWS do
