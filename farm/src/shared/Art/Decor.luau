@@ -708,6 +708,147 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 	end,
 }
 
+-- Gold Town Record trophies (Config/Trophies): awarded, never sold. Each is a gold statue for
+-- its record on a stone plinth with a gold trim band and a cream plaque. 1 x 1 tile.
+local GOLD = Palette.coins
+local GOLD_DARK = Palette.coins:Lerp(Palette.woodDark, 0.3)
+local GOLD_LIGHT = Palette.coins:Lerp(Palette.cream, 0.35)
+local TOP = 1.25 -- the plinth's top, where each statue stands
+
+local function plinth(b: Kit.Builder)
+	b.block("Plinth", Vector3.new(2.6, 1, 2.6), at(0, 0.5, 0), Palette.stoneLight, SOLID)
+	b.block("Trim", Vector3.new(2.8, 0.25, 2.8), at(0, 1.12, 0), GOLD_DARK, QUIET)
+	b.block("Plaque", Vector3.new(1.4, 0.45, 0.1), at(0, 0.5, -1.33), Palette.cream, QUIET)
+end
+
+local TROPHIES: { [string]: (Kit.Builder) -> () } = {
+	-- Order Runner: a clipboard with its clip and two written lines
+	Orders = function(b)
+		local board = CFrame.new(0, TOP + 1.3, 0) * CFrame.Angles(math.rad(-12), 0, 0)
+		b.block("Board", Vector3.new(1.7, 2.4, 0.25), board, GOLD)
+		b.block("Clip", Vector3.new(0.8, 0.35, 0.4), board * CFrame.new(0, 1.15, 0), GOLD_DARK, QUIET)
+		for i = 1, 2 do
+			b.block(
+				"Line",
+				Vector3.new(1.1, 0.12, 0.05),
+				board * CFrame.new(0, 0.5 - i * 0.5, -0.15),
+				GOLD_LIGHT,
+				QUIET
+			)
+		end
+	end,
+	-- Green Thumb: a bound wheat sheaf
+	Harvest = function(b)
+		for i, lean in { -14, 0, 14 } do
+			local stalk = CFrame.new(0, TOP, 0) * CFrame.Angles(0, 0, math.rad(lean)) * CFrame.new(0, 1.2, 0)
+			b.block("Stalk", Vector3.new(0.25, 2.4, 0.25), stalk, GOLD)
+			b.ball("Head", 0.6, (stalk * CFrame.new(0, 1.35, 0)).Position, if i == 2 then GOLD_LIGHT else GOLD)
+		end
+		b.post("Band", 0.3, 0.75, at(0, TOP + 0.9, 0), GOLD_DARK, QUIET)
+	end,
+	-- Busy Workshop: an upright cog
+	Goods = function(b)
+		local face = CFrame.new(0, TOP + 1.4, 0) * Kit.yaw(90)
+		b.cyl("Cog", 0.4, 2, face, GOLD)
+		for _, spin in { 0, 45 } do
+			b.block("Teeth", Vector3.new(0.35, 2.6, 0.35), face * CFrame.Angles(math.rad(spin), 0, 0), GOLD_DARK)
+			b.block("Teeth", Vector3.new(0.35, 0.35, 2.6), face * CFrame.Angles(math.rad(spin), 0, 0), GOLD_DARK)
+		end
+		b.cyl("Hub", 0.6, 0.7, face, GOLD_LIGHT, QUIET)
+	end,
+	-- Barnyard Pal: a milk churn with its lid and handles
+	Animals = function(b)
+		b.post("Churn", 1.7, 1.5, at(0, TOP + 0.85, 0), GOLD)
+		b.post("Neck", 0.6, 0.9, at(0, TOP + 2, 0), GOLD)
+		b.post("Lid", 0.25, 1.1, at(0, TOP + 2.4, 0), GOLD_DARK, QUIET)
+		b.ball("Knob", 0.35, at(0, TOP + 2.65, 0), GOLD_LIGHT, QUIET)
+		for _, x in { -0.85, 0.85 } do
+			b.block("Handle", Vector3.new(0.2, 0.5, 0.5), at(x, TOP + 1.5, 0), GOLD_DARK, QUIET)
+		end
+	end,
+	-- Coin Jar: a stack of coins with one big coin standing up behind
+	Coins = function(b)
+		for i = 0, 2 do
+			b.post(
+				"Stack",
+				0.3,
+				1.2 - i * 0.05,
+				at(-0.4, TOP + 0.15 + i * 0.32, -0.3),
+				if i == 1 then GOLD_DARK else GOLD
+			)
+		end
+		local coin = CFrame.new(0.3, TOP + 1.2, 0.3) * Kit.yaw(80)
+		b.cyl("Coin", 0.3, 2.2, coin, GOLD)
+		b.cyl("Face", 0.34, 1.5, coin, GOLD_LIGHT, QUIET)
+	end,
+	-- Growing Town: three peg-folk, tallest in the middle
+	Population = function(b)
+		for i, x in { -0.75, 0, 0.75 } do
+			local h = if i == 2 then 1.4 else 1
+			b.post("Body", h, 0.6, at(x, TOP + h / 2, if i == 2 then 0.2 else -0.1), GOLD)
+			b.ball(
+				"Head",
+				0.55,
+				at(x, TOP + h + 0.3, if i == 2 then 0.2 else -0.1),
+				if i == 2 then GOLD_LIGHT else GOLD
+			)
+		end
+	end,
+	-- Home Builder: a little gabled house with a chimney and a door
+	Houses = function(b)
+		b.block("House", Vector3.new(1.8, 1.3, 1.6), at(0, TOP + 0.65, 0), GOLD)
+		Kit.gableRoof(b, "Roof", at(0, TOP + 1.3, 0), 2.1, 1.9, 0.9, GOLD_DARK)
+		b.block("Chimney", Vector3.new(0.35, 0.7, 0.35), at(0.5, TOP + 2, 0.4), GOLD, QUIET)
+		b.block("Door", Vector3.new(0.5, 0.8, 0.08), at(0, TOP + 0.4, -0.82), GOLD_LIGHT, QUIET)
+	end,
+	-- Factory Row: a sawtooth-roofed mill with a tall chimney
+	Factories = function(b)
+		b.block("Mill", Vector3.new(2, 1.2, 1.6), at(0, TOP + 0.6, 0), GOLD)
+		for _, x in { -0.5, 0.5 } do
+			b.wedge("Tooth", Vector3.new(0.95, 0.6, 1.6), CFrame.new(x, TOP + 1.5, 0) * Kit.yaw(90), GOLD_DARK)
+		end
+		b.post("Chimney", 1.6, 0.4, at(0.75, TOP + 2, 0.5), GOLD)
+		b.post("ChimneyCap", 0.2, 0.55, at(0.75, TOP + 2.85, 0.5), GOLD_LIGHT, QUIET)
+	end,
+	-- Pretty Plot: a tulip in bloom with two leaves
+	Decor = function(b)
+		b.post("Stem", 2, 0.22, at(0, TOP + 1, 0), GOLD_DARK)
+		b.ball("Bloom", 1, at(0, TOP + 2.25, 0), GOLD)
+		for _, sx in { -1, 1 } do
+			b.block(
+				"Petal",
+				Vector3.new(0.35, 0.8, 0.5),
+				CFrame.new(sx * 0.32, TOP + 2.5, 0) * CFrame.Angles(0, 0, math.rad(-sx * 15)),
+				GOLD_LIGHT,
+				QUIET
+			)
+			b.block(
+				"Leaf",
+				Vector3.new(0.7, 0.18, 0.35),
+				CFrame.new(sx * 0.4, TOP + 0.7, 0) * CFrame.Angles(0, 0, math.rad(sx * 30)),
+				GOLD,
+				QUIET
+			)
+		end
+	end,
+	-- Helping Hand: a heart
+	Helping = function(b)
+		local heart = CFrame.new(0, TOP + 1.3, 0)
+		b.block("Point", Vector3.new(1.3, 1.3, 0.6), heart * CFrame.Angles(0, 0, math.rad(45)), GOLD)
+		for _, sx in { -1, 1 } do
+			b.ball("Lobe", 1.3, (heart * CFrame.new(sx * 0.46, 0.5, 0)).Position, GOLD)
+		end
+		b.ball("Shine", 0.35, (heart * CFrame.new(-0.5, 0.8, -0.5)).Position, GOLD_LIGHT, QUIET)
+	end,
+}
+
+for record, statue in TROPHIES do
+	BUILDERS["Trophy" .. record] = function(b)
+		plinth(b)
+		statue(b)
+	end
+end
+
 function ArtDecor.has(id: string): boolean
 	return BUILDERS[id] ~= nil
 end

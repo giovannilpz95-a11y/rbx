@@ -422,6 +422,16 @@ SCENES.blimp = function(root)
 	ArtBlimp.setState(broken, "Broken")
 end
 
+SCENES.trophies = function(root)
+	ground(root, 50)
+	local ids =
+		{ "Orders", "Harvest", "Goods", "Animals", "Coins", "Population", "Houses", "Factories", "Decor", "Helping" }
+	for i, record in ids do
+		local m = Kit.model(record, root)
+		ArtDecor.build("Trophy" .. record, m, CFrame.new(-18 + ((i - 1) % 5) * 9, 0, if i <= 5 then -5 else 5))
+	end
+end
+
 SCENES.decor4 = function(root)
 	ground(root, 60)
 	local row = {

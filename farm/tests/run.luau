@@ -257,7 +257,11 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 31, "levels 17 to 31 are banked")
+	eq(Levels.built, 32, "levels 17 to 32 are banked")
+	eq(Levels.list[32].xpToNext, 29547, "L32 row")
+	eq(Recipes.Plastic.inputs.RubberTrees, 2, "Plastic from 2 Rubber Trees")
+	eq(Town.houses.Condos.copyLevels[1], 32, "Terrace Condos")
+	eq(Town.community.GrandHotel.capBonus, 155, "Grand Hotel")
 	eq(Levels.list[31].xpToNext, 26654, "L31 row")
 	ok(table.find(Balance.enabledCrops, "Silk") ~= nil and Crops.Silk.growSeconds == 15 * 3600, "Silk at 31")
 	eq(Recipes.SunHat.inputs.SilkFabric, 1, "Sun Hat (Township's inputs)")
@@ -1476,6 +1480,8 @@ test("records: the public card others see has stars and the card's six numbers",
 	eq(card.stats.Harvest, 640, "harvest")
 	eq(card.stats.Orders, 120, "orders")
 	eq(card.stats.Coins, nil, "only the card's stats")
+	eq(card.townHall, 1, "a new town's hall has one storey")
+	eq(card.upgrading, false, "nothing going up")
 	local n = 0
 	for _ in card.stats do
 		n += 1

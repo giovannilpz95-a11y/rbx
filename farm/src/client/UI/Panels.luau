@@ -275,6 +275,17 @@ end
 
 local ORDER_CARD = 104
 
+-- Live text (Studio perf check): panels listed in tickPanels don't rebuild every second. Their
+-- countdowns register an updater here instead, and the once-a-second tick just calls those.
+-- An updater returns false when its line needs more than new text (a price moved, a timer
+-- ran out), and then the panel rebuilds once. Cleared on every render.
+local liveUpdaters: { () -> boolean } = {}
+local tickPanels: { [string]: boolean } = { Orders = true }
+
+local function live(update: () -> boolean)
+	table.insert(liveUpdaters, update)
+end
+
 local function renderOrders(state: { [string]: any })
 	titleLabel.Text = "Order Board"
 	local now = ClientStore.now()
@@ -375,11 +386,21 @@ local function renderOrders(state: { [string]: any })
 			end
 		else
 			local waitLeft = Timer.remaining(slot.refreshAt or 0, now)
-			Ui.label(
+			local waitLabel = Ui.label(
 				if waitLeft > 0 then "New order in " .. Timer.format(waitLeft) else "A new order is on its way...",
 				{ Size = UDim2.new(1, -150, 0, 22), TextColor3 = Ui.colors.muted, Parent = card }
 			)
 			if waitLeft > 0 then
+				local price = Speedup.orderWait(waitLeft)
+				local refreshAt = slot.refreshAt or 0
+				live(function()
+					local left = Timer.remaining(refreshAt, ClientStore.now())
+					if left <= 0 or Speedup.orderWait(left) ~= price then
+						return false -- the "Now" price moved or the wait is over: rebuild
+					end
+					waitLabel.Text = "New order in " .. Timer.format(left)
+					return true
+				end)
 				gemButton("order:" .. i, "Now", Speedup.orderWait(waitLeft), function()
 					Remotes.fire("Order_SkipWait", i)
 				end, {
@@ -2275,6 +2296,7 @@ local function render()
 	releaseIcons()
 	releasePictures()
 	tabNames = {}
+	table.clear(liveUpdaters)
 	Ui.clear(body)
 	if current == "Orders" then
 		renderOrders(state)
@@ -2401,7 +2423,22 @@ function Panels.init()
 	task.spawn(function()
 		while true do
 			task.wait(1)
-			if current ~= nil and not staticPanels[current] and not anyArmed() then
+			if current == nil or staticPanels[current] or anyArmed() then
+				continue
+			end
+			if tickPanels[current] then
+				-- Only the countdowns change: update their text, rebuild only if one asks
+				local rebuild = false
+				for _, update in liveUpdaters do
+					if not update() then
+						rebuild = true
+						break
+					end
+				end
+				if rebuild then
+					render()
+				end
+			else
 				render()
 			end
 		end

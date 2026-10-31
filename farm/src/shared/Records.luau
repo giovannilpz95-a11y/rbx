@@ -138,7 +138,7 @@ end
 
 -- What other players see on this player's Farmer Card: stars and the card's six numbers.
 -- The server puts it on the Player as the FarmerCard attribute (JSON).
-export type PublicCard = { stars: number, stats: { [string]: number } }
+export type PublicCard = { stars: number, stats: { [string]: number }, townHall: number, upgrading: boolean }
 
 function Records.publicCard(data: { [string]: any }, now: number): PublicCard
 	local stats: { [string]: number } = {}
@@ -148,7 +148,8 @@ function Records.publicCard(data: { [string]: any }, now: number): PublicCard
 			stats[id] = Records.value(data, def.stat, now)
 		end
 	end
-	return { stars = Records.stars(Records.view(data, now)), stats = stats }
+	local storeys, upgrading = TownRules.townHall(data, now)
+	return { stars = Records.stars(Records.view(data, now)), stats = stats, townHall = storeys, upgrading = upgrading }
 end
 
 function Records.title(stars: number): string
