@@ -49,6 +49,7 @@ local TownRules = require(Shared.TownRules)
 local Layout = require(Shared.Layout)
 
 local DataService = require(script.Parent.DataService)
+local NetService = require(script.Parent.NetService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 local DecorModels = require(script.Parent.Parent.Util.DecorModels)
 
@@ -401,6 +402,9 @@ end
 local function buildFactory(plot: Model, id: string, at: (Vector3, number) -> CFrame, spot: Layout.Spot?)
 	local def = Factories[id]
 	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.factories[id]
+	if pos == nil then
+		return -- a factory with no usual spot stands only once it's built and placed
+	end
 	local factory = Instance.new("Model")
 	factory.Name = id
 	factory:SetAttribute("LayoutKey", Layout.key("factory", id))
@@ -517,6 +521,9 @@ end
 local function buildPen(plot: Model, id: string, at: (Vector3, number) -> CFrame, spot: Layout.Spot?)
 	-- The gate faces south (+Z), toward the Barn and the spawn (then any turn the player gave it)
 	local pos = if spot then Vector3.new(spot.x, 0, spot.z) else LAYOUT.pens[id]
+	if pos == nil then
+		return -- a pen with no usual spot stands only once it's built and placed
+	end
 	local turn = if spot then spot.r else 0
 	buildPenAt(plot, id, at(pos, 0.6) * Kit.yaw(turn) * Kit.yaw(LAYOUT.penYaw[id] or 180))
 	local pen = plot:FindFirstChild(id)
@@ -960,24 +967,27 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 	end
 	for _, house in data.town.houses do
 		local def = Town.houses[house.type]
+		-- Houses past the lot list (built once the lots ran out) stand only where they're placed
 		local pos = LAYOUT.houseLots[house.lot]
-		if def == nil or pos == nil then
+		local placed = Layout.spot(data, Layout.key("house", house.lot))
+		if def == nil or (pos == nil and placed == nil) then
 			continue
 		end
+		local lotYaw = if Lots.houses[house.lot] then Lots.houses[house.lot].yaw else 0
 		local name = "House_" .. house.lot
 		local state = house.type .. ":" .. tostring(TownRules.isDone(house, now))
 		if cache[name] ~= state then
 			cache[name] = state
 			local key = Layout.key("house", house.lot)
 			local spot = Layout.spot(data, key)
-				or PlotService.placeNew(player, data, key, pos, folder:FindFirstChild(name))
+				or PlotService.placeNew(player, data, key, pos :: Vector3, folder:FindFirstChild(name))
 			townModel(
 				folder,
 				name,
 				slot.cframe
-					* CFrame.new(if spot then Vector3.new(spot.x, 0, spot.z) else pos)
+					* CFrame.new(if spot then Vector3.new(spot.x, 0, spot.z) else pos :: Vector3)
 					* Kit.yaw(if spot then spot.r else 0)
-					* Kit.yaw(Lots.houses[house.lot].yaw),
+					* Kit.yaw(lotYaw),
 				"House",
 				house.type,
 				8,
@@ -990,10 +1000,16 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 	end
 	for id, entry in data.town.community do
 		local lot = Town.community[id] and TownRules.communityLot(id)
-		local pos = lot and LAYOUT.communityLots[lot]
-		if lot == nil or pos == nil then
+		if lot == nil then
+			continue -- a Town Hall upgrade
+		end
+		-- Past the lot list, or placed off its lot: it stands where it was placed
+		local pos = LAYOUT.communityLots[lot]
+		local placed = Layout.spot(data, Layout.key("community", id))
+		if pos == nil and placed == nil then
 			continue
 		end
+		local lotYaw = if Lots.community[lot] then Lots.community[lot].yaw else 0
 		local def = Town.community[id]
 		local name = "Community_" .. id
 		local state = tostring(TownRules.isDone(entry, now))
@@ -1001,14 +1017,14 @@ local function refreshTown(player: Player, model: Model, data: { [string]: any }
 			cache[name] = state
 			local key = Layout.key("community", id)
 			local spot = Layout.spot(data, key)
-				or PlotService.placeNew(player, data, key, pos, folder:FindFirstChild(name))
+				or PlotService.placeNew(player, data, key, pos :: Vector3, folder:FindFirstChild(name))
 			townModel(
 				folder,
 				name,
 				slot.cframe
-					* CFrame.new(if spot then Vector3.new(spot.x, 0, spot.z) else pos)
+					* CFrame.new(if spot then Vector3.new(spot.x, 0, spot.z) else pos :: Vector3)
 					* Kit.yaw(if spot then spot.r else 0)
-					* Kit.yaw(Lots.community[lot].yaw),
+					* Kit.yaw(lotYaw),
 				"Community",
 				id,
 				12,
@@ -1783,30 +1799,99 @@ function PlotService.placeNew(
 	if not PlotService.footprintBlocked(player, kind, usual.X, usual.Z, 0, nil, true) then
 		return nil
 	end
+	local spot = PlotService.findOpenSpot(player, data, kind, usual)
+	if spot then
+		data.layout[key] = spot
+		DataService.markDirty(player, true)
+	end
+	return spot
+end
+
+-- Let the player place a building they just started (the client's Move mode picks it up;
+-- Cancel leaves it where it went up). Not during the first-session guide, which points at
+-- the usual spots.
+function PlotService.offerPlace(player: Player, data: { [string]: any }, key: string)
+	if (data.tutorial and data.tutorial.step or 0) == 0 then
+		NetService.popup(player, { kind = "Place", key = key })
+	end
+end
+
+-- The building's usual spot in the farm layout (plot-local), or nil when it has none
+function PlotService.usualSpot(kind: string, id: string): Vector3?
+	if kind == "factory" then
+		return LAYOUT.factories[id]
+	elseif kind == "pen" then
+		return LAYOUT.pens[id]
+	elseif kind == "field" then
+		return LAYOUT.fields[id]
+	elseif kind == "community" then
+		local lot = TownRules.communityLot(id)
+		return if lot then LAYOUT.communityLots[lot] else nil
+	end
+	return nil
+end
+
+-- Before building `kind:id`: where it should go up. Returns nothing when it stands fine where it
+-- is (moved there, or its usual spot on land the farm owns), a new spot to save when it has no
+-- usual spot or that spot's land (`land`) isn't cleared yet (the nearest open spot to the
+-- player), or an error when there's no room.
+function PlotService.prepareBuild(
+	player: Player,
+	data: { [string]: any },
+	kind: string,
+	id: string,
+	land: number?
+): (Layout.Spot?, string?)
 	local now = Clock.now()
-	local x0, z0 = Layout.snap(usual.X), Layout.snap(usual.Z)
-	for ring = 1, 40 do
-		local step = ring * Layout.GRID * 2
-		for _, offset in
-			{
-				{ step, 0 },
-				{ -step, 0 },
-				{ 0, step },
-				{ 0, -step },
-				{ step, step },
-				{ -step, step },
-				{ step, -step },
-				{ -step, -step },
-			}
-		do
-			local x, z = x0 + offset[1], z0 + offset[2]
-			if
-				Layout.onOwnLand(data, kind, x, z, 0, now)
-				and not PlotService.footprintBlocked(player, kind, x, z, 0, nil, false)
-			then
-				data.layout[key] = { x = x, z = z, r = 0 }
-				DataService.markDirty(player, true)
-				return data.layout[key]
+	local placed = Layout.spot(data, Layout.key(kind, id))
+	if placed then
+		return nil, nil
+	end
+	local usual = PlotService.usualSpot(kind, id)
+	if usual and (land == nil or land == 0 or TownRules.landDone(data, land, now)) then
+		return nil, nil
+	end
+	local spot = PlotService.findOpenSpot(player, data, kind, PlotService.nearPlayer(player))
+	if spot == nil then
+		return nil, "There's no room on your land. Clear more land, or move buildings to make room (Move)"
+	end
+	return spot, nil
+end
+
+-- Where the player stands on their farm (plot-local), or the spawn pad when they're elsewhere
+function PlotService.nearPlayer(player: Player): Vector3
+	local slot = slotByPlayer[player]
+	local character = if typeof(player) == "Instance" then player.Character else nil
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if slot and root then
+		local here = slot.cframe:PointToObjectSpace(root.Position)
+		if math.abs(here.X) <= PLOT_SIZE / 2 and math.abs(here.Z) <= PLOT_SIZE / 2 then
+			return Vector3.new(here.X, 0, here.Z)
+		end
+	end
+	return LAYOUT.spawn
+end
+
+-- The nearest open spot to `near` (plot-local) for a building of `kind`: on the farm's land and
+-- clear of everything standing there, searched in growing squares 4 studs apart. Nil when
+-- there's no room.
+function PlotService.findOpenSpot(player: Player, data: { [string]: any }, kind: string, near: Vector3): Layout.Spot?
+	local now = Clock.now()
+	local x0, z0 = Layout.snap(near.X), Layout.snap(near.Z)
+	local function fits(x: number, z: number): boolean
+		return Layout.onOwnLand(data, kind, x, z, 0, now) and not PlotService.footprintBlocked(player, kind, x, z, 0)
+	end
+	if fits(x0, z0) then
+		return { x = x0, z = z0, r = 0 }
+	end
+	local STEP = Layout.GRID * 2
+	for ring = 1, math.ceil(PLOT_SIZE / STEP) do
+		for i = -ring, ring do
+			for _, cell in { { i, -ring }, { i, ring }, { -ring, i }, { ring, i } } do
+				local x, z = x0 + cell[1] * STEP, z0 + cell[2] * STEP
+				if fits(x, z) then
+					return { x = x, z = z, r = 0 }
+				end
 			end
 		end
 	end

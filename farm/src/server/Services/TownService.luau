@@ -11,13 +11,13 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Barn = require(Shared.Config.Barn)
 local Drops = require(Shared.Drops)
 local Items = require(Shared.Items)
-local Land = require(Shared.Config.Land)
 local Lots = require(Shared.Lots)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
 local Tools = require(Shared.Config.Tools)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
+local Layout = require(Shared.Layout)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -64,24 +64,32 @@ function TownService.buildHouse(player: Player, houseId: any): (boolean, string?
 	end
 	local open = TownRules.houseLotCount(data, now)
 	local lot = TownRules.freeLot(data, open)
+	local spot = nil
 	if lot == nil then
-		if open < #Lots.houses then
-			-- The next lot waits for its land: North Lane's middle, then its two ends
-			local land = Land.expansions[Lots.houses[open + 1].land].displayName
-			if Lots.houses[open + 1].land == Lots.northLaneLand then
-				return false, string.format("Main Street is full. Clear the %s to open North Lane.", land)
-			end
-			return false, string.format("North Lane is full. Clear the %s to open its ends.", land)
+		-- No open lot: the House goes up at the nearest open spot on the farm's land (the
+		-- free-placement sandbox), on a lot number past the lot list
+		lot = #Lots.houses
+		for _, house in data.town.houses do
+			lot = math.max(lot, house.lot)
 		end
-		return false, "Every House lot is taken"
+		lot += 1
+		spot = PlotService.findOpenSpot(player, data, "house", PlotService.nearPlayer(player))
+		if spot == nil then
+			return false, "There's no room for a House. Clear more land, or move buildings to make room (Move)"
+		end
 	end
 	if not EconomyService.spend(player, "Coins", def.coinCost, "build_" .. houseId) then
 		return false, string.format("A %s costs %d Coins", def.displayName, def.coinCost)
+	end
+	local key = Layout.key("house", lot)
+	if spot then
+		data.layout[key] = spot
 	end
 	table.insert(data.town.houses, { type = houseId, lot = lot, readyAt = now + Clock.duration(def.buildSeconds) })
 	EconomyService.add(player, "XP", def.xp, "build_" .. houseId)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
+	PlotService.offerPlace(player, data, key)
 	return true
 end
 
@@ -97,17 +105,17 @@ function TownService.buildCommunity(player: Player, buildingId: any): (boolean, 
 	if data.level < def.unlockLevel then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
 	end
-	local open, land = TownRules.communityLotOpen(data, buildingId, Clock.now())
-	if not open then
-		if land == nil then
-			return false
+	-- Its lot waits for its land (or it has none past the lot list): then it goes up at the
+	-- nearest open spot on the farm's land instead (the free-placement sandbox)
+	local spot = nil
+	local lot = TownRules.communityLot(buildingId)
+	if lot ~= nil then
+		local open, land = TownRules.communityLotOpen(data, buildingId, Clock.now())
+		local noRoom
+		spot, noRoom = PlotService.prepareBuild(player, data, "community", buildingId, if open then nil else land or 0)
+		if noRoom then
+			return false, noRoom
 		end
-		return false,
-			string.format(
-				"The %s's lot is in the %s. Clear that land first.",
-				def.displayName,
-				Land.expansions[land].displayName
-			)
 	end
 	if not InventoryService.has(player, def.materials) then
 		return false, "Not enough building materials"
@@ -116,10 +124,17 @@ function TownService.buildCommunity(player: Player, buildingId: any): (boolean, 
 		return false, string.format("The %s costs %d Coins", def.displayName, def.coinCost)
 	end
 	InventoryService.remove(player, def.materials)
+	local key = Layout.key("community", buildingId)
+	if spot then
+		data.layout[key] = spot
+	end
 	data.town.community[buildingId] = { readyAt = Clock.now() + Clock.duration(def.buildSeconds) }
 	EconomyService.add(player, "XP", def.xp, "build_" .. buildingId)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
+	if lot ~= nil then
+		PlotService.offerPlace(player, data, key)
+	end
 	return true
 end
 

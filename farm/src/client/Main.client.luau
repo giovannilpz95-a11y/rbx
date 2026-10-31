@@ -50,6 +50,10 @@ MovementController.init()
 DecorPlacer.init()
 MovePlacer.init()
 Hud.onMove = MovePlacer.toggle
+Hud.handlers.Place = function(payload) -- place a building you just started
+	Panels.close()
+	MovePlacer.offer(payload)
+end
 ReachController.tapOverride = MovePlacer.tap
 task.spawn(FactoryMotion.init)
 task.spawn(AnimalMotion.init)
