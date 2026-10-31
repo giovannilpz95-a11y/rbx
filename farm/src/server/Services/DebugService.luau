@@ -8,6 +8,8 @@ local Animals = require(Shared.Config.Animals)
 local Factories = require(Shared.Config.Factories)
 local BarnRules = require(Shared.BarnRules)
 local Blimp = require(Shared.Blimp)
+local Harbor = require(Shared.Harbor)
+local IslesConfig = require(Shared.Config.Isles)
 local Levels = require(Shared.Config.Levels)
 local Net = require(Shared.Net)
 local Profile = require(Shared.Profile)
@@ -237,6 +239,46 @@ function DebugService.quarry(player: Player): (boolean, string?)
 	return true
 end
 
+-- Harbor & Far Isles (Features/F02): the Harbor repaired, every isle up to the player's level
+-- open, two of each Bar in the Barn and every boat at sea brought home now. Below level 29 it
+-- opens the content bank's level 29 first.
+function DebugService.harbor(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	if data.level < IslesConfig.unlockLevel then
+		return false, string.format("Reach level %d first (+1 level)", IslesConfig.unlockLevel)
+	end
+	if data.harbor.readyAt == nil then
+		Harbor.repair(data, now, Random.new():NextInteger(1, 2147483646))
+	end
+	Harbor.finishRepair(data, now)
+	for _, isle in IslesConfig.isles do
+		if isle.unlockLevel <= data.level then
+			if data.harbor.isles[isle.id] == nil then
+				Harbor.unlockIsle(data, isle.id, now)
+			end
+			Harbor.finishIsle(data, isle.id, now)
+		end
+	end
+	for _, bar in IslesConfig.bars do
+		data.inventory.items[bar] = (data.inventory.items[bar] or 0) + 2
+	end
+	for _, boat in data.harbor.boats do
+		if boat.returnAt and boat.returnAt > now then
+			boat.returnAt = now
+		end
+	end
+	data.harbor.driftDay = -1
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: Harbor repaired, isles open, +2 of each Bar, boats home, a new Driftwood Crate")
+	return true
+end
+
 -- Airship Freight (Features/F04): the Blimp Mast repaired and the Cargo Blimp docked now,
 -- ignoring level, land and Coins. Pressed while it's docked, it sends it off (no rewards) and
 -- brings a fresh load in.
@@ -435,6 +477,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Grant, 2, 4, DebugService.grant)
 	NetService.on(Net.Debug_Quarry, 1, 2, DebugService.quarry)
 	NetService.on(Net.Debug_Blimp, 1, 2, DebugService.blimp)
+	NetService.on(Net.Debug_Harbor, 1, 2, DebugService.harbor)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)

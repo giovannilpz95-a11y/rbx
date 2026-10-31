@@ -2306,6 +2306,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Town Express: leave now", "Debug_ExpressLeave", 240, 16)
 	devButton("Fill every open House lot with a Cottage", "Debug_FillLots", 340, 17)
 	devButton("Population for every building (Houses become the biggest type)", "Debug_Population", 380, 18)
+	devButton("Harbor: repaired, isles open to your level, Bars, boats home now", "Debug_Harbor", 380, 19)
 end
 
 ---------------------------------------------------------------------------------------------

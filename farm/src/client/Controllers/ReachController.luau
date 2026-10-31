@@ -220,6 +220,20 @@ local function act(part: BasePart)
 		ReachController.openMarket()
 	elseif kind == "Guild" then
 		Panels.open("Guild")
+	elseif kind == "Harbor" then
+		Panels.open("Harbor")
+	elseif kind == "HarborDrift" then
+		Remotes.fire("Harbor_Drift")
+	elseif kind == "HarborBoat" then
+		-- A boat that's back unloads straight away; otherwise the panel
+		local index = part:GetAttribute("Boat")
+		local harbor = ClientStore.state and ClientStore.state.harbor
+		local boat = harbor and harbor.boats[index]
+		if boat and boat.returnAt and ClientStore.now() >= boat.returnAt then
+			Remotes.fire("Harbor_Unload", index)
+		else
+			Panels.open("Harbor")
+		end
 	elseif kind == "Blimp" then
 		Panels.open("Blimp")
 	elseif kind == "BlimpCrate" then

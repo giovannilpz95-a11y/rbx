@@ -1742,6 +1742,19 @@ local function rehome(player: Player, data: { [string]: any }, now: number)
 	rehoming[player] = nil
 end
 
+-- Buildings kept in their own services (HarborService): each one's refresh runs with every
+-- PlotService.refresh, and `model` finds its model on the plot for Move mode. After a move the
+-- old model is destroyed and the next refresh builds it at its new spot.
+export type Feature = {
+	refresh: (player: Player, model: Model, data: { [string]: any }, now: number) -> (),
+	model: (plot: Model) -> Instance?,
+}
+local features: { [string]: Feature } = {}
+
+function PlotService.addFeature(kind: string, feature: Feature)
+	features[kind] = feature
+end
+
 function PlotService.refresh(player: Player)
 	local model = plotsByPlayer[player]
 	local data = DataService.get(player)
@@ -1766,6 +1779,9 @@ function PlotService.refresh(player: Player)
 	refreshShelf(player, model, data)
 	refreshBarn(player, model, data)
 	refreshMarket(player, model, data, now)
+	for _, feature in features do
+		feature.refresh(player, model, data, now)
+	end
 end
 
 ---------------------------------------------------------------------------------------------
@@ -1884,7 +1900,9 @@ function PlotService.layoutModel(player: Player, key: string): Instance?
 	if model == nil or kind == nil or id == nil then
 		return nil
 	end
-	if kind == "factory" or kind == "pen" then
+	if features[kind] then
+		return features[kind].model(model)
+	elseif kind == "factory" or kind == "pen" then
 		return model:FindFirstChild(id)
 	elseif kind == "field" then
 		local fields = model:FindFirstChild("Fields")
@@ -2060,6 +2078,15 @@ function PlotService.relocate(player: Player, key: string)
 	end
 	PlotService.refresh(player)
 end
+
+-- The plot's origin (its plot-local space), for models built by other services
+function PlotService.originCFrame(player: Player): CFrame?
+	local slot = slotByPlayer[player]
+	return slot and slot.cframe
+end
+
+PlotService.setScaffold = setScaffold
+PlotService.label = label
 
 function PlotService.getPlot(player: Player): Model?
 	return plotsByPlayer[player]
