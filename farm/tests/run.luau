@@ -1480,6 +1480,8 @@ test("records: the public card others see has stars and the card's six numbers",
 	eq(card.stats.Harvest, 640, "harvest")
 	eq(card.stats.Orders, 120, "orders")
 	eq(card.stats.Coins, nil, "only the card's stats")
+	eq(card.townHall, 1, "a new town's hall has one storey")
+	eq(card.upgrading, false, "nothing going up")
 	local n = 0
 	for _ in card.stats do
 		n += 1
