@@ -81,6 +81,10 @@
 	Each standing bucket counts one towards the Mud goal, and each spilt
 	layer adds one more to clear.
 
+	Beehives: block a cell and never break. Each hit (a match next to one,
+	once per wave, or a blast on it) sends a honey jar to the Honey goal (a
+	"Honey" effect from the hive).
+
 	Produce boxes: a stack of 3 ("v") or 2 ("V") blocks a cell like a bale
 	with that many layers. Each hit (a match next to it, or a blast) takes
 	the top box for the Boxes goal (a "Box" effect); if any are left, the
@@ -495,6 +499,12 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self.goals:onMud() -- a tipped bucket is one off the Mud goal
 		return
 	end
+	if cell.hive then
+		table.insert(wave.effects, { type = "Honey", x = cell.x, y = cell.y })
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, hive = true })
+		self.goals:onHoney()
+		return -- nothing breaks a hive
+	end
 	if cell.stack then
 		cell.bale -= 1
 		table.insert(wave.effects, { type = "Box", x = cell.x, y = cell.y })
@@ -752,6 +762,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Mud") then tiers[1] else tiers[4], cell)
 		elseif cell.stack then
 			table.insert(if goals:wants("Boxes") then tiers[1] else tiers[4], cell)
+		elseif cell.hive then
+			table.insert(if goals:wants("Honey") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
 			local worth = not cell.mailbox.open or cell.mailbox.mail
 			table.insert(if worth and goals:wants("Letters") then tiers[1] else tiers[4], cell)

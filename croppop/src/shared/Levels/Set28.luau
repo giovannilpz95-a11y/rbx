@@ -634,6 +634,13 @@ return {
 			{ 9, 7, "d" },
 			{ 2, 7, "d" },
 			{ 8, 7, "d" },
+			-- A hedge wall up top, so a level mixes the two: only the fences break.
+			{ 4, 1, "R" },
+			{ 5, 1, "R" },
+			{ 4, 2, "R" },
+			{ 5, 2, "R" },
+			{ 4, 3, "R" },
+			{ 5, 3, "R" },
 		},
 		goals = {
 			{ kind = "Fences" },

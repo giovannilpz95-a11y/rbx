@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  j  beehive: blocks a cell and never breaks; each hit (a match next to
+	     it or a blast) sends a honey jar to the Honey goal, which needs a
+	     count and at least one hive
 	  v  stack of 3 produce boxes   V  stack of 2: blocks like a bale with
 	     that many layers; each hit takes a box (the Boxes goal), and the
 	     rest hop into the nearest cell the wave just emptied
@@ -79,7 +82,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -131,6 +134,7 @@ local VALID_CHARS = {
 	u = true,
 	v = true,
 	V = true,
+	j = true,
 	y = true,
 	m = true,
 	M = true,
@@ -280,7 +284,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -339,6 +343,8 @@ function Levels.validate(level): string?
 				buckets += 1
 			elseif ch == "v" or ch == "V" then
 				boxes += 1
+			elseif ch == "j" then
+				hives += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -394,6 +400,15 @@ function Levels.validate(level): string?
 			return "seed sacks in the layout but no clover goal"
 		end
 	end
+	if hives > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Honey"
+		end
+		if not wanted then
+			return "beehives in the layout but no honey goal"
+		end
+	end
 	if buckets > 0 then
 		local wanted = false
 		for _, goal in level.goals do
@@ -441,6 +456,13 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Webs" then
 			if webs == 0 then
 				return "webs goal but no webs in the layout"
+			end
+		elseif goal.kind == "Honey" then
+			if hives == 0 then
+				return "honey goal but no beehives in the layout"
+			end
+			if type(goal.count) ~= "number" or goal.count < 1 then
+				return "honey goal needs a count"
 			end
 		elseif goal.kind == "Boxes" then
 			if boxes == 0 then

@@ -14,6 +14,7 @@
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 	  { kind = "Tarps" }                                 -- roll up every tarp cell
 	  { kind = "Webs" }                                  -- clear every web (blasts only)
+	  { kind = "Honey", count = 10 }                     -- collect N honey jars (each hit on a beehive sends one)
 	  { kind = "Boxes" }                                 -- take every produce box off the stacks
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
@@ -66,9 +67,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets and box stacks aren't bales for the HayBale goal.
+			-- mud buckets, box stacks and beehives aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -103,6 +104,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
 		elseif def.kind == "Webs" then
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
+		elseif def.kind == "Honey" then
+			table.insert(list, { kind = "Honey", target = def.count, progress = 0 })
 		elseif def.kind == "Boxes" then
 			table.insert(list, { kind = "Boxes", target = def.count or boxes, progress = 0 })
 		elseif def.kind == "Letters" then
@@ -190,6 +193,10 @@ end
 
 function Goals.onWeb(self)
 	bump(self, "Webs", nil)
+end
+
+function Goals.onHoney(self)
+	bump(self, "Honey", nil)
 end
 
 function Goals.onBox(self)

@@ -96,6 +96,7 @@ TileStyle.GoalGlyphs = {
 	Clay = "🏺", -- clay under the tiles
 	Letters = "✉", -- a letter from a mailbox
 	Boxes = "📦", -- a produce box off a stack
+	Honey = "🍯", -- a honey jar from a beehive
 	Snowballs = "☃", -- a snowball (the snowman: there's no snowball emoji)
 	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
@@ -144,6 +145,7 @@ TileStyle.Board = {
 	scarecrow = Color3.fromRGB(214, 170, 90), -- straw
 	bucket = Color3.fromRGB(150, 160, 170), -- a tin bucket
 	box = Color3.fromRGB(205, 160, 105), -- cardboard produce boxes
+	hive = Color3.fromRGB(236, 178, 52), -- a honeycomb beehive
 	glaze = Color3.fromRGB(255, 244, 220), -- the shine on glazed clay
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
