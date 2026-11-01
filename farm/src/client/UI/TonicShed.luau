@@ -12,6 +12,7 @@ local Tonics = require(Shared.Tonics)
 local TownRules = require(Shared.TownRules)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
+local Hud = require(script.Parent.Hud)
 local Remotes = require(script.Parent.Parent.Remotes)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
@@ -70,7 +71,12 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			Remotes.fire("Tonic_Build")
 		end)
 		Ui.setEnabled(button, state.currencies.Coins >= Config.buildCoins and population >= Config.population)
-		line("Tip: Move (M) lets you walk the shed to another spot on your land.", 4, body, 38, Ui.colors.muted)
+		-- The Place bar, the same one a new building offers (Main's Place handler closes this
+		-- panel and picks the building up)
+		Ui.button("Choose its spot", function()
+			Hud.popup({ kind = "Place", key = "tonics:TonicShed" })
+		end, { Size = UDim2.new(1, -8, 0, 36), LayoutOrder = 4, Parent = body })
+		line("Or press Move (M) any time to walk it somewhere else.", 5, body, 22, Ui.colors.muted)
 		return
 	end
 	if now < shed.readyAt then
