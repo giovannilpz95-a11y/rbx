@@ -56,6 +56,9 @@
 	to the next of the level's colours that doesn't make a match there (a
 	"Recolor" phase: { kind = "Recolor", changes = {{id, x, y, color}} }).
 
+	Webs: a web holds its tile in place and keeps it out of matches. Only a
+	blast on the cell clears the web (the tile stays), for the Webs goal.
+
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
 	it (matches don't), for the Fences goal.
 
@@ -184,6 +187,7 @@ local function newWave()
 		fences = {},
 		goo = {},
 		statues = {},
+		webs = {},
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
 		spread = false, -- the power-up going off started on clover
@@ -354,7 +358,7 @@ end
 function Engine._emptyBaskets(self, wave)
 	for _, basket in self.board.baskets do
 		local cell = basket.waiting > 0 and self:_basketTarget(basket)
-		if cell and (Board.isEmptySlot(cell) or (Board.isPlainTile(cell) and cell.frost == 0)) then
+		if cell and (Board.isEmptySlot(cell) or (Board.isPlainTile(cell) and cell.frost == 0 and not cell.web)) then
 			if cell.piece then
 				table.insert(wave.removed, { id = cell.piece.id, x = cell.x, y = cell.y, cause = "basket" })
 				cell.piece = nil
@@ -405,6 +409,12 @@ function Engine._hit(self, wave, x: number, y: number)
 	end
 	if cell.buried then
 		self:_digUp(wave, cell)
+	end
+	if cell.web then
+		cell.web = false -- the blast clears the web; the tile stays
+		table.insert(wave.webs, { x = cell.x, y = cell.y })
+		self.goals:onWeb()
+		return
 	end
 	if cell.bale > 0 then
 		self:_damageBale(wave, cell)
@@ -496,6 +506,8 @@ function Engine._chooseBeeTarget(self)
 			elseif cell.goo and goals:wants("Goo") then
 				table.insert(tiers[2], cell)
 			elseif cell.buried and goals:wants("Statues") then
+				table.insert(tiers[2], cell)
+			elseif cell.web and goals:wants("Webs") then
 				table.insert(tiers[2], cell)
 			elseif goals:wants("Collect", cell.piece.color) then
 				table.insert(tiers[3], cell)
@@ -628,7 +640,7 @@ function Engine._comboParts(self, wave, a, b)
 		local targets = { otherCell }
 		self.board:eachCell(function(cell)
 			local piece = cell.piece
-			if piece and cell.bale == 0 and cell.frost == 0 and piece.power == nil and piece.color == other.color then
+			if piece and cell.bale == 0 and cell.frost == 0 and not cell.web and piece.power == nil and piece.color == other.color then
 				if Tiles.isSprayer(other.power) then
 					piece.power = if self.rng:int(1, 2) == 1 then Power.SprayerRow else Power.SprayerColumn
 				else
@@ -716,6 +728,7 @@ function Engine._finishWave(self, wave, phases)
 		fences = wave.fences,
 		goo = wave.goo,
 		statues = wave.statues,
+		webs = wave.webs,
 		effects = wave.effects,
 	})
 end
@@ -786,7 +799,7 @@ function Engine._growGoo(self, phases)
 	local function around(x, y)
 		for _, d in NEIGHBORS do
 			local n = board:get(x + d[1], y + d[2])
-			if n and not seen[n] and not n.goo and n.bale == 0 and n.frost == 0 and n.piece and not n.piece.pumpkin then
+			if n and not seen[n] and not n.goo and n.bale == 0 and n.frost == 0 and not n.web and n.piece and not n.piece.pumpkin then
 				seen[n] = true
 				table.insert(candidates, n)
 			end
@@ -1139,7 +1152,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 		for x = 1, board.width do
 			self:_hit(wave, x, y)
 		end
-		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 and #wave.fences == 0 and #wave.statues == 0 then
+		if #wave.removed == 0 and #wave.bales == 0 and #wave.frost == 0 and #wave.fences == 0 and #wave.statues == 0 and #wave.webs == 0 then
 			return false, {} -- an empty row
 		end
 		self:_finishWave(wave, phases)
@@ -1212,7 +1225,7 @@ function Engine.continue(self): (boolean, { any })
 	local phases = {}
 	if step.power then
 		local placed, shuffle = self:_placePowerUps({ step.power })
-		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, fences = {}, goo = {}, statues = {}, effects = {} })
+		table.insert(phases, { kind = "Pop", removed = {}, created = {}, transformed = placed, bales = {}, mud = {}, frost = {}, clover = {}, fences = {}, goo = {}, statues = {}, webs = {}, effects = {} })
 		if shuffle then
 			table.insert(phases, shuffle)
 		end

@@ -251,6 +251,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.goo.BackgroundColor3 = if cell.thickGoo then TileStyle.Board.thickGoo else TileStyle.Board.goo
 	guis.buried.Visible = cell.buried == true
 	guis.rainbow.Visible = cell.rainbow == true
+	guis.web.Visible = cell.web == true
 	guis.statueMark.Visible = cell.buried == true
 	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate, cell.tarp ~= nil and cell.tarp ~= false)
 	styleFrost(guis, cell.frost or 0)
@@ -385,6 +386,22 @@ function BoardView.load(self, game)
 		baleCorner.CornerRadius = UDim.new(0.15, 0)
 		baleCorner.Parent = bale
 
+		-- A web over the tile (in the bale layer, so it shows on top).
+		local web = Instance.new("TextLabel")
+		web.Name = "Web"
+		web.Size = self:_cellSize()
+		web.Position = self:_cellPosition(x, y)
+		web.BackgroundColor3 = Color3.fromRGB(240, 240, 250)
+		web.BackgroundTransparency = 0.55
+		web.TextTransparency = 0.1
+		web.Text = TileStyle.GoalGlyphs.Webs
+		web.TextScaled = true
+		web.BorderSizePixel = 0
+		web.Parent = self.baleLayer
+		local webCorner = Instance.new("UICorner")
+		webCorner.CornerRadius = UDim.new(0.2, 0)
+		webCorner.Parent = web
+
 		-- Frost sits over the tile, in the same layer as bales.
 		local frost = Instance.new("Frame")
 		frost.Name = "Frost"
@@ -434,7 +451,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, rainbow = rainbow, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -748,6 +765,17 @@ function BoardView._pop(self, phase)
 		if guis then
 			guis.goo.Visible = g.on
 			guis.goo.BackgroundColor3 = if g.thick then TileStyle.Board.thickGoo else TileStyle.Board.goo
+		end
+	end
+	for _, wb in phase.webs or {} do
+		local guis = self.cellGuis[wb.y] and self.cellGuis[wb.y][wb.x]
+		if guis then
+			tween(guis.web, POP_TIME, { BackgroundTransparency = 1, TextTransparency = 1 })
+			task.delay(POP_TIME, function()
+				guis.web.Visible = false
+				guis.web.BackgroundTransparency = 0.55
+				guis.web.TextTransparency = 0.1
+			end)
 		end
 	end
 	for _, d in phase.statues or {} do
