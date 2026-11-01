@@ -89,6 +89,7 @@ TileStyle.GoalGlyphs = {
 	Statues = "🗿", -- a buried statue
 	Tarps = "🎪", -- a canvas tarp
 	Webs = "🕸", -- a spider web over a tile
+	Clay = "🏺", -- clay under the tiles
 	Snowballs = "☃", -- a snowball (the snowman: there's no snowball emoji)
 	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
@@ -130,6 +131,8 @@ TileStyle.Board = {
 	tin = Color3.fromRGB(110, 160, 190), -- a sewing tin
 	sack = Color3.fromRGB(186, 150, 104), -- burlap
 	snowText = Color3.fromRGB(40, 90, 150), -- a snowball's timer
+	clay = Color3.fromRGB(196, 110, 70), -- terracotta under a tile
+	glaze = Color3.fromRGB(255, 244, 220), -- the shine on glazed clay
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

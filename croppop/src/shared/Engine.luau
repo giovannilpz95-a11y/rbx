@@ -68,6 +68,11 @@
 	quilt lifts off and frees its cells (a "Quilt" effect with its cells), for
 	the Quilts goal.
 
+	Clay: glazed clay under a tile only cracks under a blast (a power-up or
+	booster clearing that tile); after that, any clear of the tile there (a
+	match too) breaks the clay up, for the Clay goal. Cracked clay ("A") starts
+	that way. The Pop phase lists changes as clay = {{x, y, layers}}.
+
 	Snowballs: tiles that start on "i" cells carry a timer (SNOW_TIMER swaps).
 	They match and fall like any tile; clearing one counts for the Snowballs
 	goal. After every swap each timer ticks down (a "Tick" phase:
@@ -209,6 +214,7 @@ local function newWave()
 		transformed = {},
 		bales = {},
 		mud = {},
+		clay = {},
 		frost = {},
 		clover = {},
 		fences = {},
@@ -261,6 +267,16 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 		cell.mud -= 1
 		table.insert(wave.mud, { x = cell.x, y = cell.y, layers = cell.mud })
 		self.goals:onMud()
+	end
+	if cell.clay == 2 then
+		if cause == "power" then
+			cell.clay = 1 -- the glaze cracks; the next clear here breaks it up
+			table.insert(wave.clay, { x = cell.x, y = cell.y, layers = 1 })
+		end
+	elseif cell.clay == 1 then
+		cell.clay = nil
+		table.insert(wave.clay, { x = cell.x, y = cell.y, layers = 0 })
+		self.goals:onClay()
 	end
 	if piece.power and not noActivate then
 		table.insert(wave.queue, { power = piece.power, x = cell.x, y = cell.y, color = piece.color })
@@ -610,6 +626,8 @@ function Engine._chooseBeeTarget(self)
 		elseif cell.piece and not cell.piece.pumpkin then
 			if cell.piece.timer and goals:wants("Snowballs") then
 				table.insert(tiers[2], cell)
+			elseif cell.clay == 2 and goals:wants("Clay") then
+				table.insert(tiers[2], cell) -- matches can't crack glazed clay
 			elseif cell.frost > 0 and goals:wants("Frost") then
 				table.insert(tiers[2], cell)
 			elseif cell.mud > 0 and goals:wants("Mud") then
@@ -834,6 +852,7 @@ function Engine._finishWave(self, wave, phases)
 		transformed = wave.transformed,
 		bales = wave.bales,
 		mud = wave.mud,
+		clay = wave.clay,
 		frost = wave.frost,
 		clover = wave.clover,
 		fences = wave.fences,

@@ -5,6 +5,8 @@
 	Layout characters:
 	  .  plain cell          #  hole (not part of the board)
 	  m  mud, 1 layer        M  mud, 2 layers
+	  a  glazed clay under the tile: only a blast cracks it, then any clear
+	     there breaks it up (the Clay goal)   A  cracked clay (any clear)
 	  f  frost, 1 layer      F  frost, 2 layers (the tile is frozen in place)
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
@@ -65,7 +67,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -110,6 +112,8 @@ local VALID_CHARS = {
 	k = true,
 	z = true,
 	i = true,
+	a = true,
+	A = true,
 	m = true,
 	M = true,
 	f = true,
@@ -257,7 +261,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -308,6 +312,8 @@ function Levels.validate(level): string?
 				sacks += 1
 			elseif ch == "i" then
 				snowballs += 1
+			elseif ch == "a" or ch == "A" then
+				clay += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -401,6 +407,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Webs" then
 			if webs == 0 then
 				return "webs goal but no webs in the layout"
+			end
+		elseif goal.kind == "Clay" then
+			if clay == 0 then
+				return "clay goal but no clay in the layout"
 			end
 		elseif goal.kind == "Snowballs" then
 			if snowballs == 0 then

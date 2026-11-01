@@ -58,6 +58,7 @@ export type Cell = {
 	patched: boolean?, -- this quilt cell has its patch
 	sack: boolean?, -- the "bale" is a seed sack: it never breaks, and hits sow clover near it
 	mud: number, -- mud layers under the tile (0 = none)
+	clay: number?, -- clay under the tile: 2 = glazed (only a blast cracks it), 1 = cracked (any clear)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
 	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
@@ -178,6 +179,10 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.mud = 1
 				elseif ch == "M" then
 					cell.mud = 2
+				elseif ch == "a" then
+					cell.clay = 2
+				elseif ch == "A" then
+					cell.clay = 1
 				elseif ch == "f" then
 					cell.frost = 1
 				elseif ch == "F" then
@@ -750,6 +755,9 @@ function Board.hash(self): string
 				if cell.mud > 0 then
 					code ..= "m" .. cell.mud
 				end
+				if cell.clay then
+					code ..= "a" .. cell.clay
+				end
 				if cell.frost > 0 then
 					code ..= "f" .. cell.frost
 				end
@@ -790,6 +798,7 @@ function Board.snapshot(self)
 			patched = cell.patched,
 			tarp = cell.tarp ~= nil,
 			mud = cell.mud,
+			clay = cell.clay,
 			frost = cell.frost,
 			clover = cell.clover,
 			goo = cell.goo,
