@@ -1412,6 +1412,53 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Glove", Vector3.new(0.6, 0.15, 1.2), at(-0.35, 0.08, 0), Palette.flowerYellow, QUIET)
 		b.block("Glove", Vector3.new(0.6, 0.15, 1.2), tilt(0.35, 0.2, 0, 0, 15, 0), Palette.flowerYellow, QUIET)
 	end,
+	Soybeans = function(b)
+		-- Two fuzzy pods and a few loose beans
+		b.block("Pod", Vector3.new(0.35, 0.3, 1.2), tilt(-0.25, 0.15, 0, 0, 20, 0), Palette.straw, QUIET)
+		b.block("Pod", Vector3.new(0.35, 0.3, 1.2), tilt(0.25, 0.15, 0, 0, -15, 0), Palette.straw, QUIET)
+		b.ball("Bean", 0.3, at(0.1, 0.45, 0.2), Palette.corn:Lerp(Palette.cream, 0.5), QUIET)
+	end,
+	Tofu = function(b)
+		-- A white block of tofu on a dark tray
+		b.block("Tray", Vector3.new(1.4, 0.15, 1.1), at(0, 0.08, 0), Palette.stoneDark, QUIET)
+		b.block("Tofu", Vector3.new(1, 0.6, 0.8), at(0, 0.45, 0), Palette.cream:Lerp(Palette.flowerWhite, 0.6), QUIET)
+	end,
+	CaramelApple = function(b)
+		-- A red apple dipped in caramel on a stick
+		b.ball("Apple", 1, at(0, 0.5, 0), Palette.roofRed, QUIET)
+		b.ball("Caramel", 0.9, at(0, 0.38, 0), Palette.wood, QUIET)
+		b.block("Stick", Vector3.new(0.12, 0.8, 0.12), at(0, 1.25, 0), Palette.woodLight, QUIET)
+	end,
+	Accordion = function(b)
+		-- Two red end boxes with silk bellows between
+		b.block("End", Vector3.new(0.3, 1, 0.7), at(-0.6, 0.5, 0), Palette.roofRed, QUIET)
+		b.block("End", Vector3.new(0.3, 1, 0.7), at(0.6, 0.5, 0), Palette.roofRed, QUIET)
+		b.block("Bellows", Vector3.new(0.9, 0.85, 0.6), at(0, 0.5, 0), Palette.flowerWhite, QUIET)
+	end,
+	CarrotSandwich = function(b)
+		-- Two slices of bread with carrot and soy spread
+		b.block("Bread", Vector3.new(1.1, 0.2, 1.1), at(0, 0.1, 0), Palette.wheat, QUIET)
+		b.block("Filling", Vector3.new(1, 0.15, 1), at(0, 0.28, 0), Palette.carrot, QUIET)
+		b.block("Bread", Vector3.new(1.1, 0.2, 1.1), at(0, 0.45, 0), Palette.wheat, QUIET)
+	end,
+	ButterTea = function(b)
+		-- A wooden bowl of creamy tea with a pat of butter
+		b.cyl("Bowl", 0.6, 1.2, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wood, QUIET)
+		b.block("Butter", Vector3.new(0.3, 0.15, 0.3), at(0, 0.65, 0), Palette.corn, QUIET)
+	end,
+	WeddingBouquet = function(b)
+		-- White blossoms in a silk-wrapped bunch
+		b.wedge(
+			"Wrap",
+			Vector3.new(0.8, 1, 0.8),
+			at(0, 0.5, 0) * CFrame.Angles(math.rad(180), 0, 0),
+			Palette.cream,
+			QUIET
+		)
+		for _, p in { { -0.25, 0 }, { 0.25, 0 }, { 0, 0.25 } } do
+			b.ball("Bloom", 0.5, at(p[1], 1.2, p[2]), Palette.flowerWhite, QUIET)
+		end
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
