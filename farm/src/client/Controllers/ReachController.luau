@@ -257,7 +257,7 @@ local function act(part: BasePart)
 		else
 			Panels.open("OtterPond")
 		end
-	elseif kind == "Train" then
+	elseif kind == "Train" or kind == "TrainCar" then
 		-- A train that's back unloads straight away; otherwise its panel (the station itself
 		-- opens the first train back, else the first one)
 		local trains = ClientStore.state and ClientStore.state.trains

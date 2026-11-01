@@ -4,6 +4,8 @@
 -- each, the bonus for loading them all and Send. While away it shows the time left and a Gem
 -- button to bring it back; once back, Unload. The next train can be bought here too.
 
+local Players = game:GetService("Players")
+
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local Config = require(Shared.Config.Train)
 local Items = require(Shared.Items)
@@ -21,6 +23,7 @@ local Ui = require(script.Parent.Ui)
 local TrainUi = {}
 
 local CAR_HEIGHT = 64
+local HELP_CAR_HEIGHT = 92 -- with the help flag button under Load
 local BUTTON_WIDTH = 176 -- fits "Buy missing  70 Gems"
 local ARM_SECONDS = 10
 local sendArmedAt = 0 -- sending with empty cars takes a second tap within ARM_SECONDS
@@ -73,7 +76,13 @@ local function describe(rewards: { [string]: number }): string
 end
 
 local function carCard(index: number, c: number, car: Train.Car, body: Instance, order: number)
-	local card = Ui.card({ Size = UDim2.new(1, -8, 0, CAR_HEIGHT), LayoutOrder = order, Parent = body })
+	local state = ClientStore.state or {}
+	local canFlag = not car.loaded and (state.level or 0) >= Config.helpFromLevel
+	local card = Ui.card({
+		Size = UDim2.new(1, -8, 0, if canFlag then HELP_CAR_HEIGHT else CAR_HEIGHT),
+		LayoutOrder = order,
+		Parent = body,
+	})
 	local def = Items[car.item]
 	local have = ClientStore.itemCount(car.item)
 	Ui.label(string.format("Car %d: %d %s", c, car.qty, def.displayName), {
@@ -84,7 +93,10 @@ local function carCard(index: number, c: number, car: Train.Car, body: Instance,
 		Parent = card,
 	})
 	local status = if car.loaded
-		then "Loaded ✓   ·   brings back " .. rewardName(car.reward)
+			and car.helpedBy
+			and car.helpedBy ~= Players.LocalPlayer.UserId
+		then "Loaded by a neighbor. Thank you!   ·   brings back " .. rewardName(car.reward)
+		elseif car.loaded then "Loaded ✓   ·   brings back " .. rewardName(car.reward)
 		else string.format(
 			"You have %d   ·   +%d XP   ·   brings back %s",
 			have,
@@ -110,6 +122,20 @@ local function carCard(index: number, c: number, car: Train.Car, body: Instance,
 		Position = UDim2.new(1, -(BUTTON_WIDTH + 6), 0, 12),
 		Parent = card,
 	}
+	if canFlag then
+		-- Neighbors on this server can load a flagged car from their own Barns (one a train)
+		local flag = Ui.button(if car.flagged then "Help asked ✓" else "Ask for help", function()
+			Remotes.fire("Train_Flag", index, c)
+		end, {
+			Size = UDim2.fromOffset(BUTTON_WIDTH, 34),
+			Position = UDim2.new(1, -(BUTTON_WIDTH + 6), 0, 54),
+			Parent = card,
+		})
+		fit(flag)
+		if car.flagged then
+			Ui.setEnabled(flag, true, Ui.colors.selected)
+		end
+	end
 	if have >= car.qty then
 		fit(Ui.button("Load", function()
 			Remotes.fire("Train_Load", index, c)

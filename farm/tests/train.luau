@@ -170,6 +170,39 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		eq(next(Train.rewards(empty)), nil, "nothing for empty cars")
 	end)
 
+	test("train: Help Crates, one flagged car a train from level 7", function()
+		local data = farm(6)
+		Train.ensure(data)
+		local line = Train.lines(data)[1]
+		local ok6, reason = Train.flag(data, 1, 1, 0)
+		ok(not ok6, "not at level 6")
+		eq(reason, "Neighbors can help with your trains from level 7", "says when")
+		data.level = 7
+		ok(Train.flag(data, 1, 1, 0), "flag car 1")
+		ok(line.cars[1].flagged, "car 1 flagged")
+		ok(Train.flag(data, 1, 2, 0), "flag car 2")
+		ok(not line.cars[1].flagged and line.cars[2].flagged, "the flag moved")
+		local want = string.format("%d %s", line.cars[2].qty, Items[line.cars[2].item].displayName)
+		eq(Train.helpText(data), want, "the Help Board lists it")
+		ok(Train.flag(data, 1, 2, 0), "flag it again")
+		ok(not line.cars[2].flagged, "the flag came off")
+		eq(Train.helpText(data), "", "nothing to help with")
+		-- A neighbor loads the flagged car: it's loaded for the owner, with the helper's id
+		Train.flag(data, 1, 3, 0)
+		local car = line.cars[3]
+		local coins, xp = Train.helperRewards(car)
+		ok(coins >= 1 and xp >= 1, "the helper earns Coins and XP")
+		Train.load(car, 4242)
+		ok(car.loaded and not car.flagged, "loaded, flag gone")
+		eq(car.helpedBy, 4242, "remembers who helped")
+		eq(select(2, Train.flag(data, 1, 3, 0)), "That car is already loaded", "a loaded car can't be flagged")
+		eq(Train.helpText(data), "", "off the Help Board")
+		-- An away train asks for no help
+		Train.flag(data, 1, 1, 0)
+		Train.send(data, line, 0)
+		eq(Train.helpText(data), "", "away trains ask for nothing")
+	end)
+
 	test("train: buying the second and third trains", function()
 		local data = farm(13)
 		Train.ensure(data)

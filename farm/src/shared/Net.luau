@@ -43,6 +43,7 @@ return table.freeze({
 	Visit_SendHome = "Visit_SendHome", -- visitorUserId: send a visitor off your plot
 	Help_Water = "Help_Water", -- ownerUserId, fieldId: water a growing field on a neighbor's plot
 	Help_Harvest = "Help_Harvest", -- ownerUserId, fieldId: harvest a ready field into the owner's Barn
+	Help_Train = "Help_Train", -- ownerUserId, train, car: load a neighbor's flagged train car from your Barn
 	Help_Blimp = "Help_Blimp", -- ownerUserId, row, slot: load a neighbor's flagged blimp crate from your Barn
 	Social_SetPrivacy = "Social_SetPrivacy", -- "Open" | "Friends" | "Closed"
 	Social_SetHelpers = "Social_SetHelpers", -- "Nobody" | "Friends" | "Anyone"
@@ -89,6 +90,7 @@ return table.freeze({
 	Train_SpeedUp = "Train_SpeedUp", -- train: bring an away train back now, Gems
 	Train_Unload = "Train_Unload", -- train: take a returned train's rewards (new cars follow)
 	Train_Buy = "Train_Buy", -- (the next train, Coins)
+	Train_Flag = "Train_Flag", -- train, car: ask neighbors for help with a car (one a train; again to take it off)
 	Pond_Skip = "Pond_Skip", -- pondId?: the ducks leave now, Gems
 	Otter_Build = "Otter_Build", -- (start building the Otter Pond, Coins; shared/OtterPond)
 	Otter_SpeedUp = "Otter_SpeedUp", -- (finish building now, Gems)

@@ -31,6 +31,8 @@ local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
 local SocialService = require(script.Parent.SocialService)
 local TownService = require(script.Parent.TownService)
+local TrainService = require(script.Parent.TrainService)
+local Train = require(Shared.Train)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
 local HelpService = {}
@@ -216,10 +218,41 @@ function HelpService.blimp(helper: Player, ownerUserId: any, row: any, slot: any
 	return true
 end
 
+-- Load a car a neighbor flagged on their train, from the helper's own Barn (Help Crates)
+function HelpService.train(helper: Player, ownerUserId: any, index: any, carIndex: any): (boolean, string?)
+	if not NetService.check.int(index, 1, 3) or not NetService.check.int(carIndex, 1, 5) then
+		return false
+	end
+	local owner, data, reason = checkHelper(helper, ownerUserId)
+	if owner == nil or data == nil then
+		return false, reason
+	end
+	local car, why = Train.canLoad(data, index, carIndex, Clock.now())
+	if car == nil then
+		return false, why
+	elseif not car.flagged then
+		return false, string.format("%s hasn't asked for help with that car", owner.DisplayName)
+	end
+	local pos = TrainService.carPosition(owner, index, carIndex)
+	if pos == nil or not NetService.isNear(helper, pos, Balance.serverReachStuds) then
+		return false, "Walk closer to the train"
+	end
+	local name = Items[car.item].displayName
+	if not InventoryService.remove(helper, { [car.item] = car.qty }) then
+		return false, string.format("That car needs %d %s from your Barn", car.qty, name)
+	end
+	Train.load(car, helper.UserId)
+	local coins, xp = Train.helperRewards(car)
+	TrainService.changed(owner)
+	finish(helper, owner, "loaded", string.format("train car of %d %s", car.qty, name), coins, xp)
+	return true
+end
+
 function HelpService.init()
 	NetService.on(Net.Help_Water, 4, 6, HelpService.water)
 	NetService.on(Net.Help_Harvest, 4, 6, HelpService.harvest)
 	NetService.on(Net.Help_Blimp, 2, 4, HelpService.blimp)
+	NetService.on(Net.Help_Train, 2, 4, HelpService.train)
 	Players.PlayerRemoving:Connect(function(player)
 		lastNotified[player] = nil
 		for _, byHelper in lastNotified do
