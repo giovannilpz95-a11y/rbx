@@ -2238,6 +2238,35 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Cue Club (content bank, level 90): a dark green clubhouse with brick trim, a big cue-and-ball
+-- sign on the roof, an awning, and a billiard table seen through the wide front window.
+TYPES.CueClub = function(b, s)
+	local body = hall(b, s * 0.56, s * 0.44, 4.6, Palette.leaf:Lerp(Palette.stoneDark, 0.5))
+	local t = b.into(body, true)
+	local face = -s * 0.22
+	t.block("Roof", Vector3.new(s * 0.58, 0.4, s * 0.46), Vector3.new(0, PLINTH + 4.8, 0), Palette.brick)
+	t.block("Window", Vector3.new(s * 0.3, 2.4, 0.2), Vector3.new(-s * 0.1, PLINTH + 2, face - 0.05), Palette.glass)
+	t.block("Table", Vector3.new(s * 0.22, 0.4, 1), Vector3.new(-s * 0.1, PLINTH + 1.2, face + 0.6), Palette.leafLight)
+	t.wedge(
+		"Awning",
+		Vector3.new(s * 0.5, 0.6, 1.2),
+		CFrame.new(0, PLINTH + 3.8, face - 0.6) * CFrame.Angles(0, math.rad(180), 0),
+		Palette.roofRed
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.18, PLINTH, face - 0.15), 1.6, 3, Palette.woodDark, Palette.coins)
+	-- The sign: a cue across a big black ball and a red one
+	t.ball("EightBall", 2.2, Vector3.new(-s * 0.06, PLINTH + 6.2, 0), Palette.stoneDark)
+	t.ball("RedBall", 1.6, Vector3.new(s * 0.12, PLINTH + 5.9, 0), Palette.roofRed)
+	t.block(
+		"Cue",
+		Vector3.new(s * 0.45, 0.2, 0.2),
+		CFrame.new(0, PLINTH + 6.6, -1.2) * CFrame.Angles(0, 0, math.rad(15)),
+		Palette.woodLight
+	)
+	Kit.sproutTag(t, Vector3.new(s * 0.22, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Gadget Shop (content bank, level 88): a modern navy storefront with a full glass front, a
 -- giant phone on the roof, a glowing blue strip under the eave and a satellite dish.
 TYPES.GadgetShop = function(b, s)

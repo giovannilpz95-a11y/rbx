@@ -849,6 +849,51 @@ TYPES.BalconyTower = {
 	end,
 }
 
+-- Penthouse Tower (level 90): a sand-coloured tower in two steps, a glass penthouse on top
+-- with a roof terrace and parasol, window bands and a gold-trimmed entrance.
+TYPES.PenthouseTower = {
+	roof = Palette.stoneDark,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.58, s * 0.54, STORY * 3
+		local body = walls(b, w, d, h, Palette.straw:Lerp(Palette.cream, 0.4), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.6), roof)
+		t.block(
+			"Penthouse",
+			Vector3.new(w * 0.55, STORY * 0.8, d * 0.5),
+			Vector3.new(-w * 0.15, PLINTH + h + 0.5 + STORY * 0.4, 0.8),
+			Palette.glass
+		)
+		t.block(
+			"PenthouseRoof",
+			Vector3.new(w * 0.6, 0.3, d * 0.55),
+			Vector3.new(-w * 0.15, PLINTH + h + 0.65 + STORY * 0.8, 0.8),
+			roof
+		)
+		t.cyl(
+			"Parasol",
+			0.2,
+			2,
+			CFrame.new(w * 0.28, PLINTH + h + 2.2, 0.6) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.roofRed
+		)
+		t.post("ParasolPole", 1.7, 0.15, Vector3.new(w * 0.28, PLINTH + h + 1.35, 0.6), Palette.metal)
+		for floor = 1, 3 do
+			t.block(
+				"Windows",
+				Vector3.new(w * 0.8, STORY * 0.45, 0.1),
+				Vector3.new(0, PLINTH + STORY * (floor - 0.45), face - 0.05),
+				Palette.glassDeep
+			)
+		end
+		t.block("Trim", Vector3.new(2.4, 0.3, 0.3), Vector3.new(0, PLINTH + 3.3, face - 0.15), Palette.coins)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 1.2, -d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)

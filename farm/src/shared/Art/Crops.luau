@@ -395,6 +395,19 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Soybeans (level 90): low bushy rows, then the bushes turn golden and hang with fat pods.
+GROWING.Soybeans = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Bush", Vector3.new(6.4, 0.9, 1), Vector3.new(0, 0.8, z), Palette.leafLight)
+	end
+end
+READY.Soybeans = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Bush", Vector3.new(6.6, 1.2, 1.2), Vector3.new(0, 1, z), Palette.leaf:Lerp(color, 0.5))
+		b.block("Pods", Vector3.new(6.2, 0.3, 1.3), Vector3.new(0, 1.7, z), color)
+	end
+end
+
 -- Tea Leaves (level 84): neat clipped hedge rows, then the hedges flushed with bright new
 -- leaf tips.
 GROWING.Tea = function(b)

@@ -28,6 +28,7 @@ return table.freeze({
 		"Peanuts",
 		"Apples",
 		"Tea",
+		"Soybeans",
 		"Silk",
 	}),
 	enabledFactories = table.freeze({
