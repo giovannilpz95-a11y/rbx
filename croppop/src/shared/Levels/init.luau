@@ -20,6 +20,8 @@
 	     end (the Tarps goal)
 	  e  thick goo over the tile: two clears (the first leaves plain goo), and
 	     goo spreading next to it spreads thick
+	  n  web over the tile: the tile can't move or match; only a blast clears
+	     the web (the Webs goal)
 	  r  rainbow patch under the tile: after every swap the plain tile on it
 	     changes to the next colour that doesn't make a match
 	  x  surprise crate: blocks like a 1-layer bale; a match next to it or a blast
@@ -51,7 +53,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -84,6 +86,7 @@ local VALID_CHARS = {
 	["#"] = true,
 	d = true,
 	b = true,
+	n = true,
 	r = true,
 	e = true,
 	t = true,
@@ -238,7 +241,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -279,6 +282,8 @@ function Levels.validate(level): string?
 				springs += 1
 			elseif ch == "t" then
 				tarps += 1
+			elseif ch == "n" then
+				webs += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -356,6 +361,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Goo" then
 			if goo == 0 then
 				return "goo goal but no goo in the layout"
+			end
+		elseif goal.kind == "Webs" then
+			if webs == 0 then
+				return "webs goal but no webs in the layout"
 			end
 		elseif goal.kind == "Tarps" then
 			if tarps == 0 then

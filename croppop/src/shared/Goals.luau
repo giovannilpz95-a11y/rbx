@@ -13,6 +13,7 @@
 	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 	  { kind = "Tarps" }                                 -- roll up every tarp cell
+	  { kind = "Webs" }                                  -- clear every web (blasts only)
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -31,8 +32,11 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps = 0, 0, 0, 0, 0, 0, 0, 0
+	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
+		if cell.web then
+			webs += 1
+		end
 		if cell.goo then
 			goo += if cell.thickGoo then 2 else 1
 		end
@@ -77,6 +81,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Stones", target = def.count or stones, progress = 0 })
 		elseif def.kind == "Goo" then
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
+		elseif def.kind == "Webs" then
+			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
 		elseif def.kind == "Tarps" then
 			table.insert(list, { kind = "Tarps", target = def.count or tarps, progress = 0 })
 		elseif def.kind == "Statues" then
@@ -141,6 +147,10 @@ function Goals.onGooGrown(self)
 			goal.target += 1
 		end
 	end
+end
+
+function Goals.onWeb(self)
+	bump(self, "Webs", nil)
 end
 
 function Goals.onTarp(self)

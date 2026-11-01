@@ -78,6 +78,7 @@ TileStyle.GoalGlyphs = {
 	Goo = "🟢",
 	Statues = "🗿", -- a buried statue
 	Tarps = "🎪", -- a canvas tarp
+	Webs = "🕸", -- a spider web over a tile
 }
 
 TileStyle.BoosterGlyphs = {

@@ -57,6 +57,7 @@ export type Cell = {
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
 	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
 	thickGoo: boolean?, -- the goo is thick: the first clear leaves plain goo
+	web: boolean?, -- a web over the tile: it can't move or match; only a blast clears the web
 	rainbow: boolean?, -- a rainbow patch: the plain tile here changes colour after every swap
 	buried: boolean?, -- part of a buried statue lies under this cell (only blasts dig it up)
 	statue: any?, -- the statue this cell is (or was) part of: { cells, left }
@@ -183,6 +184,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.clover = true
 				elseif ch == "g" then
 					cell.goo = true
+				elseif ch == "n" then
+					cell.web = true
 				elseif ch == "r" then
 					cell.rainbow = true
 					self.hasRainbow = true
@@ -303,7 +306,7 @@ end
 
 -- A piece the player can swap (and that gravity and shuffles can move).
 function Board.isMovable(cell: Cell?): boolean
-	return cell ~= nil and cell.piece ~= nil and cell.bale == 0 and cell.frost == 0
+	return cell ~= nil and cell.piece ~= nil and cell.bale == 0 and cell.frost == 0 and not cell.web
 end
 
 -- A movable plain tile: no power-up, not a pumpkin (power-ups and weeds can land on it).
@@ -671,6 +674,9 @@ function Board.hash(self): string
 			if cell and cell.rainbow then
 				clover ..= "~"
 			end
+			if cell and cell.web then
+				clover ..= "*"
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -738,6 +744,7 @@ function Board.snapshot(self)
 			goo = cell.goo,
 			thickGoo = cell.thickGoo,
 			rainbow = cell.rainbow,
+			web = cell.web,
 			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})
