@@ -77,6 +77,7 @@ return table.freeze({
 		"Trattoria",
 		"PartyShop",
 		"GardenCenter",
+		"PetShop",
 	}),
 	enabledPens = table.freeze({
 		"CowBarn",

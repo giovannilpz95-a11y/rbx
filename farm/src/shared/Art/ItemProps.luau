@@ -1621,6 +1621,27 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("TeaBag", Vector3.new(0.3, 0.4, 0.08), at(0.2, 1.25, 0.1), Palette.cream, QUIET)
 		b.ball("Beans", 0.4, at(0, 1.15, -0.2), Palette.cocoa, QUIET)
 	end,
+	Tiramisu = function(b)
+		-- A square slice of layered tiramisu dusted with cocoa
+		b.block("Sponge", Vector3.new(1, 0.25, 1), at(0, 0.13, 0), Palette.wood, QUIET)
+		b.block("Cream", Vector3.new(1, 0.25, 1), at(0, 0.38, 0), Palette.cream, QUIET)
+		b.block("Sponge", Vector3.new(1, 0.2, 1), at(0, 0.6, 0), Palette.wood, QUIET)
+		b.block("Cocoa", Vector3.new(1, 0.1, 1), at(0, 0.75, 0), Palette.cocoa, QUIET)
+	end,
+	LawnChair = function(b)
+		-- A wooden lawn chair with a striped cloth seat
+		b.block("Seat", Vector3.new(1, 0.12, 1), tilt(0, 0.5, 0.1, -10, 0, 0), Palette.roofTeal, QUIET)
+		b.block("Back", Vector3.new(1, 1, 0.12), tilt(0, 1, 0.6, -20, 0, 0), Palette.roofTeal, QUIET)
+		b.block("Frame", Vector3.new(1.1, 0.1, 1.4), tilt(0, 0.3, 0.2, 20, 0, 0), Palette.woodLight, QUIET)
+	end,
+	RubberBone = function(b)
+		-- A chewy red rubber bone
+		b.block("Shaft", Vector3.new(1.1, 0.3, 0.3), at(0, 0.15, 0), Palette.roofRed, QUIET)
+		for _, x in { -0.6, 0.6 } do
+			b.ball("Knob", 0.35, at(x, 0.17, -0.13), Palette.roofRed, QUIET)
+			b.ball("Knob", 0.35, at(x, 0.17, 0.13), Palette.roofRed, QUIET)
+		end
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
