@@ -2238,6 +2238,33 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Souvenir Shop (content bank, level 102): a pink corner shop with a big gift box on the roof,
+-- a postcard rack and a teddy in the window under a striped awning.
+TYPES.SouvenirShop = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.4, 4.4, Palette.flowerPink:Lerp(Palette.cream, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.52, 0.4, s * 0.42), Vector3.new(0, PLINTH + 4.6, 0), Palette.roofPlum)
+	t.block("Window", Vector3.new(s * 0.24, 2.2, 0.2), Vector3.new(-s * 0.1, PLINTH + 2, face - 0.05), Palette.glass)
+	t.ball("Teddy", 1, Vector3.new(-s * 0.1, PLINTH + 1.6, face + 0.4), Palette.wood)
+	t.wedge(
+		"Awning",
+		Vector3.new(s * 0.5, 0.6, 1.2),
+		CFrame.new(0, PLINTH + 3.8, face - 0.6) * CFrame.Angles(0, math.rad(180), 0),
+		Palette.flowerPink
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.14, PLINTH, face - 0.15), 1.6, 3, Palette.roofPlum, Palette.cream)
+	-- The postcard rack
+	t.post("Rack", 1.8, 0.5, Vector3.new(-s * 0.3, PLINTH + 0.9, face - 1.2), Palette.metal)
+	t.block("Cards", Vector3.new(0.7, 0.9, 0.7), Vector3.new(-s * 0.3, PLINTH + 1.4, face - 1.2), Palette.sky)
+	-- The gift box on the roof
+	t.block("Gift", Vector3.new(2.6, 2, 2.6), Vector3.new(0, PLINTH + 5.8, 0), Palette.lime)
+	t.block("Ribbon", Vector3.new(0.4, 2.1, 2.7), Vector3.new(0, PLINTH + 5.8, 0), Palette.roofRed)
+	t.ball("Bow", 0.9, Vector3.new(0, PLINTH + 7, 0), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 5.4, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Recycling Center (content bank, level 100): a green sorting shed with a conveyor running out
 -- of it, three coloured bins, a bale of crushed cans and the recycling-arrows sign on the roof.
 TYPES.RecyclingCenter = function(b, s)
