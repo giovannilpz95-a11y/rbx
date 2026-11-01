@@ -274,6 +274,13 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	end
 end
 
+local function styleClay(guis, layers: number?)
+	guis.clay.Visible = (layers or 0) > 0
+	guis.clay.BackgroundTransparency = if layers == 2 then 0.1 else 0.35
+	local glaze = guis.clay:FindFirstChild("Glaze") :: UIStroke
+	glaze.Enabled = layers == 2
+end
+
 local function styleFrost(guis, layers: number)
 	guis.frost.Visible = layers > 0
 	guis.frost.BackgroundTransparency = if layers >= 2 then 0.25 else 0.5
@@ -287,6 +294,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	end
 	guis.mud.Visible = cell.mud > 0
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
+	styleClay(guis, cell.clay)
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
 	guis.goo.BackgroundColor3 = if cell.thickGoo then TileStyle.Board.thickGoo else TileStyle.Board.goo
@@ -344,6 +352,25 @@ function BoardView.load(self, game)
 		local mudCorner = Instance.new("UICorner")
 		mudCorner.CornerRadius = UDim.new(0.2, 0)
 		mudCorner.Parent = mud
+
+		-- Clay under the tile: terracotta, with a shiny glaze ring while glazed.
+		local clay = Instance.new("Frame")
+		clay.Name = "Clay"
+		clay.AnchorPoint = Vector2.new(0.5, 0.5)
+		clay.Position = UDim2.fromScale(0.5, 0.5)
+		clay.Size = UDim2.fromScale(0.96, 0.96)
+		clay.BorderSizePixel = 0
+		clay.BackgroundColor3 = TileStyle.Board.clay
+		clay.Visible = false
+		clay.Parent = bg
+		local clayCorner = Instance.new("UICorner")
+		clayCorner.CornerRadius = UDim.new(0.1, 0)
+		clayCorner.Parent = clay
+		local glaze = Instance.new("UIStroke")
+		glaze.Name = "Glaze"
+		glaze.Color = TileStyle.Board.glaze
+		glaze.Thickness = 3
+		glaze.Parent = clay
 
 		-- Clover covers the cell, over any mud, with a leaf in the corner.
 		local clover = Instance.new("TextLabel")
@@ -492,7 +519,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -817,6 +844,12 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[b.y] and self.cellGuis[b.y][b.x]
 		if guis then
 			styleBale(guis.bale, b.hp, b)
+		end
+	end
+	for _, c in phase.clay or {} do
+		local guis = self.cellGuis[c.y] and self.cellGuis[c.y][c.x]
+		if guis then
+			styleClay(guis, c.layers)
 		end
 	end
 	for _, m in phase.mud do
