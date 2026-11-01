@@ -386,7 +386,12 @@ READY.Mint = function(b, color)
 		for _, x in { -2.2, 2.2 } do
 			b.ball("Clump", 1.7, Vector3.new(x, 1.2, z), color)
 		end
-		b.block("Spike", Vector3.new(0.35, 1, 0.35), Vector3.new(0, 1.6, z), Palette.plum:Lerp(Palette.cream, 0.4))
+		b.block(
+			"Spike",
+			Vector3.new(0.35, 1, 0.35),
+			Vector3.new(0, 1.6, z),
+			Palette.plum:Lerp(Palette.flowerPink, 0.35)
+		)
 	end
 end
 
