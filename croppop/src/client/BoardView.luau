@@ -259,6 +259,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.bucket then
 		label.BackgroundColor3 = TileStyle.Board.bucket
 		label.Text = TileStyle.BucketGlyph
+	elseif kind.truck then
+		label.BackgroundColor3 = TileStyle.Board.truck
+		label.Text = TileStyle.TruckGlyph .. hp -- bales still on it
 	elseif kind.hive then
 		label.BackgroundColor3 = TileStyle.Board.hive
 		label.Text = TileStyle.GoalGlyphs.Honey
@@ -779,6 +782,22 @@ function BoardView._effect(self, effect): number
 			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
+	elseif effect.type == "Drop" then
+		-- A bale tumbles off the truck into its new cell.
+		local bale = Instance.new("TextLabel")
+		bale.Name = "DroppedBale"
+		bale.AnchorPoint = Vector2.new(0.5, 0.5)
+		bale.BackgroundTransparency = 1
+		bale.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		bale.Position = self:_centerOf(effect.fromX, effect.fromY)
+		bale.Text = TileStyle.GoalGlyphs.HayBale
+		bale.TextScaled = true
+		bale.Parent = self.fxLayer
+		tween(bale, FX_TIME, { Position = self:_centerOf(effect.x, effect.y), Rotation = 180 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		task.delay(FX_TIME, function()
+			bale:Destroy()
+		end)
 		return FX_TIME
 	elseif effect.type == "Honey" then
 		-- The hive wobbles and a jar of honey floats up off it.

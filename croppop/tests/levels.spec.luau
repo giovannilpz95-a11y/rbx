@@ -10,10 +10,10 @@ test("every level validates", function()
 		truthy(not seen[level.id], "duplicate id " .. level.id)
 		seen[level.id] = true
 	end
-	eq(#Levels.List, 725)
+	eq(#Levels.List, 750)
 end)
 
-test("levels run 1 to 725 in order, with unique names and the difficulty pattern", function()
+test("levels run 1 to 750 in order, with unique names and the difficulty pattern", function()
 	local names = {}
 	for i, level in Levels.List do
 		eq(level.id, i)
@@ -400,4 +400,21 @@ test("beehives first show up on level 701, with a Honey goal alone", function()
 	eq(#first.goals, 1)
 	eq(first.goals[1].kind, "Honey")
 	truthy(first.goals[1].count >= 1)
+end)
+
+test("hay trucks first show up on level 726, with a HayBale goal alone and no other bales", function()
+	local first
+	for _, level in Levels.List do
+		for _, row in level.layout do
+			if not first and string.find(row, "C", 1, true) then
+				first = level
+			end
+		end
+	end
+	eq(first and first.id, 726)
+	eq(#first.goals, 1)
+	eq(first.goals[1].kind, "HayBale")
+	for _, row in first.layout do
+		falsy(string.find(row, "[123]"), "the first truck level's bales all come off its trucks")
+	end
 end)

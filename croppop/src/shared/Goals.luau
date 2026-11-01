@@ -3,7 +3,7 @@
 
 	  { kind = "Collect", tile = "Tomato", count = 15 }  -- pop N tiles of one kind
 	  { kind = "Mud" }                                   -- clear every mud layer on the board (and tip every mud bucket)
-	  { kind = "HayBale" }                               -- break every hay bale on the board
+	  { kind = "HayBale" }                               -- break every hay bale on the board (a hay truck counts its 3)
 	  { kind = "Frost" }                                 -- break every frost layer on the board
 	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
 	  { kind = "Pumpkins", count = 3 }                   -- bring N pumpkins down to the bottom row
@@ -39,7 +39,7 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local clay, letters, buckets, boxes = 0, 0, 0, 0
+	local clay, letters, buckets, boxes, trucks = 0, 0, 0, 0, 0
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.web then
@@ -61,15 +61,18 @@ function Goals.new(defs: { any }, board)
 		if cell.stack then
 			boxes += cell.bale
 		end
+		if cell.truck then
+			trucks += cell.bale -- each bale it carries counts once it's broken
+		end
 		if cell.mailbox and cell.mailbox.mail then
 			letters += 1
 		end
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks and beehives aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives and hay trucks aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -91,7 +94,7 @@ function Goals.new(defs: { any }, board)
 		elseif def.kind == "Mud" then
 			table.insert(list, { kind = "Mud", target = def.count or mudLayers + buckets, progress = 0 })
 		elseif def.kind == "HayBale" then
-			table.insert(list, { kind = "HayBale", target = def.count or bales, progress = 0 })
+			table.insert(list, { kind = "HayBale", target = def.count or bales + trucks, progress = 0 })
 		elseif def.kind == "Frost" then
 			table.insert(list, { kind = "Frost", target = def.count or frost, progress = 0 })
 		elseif def.kind == "Weeds" then

@@ -61,6 +61,7 @@ export type Cell = {
 	scarecrow: number?, -- the "bale" is a scarecrow: charges so far (it never breaks)
 	sack: boolean?, -- the "bale" is a seed sack: it never breaks, and hits sow clover near it
 	bucket: boolean?, -- the "bale" is a mud bucket: one hit tips it, spilling mud around it
+	truck: boolean?, -- the "bale" is a hay truck: each hit drops one of its bales nearby
 	hive: boolean?, -- the "bale" is a beehive: it never breaks, and each hit sends a honey jar to the goal
 	stack: boolean?, -- the "bale" is a stack of produce boxes: each hit takes one, and the rest hop
 	mud: number, -- mud layers under the tile (0 = none)
@@ -236,6 +237,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "u" then
 					cell.bale = 1
 					cell.bucket = true
+				elseif ch == "C" then
+					cell.bale = 3
+					cell.truck = true
 				elseif ch == "j" then
 					cell.bale = 1
 					cell.hive = true
@@ -774,6 +778,8 @@ function Board.hash(self): string
 				table.insert(row, "V" .. cell.bale .. clover)
 			elseif cell.hive then
 				table.insert(row, "J" .. clover)
+			elseif cell.truck then
+				table.insert(row, "N" .. cell.bale .. clover)
 			elseif cell.mailbox then
 				table.insert(row, "L" .. (if cell.mailbox.mail then "1" else "0") .. (if cell.mailbox.open then "o" else "") .. clover)
 			elseif cell.quilt then
@@ -844,6 +850,7 @@ function Board.snapshot(self)
 			bucket = cell.bucket,
 			stack = cell.stack,
 			hive = cell.hive,
+			truck = cell.truck,
 			-- What's inside shows only once it's open.
 			mailbox = cell.mailbox and { open = cell.mailbox.open, mail = cell.mailbox.open and cell.mailbox.mail },
 			quilt = cell.quilt ~= nil,
