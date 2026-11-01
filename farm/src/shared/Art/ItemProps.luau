@@ -1718,6 +1718,31 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Tofu", Vector3.new(0.2, 0.15, 0.2), at(-0.2, 0.56, 0), Palette.cream, QUIET)
 		b.block("Seaweed", Vector3.new(0.35, 0.08, 0.15), at(0.2, 0.55, 0.1), Palette.leaf, QUIET)
 	end,
+	GardenHose = function(b)
+		-- A coiled green hose with a nozzle
+		b.cyl("Coil", 0.4, 1.3, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.leafLight, QUIET)
+		b.cyl("Hole", 0.42, 0.6, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.leaf, QUIET)
+		b.block("Nozzle", Vector3.new(0.5, 0.2, 0.2), at(0.85, 0.15, 0), Palette.flowerYellow, QUIET)
+	end,
+	PetBed = function(b)
+		-- A round cushioned pet bed
+		b.cyl(
+			"Rim",
+			0.5,
+			1.6,
+			at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.plum:Lerp(Palette.cream, 0.4),
+			QUIET
+		)
+		b.cyl("Cushion", 0.3, 1.2, at(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+	end,
+	VeganCheesecake = function(b)
+		-- A slice of pale cheesecake topped with grapes and lime
+		b.wedge("Slice", Vector3.new(0.8, 0.6, 1.2), at(0, 0.3, 0), Palette.cream, QUIET)
+		b.block("Base", Vector3.new(0.8, 0.15, 1.2), at(0, 0.07, 0), Palette.wood, QUIET)
+		b.ball("Grape", 0.25, at(-0.15, 0.7, 0.35), Palette.plum, QUIET)
+		b.ball("Lime", 0.25, at(0.15, 0.7, 0.35), Palette.lime, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

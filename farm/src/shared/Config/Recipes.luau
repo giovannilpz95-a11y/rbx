@@ -308,6 +308,10 @@ local Recipes: { [string]: RecipeDef } = {
 	WaterBowl = { id = "WaterBowl", displayName = "Water Bowl", factory = "PetShop", unlockLevel = 103, inputs = { Clay = 2, PineTrees = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 135, xp = 58 },
 	ChocolateCustard = { id = "ChocolateCustard", displayName = "Chocolate Custard", factory = "TeaHouse", unlockLevel = 104, inputs = { Tea = 2, Chocolate = 1, Eggs = 2 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 333, xp = 141 },
 	MisoSoup = { id = "MisoSoup", displayName = "Miso Soup", factory = "GreenCafe", unlockLevel = 104, inputs = { Soybeans = 4, Seaweed = 2, Tofu = 1, Mushroom = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 425, xp = 182 },
+	-- Level 105-106 goods
+	GardenHose = { id = "GardenHose", displayName = "Garden Hose", factory = "GardenCenter", unlockLevel = 105, inputs = { Plastic = 1, Rubber = 1, CottonFabric = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 185, xp = 79 },
+	PetBed = { id = "PetBed", displayName = "Pet Bed", factory = "PetShop", unlockLevel = 106, inputs = { DownFeather = 2, CottonFabric = 3 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 180, xp = 77 },
+	VeganCheesecake = { id = "VeganCheesecake", displayName = "Vegan Cheesecake", factory = "GreenCafe", unlockLevel = 106, inputs = { PlantMilk = 2, Wheat = 2, Grapes = 1, KeyLimes = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 370, xp = 159 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },
