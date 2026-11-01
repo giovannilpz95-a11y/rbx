@@ -135,7 +135,8 @@ local function stepWool(e: Entry, mood: string?)
 	if #e.rig.wool == 0 then
 		return
 	end
-	if e.mood == "ready" and mood == "hungry" then
+	-- Collected: the sheep goes hungry, or straight back to eating when there's feed waiting
+	if e.mood == "ready" and mood ~= "ready" and mood ~= nil then
 		woolPuff(e.rig.feet.Position + Vector3.new(0, 1.6, 0))
 	end
 	local progress = 0
