@@ -467,6 +467,7 @@ SCENES.decor5 = function(root)
 		{ "HedgeMaze", -10, 12 },
 		{ "GardenCarousel", 0, 12 },
 		{ "Bandstand", 10, 12 },
+		{ "GoldenSheafFountain", 22, 12 },
 	}
 	for _, d in row do
 		local m = Kit.model(d[1], root)

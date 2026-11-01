@@ -79,6 +79,9 @@ local Decor: { [string]: DecorDef } = {
 	HotAirBalloon = { id = "HotAirBalloon", displayName = "Hot Air Balloon", category = "Landmarks", unlockLevel = 36, coinCost = 3600, xp = 19, size = { 1, 1 }, order = 56 },
 	FairyLightTree = { id = "FairyLightTree", displayName = "Fairy Light Tree", category = "Lights & furniture", unlockLevel = 36, coinCost = 3800, xp = 19, size = { 1, 1 }, order = 57 },
 	Bandstand = { id = "Bandstand", displayName = "Bandstand", category = "Lights & furniture", unlockLevel = 36, coinCost = 4500, xp = 21, size = { 2, 2 }, order = 58 },
+	-- Level-100 landmark: Township's level, Coin price and 2 x 3 footprint for that slot (wiki
+	-- Decoration Table), our own fountain and name
+	GoldenSheafFountain = { id = "GoldenSheafFountain", displayName = "Golden Sheaf Fountain", category = "Landmarks", unlockLevel = 100, coinCost = 230000, xp = 30, size = { 2, 3 }, order = 59 },
 }
 
 for _, def in Decor do
