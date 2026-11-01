@@ -23,9 +23,9 @@ local crates: { [string]: Range } = {
 	-- Crops
 	Wheat = { 18, 99 }, Corn = { 47, 81 }, Carrots = { 19, 40 }, Sugarcane = { 11, 27 },
 	Cotton = { 8, 20 }, Strawberries = { 5, 14 }, Tomatoes = { 6, 15 }, PineTrees = { 6, 11 },
-	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, CorkOak = { 2, 3 }, Peppers = { 6, 9 }, Mint = { 8, 10 }, Rice = { 11, 16 }, Silk = { 1, 5 },
+	Potatoes = { 3, 15 }, Cocoa = { 2, 6 }, RubberTrees = { 1, 6 }, CorkOak = { 2, 3 }, Peppers = { 6, 9 }, Mint = { 8, 10 }, Rice = { 11, 16 }, Rose = { 6, 10 }, Silk = { 1, 5 },
 	-- Animal goods
-	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 }, Honeycomb = { 1, 7 }, Bacon = { 2, 4 },
+	Milk = { 8, 20 }, Eggs = { 9, 15 }, Wool = { 2, 10 }, Honeycomb = { 1, 7 }, Bacon = { 2, 4 }, Mushroom = { 2, 3 },
 	DownFeather = { 3, 12 }, ColorfulFeather = { 1, 2 }, Seaweed = { 2, 5 }, Scallop = { 1, 2 }, Pearls = { 1, 2 },
 	-- Bakery
 	Bread = { 5, 14 }, Cookies = { 4, 9 }, Bagel = { 2, 6 }, GardenPizza = { 1, 3 }, PotatoBread = { 2, 4 }, BananaBread = { 1, 3 },
@@ -61,7 +61,7 @@ local crates: { [string]: Range } = {
 	FlipFlops = { 2, 4 }, Sandals = { 2, 2 }, FeatherHat = { 1, 2 }, MintChocIceCream = { 2, 2 }, PineappleSorbet = { 1, 2 },
 	HoneyMarshmallow = { 1, 2 }, Book = { 1, 2 }, HighlighterPen = { 1, 2 }, FishBurger = { 1, 3 },
 	Bed = { 1, 2 }, MintCandy = { 2, 2 }, SeafoodPizza = { 1, 2 }, Sneakers = { 1, 2 },
-	SushiRoll = { 2, 6 }, LobsterSushi = { 2, 3 }, BaconPoppers = { 1, 3 }, Boots = { 1, 2 }, Quiche = { 2, 2 }, SeafoodMix = { 1, 2 }, SeaweedShrimpSalad = { 2, 3 },
+	SushiRoll = { 2, 6 }, LobsterSushi = { 2, 3 }, BaconPoppers = { 1, 3 }, Boots = { 1, 2 }, Quiche = { 2, 2 }, BakedLobster = { 1, 2 }, HighHeels = { 1, 2 }, RoseJam = { 1, 3 }, WarmBoots = { 1, 2 }, ScallopSushi = { 1, 3 }, AromaCandle = { 2, 3 }, PuffedRice = { 2, 5 }, CoconutSoup = { 1, 2 }, BaconEggs = { 2, 2 }, SeafoodMix = { 1, 2 }, SeaweedShrimpSalad = { 2, 3 },
 	-- Stationery Shop, Furniture Workshop
 	Eraser = { 1, 3 }, StickyNotes = { 2, 2 }, Table = { 1, 2 }, Chair = { 1, 2 },
 	-- Level 46-47 goods at older factories

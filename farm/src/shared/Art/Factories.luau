@@ -1117,6 +1117,53 @@ local function grillHouse(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Perfumery (level 61, placed by the player): a lilac boutique with a domed glass roof, a
+-- striped awning, a rose arch at the door and a giant scent bottle on the roof whose glass
+-- stopper glows while it works.
+local function perfumery(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.plum:Lerp(Palette.cream, 0.65), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.cream)
+	d.ball("Dome", 5, Vector3.new(-2.6, TOP + 0.9, 1.2), Palette.glass, { shadow = false })
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The scent bottle on the roof and its glowing stopper
+	local bottle = Vector3.new(2.6, TOP + 0.6, -0.6)
+	d.block(
+		"Bottle",
+		Vector3.new(2.2, 2.4, 1.4),
+		bottle + Vector3.new(0, 1.2, 0),
+		Palette.flowerPink:Lerp(Palette.glass, 0.4)
+	)
+	d.post("Neck", 0.6, 0.6, bottle + Vector3.new(0, 2.7, 0), Palette.coins)
+	d.ball("NeonSign", 1.1, bottle + Vector3.new(0, 3.4, 0), Palette.plum, { shadow = false })
+	-- The striped awning over the window
+	for i = 0, 3 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.flowerPink else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.plum, Palette.cream)
+	-- The rose arch around the door
+	for _, x in { 1, 4.2 } do
+		d.block("ArchSide", Vector3.new(0.4, 4.6, 0.4), Vector3.new(x, PLINTH + 2.3, FRONT - 0.7), Palette.leaf)
+	end
+	d.block("ArchTop", Vector3.new(3.6, 0.5, 0.5), Vector3.new(2.6, PLINTH + 4.8, FRONT - 0.7), Palette.leaf)
+	for _, x in { 1, 2.6, 4.2 } do
+		d.ball("ArchRose", 0.6, Vector3.new(x, PLINTH + 5.1, FRONT - 0.85), Palette.roofRed)
+	end
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("BottleIcon", Vector3.new(0.8, 1, 0.2), at, Palette.flowerPink, { shadow = false })
+		s.block("CapIcon", Vector3.new(0.3, 0.35, 0.2), at + Vector3.new(0, 0.65, 0), Palette.coins, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(-4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1254,6 +1301,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Jeweler = jeweler,
 	SushiBar = sushiBar,
 	GrillHouse = grillHouse,
+	Perfumery = perfumery,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

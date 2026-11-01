@@ -35,6 +35,7 @@ local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local DuckPondConfig = require("../src/shared/Config/DuckPond")
 local OtterPondConfig = require("../src/shared/Config/OtterPond")
+local ToolTraderConfig = require("../src/shared/Config/ToolTrader")
 local IslesConfig = require("../src/shared/Config/Isles")
 local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
@@ -96,7 +97,7 @@ test("every crop has positive timers and matching ids", function()
 		eq(crop.id, id, "crop id")
 		ok(crop.growSeconds > 0 and crop.yield > 0, id .. " needs time and yield")
 		eq(crop.yield, 1, id .. " gives 1 unit a field, as in Township")
-		ok(crop.unlockLevel >= 1 and crop.unlockLevel <= 60, id .. " unlock level in 1-60")
+		ok(crop.unlockLevel >= 1 and crop.unlockLevel <= Levels.built, id .. " unlock level within the built levels")
 	end
 end)
 
@@ -293,7 +294,32 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 59, "levels 17 to 59 are banked")
+	eq(Levels.built, 63, "levels 17 to 63 are banked")
+	eq(Levels.list[62].xpToNext, 273515, "L62 row")
+	eq(Levels.list[63].xpToNext, 300000, "L63 row")
+	eq(Recipes.PuffedRice.inputs.Rice, 4, "Puffed Rice from Rice and Cane Syrup")
+	eq(Recipes.CoconutSoup.inputs.Shrimp, 2, "Coconut Soup from Coconuts, Shrimp and Key Limes")
+	eq(Town.houses.TimberedManor.population, 380, "Timbered Manor")
+	eq(Town.community.BlossomBoutique.materials.Jackhammer, 8, "Blossom Boutique needs Jackhammers")
+	eq(Animals.pens.MushroomShed.buildCost, 29000, "Mushroom Shed (Township's Mushroom Farm)")
+	eq(Animals.pens.MushroomShed.produceSeconds, 5 * 3600, "Mushrooms take 5 h")
+	eq(Animals.pens.MushroomShed.extraAnimalCosts[3], 9500, "Mushroom Logs 4 to 6")
+	ok(table.find(Balance.enabledPens, "MushroomShed") ~= nil, "Mushroom Shed enabled")
+	eq(Recipes.Substrate.outputQty, 3, "Substrate comes 3 to a batch")
+	eq(Recipes.BaconEggs.inputs.Eggs, 2, "Bacon & Eggs")
+	ok(Recipes.Earrings.fromOreShed and Recipes.Earrings.inputs.PlatinumOre == 5, "Earrings from Gold and Platinum Ore")
+	eq(Levels.list[60].xpToNext, 244220, "L60 row")
+	eq(Levels.list[61].xpToNext, 258565, "L61 row")
+	ok(table.find(Balance.enabledCrops, "Rose") ~= nil and Crops.Rose.growSeconds == 9000, "Rose, 2 h 30")
+	eq(Levels.gifts[61].Rose, 3, "Rose to start with")
+	eq(Factories.Perfumery.buildCost, 130000, "Perfumery (Township's Perfume Factory)")
+	eq(Guild.maxLevel("Perfumery"), 53, "the Perfumery has its own Guild table")
+	eq(Recipes.BakedLobster.inputs.Lobsters, 1, "Baked Lobster from Lobsters and Cream")
+	eq(Recipes.HighHeels.inputs.PineTrees, 1, "High Heels from Rubber, Silk Fabric, Pine Trees and Glue")
+	eq(Recipes.RoseJam.inputs.Rose, 3, "Rose Jam from Roses")
+	eq(Recipes.WarmBoots.inputs.DownFeather, 2, "Warm Boots from Down Feathers, Silk Fabric and Wool")
+	eq(Recipes.ScallopSushi.inputs.Scallop, 1, "Scallop Sushi from the Otter Pond's catch")
+	eq(Recipes.AromaCandle.inputs.Caramel, 1, "Aroma Candle from Honeycomb, Cocoa and Caramel")
 	eq(Levels.list[58].xpToNext, 217286, "L58 row")
 	eq(Levels.list[59].xpToNext, 230467, "L59 row")
 	eq(Factories.GrillHouse.buildCost, 115000, "Grill House (Township's Grill Factory)")
@@ -848,6 +874,7 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 		Dough = true,
 		Pendant = true,
 		Ring = true,
+		Earrings = true,
 	}
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]
@@ -1533,7 +1560,11 @@ test("Township baseline town rows", function()
 		end
 		ok(def.unlockLevel <= Levels.built, def.id .. " past the content bank")
 		for material in def.materials do
-			ok(Town.materials[material] ~= nil and Items[material].kind == "Material", def.id .. " " .. material)
+			ok(
+				(Town.materials[material] ~= nil or ToolTraderConfig.tools[material] ~= nil)
+					and Items[material].kind == "Material",
+				def.id .. " " .. material
+			)
 		end
 	end
 	eq(Town.baseCap + total, 385, "Cap with every MVP Community Building (Township's level-12 max Population)")
@@ -2316,6 +2347,7 @@ require("./seedcart")(test, eq, ok)
 require("./harbor")(test, eq, ok)
 require("./duckpond")(test, eq, ok)
 require("./otterpond")(test, eq, ok)
+require("./tooltrader")(test, eq, ok)
 
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles

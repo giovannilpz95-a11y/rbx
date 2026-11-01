@@ -621,6 +621,129 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Shrimp", 0.4, at(-0.25, 0.95, 0), Palette.carrot, QUIET)
 		b.ball("Shrimp", 0.4, at(0.25, 0.9, 0.15), Palette.carrot, QUIET)
 	end,
+	Rose = function(b)
+		-- A bunch of red roses tied with a ribbon
+		for i, x in { -0.35, 0, 0.35 } do
+			b.block("Stem", Vector3.new(0.12, 1.2, 0.12), at(x * 0.6, 0.6, 0), Palette.leaf, QUIET)
+			b.ball("Bloom", 0.55, at(x, 1.3 + (i % 2) * 0.15, 0), Palette.roofRed, QUIET)
+		end
+		b.block("Ribbon", Vector3.new(0.5, 0.2, 0.3), at(0, 0.45, 0), Palette.flowerPink, QUIET)
+	end,
+	RoseJam = function(b)
+		-- A jar of pink jam with a rose on the lid
+		b.cyl("Jar", 1.1, 1, at(0, 0.55, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerPink, QUIET)
+		b.cyl("Lid", 0.25, 1.05, at(0, 1.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Rose", 0.4, at(0, 1.45, 0), Palette.roofRed, QUIET)
+	end,
+	HighHeels = function(b)
+		-- A red high-heeled shoe
+		b.block("Sole", Vector3.new(0.6, 0.12, 1.5), tilt(0, 0.45, 0, -18, 0, 0), Palette.roofRed, QUIET)
+		b.block("Heel", Vector3.new(0.2, 0.75, 0.2), at(0, 0.38, 0.6), Palette.roofRed, QUIET)
+		b.block("Toe", Vector3.new(0.6, 0.3, 0.5), at(0, 0.3, -0.55), Palette.roofRed, QUIET)
+		b.block("Strap", Vector3.new(0.62, 0.1, 0.12), at(0, 0.75, 0.3), Palette.coins, QUIET)
+	end,
+	WarmBoots = function(b)
+		-- A fluffy winter boot
+		b.block("Leg", Vector3.new(0.9, 1.3, 0.9), at(0, 0.85, 0.3), Palette.wood, QUIET)
+		b.block("Foot", Vector3.new(0.9, 0.55, 1.5), at(0, 0.28, -0.1), Palette.wood, QUIET)
+		b.ball("Fluff", 1.1, at(0, 1.55, 0.3), Palette.wool, QUIET)
+		b.block("Sole", Vector3.new(0.95, 0.15, 1.6), at(0, 0.07, -0.1), Palette.stoneDark, QUIET)
+	end,
+	ScallopSushi = function(b)
+		-- Rice rolls wrapped in seaweed with a scallop on top
+		for _, x in { -0.45, 0.45 } do
+			b.cyl("Nori", 0.6, 0.8, at(x, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.treeTopDark, QUIET)
+			b.cyl(
+				"Scallop",
+				0.25,
+				0.6,
+				at(x, 0.7, 0) * CFrame.Angles(0, 0, math.rad(90)),
+				Palette.cream:Lerp(Palette.flowerPink, 0.3),
+				QUIET
+			)
+		end
+	end,
+	BakedLobster = function(b)
+		-- A red lobster on a white plate with a lemon wedge
+		b.cyl("Plate", 0.15, 2, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.block("Body", Vector3.new(0.6, 0.4, 1.3), at(0, 0.35, 0), Palette.roofRed, QUIET)
+		b.ball("Claw", 0.45, at(-0.45, 0.35, -0.6), Palette.roofRed, QUIET)
+		b.ball("Claw", 0.45, at(0.45, 0.35, -0.6), Palette.roofRed, QUIET)
+		b.wedge("Lemon", Vector3.new(0.3, 0.3, 0.5), at(0.6, 0.3, 0.5), Palette.flowerYellow, QUIET)
+	end,
+	AromaCandle = function(b)
+		-- A cream candle in a lilac glass with its flame
+		b.cyl(
+			"Glass",
+			1,
+			1.1,
+			at(0, 0.5, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.plum:Lerp(Palette.cream, 0.5),
+			QUIET
+		)
+		b.cyl("Wax", 0.1, 0.95, at(0, 1.02, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Flame", 0.3, at(0, 1.25, 0), Palette.flowerYellow, QUIET)
+	end,
+	PowerDrill = function(b)
+		-- A yellow cordless drill with its bit
+		b.block("Body", Vector3.new(0.5, 0.6, 1.3), at(0, 1.2, 0), Palette.flowerYellow, QUIET)
+		b.block("Grip", Vector3.new(0.45, 1, 0.5), at(0, 0.5, 0.35), Palette.stoneDark, QUIET)
+		b.block("Battery", Vector3.new(0.6, 0.3, 0.7), at(0, 0.1, 0.35), Palette.stoneDark, QUIET)
+		b.cyl("Bit", 0.8, 0.15, at(0, 1.2, -1) * Kit.yaw(90), Palette.stoneLight, QUIET)
+	end,
+	PowerSaw = function(b)
+		-- A red circular saw with its silver blade
+		b.cyl("Blade", 0.1, 1.4, at(0.3, 0.75, 0), Palette.stoneLight, QUIET)
+		b.block("Body", Vector3.new(0.6, 0.7, 1), at(-0.1, 0.9, 0), Palette.roofRed, QUIET)
+		b.block("Handle", Vector3.new(0.3, 0.3, 0.9), at(-0.1, 1.4, 0.2), Palette.stoneDark, QUIET)
+	end,
+	Jackhammer = function(b)
+		-- An orange jackhammer standing on its chisel
+		b.block("Body", Vector3.new(0.6, 1.1, 0.6), at(0, 1.1, 0), Palette.carrot, QUIET)
+		b.block("Handles", Vector3.new(1.4, 0.2, 0.25), at(0, 1.75, 0), Palette.stoneDark, QUIET)
+		b.cyl("Chisel", 0.6, 0.15, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
+	end,
+	Mushroom = function(b)
+		-- Two brown mushrooms
+		b.post("Stem", 0.8, 0.45, at(-0.3, 0.4, 0), Palette.cream, QUIET)
+		b.ball("Cap", 1.1, at(-0.3, 0.95, 0), Palette.cocoa:Lerp(Palette.wood, 0.4), QUIET)
+		b.post("Stem", 0.5, 0.35, at(0.45, 0.25, 0.2), Palette.cream, QUIET)
+		b.ball("Cap", 0.8, at(0.45, 0.6, 0.2), Palette.cocoa:Lerp(Palette.wood, 0.4), QUIET)
+	end,
+	Substrate = function(b)
+		-- A tied sack of dark compost
+		b.block("Sack", Vector3.new(1.2, 1.3, 0.9), at(0, 0.65, 0), Palette.sack, QUIET)
+		b.block("Top", Vector3.new(1, 0.25, 0.75), at(0, 1.4, 0), Palette.soilDark, QUIET)
+		b.block("Tie", Vector3.new(0.5, 0.3, 0.5), at(0, 1.62, 0), Palette.leaf, QUIET)
+	end,
+	PuffedRice = function(b)
+		-- A bowl heaped with puffed grains
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.sky, QUIET)
+		b.ball("Heap", 1.4, at(0, 0.75, 0), Palette.wheat, QUIET)
+	end,
+	CoconutSoup = function(b)
+		-- Soup served in half a coconut with a lime slice
+		b.ball("Shell", 1.6, at(0, 0.5, 0), Palette.trunk, QUIET)
+		b.cyl("Soup", 0.1, 1.4, at(0, 1.05, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Shrimp", 0.35, at(-0.3, 1.15, 0.1), Palette.carrot, QUIET)
+		b.wedge("Lime", Vector3.new(0.2, 0.35, 0.45), at(0.55, 1.2, 0), Palette.lime, QUIET)
+	end,
+	BaconEggs = function(b)
+		-- Two fried eggs and bacon strips on a plate
+		b.cyl("Plate", 0.15, 2, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		for _, x in { -0.45, 0.45 } do
+			b.cyl("White", 0.08, 0.8, at(x, 0.2, -0.2) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+			b.ball("Yolk", 0.35, at(x, 0.25, -0.2), Palette.flowerYellow, QUIET)
+		end
+		b.block("Bacon", Vector3.new(1.2, 0.1, 0.25), at(0, 0.2, 0.45), Palette.cowMuzzle, QUIET)
+	end,
+	Earrings = function(b)
+		-- A pair of gold hoops with platinum drops
+		for _, x in { -0.45, 0.45 } do
+			b.cyl("Hoop", 0.12, 0.8, at(x, 0.9, 0), Palette.coins, QUIET)
+			b.ball("Drop", 0.35, at(x, 0.35, 0), Palette.stoneLight, QUIET)
+		end
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

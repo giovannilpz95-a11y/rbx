@@ -45,6 +45,7 @@ ArtMotion.SPECS = {
 	FurnitureWorkshop = { kind = "spin", pivot = "Saw", speed = 4 },
 	Cobbler = { kind = "bob", pivot = "Hammer", speed = 6, amplitude = 0.6 },
 	Jeweler = { kind = "spin", pivot = "Gem", speed = 1.2 },
+	Perfumery = { kind = "glow", pivot = "NeonSign", speed = 2, color = Palette.flowerPink },
 	GrillHouse = { kind = "glow", pivot = "FurnaceGlow", speed = 3, color = Palette.carrot },
 	SushiBar = { kind = "glow", pivot = "NeonSign", speed = 2.5, color = Palette.flowerYellow },
 	Smelter = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
@@ -223,6 +224,9 @@ function ArtMotion.animalOffset(penId: string, mood: string?, t: number): CFrame
 	elseif penId == "PigPen" then
 		-- Pigs waddle: a side-to-side roll
 		return CFrame.Angles(0, 0, math.rad(math.sin(t * 6) * 4))
+	elseif penId == "MushroomShed" then
+		-- The mushrooms swell and settle as they grow
+		return CFrame.new(0, math.max(0, math.sin(t * 1.5)) * 0.08, 0)
 	elseif penId == "BeeYard" then
 		-- The hive hums: a fast small shiver
 		return CFrame.Angles(0, 0, math.rad(math.sin(t * 14) * 1.5))

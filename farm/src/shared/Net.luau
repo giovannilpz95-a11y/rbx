@@ -91,6 +91,12 @@ return table.freeze({
 	Otter_Feed = "Otter_Feed", -- otter, food: give an otter an Egg, Bacon or Fish
 	Otter_Collect = "Otter_Collect", -- otter: take its catch
 	Otter_Skip = "Otter_Skip", -- otter: bring it home now (Gems)
+	Trader_Build = "Trader_Build", -- (start building the Tool Trader, Coins; shared/ToolTrader)
+	Trader_SpeedUp = "Trader_SpeedUp", -- (finish building now, Gems)
+	Trader_BuySlot = "Trader_BuySlot", -- (open another offer slot, Coins)
+	Trader_Trade = "Trader_Trade", -- slot: take its offer (materials for power tools)
+	Trader_Dump = "Trader_Dump", -- slot: throw its offer away; a new one comes in an hour
+	Trader_Skip = "Trader_Skip", -- slot: bring the next offer now (Gems)
 	Layout_Move = "Layout_Move", -- key, x, z, r: move one of your buildings (shared/Layout)
 	Express_Load = "Express_Load", -- index: load a Town Express crate from the Barn (at the hub station)
 	Market_List = "Market_List", -- slot, item, qty, price: put Barn goods on your stall
@@ -107,6 +113,7 @@ return table.freeze({
 	Debug_Blimp = "Debug_Blimp", -- the Blimp Mast repaired and the Cargo Blimp docked now (Studio only)
 	Debug_Pond = "Debug_Pond", -- the Duck Pond dug out, any visit over, one of each food (Studio only)
 	Debug_Otters = "Debug_Otters", -- the Otter Pond built, three otters, trips over, one of each food (Studio only)
+	Debug_Trader = "Debug_Trader", -- the Tool Trader built, three slots, materials for its offers (Studio only)
 	Debug_Harbor = "Debug_Harbor", -- the Harbor repaired, isles open to your level, the Guild built, Bars, boats home now (Studio only)
 	Debug_Quarry = "Debug_Quarry", -- Bars, ore, Pickaxes, an open Quarry and Population (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
