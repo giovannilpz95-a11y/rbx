@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 725
+local LAST = tonumber(ARGS[2]) or 750
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -173,6 +173,11 @@ local NAMES = {
 	"Sunflower Rise", "Golden Comb Farm", "Royal Jelly Lane", "Heather Moor", "Hive Mind Meadow",
 	"Drone Day", "Busy Bee Lane", "Nectar Night", "Queen Bee Court", "Grand Honey Show",
 	"Smoker's Shed", "Wax Candle Row", "Linden Blossom", "Honey Fair", "Golden Hive Gala",
+	"Hay Truck Day", "Wagon Wheel Way", "Flatbed Farm", "Convoy Crossing", "Haulage Yard",
+	"Pickup Lane", "Lorry Park", "Truck Stop Diner", "Wagon Trail", "Barn Delivery Run",
+	"Country Road", "Tow Rope Hill", "Dusty Wheels", "Haystack Run", "Grand Wagon Race",
+	"Harvest Convoy", "Long Road Home", "Old Truck Barn", "Gravel Track", "Wagon Fair",
+	"Fuel Stop", "Rolling Wagons", "Dairy Run", "Flatbed Festival", "Grand Truck Parade",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -205,7 +210,8 @@ local BUCKET_INTRO = 626 -- first level with mud buckets
 local BOX_INTRO = 651 -- first level with produce box stacks
 local HEDGE_INTRO = 676 -- first level with hedges
 local HIVE_INTRO = 701 -- first level with beehives
-local INTROS = { [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local TRUCK_INTRO = 726 -- first level with hay trucks
+local INTROS = { [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -546,6 +552,7 @@ local function mechanics(id)
 		boxes = id >= BOX_INTRO, -- "v" and "V"
 		hedges = id >= HEDGE_INTRO, -- level.fences with side "R" or "D"
 		hives = id >= HIVE_INTRO, -- "j"
+		trucks = id >= TRUCK_INTRO, -- "C"
 	}
 end
 
@@ -553,6 +560,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_TRUCKS = { "Trucks", "Honey", "Hedges", "Collect", "Trucks", "Boxes", "Buckets", "Scarecrows", "Trucks", "Letters", "Clay", "Mix" }
 local FOCUS_HIVES = { "Honey", "Hedges", "Boxes", "Collect", "Honey", "Buckets", "Scarecrows", "Letters", "Honey", "Clay", "Snowballs", "Mix" }
 local FOCUS_HEDGES = { "Hedges", "Boxes", "Buckets", "Collect", "Hedges", "Scarecrows", "Letters", "Clay", "Hedges", "Snowballs", "Fences", "Mix" }
 local FOCUS_BOXES = { "Boxes", "Buckets", "Scarecrows", "Collect", "Boxes", "Letters", "Clay", "Snowballs", "Boxes", "Sacks", "Quilts", "Mix" }
@@ -589,6 +597,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Truck", "Wagon", "Lorry", "Haulage", "Pickup", "Convoy", "Flatbed", "Tow " }, focus = "Trucks", needs = "trucks" },
 	{ words = { "Hive", "Honey", "Apiary", "Beekeep", "Nectar", "Mead", "Pollen", "Comb", "Swarm", "Buzz", "Bee ", "Drone", "Smoker" }, focus = "Honey", needs = "hives" },
 	{ words = { "Hedge", "Privet", "Hawthorn", "Maze", "Topiary", "Laurel", "Yew", "Holly", "Shrub", "Hornbeam", "Thicket", "Briar", "Juniper", "Windbreak", "Labyrinth" }, focus = "Hedges", needs = "hedges" },
 	{ words = { "Market", "Stall", "Produce", "Grocer", "Stack", "Pallet", "Packing", "Haul", "Loading" }, focus = "Boxes", needs = "boxes" },
@@ -665,6 +674,8 @@ local function focusOf(id, name)
 		return "Hedges"
 	elseif id == HIVE_INTRO then
 		return "Honey"
+	elseif id == TRUCK_INTRO then
+		return "Trucks"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -676,7 +687,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -771,7 +782,7 @@ end
 -- Tarps: centred runs of plain cells in a row (so they stay mirrored), with
 -- tiles above them to fall in once they roll up, never stacked. The first
 -- tarp level has one run of four.
-local NOT_FALLING = "123wsSxtfF#dhGqkzlLyuvVj" -- cells nothing falls out of
+local NOT_FALLING = "123wsSxtfF#dhGqkzlLyuvVjC" -- cells nothing falls out of
 local function placeTarps(g, rng, id)
 	local want = if id == TARP_INTRO then 1 else rng:int(1, 2)
 	local placed = 0
@@ -1016,6 +1027,34 @@ local function placeBuckets(g, rng, id)
 		end
 		if ok then
 			setSym(g, x, y, "u")
+			placed += 1
+		end
+	end
+	return placed
+end
+
+-- Hay trucks: one mirrored pair on plain cells away from the edges (two pairs
+-- now and then after the first truck level), with room around them.
+local function placeTrucks(g, rng, id)
+	local want = if id == TRUCK_INTRO or rng:int(1, 3) < 3 then 1 else 2
+	local placed = 0
+	for _ = 1, 40 do
+		if placed >= want then
+			break
+		end
+		local x, y = rng:int(2, g.w // 2), rng:int(2, g.h - 1)
+		local mx = g.w - x + 1
+		local ok = mx - x >= 2 and g[y][x] == "." and g[y][mx] == "."
+		for dy = -1, 1 do
+			for dx = -1, 1 do
+				local row = g[y + dy]
+				if row and row[x + dx] == "C" then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			setSym(g, x, y, "C")
 			placed += 1
 		end
 	end
@@ -1394,6 +1433,11 @@ local function draft(id, variant)
 	local focus = focusOf(id, name)
 	-- Hen levels after the intro add one other obstacle: eggs alone are too easy.
 	-- Seed sack levels are clover levels with sacks to sow it.
+	-- Hay truck levels are hay bale levels with trucks dropping more.
+	local truckFocus = focus == "Trucks"
+	if truckFocus then
+		focus = "HayBale"
+	end
 	-- Mud bucket levels are mud levels with buckets to spill it.
 	local bucketFocus = focus == "Buckets"
 	if bucketFocus then
@@ -1423,6 +1467,9 @@ local function draft(id, variant)
 		-- Clover can't grow under bales from matches, so clover levels go without them.
 		wantBales = false
 		wantMud = id ~= CLOVER_INTRO and rng:int(1, 3) == 1
+	end
+	if truckFocus and id == TRUCK_INTRO then
+		wantBales = false -- the first truck level's bales all come off its trucks
 	end
 	if bucketFocus and id == BUCKET_INTRO then
 		wantMud = false -- the first bucket level's mud all comes from its buckets
@@ -1462,6 +1509,11 @@ local function draft(id, variant)
 	end
 	if focus == "Crates" or (focus == "Mix" and mech.crates and rng:int(1, 3) == 1) then
 		placeCrates(g, rng, id)
+	end
+	if truckFocus or (mech.trucks and (focus == "HayBale" or focus == "Mix") and rng:int(1, 3) == 1) then
+		if placeTrucks(g, rng, id) == 0 then
+			return nil
+		end
 	end
 	if focus == "Honey" or (focus == "Mix" and mech.hives and rng:int(1, 3) == 1) then
 		if placeHives(g, rng, id) == 0 then
@@ -1592,7 +1644,7 @@ local function draft(id, variant)
 	if has(g, "mMu") > 0 then
 		table.insert(goals, { kind = "Mud" })
 	end
-	if has(g, "123") > 0 then
+	if has(g, "123C") > 0 then
 		table.insert(goals, { kind = "HayBale" })
 	end
 	if has(g, "fF") > 0 then

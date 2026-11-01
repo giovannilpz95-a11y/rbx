@@ -49,6 +49,7 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
+TileStyle.TruckGlyph = "🚚" -- a hay truck (the number is the bales it still carries)
 TileStyle.BucketGlyph = "🥫" -- a mud bucket: a tin (Unicode 10; Roblox has no 🪣, Unicode 13)
 TileStyle.ScarecrowGlyph = "🎩" -- a scarecrow's hat (no scarecrow emoji); dots show its charges
 -- Mailboxes: shut, open with a letter, open and empty.
@@ -146,6 +147,7 @@ TileStyle.Board = {
 	bucket = Color3.fromRGB(150, 160, 170), -- a tin bucket
 	box = Color3.fromRGB(205, 160, 105), -- cardboard produce boxes
 	hive = Color3.fromRGB(236, 178, 52), -- a honeycomb beehive
+	truck = Color3.fromRGB(196, 92, 70), -- a red hay truck
 	glaze = Color3.fromRGB(255, 244, 220), -- the shine on glazed clay
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster

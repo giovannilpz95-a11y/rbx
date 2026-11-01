@@ -81,6 +81,13 @@
 	Each standing bucket counts one towards the Mud goal, and each spilt
 	layer adds one more to clear.
 
+	Hay trucks: carry 3 hay bales and block a cell like a 3-layer bale. Each
+	hit (a match next to it, or a blast) drops one bale off into the nearest
+	cell the wave just emptied (as for produce boxes), as a 1-layer hay bale
+	(a "Drop" effect); with nowhere to drop it, it counts for the goal at
+	once. The truck goes with its last bale. The HayBale goal counts each
+	truck as its 3 bales.
+
 	Beehives: block a cell and never break. Each hit (a match next to one,
 	once per wave, or a blast on it) sends a honey jar to the Honey goal (a
 	"Honey" effect from the hive).
@@ -358,7 +365,9 @@ end
 
 -- What's left of a produce box stack hops into the nearest cell the wave
 -- emptied (a random one of the nearest), or stays put if there's none.
-function Engine._hopStack(self, wave, from)
+-- The nearest cell this wave emptied (within 2 steps of `from`, not where a
+-- power-up is about to appear), a random one of the nearest, or nil.
+function Engine._nearestEmptied(self, wave, from)
 	local reserved = {}
 	for _, create in wave.pendingCreates do
 		reserved[create.cell] = true
@@ -377,10 +386,17 @@ function Engine._hopStack(self, wave, from)
 		end
 	end
 	if #best == 0 then
+		return nil
+	end
+	return self.rng:pick(best)
+end
+
+function Engine._hopStack(self, wave, from)
+	local to = self:_nearestEmptied(wave, from)
+	if not to then
 		table.insert(wave.bales, { x = from.x, y = from.y, hp = from.bale, stack = true })
 		return
 	end
-	local to = self.rng:pick(best)
 	to.bale, to.stack = from.bale, true
 	from.bale, from.stack = 0, nil
 	if wave.balesTouched then
@@ -389,6 +405,22 @@ function Engine._hopStack(self, wave, from)
 	table.insert(wave.bales, { x = from.x, y = from.y, hp = 0 })
 	table.insert(wave.bales, { x = to.x, y = to.y, hp = to.bale, stack = true })
 	table.insert(wave.effects, { type = "Hop", fromX = from.x, fromY = from.y, x = to.x, y = to.y, hp = to.bale })
+end
+
+-- A hay truck drops one of its bales into the nearest cell the wave emptied,
+-- as a 1-layer hay bale. With nowhere to drop it, the bale counts at once.
+function Engine._dropBale(self, wave, truck)
+	local to = self:_nearestEmptied(wave, truck)
+	if not to then
+		self.goals:onBale()
+		return
+	end
+	to.bale = 1
+	if wave.balesTouched then
+		wave.balesTouched[to] = true -- the same wave's matches don't break it where it lands
+	end
+	table.insert(wave.bales, { x = to.x, y = to.y, hp = 1 })
+	table.insert(wave.effects, { type = "Drop", fromX = truck.x, fromY = truck.y, x = to.x, y = to.y })
 end
 
 -- A tipped mud bucket spills a layer of mud onto the cells around it.
@@ -497,6 +529,15 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, bucket = true })
 		self:_spill(wave, cell)
 		self.goals:onMud() -- a tipped bucket is one off the Mud goal
+		return
+	end
+	if cell.truck then
+		cell.bale -= 1
+		if cell.bale == 0 then
+			cell.truck = nil
+		end
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, truck = cell.truck })
+		self:_dropBale(wave, cell)
 		return
 	end
 	if cell.hive then
@@ -764,6 +805,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Boxes") then tiers[1] else tiers[4], cell)
 		elseif cell.hive then
 			table.insert(if goals:wants("Honey") then tiers[1] else tiers[4], cell)
+		elseif cell.truck then
+			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
 			local worth = not cell.mailbox.open or cell.mailbox.mail
 			table.insert(if worth and goals:wants("Letters") then tiers[1] else tiers[4], cell)
