@@ -894,6 +894,65 @@ TYPES.PenthouseTower = {
 	end,
 }
 
+-- Skyline Tower (level 92): a slim blue-grey glass high-rise with white floor bands, a
+-- stepped crown and an antenna.
+TYPES.SkylineTower = {
+	roof = Palette.stoneLight,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.5, s * 0.5, STORY * 3.6
+		local body = walls(b, w, d, h, Palette.glassDeep:Lerp(Palette.stoneLight, 0.4), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		for floor = 1, 3 do
+			t.block(
+				"Band",
+				Vector3.new(w + 0.1, 0.3, d + 0.1),
+				Vector3.new(0, PLINTH + STORY * floor * 1.1, 0.6),
+				Palette.flowerWhite
+			)
+		end
+		t.block("Roof", Vector3.new(w + 0.3, 0.5, d + 0.3), Vector3.new(0, PLINTH + h + 0.25, 0.6), roof)
+		t.block("Crown", Vector3.new(w * 0.6, 1.2, d * 0.6), Vector3.new(0, PLINTH + h + 1.1, 0.6), roof)
+		t.post("Antenna", 2.4, 0.15, Vector3.new(0, PLINTH + h + 2.9, 0.6), Palette.metal)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 1.2, -d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Poolside Tower (level 92): a white high-rise with a blue rooftop pool, sun loungers, a
+-- glass railing and a striped entrance canopy.
+TYPES.PoolsideTower = {
+	roof = Palette.stoneLight,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.58, s * 0.54, STORY * 3.1
+		local body = walls(b, w, d, h, Palette.flowerWhite:Lerp(Palette.cream, 0.3), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.6), roof)
+		t.block(
+			"Pool",
+			Vector3.new(w * 0.6, 0.3, d * 0.45),
+			Vector3.new(-w * 0.1, PLINTH + h + 0.6, 0.6),
+			Palette.water
+		)
+		t.block("Lounger", Vector3.new(0.8, 0.3, 1.8), Vector3.new(w * 0.32, PLINTH + h + 0.65, 0.2), Palette.roofRed)
+		t.block("Railing", Vector3.new(w + 0.3, 0.8, 0.1), Vector3.new(0, PLINTH + h + 0.9, face), Palette.glass)
+		for floor = 1, 3 do
+			t.block(
+				"Windows",
+				Vector3.new(w * 0.8, STORY * 0.45, 0.1),
+				Vector3.new(0, PLINTH + STORY * (floor - 0.45), face - 0.05),
+				Palette.glassDeep
+			)
+		end
+		t.block("Canopy", Vector3.new(2.6, 0.25, 1.2), Vector3.new(0, PLINTH + 3.4, face - 0.6), Palette.roofTeal)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 1.4, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)

@@ -89,6 +89,8 @@ local Factories: { [string]: FactoryDef } = {
 	TeaHouse = { id = "TeaHouse", displayName = "Tea House", unlockLevel = 84, population = 16400, buildCost = 405000, buildSeconds = 72 * HOUR, xp = 16711, queueSlots = 2, trayCapacity = 6, order = 40, color = { 120, 170, 100 } },
 	-- Township's Bouquet Factory (level 87): placed by the player
 	FlowerShop = { id = "FlowerShop", displayName = "Flower Shop", unlockLevel = 87, population = 17200, buildCost = 420000, buildSeconds = 70 * HOUR, xp = 17330, queueSlots = 2, trayCapacity = 6, order = 41, color = { 240, 160, 190 } },
+	-- Township's Italian Restaurant (level 92): placed by the player
+	Trattoria = { id = "Trattoria", displayName = "Trattoria", unlockLevel = 92, population = 17845, buildCost = 450000, buildSeconds = 71 * HOUR, xp = 18567, queueSlots = 2, trayCapacity = 6, order = 42, color = { 200, 80, 60 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 
