@@ -1073,6 +1073,50 @@ local function sushiBar(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Grill House (level 59, placed by the player): a dark-timbered smokehouse under a slate roof
+-- with a tall stone chimney, a big black kettle grill out front whose coals glow while it
+-- works, a woodpile and a sausage-and-fork sign.
+local function grillHouse(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.woodDark:Lerp(Palette.brick, 0.3), Palette.stoneDark)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 11.4, 9.4, 2.4, Palette.stoneDark, Palette.cream)
+	local chimney = d.post("Chimney", 4.4, 1.6, Vector3.new(-3.6, TOP + 2.6, 2.4), Palette.stone)
+	-- The kettle grill on its legs, its glowing coals and the lid propped open
+	local g = Vector3.new(-4.4, 0, FRONT - 2)
+	d.post("GrillLegs", 1.6, 1.4, g + Vector3.new(0, 0.8, 0), Palette.stoneDark)
+	d.ball("Kettle", 2, g + Vector3.new(0, 1.9, 0), Palette.stoneDark)
+	d.cyl(
+		"FurnaceGlow",
+		0.3,
+		1.7,
+		CFrame.new(g + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.brick,
+		{ shadow = false }
+	)
+	d.block(
+		"Lid",
+		Vector3.new(1.8, 0.2, 1.8),
+		CFrame.new(g + Vector3.new(0, 3.3, 0.9)) * CFrame.Angles(math.rad(-60), 0, 0),
+		Palette.stoneDark
+	)
+	d.block("Woodpile", Vector3.new(1.4, 1, 2.6), Vector3.new(5, 0.5, FRONT - 1.8), Palette.trunk)
+	Kit.window(d, "Window", CFrame.new(-1.6, PLINTH + 3.2, FRONT), 3, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(3, PLINTH, FRONT), 2.4, 4.2, Palette.roofRed, Palette.cream)
+	sign(d, Vector3.new(3, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("SausageIcon", Vector3.new(1.4, 0.45, 0.2), at, Palette.brick, { shadow = false })
+		s.block(
+			"ForkIcon",
+			Vector3.new(0.15, 1.2, 0.2),
+			at + Vector3.new(0.5, 0, -0.02),
+			Palette.stoneLight,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1209,6 +1253,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Cobbler = cobbler,
 	Jeweler = jeweler,
 	SushiBar = sushiBar,
+	GrillHouse = grillHouse,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

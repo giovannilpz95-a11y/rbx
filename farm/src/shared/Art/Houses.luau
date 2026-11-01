@@ -811,6 +811,39 @@ TYPES.GlassTower = {
 	end,
 }
 
+-- Heritage Row (content bank, level 58): an old red-brick terrace of three narrow town houses
+-- with white trim, stepped gables and a black lamp post out front.
+TYPES.HeritageRow = {
+	roof = Palette.stoneDark,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.8, s * 0.48, STORY * 2.4
+		local body = walls(b, w, d, h, Palette.brick, 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		for i = -1, 1 do
+			local x = i * w / 3
+			t.block(
+				"Gable",
+				Vector3.new(w / 3 - 0.4, 2 + (i + 1) % 2, d),
+				Vector3.new(x, PLINTH + h + 1 + ((i + 1) % 2) / 2, 0.6),
+				roof
+			)
+			Kit.window(t, "Window", CFrame.new(x, PLINTH + STORY + 1.8, face), 1.2, 1.8, Palette.cream, Palette.glass)
+		end
+		t.block("Trim", Vector3.new(w + 0.2, 0.4, d + 0.2), Vector3.new(0, PLINTH + h, 0.6), Palette.cream)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3.2, Palette.treeTopDark, Palette.cream)
+		t.post("Lamp", 3.6, 0.25, Vector3.new(-w / 3, PLINTH + 1.8, face - 1.4), Palette.stoneDark)
+		t.block(
+			"LampHead",
+			Vector3.new(0.6, 0.7, 0.6),
+			Vector3.new(-w / 3, PLINTH + 3.9, face - 1.4),
+			Palette.flowerYellow
+		)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 2.6, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

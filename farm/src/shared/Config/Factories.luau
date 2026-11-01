@@ -64,6 +64,8 @@ local Factories: { [string]: FactoryDef } = {
 	Jeweler = { id = "Jeweler", displayName = "Jeweler", unlockLevel = 53, population = 5860, buildCost = 70000, buildSeconds = 56 * HOUR, xp = 2892, queueSlots = 1, trayCapacity = 6, order = 27, color = { 120, 200, 220 } },
 	-- Township's Asian Restaurant (level 56): placed by the player
 	SushiBar = { id = "SushiBar", displayName = "Sushi Bar", unlockLevel = 56, population = 7500, buildCost = 95000, buildSeconds = 60 * HOUR, xp = 3923, queueSlots = 2, trayCapacity = 6, order = 28, color = { 200, 60, 60 } },
+	-- Township's Grill Factory (level 59): placed by the player
+	GrillHouse = { id = "GrillHouse", displayName = "Grill House", unlockLevel = 59, population = 8700, buildCost = 115000, buildSeconds = 61 * HOUR, xp = 4748, queueSlots = 2, trayCapacity = 6, order = 29, color = { 90, 70, 60 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 
