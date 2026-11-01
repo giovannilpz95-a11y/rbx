@@ -6,7 +6,7 @@
 -- plot-local position and an extra turn (0 / 90 / 180 / 270 degrees) on top of the way it
 -- faces by default. Buildings without an entry stand where the farm layout puts them.
 -- Keys: "field:F7", "factory:Bakery", "pen:ChickenCoop", "house:<lot>", "community:<id>",
--- "harbor:Harbor", "pond:DuckPond".
+-- "harbor:Harbor", "pond:DuckPond", "otters:OtterPond".
 --
 -- Footprints are in plot-local studs at the default facing: width along X, depth along Z,
 -- and the footprint's centre offset from the building's position (a factory's output table
@@ -14,6 +14,7 @@
 
 local Balance = require("./Config/Balance")
 local DuckPondConfig = require("./Config/DuckPond")
+local OtterPondConfig = require("./Config/OtterPond")
 local Isles = require("./Config/Isles")
 local Land = require("./Config/Land")
 local TownRules = require("./TownRules")
@@ -31,6 +32,7 @@ Layout.KINDS = table.freeze({
 	community = table.freeze({ w = 12, d = 12, ox = 0, oz = 0 }),
 	harbor = table.freeze({ w = 24, d = 18, ox = 0, oz = 0 }), -- Art/Harbor WIDTH x DEPTH
 	pond = table.freeze({ w = 14, d = 14, ox = 0, oz = 0 }), -- Art/DuckPond SIZE
+	otters = table.freeze({ w = 16, d = 14, ox = 0, oz = 0 }), -- Art/OtterPond WIDTH x DEPTH
 }) :: { [string]: Footprint }
 
 Layout.DISPLAY = table.freeze({
@@ -41,6 +43,7 @@ Layout.DISPLAY = table.freeze({
 	community = "Community Building",
 	harbor = "Harbor",
 	pond = "Duck Pond",
+	otters = "Otter Pond",
 })
 
 Layout.GRID = 2 -- positions snap to a 2-stud grid
@@ -110,6 +113,9 @@ function Layout.exists(data: { [string]: any }, kind: string, id: string): boole
 	elseif kind == "pond" then
 		-- The overgrown pond is on the farm from its level, dug out or not
 		return id == "DuckPond" and data.level >= DuckPondConfig.unlockLevel
+	elseif kind == "otters" then
+		-- The empty otter pool is on the farm from its level, built or not
+		return id == "OtterPond" and data.level >= OtterPondConfig.unlockLevel
 	end
 	return false
 end

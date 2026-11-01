@@ -7,6 +7,7 @@
 local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
 local DuckPondConfig = require("./Config/DuckPond")
+local OtterPondConfig = require("./Config/OtterPond")
 local Harbor = require("./Harbor")
 local Items = require("./Items")
 local OrderConfig = require("./Config/Orders")
@@ -103,6 +104,20 @@ function OrderGen.makeablePool(data: { [string]: any }): { string }
 				can[DuckPondConfig.down] = true
 				if food.drakes[2] > 0 then
 					can[DuckPondConfig.colorful] = true
+				end
+			end
+		end
+		addRecipes()
+	end
+	-- Otter Pond catch, once it's built: whatever the foods the farm can make can bring back
+	local otters = data.otterPond
+	if otters and otters.readyAt ~= nil then
+		for _, food in OtterPondConfig.foods do
+			if can[food.item] then
+				for id, range in food.catch do
+					if range[2] > 0 then
+						can[id] = true
+					end
 				end
 			end
 		end

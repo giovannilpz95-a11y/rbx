@@ -231,6 +231,27 @@ local function act(part: BasePart)
 		else
 			Panels.open("DuckPond")
 		end
+	elseif kind == "OtterPond" then
+		-- An otter back with its catch is unloaded straight away; otherwise the panel
+		local pond = ClientStore.state and ClientStore.state.otterPond
+		local now = ClientStore.now()
+		local back = nil
+		if pond and pond.readyAt and now >= pond.readyAt then
+			for i = 1, pond.otters or 1 do
+				local trip = pond.away[tostring(i)]
+				if trip and now >= trip.readyAt then
+					back = i
+					break
+				end
+			end
+		end
+		if back then
+			Remotes.fire("Otter_Collect", back)
+		else
+			Panels.open("OtterPond")
+		end
+	elseif kind == "OtterCatch" then
+		Remotes.fire("Otter_Collect", part:GetAttribute("Otter"))
 	elseif kind == "HarborDrift" then
 		Remotes.fire("Harbor_Drift")
 	elseif kind == "HarborBoat" then

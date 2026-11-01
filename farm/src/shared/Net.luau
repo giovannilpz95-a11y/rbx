@@ -85,6 +85,12 @@ return table.freeze({
 	Pond_Feed = "Pond_Feed", -- food: put a Bread, Bagel or Banana Bread out for the ducks
 	Pond_Collect = "Pond_Collect", -- (take the feathers the ducks left)
 	Pond_Skip = "Pond_Skip", -- (the ducks leave now, Gems)
+	Otter_Build = "Otter_Build", -- (start building the Otter Pond, Coins; shared/OtterPond)
+	Otter_SpeedUp = "Otter_SpeedUp", -- (finish building now, Gems)
+	Otter_Buy = "Otter_Buy", -- (another otter, Coins)
+	Otter_Feed = "Otter_Feed", -- otter, food: give an otter an Egg, Bacon or Fish
+	Otter_Collect = "Otter_Collect", -- otter: take its catch
+	Otter_Skip = "Otter_Skip", -- otter: bring it home now (Gems)
 	Layout_Move = "Layout_Move", -- key, x, z, r: move one of your buildings (shared/Layout)
 	Express_Load = "Express_Load", -- index: load a Town Express crate from the Barn (at the hub station)
 	Market_List = "Market_List", -- slot, item, qty, price: put Barn goods on your stall
@@ -100,6 +106,7 @@ return table.freeze({
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Debug_Blimp = "Debug_Blimp", -- the Blimp Mast repaired and the Cargo Blimp docked now (Studio only)
 	Debug_Pond = "Debug_Pond", -- the Duck Pond dug out, any visit over, one of each food (Studio only)
+	Debug_Otters = "Debug_Otters", -- the Otter Pond built, three otters, trips over, one of each food (Studio only)
 	Debug_Harbor = "Debug_Harbor", -- the Harbor repaired, isles open to your level, the Guild built, Bars, boats home now (Studio only)
 	Debug_Quarry = "Debug_Quarry", -- Bars, ore, Pickaxes, an open Quarry and Population (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)

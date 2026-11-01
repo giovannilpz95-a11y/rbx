@@ -2436,6 +2436,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Population for every building (Houses become the biggest type)", "Debug_Population", 380, 18)
 	devButton("Harbor: repaired, isles open, Guild built, Bars, boats home now", "Debug_Harbor", 380, 19)
 	devButton("Duck Pond: dug out, ducks gone, a Bread, Bagel and Banana Bread", "Debug_Pond", 380, 20)
+	devButton("Otter Pond: built, three otters, trips over, an Egg, Bacon and Fish", "Debug_Otters", 380, 21)
 end
 
 ---------------------------------------------------------------------------------------------

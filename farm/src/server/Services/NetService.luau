@@ -110,6 +110,7 @@ local function snapshot(data: { [string]: any })
 		layout = data.layout, -- buildings the player moved (shared/Layout), for the move ghost
 		harbor = data.harbor, -- Harbor & Far Isles: boats, isles and trips (shared/Harbor)
 		duckPond = data.duckPond, -- the Duck Pond: dig timer and the current visit (shared/DuckPond)
+		otterPond = data.otterPond, -- the Otter Pond: build timer, otters and their trips (shared/OtterPond)
 		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
