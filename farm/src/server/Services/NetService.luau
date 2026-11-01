@@ -109,6 +109,7 @@ local function snapshot(data: { [string]: any })
 		market = data.market, -- your stall's listings (shared/Market, client/UI/Market)
 		layout = data.layout, -- buildings the player moved (shared/Layout), for the move ghost
 		harbor = data.harbor, -- Harbor & Far Isles: boats, isles and trips (shared/Harbor)
+		duckPond = data.duckPond, -- the Duck Pond: dig timer and the current visit (shared/DuckPond)
 		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,

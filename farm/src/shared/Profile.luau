@@ -179,6 +179,10 @@ function Profile.template(): { [string]: any }
 			driftDay = -1, -- UTC day of the last Driftwood Crate
 			chests = 0,
 		},
+		duckPond = { -- the Duck Pond (shared/DuckPond); readyAt is set when digging starts
+			seed = 0,
+			visits = 0,
+		},
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart

@@ -114,6 +114,31 @@ local Recipes: { [string]: RecipeDef } = {
 	StickyNotes = { id = "StickyNotes", displayName = "Sticky Notes", factory = "StationeryShop", unlockLevel = 47, inputs = { Paper = 3, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 219, xp = 94 },
 	Table = { id = "Table", displayName = "Table", factory = "FurnitureWorkshop", unlockLevel = 47, inputs = { PineTrees = 3 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 62, xp = 27 },
 	Chair = { id = "Chair", displayName = "Chair", factory = "FurnitureWorkshop", unlockLevel = 47, inputs = { Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 97, xp = 71 },
+	Lollipop = { id = "Lollipop", displayName = "Lollipop", factory = "CandyFactory", unlockLevel = 48, inputs = { Strawberries = 2, CaneSyrup = 1, PineTrees = 2 }, outputQty = 1, seconds = 5 * HOUR, sellPrice = 117, xp = 50 },
+	Couch = { id = "Couch", displayName = "Couch", factory = "FurnitureWorkshop", unlockLevel = 48, inputs = { PineTrees = 2, CottonFabric = 1 }, outputQty = 1, seconds = 6 * HOUR, sellPrice = 100, xp = 43 },
+	Shuttlecock = { id = "Shuttlecock", displayName = "Shuttlecock", factory = "MoldingWorks", unlockLevel = 49, inputs = { DownFeather = 2, Plastic = 1 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 117, xp = 50 },
+	FeatherDuster = { id = "FeatherDuster", displayName = "Feather Duster", factory = "HomewaresShop", unlockLevel = 49, inputs = { Sugarcane = 1, ColorfulFeather = 3 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 136, xp = 58 },
+	-- Cobbler (content bank)
+	FlipFlops = { id = "FlipFlops", displayName = "Flip Flops", factory = "Cobbler", unlockLevel = 50, inputs = { Rubber = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 44, xp = 19 },
+	Sandals = { id = "Sandals", displayName = "Sandals", factory = "Cobbler", unlockLevel = 51, inputs = { CorkOak = 3, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 238, xp = 102 },
+	-- Level 50-51 goods at older factories
+	FeatherHat = { id = "FeatherHat", displayName = "Feather Hat", factory = "Tailor", unlockLevel = 50, inputs = { CottonFabric = 1, SilkFabric = 1, ColorfulFeather = 1 }, outputQty = 1, seconds = 2 * HOUR + 45 * MIN, sellPrice = 274, xp = 117 },
+	MintChocIceCream = { id = "MintChocIceCream", displayName = "Mint Choc Ice Cream", factory = "IceCreamParlor", unlockLevel = 50, inputs = { Milk = 1, Mint = 2, Chocolate = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 214, xp = 92 },
+	PineappleSorbet = { id = "PineappleSorbet", displayName = "Pineapple Sorbet", factory = "IceCreamParlor", unlockLevel = 51, inputs = { CaneSyrup = 1, Pineapples = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 343, xp = 147 },
+	HoneyMarshmallow = { id = "HoneyMarshmallow", displayName = "Honey Marshmallow", factory = "CandyFactory", unlockLevel = 51, inputs = { HoneyCaramel = 1, Eggs = 2 }, outputQty = 1, seconds = 4 * HOUR + 30 * MIN, sellPrice = 211, xp = 90 },
+	-- Level 52-53 goods
+	Book = { id = "Book", displayName = "Book", factory = "PaperMill", unlockLevel = 52, inputs = { Paper = 4, CottonFabric = 1, Glue = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 304, xp = 130 },
+	HighlighterPen = { id = "HighlighterPen", displayName = "Highlighter Pen", factory = "StationeryShop", unlockLevel = 52, inputs = { NylonThread = 1, Cotton = 3, Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 283, xp = 121 },
+	FishBurger = { id = "FishBurger", displayName = "Fish Burger", factory = "Diner", unlockLevel = 53, inputs = { Bread = 2, Fish = 2, Peppers = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 184, xp = 79 },
+	-- Level 54-55 goods
+	Bed = { id = "Bed", displayName = "Bed", factory = "FurnitureWorkshop", unlockLevel = 54, inputs = { SilkFabric = 1, CottonFabric = 1, PineTrees = 2 }, outputQty = 1, seconds = 4 * HOUR + 30 * MIN, sellPrice = 292, xp = 125 },
+	MintCandy = { id = "MintCandy", displayName = "Mint Candy", factory = "CandyFactory", unlockLevel = 54, inputs = { Mint = 2, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 114, xp = 49 },
+	SeafoodPizza = { id = "SeafoodPizza", displayName = "Seafood Pizza", factory = "Bakery", unlockLevel = 55, inputs = { Wheat = 2, Fish = 1, Shrimp = 1, Cheese = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 241, xp = 103 },
+	Sneakers = { id = "Sneakers", displayName = "Sneakers", factory = "Cobbler", unlockLevel = 55, inputs = { Rubber = 1, CottonFabric = 1, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 234, xp = 100 },
+	-- Jeweler (Township's Jewelry Store): Quarry ore from the Ore Shed, like the Smelter
+	Pendant = { id = "Pendant", displayName = "Pendant", factory = "Jeweler", unlockLevel = 53, inputs = { SilverOre = 9 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 345, xp = 148, fromOreShed = true },
+	BulletinBoard = { id = "BulletinBoard", displayName = "Bulletin Board", factory = "StationeryShop", unlockLevel = 48, inputs = { CorkOak = 3, Paper = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 124, xp = 53 },
+	Taco = { id = "Taco", displayName = "Taco", factory = "Cantina", unlockLevel = 49, inputs = { Corn = 3, Cream = 1, Tomatoes = 2, Peppers = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 109, xp = 47 },
 	-- Homewares Shop (content bank)
 	Plunger = { id = "Plunger", displayName = "Plunger", factory = "HomewaresShop", unlockLevel = 40, inputs = { PineTrees = 1, Rubber = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 122, xp = 52 },
 	Clothesline = { id = "Clothesline", displayName = "Clothesline", factory = "HomewaresShop", unlockLevel = 39, inputs = { Sugarcane = 5, NylonThread = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 202, xp = 87 },

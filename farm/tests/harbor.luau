@@ -300,6 +300,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(n <= ArtHarbor.PARTS_MAX, string.format("Harbor has %d parts, budget %d", n, ArtHarbor.PARTS_MAX))
 		eq(parts.body:GetAttribute("Interact"), "Harbor", "the boathouse opens the panel")
 		ok(parts.body.CanQuery and parts.body.CanCollide, "a solid tap target")
+		eq(parts.body:GetAttribute("HandsFirst"), true, "a press at the boathouse opens the Harbor before the beds")
 		eq(#parts.boats, Config and #Config.boats, "a berth per Sailboat")
 		local fp = Layout.KINDS.harbor
 		eq(fp.w, ArtHarbor.WIDTH, "Layout footprint width")

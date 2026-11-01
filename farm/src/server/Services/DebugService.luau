@@ -8,6 +8,8 @@ local Animals = require(Shared.Config.Animals)
 local Factories = require(Shared.Config.Factories)
 local BarnRules = require(Shared.BarnRules)
 local Blimp = require(Shared.Blimp)
+local DuckPond = require(Shared.DuckPond)
+local DuckPondConfig = require(Shared.Config.DuckPond)
 local Harbor = require(Shared.Harbor)
 local IslesConfig = require(Shared.Config.Isles)
 local Levels = require(Shared.Config.Levels)
@@ -279,6 +281,31 @@ function DebugService.harbor(player: Player): (boolean, string?)
 	return true
 end
 
+-- The Duck Pond: dug out now (ignoring level and Coins), any visit over, and one of each food
+function DebugService.pond(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	if data.level < DuckPondConfig.unlockLevel then
+		return false, string.format("Reach level %d first (+1 level)", DuckPondConfig.unlockLevel)
+	end
+	if data.duckPond.readyAt == nil then
+		DuckPond.dig(data, now, Random.new():NextInteger(1, 2147483646))
+	end
+	DuckPond.finishDig(data, now)
+	DuckPond.skip(data, now)
+	for _, food in DuckPondConfig.foods do
+		data.inventory.items[food.item] = (data.inventory.items[food.item] or 0) + 1
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: Duck Pond dug out, ducks gone, +1 Bread, Bagel and Banana Bread")
+	return true
+end
+
 -- Airship Freight (Features/F04): the Blimp Mast repaired and the Cargo Blimp docked now,
 -- ignoring level, land and Coins. Pressed while it's docked, it sends it off (no rewards) and
 -- brings a fresh load in.
@@ -478,6 +505,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Quarry, 1, 2, DebugService.quarry)
 	NetService.on(Net.Debug_Blimp, 1, 2, DebugService.blimp)
 	NetService.on(Net.Debug_Harbor, 1, 2, DebugService.harbor)
+	NetService.on(Net.Debug_Pond, 1, 2, DebugService.pond)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)

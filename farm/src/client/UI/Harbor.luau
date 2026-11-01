@@ -101,6 +101,12 @@ local function barPicker(order: number, body: Instance)
 			chosenBar = bar
 			Panels.refresh()
 		end, { Size = UDim2.new(0.2, -4, 1, 0), Parent = row })
+		-- Shrink the text to fit rather than clip it ("Platinum (22)" on a phone)
+		local limit = Instance.new("UITextSizeConstraint")
+		limit.MaxTextSize = button.TextSize
+		limit.MinTextSize = 9
+		limit.Parent = button
+		button.TextScaled = true
 		local picked = chosenBar == bar
 		Ui.setEnabled(button, bar == nil or have > 0, if picked then Ui.colors.selected else nil)
 	end

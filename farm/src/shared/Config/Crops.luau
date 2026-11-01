@@ -34,6 +34,7 @@ local Crops: { [string]: CropDef } = {
 	Silk = { id = "Silk", displayName = "Silk", unlockLevel = 31, growSeconds = 15 * HOUR, seedCost = 20, sellPrice = 33, xp = 27, yield = 1, order = 12, color = { 245, 240, 225 } },
 	CorkOak = { id = "CorkOak", displayName = "Cork Oak", unlockLevel = 38, growSeconds = 10 * HOUR, seedCost = 12, sellPrice = 25, xp = 22, yield = 1, order = 13, color = { 170, 120, 80 } },
 	Peppers = { id = "Peppers", displayName = "Peppers", unlockLevel = 43, growSeconds = 5 * HOUR, seedCost = 11, sellPrice = 20, xp = 9, yield = 1, order = 14, color = { 210, 40, 30 } },
+	Mint = { id = "Mint", displayName = "Mint", unlockLevel = 50, growSeconds = 2 * HOUR + 45 * MIN, seedCost = 21, sellPrice = 30, xp = 7, yield = 1, order = 15, color = { 120, 210, 150 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }
 

@@ -6,13 +6,14 @@
 -- plot-local position and an extra turn (0 / 90 / 180 / 270 degrees) on top of the way it
 -- faces by default. Buildings without an entry stand where the farm layout puts them.
 -- Keys: "field:F7", "factory:Bakery", "pen:ChickenCoop", "house:<lot>", "community:<id>",
--- "harbor:Harbor".
+-- "harbor:Harbor", "pond:DuckPond".
 --
 -- Footprints are in plot-local studs at the default facing: width along X, depth along Z,
 -- and the footprint's centre offset from the building's position (a factory's output table
 -- sticks out on its west side).
 
 local Balance = require("./Config/Balance")
+local DuckPondConfig = require("./Config/DuckPond")
 local Isles = require("./Config/Isles")
 local Land = require("./Config/Land")
 local TownRules = require("./TownRules")
@@ -29,6 +30,7 @@ Layout.KINDS = table.freeze({
 	house = table.freeze({ w = 8, d = 8, ox = 0, oz = 0 }),
 	community = table.freeze({ w = 12, d = 12, ox = 0, oz = 0 }),
 	harbor = table.freeze({ w = 24, d = 18, ox = 0, oz = 0 }), -- Art/Harbor WIDTH x DEPTH
+	pond = table.freeze({ w = 14, d = 14, ox = 0, oz = 0 }), -- Art/DuckPond SIZE
 }) :: { [string]: Footprint }
 
 Layout.DISPLAY = table.freeze({
@@ -38,6 +40,7 @@ Layout.DISPLAY = table.freeze({
 	house = "House",
 	community = "Community Building",
 	harbor = "Harbor",
+	pond = "Duck Pond",
 })
 
 Layout.GRID = 2 -- positions snap to a 2-stud grid
@@ -104,6 +107,9 @@ function Layout.exists(data: { [string]: any }, kind: string, id: string): boole
 	elseif kind == "harbor" then
 		-- The old Harbor stands on the farm from its level, repaired or not (Features/F02)
 		return id == "Harbor" and data.level >= Isles.unlockLevel
+	elseif kind == "pond" then
+		-- The overgrown pond is on the farm from its level, dug out or not
+		return id == "DuckPond" and data.level >= DuckPondConfig.unlockLevel
 	end
 	return false
 end

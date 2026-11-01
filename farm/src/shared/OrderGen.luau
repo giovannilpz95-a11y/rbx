@@ -6,6 +6,7 @@
 
 local Animals = require("./Config/Animals")
 local Balance = require("./Config/Balance")
+local DuckPondConfig = require("./Config/DuckPond")
 local Harbor = require("./Harbor")
 local Items = require("./Items")
 local OrderConfig = require("./Config/Orders")
@@ -93,6 +94,20 @@ function OrderGen.makeablePool(data: { [string]: any }): { string }
 		end
 	end
 	addRecipes()
+	-- Duck Pond feathers, once it's dug out: Down from any food, Colorful from Bagels or
+	-- Banana Bread (Bread never brings a drake). Then what's made from them.
+	local pond = data.duckPond
+	if pond and pond.readyAt ~= nil then
+		for _, food in DuckPondConfig.foods do
+			if can[food.item] then
+				can[DuckPondConfig.down] = true
+				if food.drakes[2] > 0 then
+					can[DuckPondConfig.colorful] = true
+				end
+			end
+		end
+		addRecipes()
+	end
 
 	local pool = {}
 	for id in can do

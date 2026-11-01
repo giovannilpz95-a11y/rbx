@@ -49,6 +49,7 @@ local ArtPickups = require("../src/shared/Art/Pickups")
 local ArtQuarry = require("../src/shared/Art/Quarry")
 local ArtBlimp = require("../src/shared/Art/Blimp")
 local ArtHarbor = require("../src/shared/Art/Harbor")
+local ArtDuckPond = require("../src/shared/Art/DuckPond")
 local ArtTown = require("../src/shared/Art/Town")
 local Land = require("../src/shared/Config/Land")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
@@ -1172,6 +1173,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtBlimp.PARTS_MAX
 		-- The Harbor with all four Sailboats home and the Driftwood Crate (Features/F02)
 		total += ArtHarbor.PARTS_MAX
+		-- The Duck Pond with four ducks on the water
+		total += ArtDuckPond.PARTS_MAX
 		-- The Tinker's Guild, merged like a town building once it's built
 		local guild = Instance.new("Model")
 		total += ArtMerge.count(guild, ArtGuild.build(guild, CFrame.new()))
