@@ -2238,6 +2238,41 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Sky Tower (content bank, level 74): a slim glass office tower in stepped tiers, bands of
+-- window glass, a rooftop antenna with a red light and a plaza with a fountain at its foot.
+TYPES.SkyTower = function(b, s)
+	local body = hall(b, s * 0.4, s * 0.4, 8, Palette.stoneLight)
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Tier2", Vector3.new(s * 0.32, 6, s * 0.32), Vector3.new(0, PLINTH + 11, 0), Palette.stoneLight)
+	t.block("Tier3", Vector3.new(s * 0.22, 4, s * 0.22), Vector3.new(0, PLINTH + 16, 0), Palette.stoneLight)
+	-- Window bands on the front of each tier
+	t.block("Glass1", Vector3.new(s * 0.34, 6.4, 0.2), Vector3.new(0, PLINTH + 4.4, face - 0.05), Palette.glassDeep)
+	t.block("Glass2", Vector3.new(s * 0.26, 4.6, 0.2), Vector3.new(0, PLINTH + 11, -s * 0.16 - 0.05), Palette.glassDeep)
+	t.block("Glass3", Vector3.new(s * 0.16, 3, 0.2), Vector3.new(0, PLINTH + 16, -s * 0.11 - 0.05), Palette.glassDeep)
+	t.post("Antenna", 3, 0.25, Vector3.new(0, PLINTH + 19.5, 0), Palette.metal)
+	t.ball("Beacon", 0.6, Vector3.new(0, PLINTH + 21.1, 0), Palette.roofRed, { shadow = false })
+	-- The plaza fountain
+	t.cyl(
+		"Fountain",
+		0.6,
+		3,
+		CFrame.new(-s * 0.3, PLINTH + 0.3, face - 1.8) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stone
+	)
+	t.cyl(
+		"FountainWater",
+		0.62,
+		2.4,
+		CFrame.new(-s * 0.3, PLINTH + 0.32, face - 1.8) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.water
+	)
+	t.post("Spout", 1.4, 0.4, Vector3.new(-s * 0.3, PLINTH + 0.9, face - 1.8), Palette.sky)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.1), 2.4, 3.2, Palette.glass, Palette.metal)
+	Kit.sproutTag(t, Vector3.new(s * 0.14, PLINTH + 8.6, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Lighthouse (content bank, level 72): a tall white tower banded in red on a rocky base, a
 -- glass lamp room at the top with a lamp, a gallery rail and a red cap, and a keeper's hut.
 TYPES.Lighthouse = function(b, s)

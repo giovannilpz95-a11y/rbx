@@ -395,6 +395,20 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Peanuts (level 75): low clover-leaved rows, then the rows lifted with the tan pods showing
+-- along the soil.
+GROWING.Peanuts = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Leaves", Vector3.new(6.6, 0.7, 1.1), Vector3.new(0, 0.75, z), Palette.leafLight)
+	end
+end
+READY.Peanuts = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Leaves", Vector3.new(6.8, 1, 1.2), Vector3.new(0, 0.9, z), Palette.leaf)
+		b.block("Pods", Vector3.new(6.2, 0.4, 1.4), Vector3.new(0, 0.5, z), color)
+	end
+end
+
 -- Coffee Beans (level 72): rows of glossy dark-leaved bushes, then the bushes dotted with
 -- clusters of red coffee cherries.
 GROWING.Coffee = function(b)

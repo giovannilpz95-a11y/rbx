@@ -1255,6 +1255,47 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Quilt Shop (level 74, placed by the player): a pale blue cottage workshop with a patchwork
+-- quilt hung on a line across the front, a giant plump pillow on the roof whose button glows
+-- while it sews, and a feather sign.
+local function quiltShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.sky:Lerp(Palette.cream, 0.55), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.roofPlum)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The pillow on the roof and its glowing button
+	local pillow = Vector3.new(-1.2, TOP + 1.4, 0.4)
+	d.block("Pillow", Vector3.new(5, 1.6, 3.4), pillow, Palette.flowerWhite)
+	d.ball("Puff", 2, pillow + Vector3.new(0, 0.5, 0), Palette.flowerWhite)
+	d.ball("NeonSign", 0.7, pillow + Vector3.new(0, 1.4, -0.2), Palette.roofRed, { shadow = false })
+	-- The quilt on its line: four patches
+	d.block("Line", Vector3.new(9.6, 0.1, 0.1), Vector3.new(0, PLINTH + 5.6, FRONT - 1.2), Palette.woodDark)
+	for i, color in { Palette.roofRed, Palette.sky, Palette.flowerYellow, Palette.leafLight } do
+		d.block("Patch", Vector3.new(1.4, 1.4, 0.1), Vector3.new(-4.5 + i * 1.4, PLINTH + 4.8, FRONT - 1.2), color)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 2.8, FRONT), 3.4, 2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.roofPlum, Palette.cream)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block(
+			"FeatherIcon",
+			Vector3.new(0.5, 1.1, 0.2),
+			at * CFrame.Angles(0, 0, math.rad(25)),
+			Palette.flowerWhite,
+			{ shadow = false }
+		)
+		s.block(
+			"QuillIcon",
+			Vector3.new(0.1, 0.5, 0.2),
+			at + Vector3.new(0.3, -0.6, -0.02),
+			Palette.woodDark,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Coffee House (level 72, placed by the player): a brown brick cafe with a cream awning, a
 -- giant coffee cup on the roof whose steam glows while it brews, a bean sign and a bench of
 -- sacks out front.
@@ -1533,6 +1574,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	CakeShop = cakeShop,
 	HotDogStand = hotDogStand,
 	CoffeeHouse = coffeeHouse,
+	QuiltShop = quiltShop,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
