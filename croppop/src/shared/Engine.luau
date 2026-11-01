@@ -110,7 +110,8 @@
 	blast on the cell clears the web (the tile stays), for the Webs goal.
 
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
-	it (matches don't), for the Fences goal.
+	it (matches don't), for the Fences goal. Hedges block swaps the same way,
+	but nothing breaks them; matches and falling tiles pass both.
 
 	Pumpkin baskets: a match next to a basket, or a blast reaching it, shakes
 	a pumpkin loose (once per basket per wave, while the goal still needs

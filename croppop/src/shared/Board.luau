@@ -16,7 +16,8 @@
 	by its portal (nothing falls into it from above, and no tile spawns there),
 	and the cell under an entrance gets pieces only by sliding in diagonally.
 	Fences sit on the edge between two cells: nothing swaps across one, but
-	matches and falling pieces pass it. Only blasts break them.
+	matches and falling pieces pass it. Only blasts break them. Hedges are
+	fences that nothing breaks (side "R" or "D" in a level's fences list).
 	Hen houses ("h") are not cells either, but nothing falls past one: the
 	column above stops on it, and the cell below gets a fresh tile from it
 	whenever it's empty: every other one is an Egg (so eggs never stack
@@ -97,8 +98,9 @@ function Board.new(width: number, height: number)
 		henAt = {}, -- y * 100 + x -> hen house
 		springs = {}, -- goo springs ("G" in the layout): { x, y } in row order
 		springAt = {}, -- y * 100 + x -> goo spring
-		fences = {}, -- edge key -> { x, y, side = "r" | "d" } (the edge right of / below (x, y))
-		fenceCount = 0,
+		fences = {}, -- edge key -> { x, y, side = "r" | "d", hedge? } (the edge right of / below (x, y))
+		fenceCount = 0, -- fences that can break (not hedges)
+		edgeCount = 0, -- fences and hedges
 		-- Buried statues ("b" in the layout; touching "b" cells make one statue):
 		-- { cells = { Cell }, left = cells still buried } in reading order.
 		statues = {},
@@ -126,24 +128,28 @@ end
 
 -- The fence between two neighbouring cells, if there is one.
 function Board.fenceBetween(self, x1: number, y1: number, x2: number, y2: number)
-	if self.fenceCount == 0 then
+	if self.edgeCount == 0 then
 		return nil
 	end
 	return self.fences[edgeKey(x1, y1, x2, y2)]
 end
 
--- Removes a fence; returns true if it was there.
+-- Removes a fence; returns true if it was there. Hedges never break.
 function Board.breakFence(self, fence): boolean
+	if fence.hedge then
+		return false
+	end
 	local key = edgeKey(fence.x, fence.y, fence.x + (if fence.side == "r" then 1 else 0), fence.y + (if fence.side == "d" then 1 else 0))
 	if self.fences[key] then
 		self.fences[key] = nil
 		self.fenceCount -= 1
+		self.edgeCount -= 1
 		return true
 	end
 	return false
 end
 
--- Fences on the four edges of (x, y), in a fixed order.
+-- Fences (not hedges) on the four edges of (x, y), in a fixed order.
 function Board.fencesAround(self, x: number, y: number)
 	local out = {}
 	if self.fenceCount == 0 then
@@ -151,7 +157,7 @@ function Board.fencesAround(self, x: number, y: number)
 	end
 	for _, d in { { 0, -1 }, { -1, 0 }, { 1, 0 }, { 0, 1 } } do
 		local fence = self.fences[edgeKey(x, y, x + d[1], y + d[2])]
-		if fence then
+		if fence and not fence.hedge then
 			table.insert(out, fence)
 		end
 	end
@@ -318,11 +324,16 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 		end
 	end
 	for _, f in fences or {} do
-		local x, y, side = f[1], f[2], f[3]
+		-- "R" and "D" are hedges: fences that nothing breaks.
+		local x, y, side = f[1], f[2], string.lower(f[3])
+		local hedge = f[3] ~= side
 		local key = edgeKey(x, y, x + (if side == "r" then 1 else 0), y + (if side == "d" then 1 else 0))
 		if not self.fences[key] then
-			self.fences[key] = { x = x, y = y, side = side }
-			self.fenceCount += 1
+			self.fences[key] = { x = x, y = y, side = side, hedge = if hedge then true else nil }
+			self.edgeCount += 1
+			if not hedge then
+				self.fenceCount += 1
+			end
 		end
 	end
 	return self
@@ -793,12 +804,17 @@ function Board.hash(self): string
 		end
 		parts[y] = table.concat(row, ",")
 	end
-	if self.fenceCount > 0 then
+	if self.edgeCount > 0 then
 		local keys = {}
 		for key in self.fences do
 			table.insert(keys, key)
 		end
 		table.sort(keys)
+		for i, key in keys do
+			if self.fences[key].hedge then
+				keys[i] = key .. "h"
+			end
+		end
 		table.insert(parts, "F" .. table.concat(keys, ","))
 	end
 	return table.concat(parts, "/")
