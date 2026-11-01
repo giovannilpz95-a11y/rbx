@@ -883,6 +883,53 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Tomato", 0.45, at(0, 0.45, 0.2), Palette.roofRed, QUIET)
 		b.ball("Potato", 0.45, at(0.4, 0.45, -0.1), Palette.wheat, QUIET)
 	end,
+	SeaSalad = function(b)
+		-- A bowl of greens with a shrimp and corn
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.ball("Greens", 1.2, at(0, 0.7, 0), Palette.leaf, QUIET)
+		b.ball("Shrimp", 0.45, at(-0.3, 1.05, 0.1), Palette.carrot, QUIET)
+		b.ball("Corn", 0.35, at(0.35, 1, -0.1), Palette.corn, QUIET)
+	end,
+	RiceCasserole = function(b)
+		-- A square dish of baked rice with a golden top
+		b.block("Dish", Vector3.new(1.6, 0.5, 1.2), at(0, 0.25, 0), Palette.brick, QUIET)
+		b.block("Rice", Vector3.new(1.4, 0.2, 1), at(0, 0.55, 0), Palette.flowerWhite, QUIET)
+		b.block("Crust", Vector3.new(1.2, 0.1, 0.8), at(0, 0.68, 0), Palette.wheat, QUIET)
+	end,
+	ChocolateSmoothie = function(b)
+		-- A brown smoothie topped with a banana slice
+		b.post("Glass", 1.3, 0.8, at(0, 0.65, 0), Palette.cocoa, QUIET)
+		b.cyl("Banana", 0.15, 0.5, at(0, 1.38, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerYellow, QUIET)
+		b.block("Straw", Vector3.new(0.12, 0.8, 0.12), tilt(-0.15, 1.5, 0, 0, 0, 15), Palette.flowerWhite, QUIET)
+	end,
+	Profiteroles = function(b)
+		-- A little pile of cream puffs with chocolate on top
+		for _, p in { { -0.35, 0.35, 0 }, { 0.35, 0.35, 0 }, { 0, 0.35, 0.4 } } do
+			b.ball("Puff", 0.7, at(p[1], p[2], p[3]), Palette.wheat, QUIET)
+		end
+		b.ball("Top", 0.7, at(0, 0.9, 0.15), Palette.cocoa, QUIET)
+	end,
+	JellyFruitSlices = function(b)
+		-- Three sugar-crusted fruit slice sweets
+		b.wedge("Red", Vector3.new(0.3, 0.6, 0.8), at(-0.45, 0.3, 0), Palette.roofRed, QUIET)
+		b.wedge("Pink", Vector3.new(0.3, 0.6, 0.8), at(0, 0.3, 0), Palette.flowerPink, QUIET)
+		b.wedge("Green", Vector3.new(0.3, 0.6, 0.8), at(0.45, 0.3, 0), Palette.lime, QUIET)
+	end,
+	JasmineOil = function(b)
+		-- A small glass bottle of oil with a white flower tag
+		b.post("Bottle", 1, 0.7, at(0, 0.5, 0), Palette.flowerYellow:Lerp(Palette.glass, 0.5), QUIET)
+		b.post("Neck", 0.4, 0.3, at(0, 1.2, 0), Palette.flowerYellow:Lerp(Palette.glass, 0.5), QUIET)
+		b.block("Cork", Vector3.new(0.3, 0.2, 0.3), at(0, 1.5, 0), Palette.cork, QUIET)
+		b.ball("Flower", 0.35, at(0, 0.6, -0.35), Palette.flowerWhite, QUIET)
+	end,
+	NicoiseSalad = function(b)
+		-- A plate of greens with egg halves, olives and tomato
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Greens", 1, at(0, 0.4, 0), Palette.leaf, QUIET)
+		b.ball("Egg", 0.4, at(-0.4, 0.35, 0.3), Palette.egg, QUIET)
+		b.ball("Olive", 0.25, at(0.35, 0.6, 0), Palette.stoneDark, QUIET)
+		b.ball("Tomato", 0.35, at(0.1, 0.65, -0.3), Palette.roofRed, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
