@@ -103,11 +103,21 @@ local function trackCrop(crop: Model)
 	end)
 end
 
+-- Products watched so far: a merged product is one union (Art/Animals placedProduct) that can
+-- land after its model, so it's watched once its part is there.
+local watched: { [Model]: boolean } = {}
+
 local function trackProduct(product: Model)
 	local first = product:FindFirstChildWhichIsA("BasePart")
-	if first == nil then
+	if first == nil or watched[product] then
 		return
 	end
+	watched[product] = true
+	product.AncestryChanged:Connect(function()
+		if not product:IsDescendantOf(Workspace) then
+			watched[product] = nil
+		end
+	end)
 	local shown = first.Transparency < 0.5
 	first:GetPropertyChangedSignal("Transparency"):Connect(function()
 		local now = first.Transparency < 0.5
@@ -151,6 +161,10 @@ local function track(d: Instance)
 		if crop and crop:IsA("Model") and ready[crop] and not pending[crop] then
 			pending[crop] = true
 			task.defer(rebindCrop, crop)
+		end
+		local parent = d.Parent
+		if parent and parent:IsA("Model") and parent.Name:sub(1, 8) == "Product_" then
+			trackProduct(parent)
 		end
 		return
 	end
