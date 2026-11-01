@@ -218,6 +218,14 @@ local Recipes: { [string]: RecipeDef } = {
 	FloorLamp = { id = "FloorLamp", displayName = "Floor Lamp", factory = "FurnitureWorkshop", unlockLevel = 68, inputs = { CopperOre = 5, Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 230, xp = 99 },
 	FeatherEarrings = { id = "FeatherEarrings", displayName = "Feather Earrings", factory = "Jeweler", unlockLevel = 71, inputs = { SilverOre = 4, ColorfulFeather = 2 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 260, xp = 111 },
 	PorcelainDoll = { id = "PorcelainDoll", displayName = "Porcelain Doll", factory = "DollMaker", unlockLevel = 77, inputs = { Clay = 3, SilkFabric = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 339, xp = 145 },
+	-- Level 78-79 goods
+	Cup = { id = "Cup", displayName = "Cup", factory = "CookwareShop", unlockLevel = 78, inputs = { Clay = 2 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 101, xp = 43, fromOreShed = true },
+	TropicalMix = { id = "TropicalMix", displayName = "Tropical Mix", factory = "JuiceBar", unlockLevel = 78, inputs = { Coconuts = 2, Pineapples = 2, Sugarcane = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 540, xp = 231 },
+	PeanutButter = { id = "PeanutButter", displayName = "Peanut Butter", factory = "JamKitchen", unlockLevel = 78, inputs = { Peanuts = 3, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR + 15 * MIN, sellPrice = 243, xp = 104 },
+	FashionDoll = { id = "FashionDoll", displayName = "Fashion Doll", factory = "DollMaker", unlockLevel = 79, inputs = { Plastic = 1, CottonFabric = 2, Glue = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 316, xp = 135 },
+	FaceMask = { id = "FaceMask", displayName = "Face Mask", factory = "Perfumery", unlockLevel = 79, inputs = { Seaweed = 1, Clay = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 102, xp = 44 },
+	Toothpaste = { id = "Toothpaste", displayName = "Toothpaste", factory = "Perfumery", unlockLevel = 79, inputs = { Mint = 1, Honeycomb = 1, Pineapples = 1 }, outputQty = 1, seconds = 2 * HOUR + 45 * MIN, sellPrice = 223, xp = 96 },
+	PeanutButterCrepes = { id = "PeanutButterCrepes", displayName = "Peanut Butter Crêpes", factory = "Diner", unlockLevel = 79, inputs = { Wheat = 3, PeanutButter = 1, Bananas = 1 }, outputQty = 1, seconds = 1 * HOUR + 15 * MIN, sellPrice = 376, xp = 161 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

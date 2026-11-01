@@ -1255,6 +1255,53 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Cookware Shop (level 78, placed by the player): a terracotta workshop with a kiln chimney,
+-- a giant frying pan on the roof whose burner ring glows while it works, a shelf of cups and
+-- pots in the window and a teapot sign.
+local function cookwareShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.brick:Lerp(Palette.cream, 0.45), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.stoneDark)
+	local chimney = d.post("Chimney", 3, 1.6, Vector3.new(4, TOP + 2.1, 3), Palette.brick)
+	-- The pan on the roof: the glowing burner ring, the pan and its handle
+	local pan = Vector3.new(-1.4, TOP + 0.6, 0.4)
+	d.cyl(
+		"NeonSign",
+		0.3,
+		3.6,
+		CFrame.new(pan + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.roofRed,
+		{ shadow = false }
+	)
+	d.cyl(
+		"Pan",
+		0.6,
+		3.2,
+		CFrame.new(pan + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stoneDark
+	)
+	d.block("PanHandle", Vector3.new(2.6, 0.3, 0.5), pan + Vector3.new(2.8, 0.7, 0), Palette.woodDark)
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	d.block("Shelf", Vector3.new(3.4, 0.2, 0.6), Vector3.new(-2.6, PLINTH + 2.3, FRONT - 0.3), Palette.woodLight)
+	for i, color in { Palette.flowerWhite, Palette.sky, Palette.brick } do
+		d.post("Pot", 0.6, 0.6, Vector3.new(-3.8 + i * 0.8, PLINTH + 2.7, FRONT - 0.3), color)
+	end
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.woodDark, Palette.cream)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("TeapotIcon", 0.9, at, Palette.sky, { shadow = false })
+		s.block(
+			"SpoutIcon",
+			Vector3.new(0.5, 0.15, 0.2),
+			at + Vector3.new(0.55, 0.1, -0.02),
+			Palette.sky,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Doll Maker (level 76, placed by the player): a pink toy workshop with a round window, a
 -- giant rag doll sitting on the roof whose heart glows while it works, a row of little dolls in
 -- the window and a bow sign.
@@ -1604,6 +1651,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	CoffeeHouse = coffeeHouse,
 	QuiltShop = quiltShop,
 	DollMaker = dollMaker,
+	CookwareShop = cookwareShop,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
