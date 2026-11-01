@@ -2238,6 +2238,36 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Dive Shop (content bank, level 94): a sea-blue dive centre with a round porthole window, a
+-- training pool out front with a diving board, an air tank rack and a big diving-mask sign.
+TYPES.DiveShop = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.4, 4.4, Palette.sky:Lerp(Palette.roofTeal, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.52, 0.4, s * 0.42), Vector3.new(0, PLINTH + 4.6, 0), Palette.flowerWhite)
+	t.cyl(
+		"Porthole",
+		0.2,
+		2,
+		CFrame.new(-s * 0.12, PLINTH + 2.6, face - 0.1) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.glass
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.12, PLINTH, face - 0.15), 1.6, 3, Palette.flowerWhite, Palette.metal)
+	-- The training pool and diving board
+	t.block("PoolRim", Vector3.new(s * 0.4, 0.5, 3), Vector3.new(0, PLINTH + 0.25, face - 2.2), Palette.stoneLight)
+	t.block("Pool", Vector3.new(s * 0.36, 0.2, 2.6), Vector3.new(0, PLINTH + 0.45, face - 2.2), Palette.water)
+	t.block("Board", Vector3.new(0.8, 0.15, 2), Vector3.new(-s * 0.16, PLINTH + 1.2, face - 1.4), Palette.flowerWhite)
+	-- The tank rack
+	for _, x in { s * 0.2, s * 0.24 } do
+		t.post("Tank", 1.6, 0.4, Vector3.new(x, PLINTH + 0.8, face + 0.6), Palette.flowerYellow)
+	end
+	-- The mask sign on the roof
+	t.block("Mask", Vector3.new(3, 1.4, 0.3), Vector3.new(0, PLINTH + 5.8, 0), Palette.stoneDark)
+	t.block("Lens", Vector3.new(2.4, 0.9, 0.1), Vector3.new(0, PLINTH + 5.8, -0.2), Palette.sky)
+	Kit.sproutTag(t, Vector3.new(-s * 0.2, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Game Arena (content bank, level 92): a purple dome arena with a big screen over the doors,
 -- glowing green trim, a giant game controller on the roof and two banner poles.
 TYPES.GameArena = function(b, s)

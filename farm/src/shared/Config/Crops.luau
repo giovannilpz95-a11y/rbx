@@ -48,6 +48,8 @@ local Crops: { [string]: CropDef } = {
 	Tea = { id = "Tea", displayName = "Tea Leaves", unlockLevel = 84, growSeconds = 9 * HOUR, seedCost = 37, sellPrice = 60, xp = 21, yield = 1, order = 22, color = { 90, 150, 60 } },
 	-- Township's Soybean (level 90)
 	Soybeans = { id = "Soybeans", displayName = "Soybeans", unlockLevel = 90, growSeconds = 2 * HOUR, seedCost = 8, sellPrice = 15, xp = 6, yield = 1, order = 23, color = { 200, 190, 110 } },
+	-- Township's Lavender (level 94)
+	Lavender = { id = "Lavender", displayName = "Lavender", unlockLevel = 94, growSeconds = 5 * HOUR, seedCost = 27, sellPrice = 40, xp = 9, yield = 1, order = 24, color = { 160, 120, 210 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }
 
