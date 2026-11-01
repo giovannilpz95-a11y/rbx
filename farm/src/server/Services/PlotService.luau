@@ -517,7 +517,7 @@ local function buildPenAt(plot: Model, id: string, facing: CFrame)
 		Kit.fade(animal, 1)
 		animal.Parent = pen
 		local product =
-			ArtAnimals.product(kind, facing * CFrame.new(spot + Vector3.new(0, height + 0.3, 0)), "Product_" .. i)
+			ArtAnimals.placedProduct(kind, facing * CFrame.new(spot + Vector3.new(0, height + 0.3, 0)), "Product_" .. i)
 		Kit.fade(product, 1)
 		product.Parent = pen
 	end
@@ -1289,7 +1289,7 @@ local function refreshFactory(
 	local shown = ArtFactories.goodsShown(ids, output)
 	for i, itemId in shown do
 		local at = outputTable.CFrame * CFrame.new(0, tableTop, -2 + (i - 1) * 2)
-		ArtItemProps.build(itemId, at * Kit.yaw(-90), "Goods").Parent = building
+		ArtItemProps.placed(itemId, at * Kit.yaw(-90), "Goods").Parent = building
 	end
 end
 
@@ -2212,6 +2212,7 @@ function PlotService.init()
 	task.spawn(ArtAnimals.mergeLooks, kinds, game:GetService("ServerStorage"))
 	-- Crops merge per look (crop and stage) the first time one is planted (Art/Merge cache)
 	ArtCrops.useTemplates(game:GetService("ServerStorage"))
+	ArtItemProps.useTemplates(game:GetService("ServerStorage"))
 	buildWorld()
 
 	-- Visuals that change with time alone (crops ripening, factories finishing goods,

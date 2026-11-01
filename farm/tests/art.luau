@@ -624,6 +624,47 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		eq(mix[2], "Cookie", "one of each kind first")
 	end)
 
+	test("art: props and animal products merge once per look and every display gets a copy", function()
+		local stub = {
+			UnionAsync = function(_self, primary: BasePart, _parts: { BasePart }, _options)
+				local u = Instance.new("Part")
+				u.CFrame = primary.CFrame
+				u.Size = primary.Size
+				return { u }
+			end,
+		}
+		ArtItemProps.useTemplates(Instance.new("Folder"), stub)
+		local at = CFrame.new(-6, 2, 9) * Kit.yaw(-90)
+		for _, id in { "Bread", "Cookie", "Sweater", "Cheese" } do
+			if ArtItemProps.has(id) then
+				local expected = ArtMerge.countTemplate(ArtItemProps.build(id))
+				local copy = ArtItemProps.placed(id, at, "Goods")
+				eq(copy.Name, "Goods", id .. " copy is named for the output table")
+				eq(Kit.countParts(copy), expected, id .. " copy matches the estimate")
+				Kit.eachPart(copy, function(p)
+					ok((p.CFrame.Position - at.Position).Magnitude < 3, id .. " copy stands where it was put")
+				end)
+			end
+		end
+		local kinds = {}
+		for id, def in Animals.pens do
+			if def.copyOf == nil then
+				table.insert(kinds, id)
+			end
+		end
+		table.sort(kinds)
+		ArtAnimals.mergeLooks(kinds, Instance.new("Folder"), stub)
+		for _, id in kinds do
+			local copy = ArtAnimals.placedProduct(id, at, "Product_2")
+			eq(copy.Name, "Product_2", id .. " product copy named")
+			eq(
+				Kit.countParts(copy),
+				ArtMerge.countTemplate(ArtAnimals.product(id, CFrame.new())),
+				id .. " product copy matches the estimate"
+			)
+		end
+	end)
+
 	test("art: crops merge once per look and every field gets a copy", function()
 		local stub = {
 			UnionAsync = function(_self, primary: BasePart, _parts: { BasePart }, _options)
@@ -1179,7 +1220,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			pensBuilt += Kit.countParts(pen)
 			-- Each animal is a copy of its kind's merged look (ArtAnimals.mergeLooks)
 			total += ArtMerge.countTemplate(ArtAnimals.animal(kind, CFrame.new()), ArtAnimals.MERGE_SKIP) * 6
-			add(ArtAnimals.product(kind, CFrame.new()), 6)
+			total += ArtMerge.countTemplate(ArtAnimals.product(kind, CFrame.new())) * 6
 		end
 		-- Every factory with a full output tray (its trayCapacity of goods) of the biggest
 		-- prop it makes
@@ -1193,7 +1234,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			local biggestProp = 0
 			for recipeId, recipe in Recipes do
 				if recipe.factory == makes then
-					biggestProp = math.max(biggestProp, Kit.countParts(ArtItemProps.build(recipeId)))
+					-- each prop on show is a copy of its merged look (ArtItemProps.placed)
+					biggestProp = math.max(biggestProp, ArtMerge.countTemplate(ArtItemProps.build(recipeId)))
 				end
 			end
 			ok(biggestProp > 0, id .. " makes something with a prop")

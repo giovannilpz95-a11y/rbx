@@ -6,6 +6,7 @@
 -- PARTS_MAX parts. Unknown ids get a plain crate with a coloured band.
 
 local Kit = require("./Kit")
+local Merge = require("./Merge")
 local Palette = require("./Palette")
 
 local ArtItemProps = {}
@@ -1375,6 +1376,29 @@ function ArtItemProps.build(id: string, cf: CFrame?, name: string?): Model
 	local builder = BUILDERS[id] or crate
 	builder(b)
 	return model
+end
+
+-- The part-cut pass: a prop on display never changes, so each item's prop is merged once (Art/
+-- Merge cache, on first use, kept in ServerStorage.PropLooks) and every display gets a copy,
+-- one union instead of up to eight parts. Server only.
+local cache: Merge.Cache? = nil
+
+function ArtItemProps.useTemplates(store: Instance, geometry: any?)
+	cache = Merge.cache(store, "PropLooks", geometry)
+end
+
+-- Item `id`'s prop at `cf`, named `name`: a copy of its merged look when one is ready, else
+-- built from parts (and its look starts merging for next time).
+function ArtItemProps.placed(id: string, cf: CFrame, name: string): Model
+	if cache then
+		local look = Merge.fromCache(cache, id, function()
+			return ArtItemProps.build(id)
+		end)
+		if look then
+			return Merge.place(look, cf, name)
+		end
+	end
+	return ArtItemProps.build(id, cf, name)
 end
 
 return ArtItemProps
