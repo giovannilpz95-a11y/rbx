@@ -1255,6 +1255,49 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Trattoria (level 92, placed by the player): a terracotta Italian restaurant with green
+-- shutters, a striped red-and-white awning over tables outside, a brick pizza oven chimney,
+-- an olive-oil bottle on the roof whose round cork lamp glows while it cooks, and an olive
+-- branch sign.
+local function trattoria(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.brick:Lerp(Palette.cream, 0.45), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.roofRed)
+	local chimney = d.post("Chimney", 2.4, 1.2, Vector3.new(4, TOP + 1.8, 3), Palette.brick)
+	-- The olive-oil bottle on the roof and its glowing cork lamp
+	local bottle = Vector3.new(-1.6, TOP + 0.6, 0.4)
+	d.post("Bottle", 3, 1.6, bottle + Vector3.new(0, 1.5, 0), Palette.leaf:Lerp(Palette.glass, 0.4))
+	d.post("Neck", 1, 0.7, bottle + Vector3.new(0, 3.5, 0), Palette.leaf:Lerp(Palette.glass, 0.4))
+	d.block("Label", Vector3.new(1.2, 1, 0.1), bottle + Vector3.new(0, 1.6, -0.82), Palette.cream)
+	d.ball("NeonSign", 1, bottle + Vector3.new(0, 4.3, 0), Palette.woodLight, { shadow = false })
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.leaf, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.leaf, Palette.cream)
+	-- A little table outside with a red check cloth
+	d.post("TableLeg", 1, 0.2, Vector3.new(-3, PLINTH + 0.5, FRONT - 1.6), Palette.metal)
+	d.block("TableTop", Vector3.new(1.4, 0.15, 1.4), Vector3.new(-3, PLINTH + 1.05, FRONT - 1.6), Palette.roofRed)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("OliveIcon", 0.6, at + Vector3.new(0.2, -0.1, 0), Palette.leafLight, { shadow = false })
+		s.block(
+			"BranchIcon",
+			Vector3.new(0.9, 0.12, 0.2),
+			at + Vector3.new(-0.1, 0.25, -0.02),
+			Palette.wood,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Flower Shop (level 87, placed by the player): a pink florist with buckets of flowers out
 -- front, a giant bouquet on the roof whose sunflower heart glows while it works, a striped
 -- awning and a tulip sign.
@@ -1790,6 +1833,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	MusicWorkshop = musicWorkshop,
 	TeaHouse = teaHouse,
 	FlowerShop = flowerShop,
+	Trattoria = trattoria,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts

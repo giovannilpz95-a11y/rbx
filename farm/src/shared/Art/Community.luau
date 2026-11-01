@@ -2238,6 +2238,28 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Game Arena (content bank, level 92): a purple dome arena with a big screen over the doors,
+-- glowing green trim, a giant game controller on the roof and two banner poles.
+TYPES.GameArena = function(b, s)
+	local body = hall(b, s * 0.62, s * 0.48, 4.6, Palette.plum)
+	local t = b.into(body, true)
+	local face = -s * 0.24
+	t.ball("Dome", s * 0.42, Vector3.new(0, PLINTH + 4.6, 0), Palette.plum:Lerp(Palette.stoneLight, 0.3))
+	t.block("Screen", Vector3.new(s * 0.36, 2, 0.2), Vector3.new(0, PLINTH + 3.5, face - 0.1), Palette.sky)
+	t.block("Trim", Vector3.new(s * 0.62, 0.3, 0.2), Vector3.new(0, PLINTH + 2.3, face - 0.1), Palette.lime)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 2.4, 2.2, Palette.glass, Palette.metal)
+	-- The controller on the roof
+	t.block("Pad", Vector3.new(3.4, 0.8, 1.6), Vector3.new(0, PLINTH + 4.6 + s * 0.21, 0), Palette.stoneDark)
+	t.ball("Button", 0.5, Vector3.new(0.9, PLINTH + 5.1 + s * 0.21, -0.3), Palette.roofRed)
+	t.ball("Button", 0.5, Vector3.new(-0.9, PLINTH + 5.1 + s * 0.21, -0.3), Palette.lime)
+	for _, x in { -s * 0.28, s * 0.28 } do
+		t.post("Pole", 5, 0.2, Vector3.new(x, PLINTH + 2.5, face - 1), Palette.metal)
+		t.block("Banner", Vector3.new(0.1, 1.6, 1), Vector3.new(x, PLINTH + 4, face - 1.5), Palette.lime)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.24, PLINTH + 5.4, s * 0.16), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Cue Club (content bank, level 90): a dark green clubhouse with brick trim, a big cue-and-ball
 -- sign on the roof, an awning, and a billiard table seen through the wide front window.
 TYPES.CueClub = function(b, s)

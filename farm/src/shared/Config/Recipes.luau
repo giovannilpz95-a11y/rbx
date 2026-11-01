@@ -269,6 +269,12 @@ local Recipes: { [string]: RecipeDef } = {
 	CarrotSandwich = { id = "CarrotSandwich", displayName = "Carrot Sandwich", factory = "HotDogStand", unlockLevel = 91, inputs = { Carrots = 2, Bread = 1, Soybeans = 2 }, outputQty = 1, seconds = 1 * HOUR + 15 * MIN, sellPrice = 56, xp = 24 },
 	ButterTea = { id = "ButterTea", displayName = "Butter Tea", factory = "TeaHouse", unlockLevel = 91, inputs = { Tea = 2, Butter = 1, Milk = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 215, xp = 91 },
 	WeddingBouquet = { id = "WeddingBouquet", displayName = "Wedding Bouquet", factory = "FlowerShop", unlockLevel = 91, inputs = { Jasmine = 2, Cotton = 3, SilkFabric = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 301, xp = 129 },
+	-- Level 92-93 goods
+	OliveOil = { id = "OliveOil", displayName = "Olive Oil", factory = "Trattoria", unlockLevel = 92, inputs = { Olives = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 259, xp = 111 },
+	PlantMilk = { id = "PlantMilk", displayName = "Plant Milk", factory = "Dairy", unlockLevel = 92, inputs = { Soybeans = 3 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 245, xp = 26 },
+	PanFlute = { id = "PanFlute", displayName = "Pan Flute", factory = "MusicWorkshop", unlockLevel = 92, inputs = { Sugarcane = 5, ColorfulFeather = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 81, xp = 35 },
+	CandyBouquet = { id = "CandyBouquet", displayName = "Candy Bouquet", factory = "FlowerShop", unlockLevel = 93, inputs = { Strawberries = 3, HoneyGingerbread = 1, CandyCane = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 315, xp = 135 },
+	TeaCeremonySet = { id = "TeaCeremonySet", displayName = "Tea Ceremony Set", factory = "CookwareShop", unlockLevel = 93, inputs = { Clay = 2, PineTrees = 1, CottonFabric = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 172, xp = 74 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },
