@@ -28,6 +28,10 @@ function Speedup.building(secondsLeft: number): number
 	return Speedup.price(Speedups.building, secondsLeft)
 end
 
+function Speedup.train(secondsLeft: number): number
+	return Speedup.price(Speedups.train, secondsLeft)
+end
+
 function Speedup.orderWait(secondsLeft: number): number
 	return Speedup.price(Speedups.orderWait, secondsLeft)
 end

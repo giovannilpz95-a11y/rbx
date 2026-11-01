@@ -84,6 +84,11 @@ return table.freeze({
 	Pond_SpeedUp = "Pond_SpeedUp", -- pondId?: finish digging now, Gems
 	Pond_Feed = "Pond_Feed", -- food, pondId?: put a Bread, Bagel or Banana Bread out for the ducks
 	Pond_Collect = "Pond_Collect", -- pondId?: take the feathers the ducks left
+	Train_Load = "Train_Load", -- train, car: load a car from the Barn (shared/Train)
+	Train_Send = "Train_Send", -- train: send it off now, loaded or not
+	Train_SpeedUp = "Train_SpeedUp", -- train: bring an away train back now, Gems
+	Train_Unload = "Train_Unload", -- train: take a returned train's rewards (new cars follow)
+	Train_Buy = "Train_Buy", -- (the next train, Coins)
 	Pond_Skip = "Pond_Skip", -- pondId?: the ducks leave now, Gems
 	Otter_Build = "Otter_Build", -- (start building the Otter Pond, Coins; shared/OtterPond)
 	Otter_SpeedUp = "Otter_SpeedUp", -- (finish building now, Gems)
@@ -115,6 +120,7 @@ return table.freeze({
 	Debug_Away = "Debug_Away", -- show the away summary as if gone 2 h, and a new day's gift (Studio only)
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Debug_Blimp = "Debug_Blimp", -- the Blimp Mast repaired and the Cargo Blimp docked now (Studio only)
+	Debug_Train = "Debug_Train", -- every train back now, and goods for the first train's cars (Studio only)
 	Debug_Pond = "Debug_Pond", -- the Duck Pond dug out, any visit over, one of each food (Studio only)
 	Debug_Otters = "Debug_Otters", -- the Otter Pond built, three otters, trips over, one of each food (Studio only)
 	Debug_Trader = "Debug_Trader", -- the Tool Trader built, three slots, materials for its offers (Studio only)

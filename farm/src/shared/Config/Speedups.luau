@@ -63,6 +63,18 @@ return table.freeze({
 		{ 25 * MIN, 3 },
 		{ 30 * MIN, 4 },
 	}),
+	-- Bringing a train back now (Township's train table: 9 at most, for a 4-5 hour trip)
+	train = rows({
+		{ 5 * MIN, 1 },
+		{ 13 * MIN, 2 },
+		{ 25 * MIN, 3 },
+		{ 50 * MIN, 4 },
+		{ 1 * HOUR, 5 },
+		{ 2 * HOUR, 6 },
+		{ 3 * HOUR, 7 },
+		{ 4 * HOUR, 8 },
+		{ 5 * HOUR, 9 },
+	}),
 	-- Extra factory queue slots: the 1st extra slot costs 8 Gems, the 2nd 12, ... (+4 each).
 	-- Township stops at 6 slots until a factory upgrade opens the 7th (Wiki Data - Factories
 	-- & Goods §1.2), so a 3-slot factory pays 8/12/16 and a 2-slot one 8/12/16/20.

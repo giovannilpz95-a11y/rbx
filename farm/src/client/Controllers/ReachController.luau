@@ -257,6 +257,27 @@ local function act(part: BasePart)
 		else
 			Panels.open("OtterPond")
 		end
+	elseif kind == "Train" then
+		-- A train that's back unloads straight away; otherwise its panel (the station itself
+		-- opens the first train back, else the first one)
+		local trains = ClientStore.state and ClientStore.state.trains
+		local lines = trains and trains.lines or {}
+		local now = ClientStore.now()
+		local index = tonumber(part:GetAttribute("Train")) or 0
+		if index == 0 then
+			for i, line in lines do
+				if line.returnAt and now >= line.returnAt then
+					index = i
+					break
+				end
+			end
+		end
+		local line = lines[index]
+		if line and line.returnAt and now >= line.returnAt then
+			Remotes.fire("Train_Unload", index)
+		else
+			Panels.open("Train", tostring(math.max(index, 1)))
+		end
 	elseif kind == "ToolTrader" then
 		Panels.open("ToolTrader")
 	elseif kind == "TonicShed" then
