@@ -939,6 +939,30 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Finial", 0.6, at(0, 7.4, 0), Palette.coins, QUIET)
 		b.post("MusicStand", 1.2, 0.15, at(0.8, 1.4, 0.6), Palette.metal, QUIET)
 	end,
+	-- Level-100 landmark (2 x 3): a round pool on a stone plaza, a bowl on a pedestal, and a
+	-- gilded wheat sheaf crowning the column, with two flower beds and a gold plaque at the front.
+	-- All opaque SmoothPlastic, so the server merges the whole look into one part.
+	GoldenSheafFountain = function(b)
+		b.block("Plaza", Vector3.new(7.8, 0.3, 11.8), at(0, 0.15, 0), Palette.stoneLight, SOLID)
+		b.post("Pool", 1.2, 7.4, at(0, 0.9, 1.4), Palette.stone, SOLID)
+		b.post("Water", 0.15, 6.6, at(0, 1.52, 1.4), Palette.water, QUIET)
+		b.post("Pedestal", 2.6, 1.6, at(0, 2.8, 1.4), Palette.stoneLight)
+		b.post("Bowl", 0.7, 4.4, at(0, 4.4, 1.4), Palette.stone)
+		b.post("BowlWater", 0.12, 3.8, at(0, 4.78, 1.4), Palette.water, QUIET)
+		b.post("Column", 1.6, 0.8, at(0, 5.6, 1.4), Palette.stoneLight, QUIET)
+		b.post("Sheaf", 1.8, 1.1, at(0, 7.3, 1.4), Palette.coins)
+		b.ball("SheafHeads", 1.9, at(0, 8.5, 1.4), Palette.coins:Lerp(Palette.wheatHead, 0.35))
+		for _, x in { -2.4, 2.4 } do
+			b.block(
+				"Bed",
+				Vector3.new(2.4, 0.6, 2),
+				at(x, 0.6, -4.4),
+				if x < 0 then Palette.flowerPink else Palette.flowerYellow,
+				QUIET
+			)
+		end
+		b.block("Plaque", Vector3.new(1.6, 1.1, 0.4), at(0, 0.85, -5.2), Palette.coins, QUIET)
+	end,
 	-- VIP gold fence (Model List §7, P1 with the VIP pass): gilded pickets with ball finials and
 	-- a little Neon glint on the middle one. Not in Config/Decor until the VIP pass exists.
 	GoldFence = function(b)
