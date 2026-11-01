@@ -143,6 +143,13 @@ local Recipes: { [string]: RecipeDef } = {
 	-- Level 58-59 goods
 	Boots = { id = "Boots", displayName = "Boots", factory = "Cobbler", unlockLevel = 58, inputs = { Rubber = 1, SilkFabric = 1, Glue = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 381, xp = 163 },
 	Quiche = { id = "Quiche", displayName = "Quiche", factory = "GrillHouse", unlockLevel = 59, inputs = { Wheat = 2, Bacon = 2, Eggs = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 95, xp = 41 },
+	-- Level 60-61 goods
+	BakedLobster = { id = "BakedLobster", displayName = "Baked Lobster", factory = "GrillHouse", unlockLevel = 60, inputs = { Lobsters = 1, Cream = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 190, xp = 81 },
+	HighHeels = { id = "HighHeels", displayName = "High Heels", factory = "Cobbler", unlockLevel = 60, inputs = { Rubber = 1, SilkFabric = 1, PineTrees = 1, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 393, xp = 168 },
+	RoseJam = { id = "RoseJam", displayName = "Rose Jam", factory = "JamKitchen", unlockLevel = 61, inputs = { Rose = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 107, xp = 46 },
+	WarmBoots = { id = "WarmBoots", displayName = "Warm Boots", factory = "Cobbler", unlockLevel = 61, inputs = { DownFeather = 2, SilkFabric = 1, Wool = 1 }, outputQty = 1, seconds = 2 * HOUR + 45 * MIN, sellPrice = 236, xp = 101 },
+	ScallopSushi = { id = "ScallopSushi", displayName = "Scallop Sushi", factory = "SushiBar", unlockLevel = 61, inputs = { Scallop = 1, Rice = 4, Seaweed = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 145, xp = 62 },
+	AromaCandle = { id = "AromaCandle", displayName = "Aroma Candle", factory = "Perfumery", unlockLevel = 61, inputs = { Honeycomb = 2, Cocoa = 2, Caramel = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 162, xp = 69 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

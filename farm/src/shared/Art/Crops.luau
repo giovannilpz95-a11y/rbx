@@ -390,6 +390,23 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Rose (level 61): low leafy bushes in rows, then the same bushes dotted with open blooms.
+GROWING.Rose = function(b)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.5, 0, 2.5 } do
+			b.ball("Bush", 1.1, Vector3.new(x, 1, z), Palette.leaf)
+		end
+	end
+end
+READY.Rose = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Hedge", Vector3.new(7.4, 1.2, 1.2), Vector3.new(0, 1.1, z), Palette.leaf)
+		for _, x in { -2.6, 0, 2.6 } do
+			b.ball("Bloom", 0.9, Vector3.new(x, 1.9, z), color)
+		end
+	end
+end
+
 -- Rice (level 56): a flooded paddy with rows of bright green shoots, then tall golden
 -- stalks bowing under their heads of grain.
 GROWING.Rice = function(b)
