@@ -1255,6 +1255,67 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Bag Maker (level 107, placed by the player): a tan leather-goods workshop with a giant
+-- handbag on the roof whose round brass clasp glows while it works, backpacks hung by the
+-- door, a striped awning and a buckle sign.
+local function bagMaker(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.wood:Lerp(Palette.cream, 0.55), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.woodDark)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The handbag on the roof and its glowing clasp
+	local bag = Vector3.new(-1.4, TOP + 0.6, 0.4)
+	d.block("Bag", Vector3.new(3.4, 2.4, 1.6), bag + Vector3.new(0, 1.2, 0), Palette.roofRed)
+	d.block(
+		"Flap",
+		Vector3.new(3.5, 0.9, 1.7),
+		bag + Vector3.new(0, 2.1, 0),
+		Palette.roofRed:Lerp(Palette.woodDark, 0.3)
+	)
+	d.block("Handle", Vector3.new(2.2, 0.3, 0.3), bag + Vector3.new(0, 3.4, 0), Palette.woodDark)
+	for _, x in { -1, 1 } do
+		d.block("HandleSide", Vector3.new(0.3, 1, 0.3), bag + Vector3.new(x, 2.9, 0), Palette.woodDark)
+	end
+	d.ball("NeonSign", 0.8, bag + Vector3.new(0, 1.7, -0.9), Palette.coins, { shadow = false })
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.woodDark else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.woodDark, Palette.cream)
+	for i, color in { Palette.sky, Palette.leafLight } do
+		d.block(
+			"Backpack",
+			Vector3.new(0.9, 1.2, 0.5),
+			Vector3.new(4.4 + (i - 1) * 1, PLINTH + 2.4, FRONT - 0.3),
+			color
+		)
+	end
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block(
+			"BuckleIcon",
+			Vector3.new(0.8, 0.6, 0.2),
+			at + Vector3.new(0, 0, -0.02),
+			Palette.coins,
+			{ shadow = false }
+		)
+		s.block(
+			"BarIcon",
+			Vector3.new(0.1, 0.6, 0.2),
+			at + Vector3.new(0, 0, -0.05),
+			Palette.woodDark,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Green Cafe (level 103, placed by the player): a leafy cafe with a living green roof, herb
 -- boxes under the window, a giant avocado half on the roof whose round stone lamp glows while
 -- it cooks, a striped awning and a leaf sign.
@@ -2023,6 +2084,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	GardenCenter = gardenCenter,
 	PetShop = petShop,
 	GreenCafe = greenCafe,
+	BagMaker = bagMaker,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts

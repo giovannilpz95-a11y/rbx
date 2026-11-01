@@ -100,6 +100,9 @@ local Factories: { [string]: FactoryDef } = {
 	PetShop = { id = "PetShop", displayName = "Pet Shop", unlockLevel = 100, population = 23500, buildCost = 535000, buildSeconds = 72 * HOUR, xp = 22074, queueSlots = 2, trayCapacity = 6, order = 45, color = { 90, 170, 220 } },
 	-- Township's Vegan Cafe (level 103): placed by the player
 	GreenCafe = { id = "GreenCafe", displayName = "Green Cafe", unlockLevel = 103, population = 26000, buildCost = 580000, buildSeconds = 72 * HOUR, xp = 23930, queueSlots = 2, trayCapacity = 6, order = 46, color = { 150, 200, 90 } },
+	-- Township's Bag Factory (level 107): placed by the player. No build XP on the wiki, so it
+	-- follows the line through the factories before it.
+	BagMaker = { id = "BagMaker", displayName = "Bag Maker", unlockLevel = 107, population = 28000, buildCost = 630000, buildSeconds = 72 * HOUR, xp = 25994, queueSlots = 2, trayCapacity = 6, order = 47, color = { 170, 110, 70 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

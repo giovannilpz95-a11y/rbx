@@ -1743,6 +1743,26 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Grape", 0.25, at(-0.15, 0.7, 0.35), Palette.plum, QUIET)
 		b.ball("Lime", 0.25, at(0.15, 0.7, 0.35), Palette.lime, QUIET)
 	end,
+	Backpack = function(b)
+		-- A blue canvas backpack with a front pocket
+		b.block("Pack", Vector3.new(0.9, 1.1, 0.5), at(0, 0.55, 0), Palette.sky, QUIET)
+		b.block("Pocket", Vector3.new(0.6, 0.45, 0.2), at(0, 0.4, -0.32), Palette.roofTeal, QUIET)
+		b.block("Strap", Vector3.new(0.6, 0.15, 0.3), at(0, 1.15, 0), Palette.stoneDark, QUIET)
+	end,
+	WovenBag = function(b)
+		-- A woven straw tote with two handles
+		b.block("Bag", Vector3.new(1, 0.8, 0.5), at(0, 0.4, 0), Palette.straw, QUIET)
+		for _, x in { -0.25, 0.25 } do
+			b.block("Handle", Vector3.new(0.1, 0.5, 0.1), at(x, 1, 0), Palette.wheat, QUIET)
+		end
+	end,
+	SoybeanHummus = function(b)
+		-- A bowl of hummus with carrot sticks and a lime wedge
+		b.cyl("Bowl", 0.4, 1.2, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.ball("Hummus", 0.9, at(0, 0.45, 0), Palette.straw:Lerp(Palette.cream, 0.5), QUIET)
+		b.block("Carrot", Vector3.new(0.12, 0.6, 0.12), tilt(0.25, 0.8, 0, 0, 0, -20), Palette.carrot, QUIET)
+		b.ball("Lime", 0.3, at(-0.45, 0.25, 0.4), Palette.lime, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
