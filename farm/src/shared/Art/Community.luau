@@ -2238,6 +2238,127 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Surf Lagoon (content bank, level 118): a beach-hut changing block beside a big wave pool,
+-- with a curling wave wall, a surfboard rack and a striped lifeguard chair.
+TYPES.SurfLagoon = function(b, s)
+	local body = hall(b, s * 0.26, s * 0.22, 3, Palette.straw)
+	local t = b.into(body, true)
+	local face = -s * 0.11
+	t.wedge("HutRoof", Vector3.new(s * 0.3, 1.2, s * 0.26), CFrame.new(0, PLINTH + 3.6, 0), Palette.roofTeal)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.1), 1.4, 2.4, Palette.flowerWhite, Palette.roofTeal)
+	-- The pool and the wave wall
+	local px = -s * 0.26
+	t.block("PoolRim", Vector3.new(s * 0.4, 0.5, s * 0.4), Vector3.new(px, PLINTH + 0.25, 0), Palette.stoneLight)
+	t.block("Water", Vector3.new(s * 0.36, 0.2, s * 0.36), Vector3.new(px, PLINTH + 0.45, 0), Palette.water)
+	t.wedge(
+		"Wave",
+		Vector3.new(s * 0.36, 1.6, 1.6),
+		CFrame.new(px, PLINTH + 1.2, s * 0.14),
+		Palette.sky:Lerp(Palette.flowerWhite, 0.4)
+	)
+	-- Boards and the lifeguard chair
+	for i, color in { Palette.carrot, Palette.flowerYellow, Palette.flowerPink } do
+		t.block("Board", Vector3.new(0.6, 2.4, 0.15), Vector3.new(s * 0.18 + i * 0.5, PLINTH + 1.2, face - 0.4), color)
+	end
+	t.post("ChairLeg", 2.4, 0.2, Vector3.new(px + s * 0.2, PLINTH + 1.2, -s * 0.16), Palette.flowerWhite)
+	t.block("Chair", Vector3.new(1, 0.8, 0.8), Vector3.new(px + s * 0.2, PLINTH + 2.6, -s * 0.16), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(s * 0.08, PLINTH + 4, s * 0.08), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Book Nook (content bank, level 120): a brick bookshop with a bay window of stacked books, a
+-- giant open book on the roof, a reading bench and a lantern by the door.
+TYPES.BookNook = function(b, s)
+	local body = hall(b, s * 0.44, s * 0.34, 4.2, Palette.brick)
+	local t = b.into(body, true)
+	local face = -s * 0.17
+	t.block("Roof", Vector3.new(s * 0.46, 0.4, s * 0.36), Vector3.new(0, PLINTH + 4.4, 0), Palette.stoneDark)
+	t.block("BayWindow", Vector3.new(s * 0.2, 2.2, 0.8), Vector3.new(-s * 0.1, PLINTH + 2, face - 0.4), Palette.glass)
+	for i, color in { Palette.roofRed, Palette.sky, Palette.leaf } do
+		t.block(
+			"Books",
+			Vector3.new(s * 0.16, 0.3, 0.5),
+			Vector3.new(-s * 0.1, PLINTH + 0.9 + i * 0.35, face - 0.3),
+			color
+		)
+	end
+	Kit.door(t, "Door", CFrame.new(s * 0.12, PLINTH, face - 0.15), 1.6, 3, Palette.leaf, Palette.coins)
+	t.block("Bench", Vector3.new(2.4, 0.4, 0.8), Vector3.new(-s * 0.1, PLINTH + 0.6, face - 1.6), Palette.wood)
+	t.post("Lantern", 2.6, 0.2, Vector3.new(s * 0.22, PLINTH + 1.3, face - 0.6), Palette.stoneDark)
+	t.ball("LanternGlow", 0.6, Vector3.new(s * 0.22, PLINTH + 2.8, face - 0.6), Palette.lantern)
+	-- The open book on the roof
+	for _, a in { 15, -15 } do
+		t.block(
+			"Page",
+			Vector3.new(1.8, 0.2, 2.4),
+			CFrame.new(math.sign(a) * -0.85, PLINTH + 5, 0) * CFrame.Angles(0, 0, math.rad(a)),
+			Palette.cream
+		)
+	end
+	t.block("Spine", Vector3.new(0.3, 0.3, 2.5), Vector3.new(0, PLINTH + 4.8, 0), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Zen Studio (content bank, level 122): a pale studio with a wide low roof, a raked sand garden
+-- with stones, a bamboo screen and a lotus sign.
+TYPES.ZenStudio = function(b, s)
+	local body = hall(b, s * 0.46, s * 0.34, 3.6, Palette.cream)
+	local t = b.into(body, true)
+	local face = -s * 0.17
+	t.block("Roof", Vector3.new(s * 0.56, 0.4, s * 0.44), Vector3.new(0, PLINTH + 3.8, 0), Palette.woodDark)
+	t.block("Glass", Vector3.new(s * 0.36, 2.4, 0.15), Vector3.new(0, PLINTH + 1.6, face - 0.05), Palette.glass)
+	Kit.door(t, "Door", CFrame.new(s * 0.16, PLINTH, face - 0.12), 1.6, 2.8, Palette.woodLight, Palette.woodDark)
+	-- The sand garden
+	t.block(
+		"Sand",
+		Vector3.new(s * 0.36, 0.2, 2.4),
+		Vector3.new(-s * 0.04, PLINTH + 0.1, face - 1.8),
+		Palette.straw:Lerp(Palette.flowerWhite, 0.5)
+	)
+	for _, p in { { -0.15, -1.4 }, { 0.08, -2.2 } } do
+		t.ball("Stone", 0.8, Vector3.new(s * p[1], PLINTH + 0.4, face + p[2]), Palette.stone)
+	end
+	-- Bamboo screen
+	for i = 0, 3 do
+		t.post("Bamboo", 2.6, 0.2, Vector3.new(-s * 0.28 + i * 0.3, PLINTH + 1.3, face - 0.6), Palette.leafLight)
+	end
+	-- The lotus sign
+	for _, a in { -30, 0, 30 } do
+		t.wedge(
+			"Petal",
+			Vector3.new(0.3, 1, 0.6),
+			CFrame.new(0, PLINTH + 4.6, 0) * CFrame.Angles(0, math.rad(90), math.rad(a)),
+			Palette.flowerPink
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 4.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Ice Rink (content bank, level 124): an arched ice hall with a frosty blue roof, an outdoor rink
+-- out front, a giant skate on top and snow along the eaves.
+TYPES.IceRink = function(b, s)
+	local body = hall(b, s * 0.52, s * 0.38, 4, Palette.flowerWhite:Lerp(Palette.sky, 0.25))
+	local t = b.into(body, true)
+	local face = -s * 0.19
+	t.cyl("Arch", s * 0.4, s * 0.54, CFrame.new(0, PLINTH + 4, 0) * CFrame.Angles(0, math.rad(90), 0), Palette.sky)
+	t.block("Snow", Vector3.new(s * 0.54, 0.3, 0.4), Vector3.new(0, PLINTH + 4.1, face - 0.1), Palette.flowerWhite)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 2.4, 3, Palette.glass, Palette.metal)
+	t.cyl(
+		"Rink",
+		0.2,
+		s * 0.36,
+		CFrame.new(0, PLINTH + 0.1, face - s * 0.2) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.sky:Lerp(Palette.flowerWhite, 0.7)
+	)
+	-- The skate on top
+	t.block("Boot", Vector3.new(0.8, 1.6, 1.4), Vector3.new(0, PLINTH + 4 + s * 0.2, 0), Palette.flowerWhite)
+	t.block("Blade", Vector3.new(0.15, 0.3, 2), Vector3.new(0, PLINTH + 3.3 + s * 0.2, 0), Palette.metal)
+	Kit.sproutTag(t, Vector3.new(s * 0.22, PLINTH + 4.6, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Pet Lodge (content bank, level 114): a warm wooden lodge with paw-print windows, a fenced
 -- run with a little agility hurdle, a dog bowl and a bone-shaped sign.
 TYPES.PetLodge = function(b, s)
