@@ -2238,6 +2238,181 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- A simple storefront hall shared by the late community buildings: body, flat roof, wide front
+-- window and a door. Each building adds its own sign and yard pieces.
+local function lateHall(
+	b: Kit.Builder,
+	s: number,
+	w: number,
+	d: number,
+	h: number,
+	wall: Color3,
+	roof: Color3,
+	door: Color3
+)
+	local body = hall(b, s * w, s * d, h, wall)
+	local t = b.into(body, true)
+	local face = -s * d / 2
+	t.block("Roof", Vector3.new(s * w + 0.2, 0.4, s * d + 0.2), Vector3.new(0, PLINTH + h + 0.2, 0), roof)
+	t.block(
+		"Window",
+		Vector3.new(s * w * 0.45, 2.2, 0.2),
+		Vector3.new(-s * w * 0.2, PLINTH + 2, face - 0.05),
+		Palette.glass
+	)
+	Kit.door(t, "Door", CFrame.new(s * w * 0.25, PLINTH, face - 0.15), 1.8, 3, door, Palette.cream)
+	return body, t, face
+end
+
+-- Dance Academy (content bank, level 126): a pink studio with a tall arched window, a barre
+-- inside, and a giant pair of ballet slippers on the roof.
+TYPES.DanceAcademy = function(b, s)
+	local body, t, face = lateHall(
+		b,
+		s,
+		0.46,
+		0.34,
+		4.4,
+		Palette.flowerPink:Lerp(Palette.cream, 0.5),
+		Palette.flowerWhite,
+		Palette.flowerPink
+	)
+	t.block(
+		"Barre",
+		Vector3.new(s * 0.18, 0.15, 0.15),
+		Vector3.new(-s * 0.09, PLINTH + 1.6, face + 0.3),
+		Palette.woodLight
+	)
+	for _, x in { -0.6, 0.6 } do
+		t.block("Slipper", Vector3.new(0.9, 0.5, 2), Vector3.new(x, PLINTH + 5, 0), Palette.flowerPink)
+	end
+	t.block("Ribbon", Vector3.new(2.4, 0.1, 0.2), Vector3.new(0, PLINTH + 5.3, 0.8), Palette.flowerWhite)
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Discovery Museum (content bank, level 128): a grey museum with columns, a dinosaur skeleton
+-- neck rising from the roof and a telescope by the door.
+TYPES.DiscoveryMuseum = function(b, s)
+	local body, t, face = lateHall(b, s, 0.54, 0.38, 4.6, Palette.stoneLight, Palette.stoneDark, Palette.woodDark)
+	for _, x in { -s * 0.22, -s * 0.06, s * 0.06, s * 0.22 } do
+		t.post("Column", 4.4, 0.5, Vector3.new(x, PLINTH + 2.2, face - 0.8), Palette.flowerWhite)
+	end
+	t.block("Pediment", Vector3.new(s * 0.54, 0.6, 1.2), Vector3.new(0, PLINTH + 4.7, face - 0.6), Palette.flowerWhite)
+	-- The dinosaur neck and head
+	t.block(
+		"Neck",
+		Vector3.new(0.6, 3.2, 0.6),
+		CFrame.new(-s * 0.1, PLINTH + 6.4, 0) * CFrame.Angles(0, 0, math.rad(-20)),
+		Palette.cream
+	)
+	t.block("Skull", Vector3.new(1.6, 0.8, 0.8), Vector3.new(-s * 0.1 + 1.2, PLINTH + 8, 0), Palette.cream)
+	t.post("Telescope", 1.6, 0.2, Vector3.new(s * 0.26, PLINTH + 0.8, face - 1.8), Palette.metal)
+	t.block(
+		"Tube",
+		Vector3.new(1.4, 0.4, 0.4),
+		CFrame.new(s * 0.26, PLINTH + 1.8, face - 1.8) * CFrame.Angles(0, 0, math.rad(30)),
+		Palette.coins
+	)
+	Kit.sproutTag(t, Vector3.new(s * 0.22, PLINTH + 5.4, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Blues Lounge (content bank, level 130): a navy club with a gold marquee, a saxophone sign and
+-- round lamps along the front.
+TYPES.BluesLounge = function(b, s)
+	local body, t, face =
+		lateHall(b, s, 0.48, 0.36, 4.4, Palette.stoneDark:Lerp(Palette.sky, 0.25), Palette.stoneDark, Palette.roofRed)
+	t.block("Marquee", Vector3.new(s * 0.44, 0.8, 1), Vector3.new(0, PLINTH + 3.8, face - 0.5), Palette.coins)
+	for i = -2, 2 do
+		t.ball("Bulb", 0.4, Vector3.new(i * s * 0.08, PLINTH + 3.3, face - 1), Palette.lantern)
+	end
+	t.post("SaxBody", 2.6, 0.6, Vector3.new(0, PLINTH + 6, 0), Palette.coins)
+	t.cyl("SaxBell", 0.6, 1.2, CFrame.new(0.4, PLINTH + 4.9, 0), Palette.coins)
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Grand Auditorium (content bank, level 132): a cream concert hall with a curved shell roof, tall
+-- glass front and a treble clef on top.
+TYPES.Auditorium = function(b, s)
+	local body, t, face = lateHall(b, s, 0.56, 0.4, 4.8, Palette.cream, Palette.flowerWhite, Palette.woodDark)
+	t.cyl(
+		"Shell",
+		s * 0.44,
+		s * 0.56,
+		CFrame.new(0, PLINTH + 4.8, s * 0.04) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.flowerWhite
+	)
+	t.block("GlassFront", Vector3.new(s * 0.4, 3.6, 0.15), Vector3.new(0, PLINTH + 2.4, face - 0.1), Palette.glass)
+	t.ball("ClefLoop", 1.2, Vector3.new(0, PLINTH + 5 + s * 0.22, 0), Palette.stoneDark)
+	t.block("ClefStem", Vector3.new(0.3, 2.6, 0.3), Vector3.new(0.3, PLINTH + 5.6 + s * 0.22, 0), Palette.stoneDark)
+	Kit.sproutTag(t, Vector3.new(s * 0.24, PLINTH + 5.4, s * 0.16), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Clay Studio (content bank, level 134): a terracotta workshop with a kiln chimney, a potter's
+-- wheel out front, shelves of pots and a giant vase on the roof.
+TYPES.ClayStudio = function(b, s)
+	local body, t, face =
+		lateHall(b, s, 0.44, 0.34, 4, Palette.brick:Lerp(Palette.cream, 0.4), Palette.brick, Palette.woodDark)
+	t.post("Kiln", 3, 1.4, Vector3.new(s * 0.16, PLINTH + 5.5, s * 0.08), Palette.brick)
+	t.cyl(
+		"Wheel",
+		0.3,
+		1.2,
+		CFrame.new(-s * 0.1, PLINTH + 0.9, face - 1.4) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stone
+	)
+	t.post("WheelBase", 0.8, 0.5, Vector3.new(-s * 0.1, PLINTH + 0.4, face - 1.4), Palette.woodDark)
+	t.ball("Vase", 1.8, Vector3.new(-s * 0.08, PLINTH + 5.2, 0), Palette.carrot:Lerp(Palette.brick, 0.4))
+	t.post("VaseNeck", 1, 0.8, Vector3.new(-s * 0.08, PLINTH + 6.4, 0), Palette.carrot:Lerp(Palette.brick, 0.4))
+	Kit.sproutTag(t, Vector3.new(-s * 0.18, PLINTH + 4.6, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Archery Field (content bank, level 136): a timber clubhouse beside two round straw targets,
+-- a bow rack and a pennant on the roof.
+TYPES.ArcheryField = function(b, s)
+	local body, t, face = lateHall(b, s, 0.3, 0.26, 3.4, Palette.woodLight, Palette.leaf, Palette.woodDark)
+	for i, x in { -s * 0.32, -s * 0.18 } do
+		t.cyl(
+			"Target",
+			0.4,
+			2.2,
+			CFrame.new(x, PLINTH + 1.6, -s * 0.06) * CFrame.Angles(0, math.rad(90), 0),
+			Palette.straw
+		)
+		t.cyl(
+			"Bull",
+			0.45,
+			0.8,
+			CFrame.new(x, PLINTH + 1.6, -s * 0.06) * CFrame.Angles(0, math.rad(90), 0),
+			if i == 1 then Palette.roofRed else Palette.flowerYellow
+		)
+	end
+	t.block("BowRack", Vector3.new(1.6, 1.4, 0.3), Vector3.new(s * 0.2, PLINTH + 0.7, face - 0.6), Palette.woodDark)
+	t.post("PennantPole", 2, 0.15, Vector3.new(0, PLINTH + 4.4, 0), Palette.metal)
+	t.wedge("Pennant", Vector3.new(0.1, 0.8, 1.4), CFrame.new(0, PLINTH + 5.1, -0.7), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(s * 0.1, PLINTH + 4.2, s * 0.08), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Shared Office (content bank, level 138): a glass-and-steel office with a rooftop garden
+-- deck, bike stands and a speech-bubble sign.
+TYPES.SharedOffice = function(b, s)
+	local body, t, face =
+		lateHall(b, s, 0.5, 0.38, 5, Palette.stoneLight:Lerp(Palette.sky, 0.2), Palette.stoneDark, Palette.metal)
+	t.block("GlassBand", Vector3.new(s * 0.5, 1.2, 0.12), Vector3.new(0, PLINTH + 4, face - 0.08), Palette.glassDeep)
+	t.block("Deck", Vector3.new(s * 0.3, 0.3, s * 0.2), Vector3.new(-s * 0.08, PLINTH + 5.55, 0), Palette.woodLight)
+	t.block("Garden", Vector3.new(s * 0.26, 0.5, 0.6), Vector3.new(-s * 0.08, PLINTH + 5.95, s * 0.06), Palette.leaf)
+	t.block("BikeStand", Vector3.new(2.4, 0.8, 0.2), Vector3.new(-s * 0.18, PLINTH + 0.4, face - 1.4), Palette.metal)
+	t.ball("Bubble", 1.6, Vector3.new(s * 0.16, PLINTH + 6.4, 0), Palette.flowerWhite)
+	t.wedge("BubbleTail", Vector3.new(0.3, 0.6, 0.6), CFrame.new(s * 0.16 - 0.5, PLINTH + 5.6, 0), Palette.flowerWhite)
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 5.8, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Surf Lagoon (content bank, level 118): a beach-hut changing block beside a big wave pool,
 -- with a curling wave wall, a surfboard rack and a striped lifeguard chair.
 TYPES.SurfLagoon = function(b, s)

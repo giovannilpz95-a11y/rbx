@@ -1068,6 +1068,71 @@ TYPES.SpiralTower = {
 	end,
 }
 
+-- Courtyard House (level 130): a sand-coloured townhouse with a flat roof terrace, a horseshoe
+-- arch door, carved window screens, a striped awning and a potted palm.
+TYPES.CourtyardHouse = {
+	roof = Palette.roofTeal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.5, STORY * 2
+		local body = walls(b, w, d, h, Palette.straw:Lerp(Palette.carrot, 0.15), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Parapet", Vector3.new(w + 0.2, 0.6, d + 0.2), Vector3.new(0, PLINTH + h + 0.3, 0.6), Palette.straw)
+		t.block(
+			"Terrace",
+			Vector3.new(w * 0.4, 1.4, d * 0.4),
+			Vector3.new(w * 0.2, PLINTH + h + 1.1, 0.8),
+			Palette.straw:Lerp(Palette.cream, 0.3)
+		)
+		t.ball("Dome", 1.6, Vector3.new(w * 0.2, PLINTH + h + 2, 0.8), roof)
+		for _, x in { -w * 0.3, w * 0.3 } do
+			t.block(
+				"Screen",
+				Vector3.new(1.2, 1.6, 0.1),
+				Vector3.new(x, PLINTH + STORY * 1.4, face - 0.05),
+				Palette.woodDark
+			)
+		end
+		t.ball("Arch", 1.8, Vector3.new(0, PLINTH + 2.6, face - 0.02), roof)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 2.6, Palette.woodDark, Palette.coins)
+		t.post("PalmPot", 0.8, 0.8, Vector3.new(-w * 0.42, PLINTH + 0.4, face - 0.6), Palette.brick)
+		t.ball("Palm", 1.4, Vector3.new(-w * 0.42, PLINTH + 1.8, face - 0.6), Palette.leaf)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 1.4, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Stone Villa (level 138): an old grey stone villa with a columned porch, a low tiled roof and
+-- ivy up one corner.
+TYPES.StoneVilla = {
+	roof = Palette.brick,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.6, s * 0.5, STORY * 1.6
+		local body = walls(b, w, d, h, Palette.stone, 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + h, 0.6), w + 0.6, d + 0.6, 1.8, roof)
+		t.block(
+			"Porch",
+			Vector3.new(w * 0.6, 0.3, 1.4),
+			Vector3.new(0, PLINTH + h - 0.2, face - 0.7),
+			Palette.stoneLight
+		)
+		for _, x in { -w * 0.26, -w * 0.09, w * 0.09, w * 0.26 } do
+			t.post("Column", h - 0.3, 0.4, Vector3.new(x, PLINTH + (h - 0.3) / 2, face - 1.2), Palette.flowerWhite)
+		end
+		t.block(
+			"Ivy",
+			Vector3.new(0.3, h * 0.8, 1.2),
+			Vector3.new(w / 2 + 0.1, PLINTH + h * 0.4, face - 0.8),
+			Palette.leaf
+		)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 2.8, Palette.woodDark, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 2.2, d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)
