@@ -362,7 +362,13 @@ local function spotFor(player: Player, data: { [string]: any }): Layout.Spot?
 		player,
 		"Your first train has pulled into the new Train Station. Walk it where you like, then tap the train to load it."
 	)
-	PlotService.offerPlace(player, data, KEY)
+	if (data.tutorial and data.tutorial.step or 0) == 0 then
+		PlotService.offerPlace(player, data, KEY)
+	else
+		-- The first-session guide is still running (it points at the usual spots): offer the
+		-- placing once it's over
+		data.trains.placeOffer = true
+	end
 	return spot
 end
 
@@ -396,6 +402,12 @@ local function refresh(player: Player, plot: Model, data: { [string]: any }, now
 		end
 	end
 	local station = model :: Model
+	if data.trains.placeOffer and (data.tutorial and data.tutorial.step or 0) == 0 then
+		data.trains.placeOffer = nil
+		DataService.markDirty(player, true)
+		NetService.toast(player, "Walk the Train Station where you like (Move works any time too).")
+		PlotService.offerPlace(player, data, KEY)
+	end
 	local lines = Train.lines(data)
 	local board = {}
 	for index = 1, #ArtRail.FARM_LANES do
