@@ -20,6 +20,8 @@
 	     end (the Tarps goal)
 	  e  thick goo over the tile: two clears (the first leaves plain goo), and
 	     goo spreading next to it spreads thick
+	  r  rainbow patch under the tile: after every swap the plain tile on it
+	     changes to the next colour that doesn't make a match
 	  x  surprise crate: blocks like a 1-layer bale; a match next to it or a blast
 	     opens it, and it leaves a power-up (or now and then a hay bale)
 	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
@@ -49,7 +51,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -82,6 +84,7 @@ local VALID_CHARS = {
 	["#"] = true,
 	d = true,
 	b = true,
+	r = true,
 	e = true,
 	t = true,
 	g = true,

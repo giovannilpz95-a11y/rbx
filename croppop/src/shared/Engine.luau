@@ -52,6 +52,10 @@
 	right end (once per tarp per wave), and each blast on one of its cells
 	rolls up one more, for the Tarps goal.
 
+	Rainbow patches: after every swap, the plain tile on each patch changes
+	to the next of the level's colours that doesn't make a match there (a
+	"Recolor" phase: { kind = "Recolor", changes = {{id, x, y, color}} }).
+
 	Fences: no swap crosses one. A blast on either cell next to a fence breaks
 	it (matches don't), for the Fences goal.
 
@@ -1013,6 +1017,71 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 	return true, phases
 end
 
+-- Would the tile at (x, y) be part of a line of 3 or a 2x2 square?
+local function matchesAt(board, x: number, y: number): boolean
+	local color = Matcher.colorAt(board, x, y)
+	if color <= 0 then
+		return false
+	end
+	local function same(cx, cy)
+		return Matcher.colorAt(board, cx, cy) == color
+	end
+	for _, d in { { 1, 0 }, { 0, 1 } } do
+		local run = 1
+		local k = 1
+		while same(x + d[1] * k, y + d[2] * k) do
+			run += 1
+			k += 1
+		end
+		k = 1
+		while same(x - d[1] * k, y - d[2] * k) do
+			run += 1
+			k += 1
+		end
+		if run >= 3 then
+			return true
+		end
+	end
+	for _, s in { { -1, -1 }, { 0, -1 }, { -1, 0 }, { 0, 0 } } do
+		local sx, sy = x + s[1], y + s[2]
+		if same(sx, sy) and same(sx + 1, sy) and same(sx, sy + 1) and same(sx + 1, sy + 1) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Rainbow patches: each plain tile on one moves on to the next level colour
+-- that doesn't make a match there (it keeps its colour if none fits).
+function Engine._recolor(self, phases)
+	local board = self.board
+	local colors = self.colors
+	local changes = {}
+	board:eachCell(function(cell)
+		local piece = cell.piece
+		if cell.rainbow and Board.isPlainTile(cell) and piece.color > 0 then
+			local start = piece.color
+			local at = table.find(colors, start) or 0
+			for step = 1, #colors - 1 do
+				piece.color = colors[(at + step - 1) % #colors + 1]
+				if not matchesAt(board, cell.x, cell.y) then
+					break
+				end
+				piece.color = start
+			end
+			if piece.color ~= start then
+				table.insert(changes, { id = piece.id, x = cell.x, y = cell.y, color = piece.color })
+			end
+		end
+	end)
+	if #changes > 0 then
+		table.insert(phases, { kind = "Recolor", changes = changes })
+		if not Matcher.hasPossibleMove(board) then
+			table.insert(phases, { kind = "Shuffle", moves = board:shuffle(self.rng, self.colors) })
+		end
+	end
+end
+
 -- Cascades, weeds spreading (after a swap), then win/lose, then the leftover-moves bonus.
 function Engine._afterAction(self, phases, wasSwap: boolean?)
 	self:_settle(phases)
@@ -1021,6 +1090,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	end
 	if wasSwap and self.gooCleared == 0 and not self.goals:isComplete() then
 		self:_growGoo(phases)
+	end
+	if wasSwap and self.board.hasRainbow and not self.goals:isComplete() then
+		self:_recolor(phases)
 	end
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then

@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 425
+local LAST = tonumber(ARGS[2]) or 450
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -113,6 +113,11 @@ local NAMES = {
 	"Toffee Fen", "Jelly Mire", "Stodgy Ditch", "Sticky Wicket", "Gooseberry Gloop",
 	"Bubble and Squeak", "Thicket Bog", "Goo Goliath", "Slurry Puddle", "Swamp King",
 	"Clotted Creek", "Gumdrop Glade", "Mire Maze", "Deep Bog Day", "Grand Goo Gala",
+	"Rainbow Patch", "Painted Pots", "Dye Works", "Colour Wheel", "Prism Meadow",
+	"Paint Pot Lane", "Shifting Sands", "Kaleidoscope Farm", "Rainbow Row", "Flower Show Dye",
+	"Hue Hollow", "Bright Barn", "Spectrum Field", "Tie-Dye Day", "Chameleon Corner",
+	"Painted Ponies", "Colour Swap Shop", "Stained Glass Mill", "Sunset Shades", "Rainbow Ridge",
+	"Paintbox Pasture", "Crayon Croft", "Easel Lane", "Prism Pond", "Grand Rainbow Fair",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -133,7 +138,8 @@ local STATUE_INTRO = 326 -- first level with buried statues
 local SPRING_INTRO = 351 -- first level with goo springs
 local TARP_INTRO = 376 -- first level with tarps
 local THICK_GOO_INTRO = 401 -- first level with thick goo
-local INTROS = { [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local RAINBOW_INTRO = 426 -- first level with rainbow patches
+local INTROS = { [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -462,6 +468,7 @@ local function mechanics(id)
 		springs = id >= SPRING_INTRO, -- "G"
 		tarps = id >= TARP_INTRO, -- "t"
 		thickGoo = id >= THICK_GOO_INTRO, -- "e"
+		rainbow = id >= RAINBOW_INTRO, -- "r"
 	}
 end
 
@@ -469,6 +476,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_RAINBOW = { "Rainbow", "Goo", "Tarps", "Collect", "Rainbow", "Springs", "Statues", "Crates", "Rainbow", "Fences", "Mud", "Mix" }
 local FOCUS_THICK_GOO = { "Goo", "Tarps", "Springs", "Collect", "Goo", "Statues", "Crates", "Fences", "Goo", "Hens", "Mud", "Mix" }
 local FOCUS_TARPS = { "Tarps", "Springs", "Statues", "Collect", "Tarps", "Crates", "Fences", "Goo", "Tarps", "Hens", "Mud", "Mix" }
 local FOCUS_SPRINGS = { "Springs", "Statues", "Crates", "Collect", "Springs", "Hens", "Fences", "Baskets", "Springs", "Stones", "Mud", "Mix" }
@@ -493,6 +501,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Rainbow", "Dye", "Paint", "Colour", "Prism", "Hue", "Spectrum", "Chameleon", "Crayon" }, focus = "Rainbow", needs = "rainbow" },
 	{ words = { "Tarp", "Canvas", "Awning", "Tent", "Marquee", "Shade", "Cover", "Big Top" }, focus = "Tarps", needs = "tarps" },
 	{ words = { "Spring", "Well", "Fountain", "Geyser", "Seep", "Spout" }, focus = "Springs", needs = "springs" },
 	{ words = { "Statue", "Relic", "Monument", "Bust", "Dig", "Plinth", "Fossil", "Unveiling" }, focus = "Statues", needs = "statues" },
@@ -533,6 +542,8 @@ local function focusOf(id, name)
 		return "Tarps"
 	elseif id == THICK_GOO_INTRO then
 		return "Goo"
+	elseif id == RAINBOW_INTRO then
+		return "Rainbow"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -544,7 +555,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -668,6 +679,17 @@ local function placeTarps(g, rng, id)
 		end
 	end
 	return placed
+end
+
+-- Rainbow patches on plain cells, mirrored; the first rainbow level keeps
+-- them in the middle.
+local function placeRainbow(g, rng, id)
+	local name = if id == RAINBOW_INTRO then "centre" else rng:pick(FROST_PATTERNS)
+	for _, p in PATTERNS[name](g, rng) do
+		if isCell(g, p[1], p[2]) and g[p[2]][p[1]] == "." then
+			setSym(g, p[1], p[2], "r")
+		end
+	end
 end
 
 -- Goo on plain cells; the first goo level starts with a small patch in the middle.
@@ -936,7 +958,7 @@ local function keepRowsOpen(g)
 		local open = false
 		for x = 1, g.w do
 			local c = g[y][x]
-			open = open or c == "." or c == "m" or c == "M" or c == "g" or c == "e" or c == "b"
+			open = open or c == "." or c == "m" or c == "M" or c == "g" or c == "e" or c == "b" or c == "r"
 		end
 		if not open then
 			setSym(g, math.ceil(g.w / 2), y, ".")
@@ -1010,6 +1032,9 @@ local function draft(id, variant)
 	if focus == "Crates" or (focus == "Mix" and mech.crates and rng:int(1, 3) == 1) then
 		placeCrates(g, rng, id)
 	end
+	if focus == "Rainbow" or (focus == "Mix" and mech.rainbow and rng:int(1, 3) == 1) then
+		placeRainbow(g, rng, id)
+	end
 	if focus == "Tarps" or (focus == "Mix" and mech.tarps and rng:int(1, 3) == 1) then
 		if placeTarps(g, rng, id) == 0 and focus == "Tarps" then
 			return nil
@@ -1064,7 +1089,7 @@ local function draft(id, variant)
 		for y = 1, g.h do
 			local open = false
 			for x = 1, g.w do
-				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g" or g[y][x] == "e" or g[y][x] == "b"
+				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g" or g[y][x] == "e" or g[y][x] == "b" or g[y][x] == "r"
 			end
 			if not open then
 				return nil
@@ -1134,10 +1159,10 @@ local function draft(id, variant)
 	if focus == "Collect" and collects == 0 then
 		collects = 1
 	end
-	if focus == "Crates" and collects == 0 then
-		collects = 1 -- crates have no goal of their own
+	if (focus == "Crates" or focus == "Rainbow") and collects == 0 then
+		collects = 1 -- crates and rainbow patches have no goal of their own
 	end
-	if INTROS[id] and id ~= PORTAL_INTRO and id ~= CRATE_INTRO then
+	if INTROS[id] and id ~= PORTAL_INTRO and id ~= CRATE_INTRO and id ~= RAINBOW_INTRO then
 		collects = 0 -- an intro level is about the new obstacle alone
 	end
 	local picks = table.clone(colors)
