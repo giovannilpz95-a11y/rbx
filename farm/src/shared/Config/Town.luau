@@ -22,7 +22,7 @@ export type CommunityDef = {
 	unlockLevel: number,
 	capBonus: number,
 	coinCost: number,
-	materials: { [string]: number }, -- Bricks / Planks / Panes
+	materials: { [string]: number }, -- Bricks / Planks / Panes, and from level 60 power tools (Config/ToolTrader)
 	buildSeconds: number,
 	xp: number,
 	order: number, -- unlock order; also picks its lot (TownRules.communityLot)
@@ -114,6 +114,7 @@ local Community: { [string]: CommunityDef } = {
 	Speedway = { id = "Speedway", displayName = "Speedway", unlockLevel = 57, capBonus = 410, coinCost = 26500, materials = { Bricks = 24, Planks = 31, Panes = 34 }, buildSeconds = 43 * HOUR, xp = 820, order = 54, color = { 60, 60, 70 } },
 	ClimbingWall = { id = "ClimbingWall", displayName = "Climbing Wall", unlockLevel = 58, capBonus = 430, coinCost = 28000, materials = { Bricks = 31, Planks = 28, Panes = 32 }, buildSeconds = 44 * HOUR, xp = 860, order = 55, color = { 230, 140, 60 } },
 	AutoWorkshop = { id = "AutoWorkshop", displayName = "Auto Workshop", unlockLevel = 59, capBonus = 450, coinCost = 29500, materials = { Bricks = 34, Planks = 35, Panes = 24 }, buildSeconds = 45 * HOUR, xp = 900, order = 56, color = { 90, 120, 160 } },
+	Planetarium = { id = "Planetarium", displayName = "Planetarium", unlockLevel = 60, capBonus = 470, coinCost = 31000, materials = { Bricks = 30, PowerDrill = 8, PowerSaw = 5 }, buildSeconds = 46 * HOUR, xp = 940, order = 57, color = { 70, 80, 140 } },
 	SportsArena = { id = "SportsArena", displayName = "Sports Arena", unlockLevel = 37, capBonus = 180, coinCost = 7200, materials = { Bricks = 11, Planks = 20, Panes = 18 }, buildSeconds = 23 * HOUR, xp = 360, order = 34, color = { 120, 180, 110 } },
 	LoopCoaster = { id = "LoopCoaster", displayName = "Loop Coaster", unlockLevel = 36, capBonus = 175, coinCost = 6500, materials = { Bricks = 10, Planks = 24, Panes = 13 }, buildSeconds = 22 * HOUR, xp = 350, order = 33, color = { 90, 170, 230 } },
 	SkyWheel = { id = "SkyWheel", displayName = "Sky Wheel", unlockLevel = 35, capBonus = 170, coinCost = 5900, materials = { Bricks = 18, Planks = 16, Panes = 11 }, buildSeconds = 21 * HOUR, xp = 340, order = 32, color = { 240, 120, 160 } },

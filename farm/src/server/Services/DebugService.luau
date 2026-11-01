@@ -12,6 +12,8 @@ local DuckPond = require(Shared.DuckPond)
 local DuckPondConfig = require(Shared.Config.DuckPond)
 local OtterPond = require(Shared.OtterPond)
 local OtterPondConfig = require(Shared.Config.OtterPond)
+local ToolTrader = require(Shared.ToolTrader)
+local ToolTraderConfig = require(Shared.Config.ToolTrader)
 local Harbor = require(Shared.Harbor)
 local IslesConfig = require(Shared.Config.Isles)
 local Levels = require(Shared.Config.Levels)
@@ -343,6 +345,39 @@ function DebugService.otters(player: Player): (boolean, string?)
 	return true
 end
 
+-- The Tool Trader: built now (ignoring level, Population and Coins), all three slots open with
+-- fresh offers, and the materials every offer asks for
+function DebugService.trader(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	if data.level < ToolTraderConfig.unlockLevel then
+		return false, string.format("Reach level %d first (+1 level)", ToolTraderConfig.unlockLevel)
+	end
+	if data.toolTrader.readyAt == nil then
+		ToolTrader.build(data, now, Random.new():NextInteger(1, 2147483646))
+	end
+	ToolTrader.finishBuild(data, now)
+	data.toolTrader.slots = #ToolTraderConfig.slotCoins
+	for i = 1, data.toolTrader.slots do
+		data.toolTrader.offers[tostring(i)] = nil
+	end
+	ToolTrader.settle(data, now)
+	for i = 1, data.toolTrader.slots do
+		local offer = ToolTrader.offer(data, i)
+		for id, qty in (offer and offer.cost) or {} do
+			data.inventory.items[id] = (data.inventory.items[id] or 0) + qty
+		end
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: Tool Trader built, three slots, materials for every offer")
+	return true
+end
+
 -- Airship Freight (Features/F04): the Blimp Mast repaired and the Cargo Blimp docked now,
 -- ignoring level, land and Coins. Pressed while it's docked, it sends it off (no rewards) and
 -- brings a fresh load in.
@@ -544,6 +579,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Harbor, 1, 2, DebugService.harbor)
 	NetService.on(Net.Debug_Pond, 1, 2, DebugService.pond)
 	NetService.on(Net.Debug_Otters, 1, 2, DebugService.otters)
+	NetService.on(Net.Debug_Trader, 1, 2, DebugService.trader)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)

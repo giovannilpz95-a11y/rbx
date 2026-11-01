@@ -2144,6 +2144,50 @@ TYPES.AutoWorkshop = function(b, s)
 	return body
 end
 
+-- Planetarium (content bank, level 60): a round navy hall under a big silver dome with its
+-- observing slit open, a brass telescope poking out, gold stars on the drum and a ringed
+-- planet on a post by the door.
+TYPES.Planetarium = function(b, s)
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.8), Vector3.new(0, PLINTH / 2, 0), Palette.stone)
+	local body = b.post("Body", 4.4, s * 0.62, Vector3.new(0, PLINTH + 2.2, 0.4), Palette.glassDeep, { collide = true })
+	local t = b.into(body, true)
+	t.ball("Dome", s * 0.6, Vector3.new(0, PLINTH + 4.4, 0.4), Palette.stoneLight)
+	t.block(
+		"Slit",
+		Vector3.new(1.2, s * 0.28, 0.4),
+		CFrame.new(0, PLINTH + 4.4 + s * 0.15, 0.4 - s * 0.12) * CFrame.Angles(math.rad(-35), 0, 0),
+		Palette.glassDeep
+	)
+	t.cyl(
+		"Telescope",
+		3.6,
+		0.7,
+		CFrame.new(0, PLINTH + 4.4 + s * 0.24, 0.4 - s * 0.2) * Kit.yaw(90) * CFrame.Angles(0, 0, math.rad(-35)),
+		Palette.coins
+	)
+	for i = -1, 1 do
+		t.ball(
+			"Star",
+			0.6,
+			Vector3.new(i * 2.2, PLINTH + 3.2 - math.abs(i) * 0.6, 0.4 - s * 0.31 + math.abs(i) * 0.5),
+			Palette.flowerYellow
+		)
+	end
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, 0.4 - s * 0.31), 1.8, 3, Palette.stoneDark, Palette.cream)
+	-- The ringed planet on its post
+	t.post("PlanetPost", 3, 0.3, Vector3.new(s * 0.32, PLINTH + 1.5, -s * 0.3), Palette.stoneDark)
+	t.ball("Planet", 1.6, Vector3.new(s * 0.32, PLINTH + 3.6, -s * 0.3), Palette.carrot)
+	t.cyl(
+		"Ring",
+		0.15,
+		2.6,
+		CFrame.new(s * 0.32, PLINTH + 3.6, -s * 0.3) * CFrame.Angles(0, 0, math.rad(70)),
+		Palette.wheat
+	)
+	Kit.sproutTag(t, Vector3.new(-s * 0.3, PLINTH + 4.6, s * 0.3), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

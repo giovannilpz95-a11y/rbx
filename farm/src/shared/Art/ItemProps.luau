@@ -684,6 +684,25 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.cyl("Wax", 0.1, 0.95, at(0, 1.02, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
 		b.ball("Flame", 0.3, at(0, 1.25, 0), Palette.flowerYellow, QUIET)
 	end,
+	PowerDrill = function(b)
+		-- A yellow cordless drill with its bit
+		b.block("Body", Vector3.new(0.5, 0.6, 1.3), at(0, 1.2, 0), Palette.flowerYellow, QUIET)
+		b.block("Grip", Vector3.new(0.45, 1, 0.5), at(0, 0.5, 0.35), Palette.stoneDark, QUIET)
+		b.block("Battery", Vector3.new(0.6, 0.3, 0.7), at(0, 0.1, 0.35), Palette.stoneDark, QUIET)
+		b.cyl("Bit", 0.8, 0.15, at(0, 1.2, -1) * Kit.yaw(90), Palette.stoneLight, QUIET)
+	end,
+	PowerSaw = function(b)
+		-- A red circular saw with its silver blade
+		b.cyl("Blade", 0.1, 1.4, at(0.3, 0.75, 0), Palette.stoneLight, QUIET)
+		b.block("Body", Vector3.new(0.6, 0.7, 1), at(-0.1, 0.9, 0), Palette.roofRed, QUIET)
+		b.block("Handle", Vector3.new(0.3, 0.3, 0.9), at(-0.1, 1.4, 0.2), Palette.stoneDark, QUIET)
+	end,
+	Jackhammer = function(b)
+		-- An orange jackhammer standing on its chisel
+		b.block("Body", Vector3.new(0.6, 1.1, 0.6), at(0, 1.1, 0), Palette.carrot, QUIET)
+		b.block("Handles", Vector3.new(1.4, 0.2, 0.25), at(0, 1.75, 0), Palette.stoneDark, QUIET)
+		b.cyl("Chisel", 0.6, 0.15, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

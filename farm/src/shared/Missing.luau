@@ -12,6 +12,7 @@
 local Barn = require("./Config/Barn")
 local Items = require("./Items")
 local Speedup = require("./Speedup")
+local ToolTrader = require("./Config/ToolTrader")
 local Town = require("./Config/Town")
 
 export type Line = { item: string, qty: number }
@@ -24,6 +25,8 @@ function Missing.unitPrice(item: string): number?
 		return Town.materialGemPrice
 	elseif Barn.materials[item] then
 		return Barn.materialGemPrice
+	elseif ToolTrader.tools[item] then
+		return nil -- power tools only come from the Tool Trader, as in Township
 	end
 	local def = Items[item]
 	if def == nil then

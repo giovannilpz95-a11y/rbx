@@ -190,6 +190,12 @@ function Profile.template(): { [string]: any }
 			trips = 0,
 			away = {}, -- otter index (string) -> { food, readyAt, catch }
 		},
+		toolTrader = { -- the Tool Trader (shared/ToolTrader); readyAt is set when building starts
+			seed = 0,
+			slots = 1,
+			trades = 0,
+			offers = {}, -- slot index (string) -> { tools, cost } or { waitUntil }
+		},
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
