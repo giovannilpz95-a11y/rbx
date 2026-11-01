@@ -1642,6 +1642,49 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			b.ball("Knob", 0.35, at(x, 0.17, 0.13), Palette.roofRed, QUIET)
 		end
 	end,
+	Lei = function(b)
+		-- A ring of roses and jasmine
+		for i = 0, 7 do
+			local a = math.rad(i * 45)
+			b.ball(
+				"Flower",
+				0.35,
+				at(math.cos(a) * 0.55, 0.18, math.sin(a) * 0.55),
+				if i % 2 == 0 then Palette.roofRed else Palette.flowerWhite,
+				QUIET
+			)
+		end
+	end,
+	WindUpMouse = function(b)
+		-- A grey toy mouse with a brass key
+		b.ball("Body", 0.8, at(0, 0.35, 0), Palette.stone, QUIET)
+		b.ball("Ear", 0.3, at(-0.2, 0.7, -0.25), Palette.flowerPink, QUIET)
+		b.ball("Ear", 0.3, at(0.2, 0.7, -0.25), Palette.flowerPink, QUIET)
+		b.block("Key", Vector3.new(0.4, 0.3, 0.08), at(0, 0.6, 0.45), Palette.coins, QUIET)
+	end,
+	RobeAndSlippers = function(b)
+		-- A folded white robe with a pair of fluffy slippers
+		b.block("Robe", Vector3.new(1.2, 0.4, 0.9), at(0, 0.2, -0.2), Palette.flowerWhite, QUIET)
+		b.block("Belt", Vector3.new(1.22, 0.1, 0.15), at(0, 0.3, -0.2), Palette.flowerPink, QUIET)
+		b.block("Slipper", Vector3.new(0.35, 0.25, 0.7), at(-0.25, 0.13, 0.55), Palette.flowerPink, QUIET)
+		b.block("Slipper", Vector3.new(0.35, 0.25, 0.7), at(0.25, 0.13, 0.55), Palette.flowerPink, QUIET)
+	end,
+	Lasagna = function(b)
+		-- A baking dish of layered lasagna
+		b.block("Dish", Vector3.new(1.4, 0.4, 1), at(0, 0.2, 0), Palette.flowerWhite, QUIET)
+		b.block("Layers", Vector3.new(1.2, 0.3, 0.8), at(0, 0.4, 0), Palette.roofRed:Lerp(Palette.wheat, 0.4), QUIET)
+		b.block("Cheese", Vector3.new(1.2, 0.08, 0.8), at(0, 0.58, 0), Palette.corn, QUIET)
+	end,
+	Planter = function(b)
+		-- A wooden planter box with a little shrub
+		b.block("Box", Vector3.new(1.2, 0.6, 0.6), at(0, 0.3, 0), Palette.woodLight, QUIET)
+		b.ball("Shrub", 0.7, at(0, 0.8, 0), Palette.leaf, QUIET)
+	end,
+	CatLitter = function(b)
+		-- A bag of litter with a cat on the label
+		b.block("Bag", Vector3.new(0.9, 1.1, 0.5), at(0, 0.55, 0), Palette.leafLight:Lerp(Palette.cream, 0.4), QUIET)
+		b.ball("CatFace", 0.4, at(0, 0.65, -0.27), Palette.carrot, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
