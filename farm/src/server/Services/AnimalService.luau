@@ -11,6 +11,7 @@ local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Pen = require(Shared.Pen)
 local Speedup = require(Shared.Speedup)
+local Tonics = require(Shared.Tonics)
 local TownRules = require(Shared.TownRules)
 local Layout = require(Shared.Layout)
 local Tutorial = require(Shared.Tutorial)
@@ -140,13 +141,15 @@ function AnimalService.collect(player: Player, penId: any): (boolean, string?)
 	if not nearPen(player, def.id) then
 		return false, "Walk closer to the " .. def.displayName
 	end
-	local taken = Pen.collect(pen, now + 1, InventoryService.space(player))
+	-- Happy Herd (a tonic) doubles what each animal gives, so it needs twice the Barn room
+	local mult = Tonics.value(DataService.get(player) :: any, "penYield", now)
+	local taken = Pen.collect(pen, now + 1, math.floor(InventoryService.space(player) / mult))
 	if taken == 0 then
 		return false, "Your Barn is full. Sell something from the Barn first."
 	end
-	InventoryService.add(player, { [def.product] = taken })
+	InventoryService.add(player, { [def.product] = taken * mult })
 	EconomyService.add(player, "XP", def.productXP * taken, "collect_" .. def.product)
-	QuestService.progress(player, "animal", taken)
+	QuestService.progress(player, "animal", taken * mult)
 	feedPen(player, def, pen)
 	PlotService.refresh(player)
 	return true

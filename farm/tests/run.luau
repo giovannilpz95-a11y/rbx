@@ -36,6 +36,7 @@ local Items = require("../src/shared/Items")
 local DuckPondConfig = require("../src/shared/Config/DuckPond")
 local OtterPondConfig = require("../src/shared/Config/OtterPond")
 local ToolTraderConfig = require("../src/shared/Config/ToolTrader")
+local TonicsConfig = require("../src/shared/Config/Tonics")
 local IslesConfig = require("../src/shared/Config/Isles")
 local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
@@ -997,7 +998,8 @@ test("Airship Freight: repair, dock, load, send, expire", function()
 			seen[crate.item] = true
 		end
 	end
-	eq(#load.chest, 3, "chest: a Bar, a tool, a material")
+	-- A Bar, a tool, a material, and sometimes a Farm Tonic (Config/Tonics chestChance)
+	ok(#load.chest == 3 or (#load.chest == 4 and TonicsConfig.tonics[load.chest[4].item] ~= nil), "chest contents")
 	-- Same seed, same load
 	local again = Profile.migrate(nil) :: any
 	again.level, again.factories, again.pens = data.level, data.factories, data.pens
@@ -2418,6 +2420,7 @@ require("./harbor")(test, eq, ok)
 require("./duckpond")(test, eq, ok)
 require("./otterpond")(test, eq, ok)
 require("./tooltrader")(test, eq, ok)
+require("./tonics")(test, eq, ok)
 
 test("client panels read the flat inventory the snapshot sends", function()
 	for _, file in fs.readDir("src/client/UI") do

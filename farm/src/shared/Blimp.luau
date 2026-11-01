@@ -15,6 +15,7 @@ local Config = require("./Config/Blimp")
 local Items = require("./Items")
 local OrderGen = require("./OrderGen")
 local Rng = require("./Rng")
+local Tonics = require("./Tonics")
 local TownRules = require("./TownRules")
 
 local Blimp = {}
@@ -136,6 +137,14 @@ function Blimp.generate(pool: { string }, level: number, seed: number): (Load, n
 		local entry
 		entry, seed = pickWeighted(seed, group, prizeWeight)
 		table.insert(chest, { item = entry.item, qty = entry.qty })
+	end
+	-- Sometimes a Farm Tonic too (Config/Tonics chestChance), for the Tonic Shed
+	local roll, pick
+	roll, seed = Rng.next(seed)
+	pick, seed = Rng.next(seed)
+	local tonic = Tonics.chestDraw(roll, pick)
+	if tonic then
+		table.insert(chest, { item = tonic, qty = 1 })
 	end
 	return { rows = rows, chest = chest }, seed
 end

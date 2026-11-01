@@ -252,6 +252,8 @@ local function act(part: BasePart)
 		end
 	elseif kind == "ToolTrader" then
 		Panels.open("ToolTrader")
+	elseif kind == "TonicShed" then
+		Panels.open("TonicShed")
 	elseif kind == "OtterCatch" then
 		Remotes.fire("Otter_Collect", part:GetAttribute("Otter"))
 	elseif kind == "HarborDrift" then

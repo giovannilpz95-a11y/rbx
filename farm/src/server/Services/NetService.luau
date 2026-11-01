@@ -112,6 +112,7 @@ local function snapshot(data: { [string]: any })
 		duckPond = data.duckPond, -- the Duck Pond: dig timer and the current visit (shared/DuckPond)
 		otterPond = data.otterPond, -- the Otter Pond: build timer, otters and their trips (shared/OtterPond)
 		toolTrader = data.toolTrader, -- the Tool Trader: build timer, slots and offers (shared/ToolTrader)
+		tonics = data.tonics, -- the Tonic Shed: build timer, running tonics and earned ones (shared/Tonics)
 		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
