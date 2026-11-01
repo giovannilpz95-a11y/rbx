@@ -1537,6 +1537,51 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Balloon", 0.9, at(0, 1.3, 0), Palette.roofRed, QUIET)
 		b.block("String", Vector3.new(0.05, 0.85, 0.05), at(0, 0.45, 0), Palette.flowerWhite, QUIET)
 	end,
+	PastaArrabbiata = function(b)
+		-- A bowl of pasta in red pepper sauce with cheese on top
+		b.cyl("Bowl", 0.4, 1.5, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.ball("Pasta", 1, at(0, 0.5, 0), Palette.carrot:Lerp(Palette.roofRed, 0.5), QUIET)
+		b.block("Cheese", Vector3.new(0.3, 0.1, 0.3), at(0.1, 0.95, 0), Palette.corn, QUIET)
+	end,
+	MilkOolongTea = function(b)
+		-- A clay cup of milky tea on a saucer
+		b.cyl("Saucer", 0.1, 1.1, at(0, 0.05, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.brick, QUIET)
+		b.post("Cup", 0.6, 0.6, at(0, 0.4, 0), Palette.brick, QUIET)
+		b.cyl(
+			"Tea",
+			0.05,
+			0.5,
+			at(0, 0.71, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.cream:Lerp(Palette.wood, 0.3),
+			QUIET
+		)
+	end,
+	LavenderBouquet = function(b)
+		-- Purple lavender spikes tied with a ribbon
+		for _, x in { -0.25, 0, 0.25 } do
+			b.block("Stem", Vector3.new(0.1, 1.1, 0.1), at(x, 0.55, 0), Palette.leafLight, QUIET)
+			b.block(
+				"Spike",
+				Vector3.new(0.22, 0.55, 0.22),
+				at(x, 1.3, 0),
+				Palette.plum:Lerp(Palette.flowerPink, 0.3),
+				QUIET
+			)
+		end
+		b.block("Ribbon", Vector3.new(0.7, 0.2, 0.25), at(0, 0.45, 0), Palette.flowerPink, QUIET)
+	end,
+	CottonCandy = function(b)
+		-- A pink cloud of candy floss on a paper stick
+		b.block("Stick", Vector3.new(0.12, 0.8, 0.12), at(0, 0.4, 0), Palette.cream, QUIET)
+		b.ball("Floss", 1.1, at(0, 1.2, 0), Palette.flowerPink, QUIET)
+	end,
+	GardenTools = function(b)
+		-- A trowel and a hand fork
+		b.block("Handle", Vector3.new(0.18, 0.18, 0.7), at(-0.3, 0.09, 0.4), Palette.roofRed, QUIET)
+		b.block("Trowel", Vector3.new(0.4, 0.06, 0.7), at(-0.3, 0.05, -0.3), Palette.metal, QUIET)
+		b.block("Handle", Vector3.new(0.18, 0.18, 0.7), at(0.3, 0.09, 0.4), Palette.leaf, QUIET)
+		b.block("Fork", Vector3.new(0.4, 0.06, 0.7), at(0.3, 0.05, -0.3), Palette.metal, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

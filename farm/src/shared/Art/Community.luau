@@ -2238,6 +2238,39 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Radio Dish (content bank, level 96): a big white radio telescope dish tilted to the sky on a
+-- turntable, with a small control hut, a blinking red tip and a cable run.
+TYPES.RadioDish = function(b, s)
+	local body = hall(b, s * 0.34, s * 0.3, 3.4, Palette.stoneLight)
+	local t = b.into(body, true)
+	local face = -s * 0.15
+	t.block("HutRoof", Vector3.new(s * 0.36, 0.4, s * 0.32), Vector3.new(0, PLINTH + 3.6, 0), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 1.6, 2.8, Palette.metal, Palette.stoneDark)
+	t.block("Window", Vector3.new(1.6, 1, 0.1), Vector3.new(-s * 0.1, PLINTH + 2.2, face - 0.1), Palette.glass)
+	-- The dish on its turntable beside the hut
+	local x = s * 0.22
+	t.cyl(
+		"Turntable",
+		0.8,
+		3.4,
+		CFrame.new(x, PLINTH + 0.4, s * 0.05) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.metal
+	)
+	t.post("Mount", 3.6, 0.8, Vector3.new(x, PLINTH + 2.6, s * 0.05), Palette.flowerWhite)
+	t.cyl(
+		"Dish",
+		0.6,
+		6.4,
+		CFrame.new(x, PLINTH + 5.6, s * 0.05) * CFrame.Angles(0, 0, math.rad(55)),
+		Palette.flowerWhite
+	)
+	t.post("Feed", 2, 0.2, Vector3.new(x - 0.9, PLINTH + 6.6, s * 0.05), Palette.metal)
+	t.ball("Tip", 0.4, Vector3.new(x - 0.9, PLINTH + 7.7, s * 0.05), Palette.roofRed)
+	t.block("Cable", Vector3.new(s * 0.14, 0.2, 0.2), Vector3.new(s * 0.1, PLINTH + 0.2, s * 0.05), Palette.stoneDark)
+	Kit.sproutTag(t, Vector3.new(-s * 0.12, PLINTH + 4.2, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Dive Shop (content bank, level 94): a sea-blue dive centre with a round porthole window, a
 -- training pool out front with a diving board, an air tank rack and a big diving-mask sign.
 TYPES.DiveShop = function(b, s)

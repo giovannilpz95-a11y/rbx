@@ -45,6 +45,7 @@ ArtMotion.SPECS = {
 	FurnitureWorkshop = { kind = "spin", pivot = "Saw", speed = 4 },
 	Cobbler = { kind = "bob", pivot = "Hammer", speed = 6, amplitude = 0.6 },
 	Jeweler = { kind = "spin", pivot = "Gem", speed = 1.2 },
+	GardenCenter = { kind = "glow", pivot = "NeonSign", speed = 1.4, color = Palette.flowerYellow },
 	PartyShop = { kind = "glow", pivot = "NeonSign", speed = 2.4, color = Palette.flowerPink },
 	Trattoria = { kind = "glow", pivot = "NeonSign", speed = 1.2, color = Palette.lantern },
 	FlowerShop = { kind = "glow", pivot = "NeonSign", speed = 2, color = Palette.flowerYellow },
