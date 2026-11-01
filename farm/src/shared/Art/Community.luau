@@ -2238,6 +2238,39 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Trail Camp (content bank, level 98): a log lodge with a green roof, two canvas tents, a
+-- campfire ring, a flagpole and a wooden trail sign.
+TYPES.TrailCamp = function(b, s)
+	local body = hall(b, s * 0.4, s * 0.32, 3.6, Palette.woodDark)
+	local t = b.into(body, true)
+	local face = -s * 0.16
+	t.wedge("Roof", Vector3.new(s * 0.44, 1.6, s * 0.36), CFrame.new(0, PLINTH + 4.4, 0), Palette.leaf)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 1.6, 2.8, Palette.wood, Palette.woodLight)
+	-- Two tents
+	for i, x in { -s * 0.3, s * 0.3 } do
+		t.wedge(
+			"Tent",
+			Vector3.new(2.6, 2, 2.4),
+			CFrame.new(x, PLINTH + 1, face - 2.4) * Kit.yaw(if i == 1 then 90 else -90),
+			if i == 1 then Palette.carrot else Palette.straw
+		)
+	end
+	-- The campfire ring
+	t.cyl(
+		"FireRing",
+		0.4,
+		1.8,
+		CFrame.new(0, PLINTH + 0.2, face - 2.6) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stone
+	)
+	t.ball("Fire", 0.8, Vector3.new(0, PLINTH + 0.6, face - 2.6), Palette.carrot)
+	-- The flagpole
+	t.post("Pole", 6, 0.2, Vector3.new(s * 0.18, PLINTH + 3, s * 0.12), Palette.metal)
+	t.block("Flag", Vector3.new(0.1, 1, 1.6), Vector3.new(s * 0.18, PLINTH + 5.4, s * 0.12 - 0.8), Palette.leafLight)
+	Kit.sproutTag(t, Vector3.new(-s * 0.16, PLINTH + 4.8, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Radio Dish (content bank, level 96): a big white radio telescope dish tilted to the sky on a
 -- turntable, with a small control hut, a blinking red tip and a cable run.
 TYPES.RadioDish = function(b, s)
