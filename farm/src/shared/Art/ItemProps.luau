@@ -775,6 +775,62 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.cyl("Soup", 0.1, 1.4, at(0, 0.62, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.roofRed, QUIET)
 		b.block("Pepper", Vector3.new(0.4, 0.1, 0.2), at(0.2, 0.7, 0.1), Palette.leaf, QUIET)
 	end,
+	Jasmine = function(b)
+		-- A sprig of small white flowers
+		b.block("Stem", Vector3.new(0.12, 1.3, 0.12), at(0, 0.65, 0), Palette.leaf, QUIET)
+		for i, x in { -0.35, 0, 0.35 } do
+			b.ball("Flower", 0.45, at(x, 1.1 + (i % 2) * 0.25, 0), Palette.flowerWhite:Lerp(Palette.cream, 0.4), QUIET)
+		end
+		b.block("Leaf", Vector3.new(0.5, 0.1, 0.25), at(0.2, 0.6, 0), Palette.leaf, QUIET)
+	end,
+	MushroomTurnover = function(b)
+		-- A golden half-moon pastry
+		b.cyl("Pastry", 0.5, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.block("Crimp", Vector3.new(1.6, 0.2, 0.2), at(0, 0.35, 0), Palette.bread, QUIET)
+	end,
+	RoseSorbet = function(b)
+		-- A pink scoop in a glass cup
+		b.post("Cup", 0.7, 1, at(0, 0.35, 0), Palette.glass, QUIET)
+		b.ball("Scoop", 1, at(0, 0.95, 0), Palette.flowerPink, QUIET)
+		b.ball("Petal", 0.3, at(0.2, 1.4, 0), Palette.roofRed, QUIET)
+	end,
+	FriedFish = function(b)
+		-- A golden fried fish on a plate
+		b.cyl("Plate", 0.15, 2, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.block("Fish", Vector3.new(0.6, 0.35, 1.4), at(0, 0.3, 0), Palette.wheat:Lerp(Palette.carrot, 0.3), QUIET)
+		b.wedge("Tail", Vector3.new(0.5, 0.35, 0.4), at(0, 0.3, 0.85), Palette.wheat:Lerp(Palette.carrot, 0.3), QUIET)
+	end,
+	CarrotCake = function(b)
+		-- A slice of cake with orange frosting
+		b.wedge("Slice", Vector3.new(1, 0.9, 1.4), at(0, 0.45, 0), Palette.wood, QUIET)
+		b.block("Frosting", Vector3.new(1, 0.15, 0.3), at(0, 0.95, 0.55), Palette.cream, QUIET)
+		b.block("Carrot", Vector3.new(0.15, 0.15, 0.4), at(0, 1.1, 0.55), Palette.carrot, QUIET)
+	end,
+	CornSoup = function(b)
+		-- A bowl of yellow soup with corn kernels
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.woodLight, QUIET)
+		b.cyl("Soup", 0.1, 1.4, at(0, 0.62, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.corn, QUIET)
+		b.ball("Bacon", 0.3, at(-0.3, 0.7, 0.2), Palette.cowMuzzle, QUIET)
+	end,
+	AirFreshener = function(b)
+		-- A spray can with a white flower on its label
+		b.post("Can", 1.3, 0.8, at(0, 0.65, 0), Palette.sky, QUIET)
+		b.block("Nozzle", Vector3.new(0.35, 0.3, 0.35), at(0, 1.45, 0), Palette.cream, QUIET)
+		b.ball("Flower", 0.4, at(0, 0.7, -0.38), Palette.flowerWhite:Lerp(Palette.cream, 0.4), QUIET)
+	end,
+	GrapeFizz = function(b)
+		-- A purple fizzy drink with a straw
+		b.post("Glass", 1.3, 0.8, at(0, 0.65, 0), Palette.plum, QUIET)
+		b.ball("Bubble", 0.25, at(0.15, 1.4, 0), Palette.flowerPink, QUIET)
+		b.block("Straw", Vector3.new(0.12, 0.8, 0.12), tilt(-0.15, 1.5, 0, 0, 0, 15), Palette.flowerYellow, QUIET)
+	end,
+	FrozenFruit = function(b)
+		-- A cup of frosty fruit chunks
+		b.post("Cup", 0.8, 1.2, at(0, 0.4, 0), Palette.sky:Lerp(Palette.cream, 0.5), QUIET)
+		b.ball("Mango", 0.5, at(-0.25, 0.95, 0), Palette.flowerYellow, QUIET)
+		b.ball("Peach", 0.5, at(0.25, 0.95, 0.1), Palette.carrot, QUIET)
+		b.ball("Frost", 0.4, at(0, 1.2, -0.15), Palette.flowerWhite:Lerp(Palette.sky, 0.3), QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
