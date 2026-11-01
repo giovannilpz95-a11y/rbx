@@ -56,6 +56,7 @@ export type Cell = {
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
 	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
+	thickGoo: boolean?, -- the goo is thick: the first clear leaves plain goo
 	buried: boolean?, -- part of a buried statue lies under this cell (only blasts dig it up)
 	statue: any?, -- the statue this cell is (or was) part of: { cells, left }
 	portalOut: Cell?, -- a portal entrance: pieces falling out of here land in this cell
@@ -181,6 +182,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.clover = true
 				elseif ch == "g" then
 					cell.goo = true
+				elseif ch == "e" then
+					cell.goo = true
+					cell.thickGoo = true
 				elseif ch == "b" then
 					cell.buried = true
 				elseif ch == "t" then
@@ -690,7 +694,7 @@ function Board.hash(self): string
 					code ..= "f" .. cell.frost
 				end
 				if cell.goo then
-					code ..= "g"
+					code ..= if cell.thickGoo then "gg" else "g"
 				end
 				table.insert(row, code .. clover)
 			end
@@ -725,6 +729,7 @@ function Board.snapshot(self)
 			frost = cell.frost,
 			clover = cell.clover,
 			goo = cell.goo,
+			thickGoo = cell.thickGoo,
 			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})

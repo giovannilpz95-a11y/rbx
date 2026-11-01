@@ -34,7 +34,7 @@ function Goals.new(defs: { any }, board)
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps = 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.goo then
-			goo += 1
+			goo += if cell.thickGoo then 2 else 1
 		end
 		if not cell.clover then
 			bare += 1

@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 400
+local LAST = tonumber(ARGS[2]) or 425
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -108,6 +108,11 @@ local NAMES = {
 	"Canvas Corner", "Picnic Awning", "Tarpaulin Lane", "Circus Field", "Rain Cover",
 	"Pavilion Green", "Wagon Tilt", "Big Top Farm", "Awning Alley", "Show Tent",
 	"Bunting Row", "Stall Covers", "Tent Pegs", "Rolling Shade", "Grand Marquee Fair",
+	"Thick Goo", "Gloopy Gully", "Treacle Tarn", "Syrup Swamp", "Mudlark Marsh",
+	"Gumbo Bog", "Porridge Pond", "Custard Creek", "Molasses Mill", "Glue Pot Lane",
+	"Toffee Fen", "Jelly Mire", "Stodgy Ditch", "Sticky Wicket", "Gooseberry Gloop",
+	"Bubble and Squeak", "Thicket Bog", "Goo Goliath", "Slurry Puddle", "Swamp King",
+	"Clotted Creek", "Gumdrop Glade", "Mire Maze", "Deep Bog Day", "Grand Goo Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -127,7 +132,8 @@ local CRATE_INTRO = 301 -- first level with surprise crates
 local STATUE_INTRO = 326 -- first level with buried statues
 local SPRING_INTRO = 351 -- first level with goo springs
 local TARP_INTRO = 376 -- first level with tarps
-local INTROS = { [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local THICK_GOO_INTRO = 401 -- first level with thick goo
+local INTROS = { [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -455,6 +461,7 @@ local function mechanics(id)
 		statues = id >= STATUE_INTRO, -- "b"
 		springs = id >= SPRING_INTRO, -- "G"
 		tarps = id >= TARP_INTRO, -- "t"
+		thickGoo = id >= THICK_GOO_INTRO, -- "e"
 	}
 end
 
@@ -462,6 +469,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_THICK_GOO = { "Goo", "Tarps", "Springs", "Collect", "Goo", "Statues", "Crates", "Fences", "Goo", "Hens", "Mud", "Mix" }
 local FOCUS_TARPS = { "Tarps", "Springs", "Statues", "Collect", "Tarps", "Crates", "Fences", "Goo", "Tarps", "Hens", "Mud", "Mix" }
 local FOCUS_SPRINGS = { "Springs", "Statues", "Crates", "Collect", "Springs", "Hens", "Fences", "Baskets", "Springs", "Stones", "Mud", "Mix" }
 local FOCUS_STATUES = { "Statues", "Crates", "Goo", "Collect", "Statues", "Hens", "Fences", "Baskets", "Statues", "Stones", "Mud", "Mix" }
@@ -523,6 +531,8 @@ local function focusOf(id, name)
 		return "Springs"
 	elseif id == TARP_INTRO then
 		return "Tarps"
+	elseif id == THICK_GOO_INTRO then
+		return "Goo"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -534,7 +544,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -661,11 +671,13 @@ local function placeTarps(g, rng, id)
 end
 
 -- Goo on plain cells; the first goo level starts with a small patch in the middle.
-local function placeGoo(g, rng, id)
-	local name = if id == GOO_INTRO then "centre" else rng:pick(FROST_PATTERNS)
+local function placeGoo(g, rng, id, mech)
+	local name = if id == GOO_INTRO or id == THICK_GOO_INTRO then "centre" else rng:pick(FROST_PATTERNS)
+	-- From the thick goo level on, some goo is thick (all of it on the intro).
+	local thick = if id == THICK_GOO_INTRO then 100 elseif mech.thickGoo then rng:int(25, 60) else 0
 	for _, p in PATTERNS[name](g, rng) do
 		if isCell(g, p[1], p[2]) and g[p[2]][p[1]] == "." then
-			setSym(g, p[1], p[2], "g")
+			setSym(g, p[1], p[2], if thick > 0 and rng:int(1, 100) <= thick then "e" else "g")
 		end
 	end
 end
@@ -924,7 +936,7 @@ local function keepRowsOpen(g)
 		local open = false
 		for x = 1, g.w do
 			local c = g[y][x]
-			open = open or c == "." or c == "m" or c == "M" or c == "g" or c == "b"
+			open = open or c == "." or c == "m" or c == "M" or c == "g" or c == "e" or c == "b"
 		end
 		if not open then
 			setSym(g, math.ceil(g.w / 2), y, ".")
@@ -993,7 +1005,7 @@ local function draft(id, variant)
 		placeStones(g, rng, id, mech)
 	end
 	if focus == "Goo" or (focus == "Mix" and mech.goo and rng:int(1, 3) == 1) then
-		placeGoo(g, rng, id)
+		placeGoo(g, rng, id, mech)
 	end
 	if focus == "Crates" or (focus == "Mix" and mech.crates and rng:int(1, 3) == 1) then
 		placeCrates(g, rng, id)
@@ -1052,7 +1064,7 @@ local function draft(id, variant)
 		for y = 1, g.h do
 			local open = false
 			for x = 1, g.w do
-				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g" or g[y][x] == "b"
+				open = open or g[y][x] == "." or g[y][x] == "m" or g[y][x] == "M" or g[y][x] == "g" or g[y][x] == "e" or g[y][x] == "b"
 			end
 			if not open then
 				return nil
@@ -1099,7 +1111,7 @@ local function draft(id, variant)
 	if #fences > 0 then
 		table.insert(goals, { kind = "Fences" })
 	end
-	if has(g, "g") > 0 then
+	if has(g, "ge") > 0 then
 		table.insert(goals, { kind = "Goo" })
 	end
 	if has(g, "b") > 0 then

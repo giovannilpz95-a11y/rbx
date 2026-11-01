@@ -248,6 +248,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.mud.BackgroundTransparency = if cell.mud >= 2 then 0.15 else 0.45
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
+	guis.goo.BackgroundColor3 = if cell.thickGoo then TileStyle.Board.thickGoo else TileStyle.Board.goo
 	guis.buried.Visible = cell.buried == true
 	guis.statueMark.Visible = cell.buried == true
 	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate, cell.tarp ~= nil and cell.tarp ~= false)
@@ -732,6 +733,7 @@ function BoardView._pop(self, phase)
 		local guis = self.cellGuis[g.y] and self.cellGuis[g.y][g.x]
 		if guis then
 			guis.goo.Visible = g.on
+			guis.goo.BackgroundColor3 = if g.thick then TileStyle.Board.thickGoo else TileStyle.Board.goo
 		end
 	end
 	for _, d in phase.statues or {} do

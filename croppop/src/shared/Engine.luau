@@ -34,7 +34,9 @@
 	Goo: covers a tile; a match or blast on the tile clears it. After a swap
 	that clears no goo, goo spreads onto a neighbouring tile (a Pop phase with
 	an "Ooze" effect, and one more for the Goo goal). If goo covers every tile
-	the level is lost (`flooded`). Goo springs (not cells, and unbreakable)
+	the level is lost (`flooded`). Thick goo takes two clears (the first
+	leaves plain goo), and goo spreading next to thick goo spreads thick
+	(two more for the goal). Goo springs (not cells, and unbreakable)
 	count as goo for spreading: goo can ooze out of one onto a tile next to it.
 
 	Surprise crates: open like a 1-layer bale (a match next to one, or a
@@ -204,8 +206,12 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = cause })
 	self.goals:onCollect(piece.color)
 	if cell.goo then
-		cell.goo = false
-		table.insert(wave.goo, { x = cell.x, y = cell.y, on = false })
+		if cell.thickGoo then
+			cell.thickGoo = false -- the tile goes; a thin layer of goo stays
+		else
+			cell.goo = false
+		end
+		table.insert(wave.goo, { x = cell.x, y = cell.y, on = cell.goo })
 		self.goals:onGoo()
 		self.gooCleared += 1
 	end
@@ -803,8 +809,16 @@ function Engine._growGoo(self, phases)
 	local cell = candidates[self.rng:int(1, #candidates)]
 	cell.goo = true
 	self.goals:onGooGrown()
+	-- Goo spreading next to thick goo spreads thick.
+	for _, d in NEIGHBORS do
+		local n = board:get(cell.x + d[1], cell.y + d[2])
+		if n and n.thickGoo and not cell.thickGoo then
+			cell.thickGoo = true
+			self.goals:onGooGrown()
+		end
+	end
 	local wave = newWave()
-	table.insert(wave.goo, { x = cell.x, y = cell.y, on = true })
+	table.insert(wave.goo, { x = cell.x, y = cell.y, on = true, thick = cell.thickGoo == true })
 	table.insert(wave.effects, { type = "Ooze", x = cell.x, y = cell.y })
 	self:_finishWave(wave, phases)
 	local clean = false
