@@ -40,6 +40,8 @@ local Crops: { [string]: CropDef } = {
 	Jasmine = { id = "Jasmine", displayName = "Jasmine", unlockLevel = 67, growSeconds = 3 * HOUR + 30 * MIN, seedCost = 25, sellPrice = 37, xp = 12, yield = 1, order = 18, color = { 250, 245, 225 } },
 	-- Township's Coffee Plant (level 72)
 	Coffee = { id = "Coffee", displayName = "Coffee Beans", unlockLevel = 72, growSeconds = 6 * HOUR, seedCost = 33, sellPrice = 48, xp = 16, yield = 1, order = 19, color = { 150, 40, 40 } },
+	-- Township's Peanut Plant (level 75)
+	Peanuts = { id = "Peanuts", displayName = "Peanuts", unlockLevel = 75, growSeconds = 7 * HOUR, seedCost = 35, sellPrice = 53, xp = 10, yield = 1, order = 20, color = { 215, 170, 110 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }
 

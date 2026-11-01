@@ -987,6 +987,56 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Cake", Vector3.new(1.2, 0.8, 1.2), at(0, 0.4, 0), Palette.wheat, QUIET)
 		b.block("Crumb", Vector3.new(1.2, 0.25, 1.2), at(0, 0.92, 0), Palette.cocoa, QUIET)
 	end,
+	Peanuts = function(b)
+		-- Two tan peanut pods
+		for _, x in { -0.3, 0.35 } do
+			b.ball("Pod", 0.6, at(x, 0.3, -0.25), Palette.wheat, QUIET)
+			b.ball("Pod", 0.6, at(x, 0.3, 0.25), Palette.wheat, QUIET)
+		end
+	end,
+	Pillow = function(b)
+		-- A plump white pillow
+		b.block("Pillow", Vector3.new(1.8, 0.6, 1.2), at(0, 0.35, 0), Palette.flowerWhite, QUIET)
+		b.ball("Puff", 0.9, at(0, 0.55, 0), Palette.flowerWhite, QUIET)
+	end,
+	HoneyPancakes = function(b)
+		-- A stack of pancakes with honey on top
+		b.post("Stack", 0.7, 1.4, at(0, 0.35, 0), Palette.wheat, QUIET)
+		b.post("Honey", 0.12, 1.2, at(0, 0.76, 0), Palette.flowerYellow, QUIET)
+		b.block("Butter", Vector3.new(0.35, 0.15, 0.35), at(0, 0.88, 0), Palette.cream, QUIET)
+	end,
+	ChiliDog = function(b)
+		-- A hot dog in a bun under red chili and cheese
+		b.cyl("Bun", 1.6, 0.7, at(0, 0.3, 0), Palette.bread, QUIET)
+		b.cyl("Sausage", 1.8, 0.45, at(0, 0.55, 0), Palette.brick, QUIET)
+		b.block("Chili", Vector3.new(1.3, 0.15, 0.4), at(0, 0.78, 0), Palette.roofRed, QUIET)
+		b.block("Cheese", Vector3.new(1.1, 0.08, 0.2), at(0, 0.88, 0), Palette.flowerYellow, QUIET)
+	end,
+	Cappuccino = function(b)
+		-- A wide cup of frothy coffee
+		b.cyl("Saucer", 0.12, 1.6, at(0, 0.06, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.post("Cup", 0.8, 1.1, at(0, 0.5, 0), Palette.flowerWhite, QUIET)
+		b.post("Froth", 0.08, 1, at(0, 0.92, 0), Palette.cream, QUIET)
+		b.cyl("Handle", 0.15, 0.45, at(0.65, 0.5, 0) * Kit.yaw(90), Palette.flowerWhite, QUIET)
+	end,
+	CaramelizedMushrooms = function(b)
+		-- A jar of glossy golden mushrooms
+		b.post("Jar", 1.1, 0.9, at(0, 0.55, 0), Palette.carrot:Lerp(Palette.glass, 0.4), QUIET)
+		b.post("Lid", 0.25, 0.95, at(0, 1.2, 0), Palette.wood, QUIET)
+		b.ball("Mushroom", 0.45, at(0, 0.5, -0.35), Palette.wood, QUIET)
+	end,
+	IcedTea = function(b)
+		-- A tall glass of amber tea with ice and a lime slice
+		b.post("Glass", 1.4, 0.8, at(0, 0.7, 0), Palette.carrot:Lerp(Palette.cocoa, 0.3), QUIET)
+		b.block("Ice", Vector3.new(0.3, 0.3, 0.3), at(-0.1, 1.3, 0), Palette.glass, QUIET)
+		b.cyl("Lime", 0.1, 0.45, at(0.38, 1.35, 0), Palette.lime, QUIET)
+	end,
+	MintCake = function(b)
+		-- A round mint-green cake with a leaf on top
+		b.post("Cake", 0.9, 1.5, at(0, 0.45, 0), Palette.leafLight:Lerp(Palette.cream, 0.5), QUIET)
+		b.post("Icing", 0.15, 1.55, at(0, 0.95, 0), Palette.cream, QUIET)
+		b.block("Leaf", Vector3.new(0.5, 0.1, 0.25), at(0, 1.1, 0), Palette.leaf, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

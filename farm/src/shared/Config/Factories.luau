@@ -77,6 +77,8 @@ local Factories: { [string]: FactoryDef } = {
 	Bistro = { id = "Bistro", displayName = "Bistro", unlockLevel = 69, population = 12180, buildCost = 240000, buildSeconds = 65 * HOUR, xp = 9905, queueSlots = 2, trayCapacity = 6, order = 34, color = { 60, 80, 140 } },
 	-- Township's Coffee Factory (level 72): placed by the player
 	CoffeeHouse = { id = "CoffeeHouse", displayName = "Coffee House", unlockLevel = 72, population = 12600, buildCost = 270000, buildSeconds = 66 * HOUR, xp = 11142, queueSlots = 2, trayCapacity = 6, order = 35, color = { 120, 80, 50 } },
+	-- Township's Down Feather Factory (level 74): placed by the player
+	QuiltShop = { id = "QuiltShop", displayName = "Quilt Shop", unlockLevel = 74, population = 13100, buildCost = 290000, buildSeconds = 67 * HOUR, xp = 11967, queueSlots = 2, trayCapacity = 6, order = 36, color = { 200, 220, 240 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 
