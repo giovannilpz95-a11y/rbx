@@ -227,6 +227,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.tin then
 		label.BackgroundColor3 = TileStyle.Board.tin
 		label.Text = TileStyle.TinGlyph
+	elseif kind.sack then
+		label.BackgroundColor3 = TileStyle.Board.sack
+		label.Text = TileStyle.SackGlyph
 	elseif tarp then
 		label.BackgroundColor3 = TileStyle.Board.tarp
 		label.Text = "≋" -- canvas stripes
@@ -698,6 +701,16 @@ function BoardView._effect(self, effect): number
 			patch:Destroy()
 		end)
 		return BEE_TIME
+	elseif effect.type == "Sow" then
+		local guis = self.cellGuis[effect.fromY] and self.cellGuis[effect.fromY][effect.fromX]
+		if guis then
+			guis.bale.Rotation = -12
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		for _, c in effect.cells do
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.clover, true)
+		end
+		return FX_TIME
 	elseif effect.type == "Quilt" then
 		for _, c in effect.cells do
 			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.quilt, true)

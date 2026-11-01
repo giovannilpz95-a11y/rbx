@@ -49,6 +49,7 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
+TileStyle.SackGlyph = "🌱" -- a seed sack (hits sow clover near it)
 TileStyle.TinGlyph = "🧵" -- a sewing tin (opening it sends a patch to a quilt)
 -- Quilt patches, by cell (a checker of four fabrics).
 TileStyle.QuiltPatchColors = {
@@ -125,6 +126,7 @@ TileStyle.Board = {
 	quilt = Color3.fromRGB(238, 226, 200), -- a quilt cell still missing its patch
 	quiltText = Color3.fromRGB(170, 140, 110),
 	tin = Color3.fromRGB(110, 160, 190), -- a sewing tin
+	sack = Color3.fromRGB(186, 150, 104), -- burlap
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream
