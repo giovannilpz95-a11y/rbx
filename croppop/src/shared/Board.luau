@@ -41,6 +41,7 @@ export type Piece = {
 	color: number, -- 1..6, 0 for a Sunflower or a pumpkin
 	power: string?, -- see Tiles.Power
 	pumpkin: boolean?,
+	timer: number?, -- a snowball: swaps left before it bursts and frosts the tiles around it
 }
 
 export type Cell = {
@@ -81,6 +82,7 @@ function Board.new(width: number, height: number)
 		cells = {},
 		nextId = 1,
 		startPumpkins = {}, -- cells that start with a pumpkin ("p" in the layout)
+		startSnowballs = {}, -- cells that start with a snowball ("i" in the layout), in reading order
 		pumpkinsToSpawn = 0, -- set by the engine before each refill
 		-- Pumpkin baskets ("d" in the layout): { x, y, waiting } in row order;
 		-- waiting = pumpkins hit loose that haven't found a cell yet.
@@ -187,6 +189,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.bale = tonumber(ch) :: number
 				elseif ch == "p" then
 					self.startPumpkins[cell] = true
+				elseif ch == "i" then
+					table.insert(self.startSnowballs, cell)
 				elseif ch == "c" then
 					cell.clover = true
 				elseif ch == "g" then
@@ -740,6 +744,9 @@ function Board.hash(self): string
 					then "P"
 					elseif piece then tostring(piece.color) .. (POWER_CODES[piece.power] or "")
 					else "_"
+				if piece and piece.timer then
+					code ..= "i" .. piece.timer
+				end
 				if cell.mud > 0 then
 					code ..= "m" .. cell.mud
 				end
@@ -790,7 +797,7 @@ function Board.snapshot(self)
 			rainbow = cell.rainbow,
 			web = cell.web,
 			buried = cell.buried,
-			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
+			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin, timer = piece.timer },
 		})
 	end)
 	return out
