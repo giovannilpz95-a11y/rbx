@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 575
+local LAST = tonumber(ARGS[2]) or 600
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -143,6 +143,11 @@ local NAMES = {
 	"Clay Oven Bakery", "Honey Jars", "Mosaic Puddle", "Tile Works", "Kiln Fire Night",
 	"Garden Urns", "Clay Court", "Teapot Cottage", "Earthenware Row", "Pitcher Plant Pond",
 	"Butter Churn Barn", "Chimney Pots", "Dovecote Yard", "Clay Pigeon Field", "Grand Pottery Show",
+	"Mail Day", "Postman's Round", "Letterbox Lane", "Love Letters", "Postcard Hill",
+	"Stamp Collector", "Mail Coach Road", "Sorting Office", "Envelope Lane", "Courier Cross",
+	"Thank-You Notes", "Post Horn Hollow", "Farmhouse Post", "Signal Hill", "Pigeon Post",
+	"Morning Mail", "Wax Seal Way", "Riverside Post", "Inkwell Cottage", "First Class Farm",
+	"Birthday Cards", "Letter Rack Lodge", "Pillar Post Row", "Airmail Puddle", "Grand Post Day",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -169,7 +174,8 @@ local QUILT_INTRO = 476 -- first level with quilts and sewing tins
 local SACK_INTRO = 501 -- first level with seed sacks
 local SNOW_INTRO = 526 -- first level with snowballs
 local CLAY_INTRO = 551 -- first level with clay
-local INTROS = { [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local MAIL_INTRO = 576 -- first level with mailboxes
+local INTROS = { [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -504,6 +510,7 @@ local function mechanics(id)
 		sacks = id >= SACK_INTRO, -- "z"
 		snowballs = id >= SNOW_INTRO, -- "i"
 		clay = id >= CLAY_INTRO, -- "a" and "A"
+		mail = id >= MAIL_INTRO, -- "l" and "L"
 	}
 end
 
@@ -511,6 +518,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_MAIL = { "Letters", "Clay", "Snowballs", "Collect", "Letters", "Sacks", "Quilts", "Webs", "Letters", "Goo", "Mud", "Mix" }
 local FOCUS_CLAY = { "Clay", "Snowballs", "Sacks", "Collect", "Clay", "Quilts", "Webs", "Goo", "Clay", "Rainbow", "Mud", "Mix" }
 local FOCUS_SNOW = { "Snowballs", "Sacks", "Quilts", "Collect", "Snowballs", "Webs", "Goo", "Rainbow", "Snowballs", "Tarps", "Mud", "Mix" }
 local FOCUS_SACKS = { "Sacks", "Quilts", "Webs", "Collect", "Sacks", "Rainbow", "Goo", "Tarps", "Sacks", "Statues", "Mud", "Mix" }
@@ -541,6 +549,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Mail", "Letter", "Post", "Stamp", "Envelope", "Courier", "Cards", "Notes", "Seal" }, focus = "Letters", needs = "mail" },
 	{ words = { "Clay", "Kiln", "Pot", "Terracotta", "Pottery", "Jug", "Urn", "Glaze", "Crock", "Brick", "Earthenware", "Tile" }, focus = "Clay", needs = "clay" },
 	{ words = { "Snow", "Ice", "Icicle", "Winter", "Blizzard", "Sleigh", "Sledge", "Chill", "Cold" }, focus = "Snowballs", needs = "snowballs" },
 	{ words = { "Seed", "Sack", "Sow", "Turf", "Lawn", "Sprout", "Planting", "Allotment", "Topsoil", "Nursery" }, focus = "Sacks", needs = "sacks" },
@@ -599,6 +608,8 @@ local function focusOf(id, name)
 		return "Snowballs"
 	elseif id == CLAY_INTRO then
 		return "Clay"
+	elseif id == MAIL_INTRO then
+		return "Letters"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -610,7 +621,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -705,7 +716,7 @@ end
 -- Tarps: centred runs of plain cells in a row (so they stay mirrored), with
 -- tiles above them to fall in once they roll up, never stacked. The first
 -- tarp level has one run of four.
-local NOT_FALLING = "123wsSxtfF#dhGqkz" -- cells nothing falls out of
+local NOT_FALLING = "123wsSxtfF#dhGqkzlL" -- cells nothing falls out of
 local function placeTarps(g, rng, id)
 	local want = if id == TARP_INTRO then 1 else rng:int(1, 2)
 	local placed = 0
@@ -898,6 +909,42 @@ local function placeClover(g, rng, id)
 			setSym(g, x, y, "c")
 		end
 	end
+end
+
+-- Mailboxes: mirrored pairs on plain cells, not touching each other; each
+-- holds a letter or not (at least one does). The first mailbox level has two
+-- pairs and three letters.
+local function placeMailboxes(g, rng, id)
+	local want = if id == MAIL_INTRO then 2 else rng:int(2, 3)
+	local spots = {}
+	for _ = 1, 40 do
+		if #spots >= want * 2 then
+			break
+		end
+		local x, y = rng:int(1, g.w // 2), rng:int(2, g.h - 1)
+		local mx = g.w - x + 1
+		local ok = mx ~= x and g[y][x] == "." and g[y][mx] == "."
+		for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+			local row = g[y + d[2]]
+			if row and (row[x + d[1]] == "l" or row[x + d[1]] == "L") then
+				ok = false
+			end
+		end
+		if ok then
+			g[y][x], g[y][mx] = "L", "L"
+			table.insert(spots, { x, y })
+			table.insert(spots, { mx, y })
+		end
+	end
+	if #spots == 0 then
+		return 0
+	end
+	local letters = if id == MAIL_INTRO then math.min(3, #spots) else rng:int(math.max(1, #spots // 2), #spots)
+	rng:shuffle(spots)
+	for i = 1, letters do
+		g[spots[i][2]][spots[i][1]] = "l"
+	end
+	return letters
 end
 
 -- Clay under plain cells in one of the frost patterns; the first clay level
@@ -1230,6 +1277,11 @@ local function draft(id, variant)
 	if focus == "Crates" or (focus == "Mix" and mech.crates and rng:int(1, 3) == 1) then
 		placeCrates(g, rng, id)
 	end
+	if focus == "Letters" or (focus == "Mix" and mech.mail and rng:int(1, 3) == 1) then
+		if placeMailboxes(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Clay" or (focus == "Mix" and mech.clay and rng:int(1, 3) == 1) then
 		placeClay(g, rng, id)
 		if has(g, "aA") == 0 then
@@ -1373,6 +1425,9 @@ local function draft(id, variant)
 	end
 	if has(g, "aA") > 0 then
 		table.insert(goals, { kind = "Clay" })
+	end
+	if has(g, "l") > 0 then
+		table.insert(goals, { kind = "Letters" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most

@@ -66,6 +66,8 @@ local BRUSH_ROWS = {
 		{ char = "i", label = TileStyle.GoalGlyphs.Snowballs },
 		{ char = "a", label = TileStyle.GoalGlyphs.Clay .. "2" },
 		{ char = "A", label = TileStyle.GoalGlyphs.Clay },
+		{ char = "l", label = TileStyle.MailGlyphs.full },
+		{ char = "L", label = TileStyle.MailGlyphs.empty },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -76,7 +78,7 @@ local PORTAL = "o" -- the portal brush
 local FENCE = "|" -- the fence brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -94,6 +96,7 @@ local GOAL_BUTTONS = {
 	Quilts = "+ 🧶",
 	Snowballs = "+ ☃",
 	Clay = "+ 🏺",
+	Letters = "+ ✉",
 }
 
 local ui = nil
@@ -356,6 +359,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.sack, TileStyle.SackGlyph
 	elseif char == "i" then
 		return TileStyle.Board.frost, TileStyle.GoalGlyphs.Snowballs
+	elseif char == "l" or char == "L" then
+		return TileStyle.Board.mailbox, if char == "l" then TileStyle.MailGlyphs.full else TileStyle.MailGlyphs.empty
 	elseif char == "a" or char == "A" then
 		return TileStyle.Board.clay, TileStyle.GoalGlyphs.Clay .. (if char == "a" then "2" else "")
 	end
@@ -516,6 +521,8 @@ local function goalLabel(goal): string
 		return "☃ all snowballs"
 	elseif goal.kind == "Clay" then
 		return "🏺 all clay"
+	elseif goal.kind == "Letters" then
+		return "✉ all letters"
 	end
 	return "🌾 all bales"
 end

@@ -14,6 +14,7 @@
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 	  { kind = "Tarps" }                                 -- roll up every tarp cell
 	  { kind = "Webs" }                                  -- clear every web (blasts only)
+	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
 	  { kind = "Snowballs" }                             -- clear every snowball (they burst and come back if left)
 	  { kind = "Quilts" }                                -- finish every quilt (patches come from sewing tins)
@@ -35,7 +36,7 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local clay = 0
+	local clay, letters = 0, 0
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.web then
@@ -51,10 +52,13 @@ function Goals.new(defs: { any }, board)
 		if cell.clay then
 			clay += 1
 		end
+		if cell.mailbox and cell.mailbox.mail then
+			letters += 1
+		end
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox then
 			-- Surprise crates, sewing tins, quilts and seed sacks aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
@@ -90,6 +94,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
 		elseif def.kind == "Webs" then
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
+		elseif def.kind == "Letters" then
+			table.insert(list, { kind = "Letters", target = def.count or letters, progress = 0 })
 		elseif def.kind == "Clay" then
 			table.insert(list, { kind = "Clay", target = def.count or clay, progress = 0 })
 		elseif def.kind == "Snowballs" then
@@ -164,6 +170,10 @@ end
 
 function Goals.onWeb(self)
 	bump(self, "Webs", nil)
+end
+
+function Goals.onLetter(self)
+	bump(self, "Letters", nil)
 end
 
 function Goals.onClay(self)

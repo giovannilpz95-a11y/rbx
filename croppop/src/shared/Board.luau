@@ -56,6 +56,7 @@ export type Cell = {
 	tin: boolean?, -- the "bale" is a sewing tin (opens like a 1-layer bale and sends a patch to a quilt)
 	quilt: any?, -- the "bale" is part of a quilt ({ cells, left }); nothing breaks it, patches finish it
 	patched: boolean?, -- this quilt cell has its patch
+	mailbox: any?, -- the "bale" is a mailbox: { mail = holds a letter?, open = opened yet? }
 	sack: boolean?, -- the "bale" is a seed sack: it never breaks, and hits sow clover near it
 	mud: number, -- mud layers under the tile (0 = none)
 	clay: number?, -- clay under the tile: 2 = glazed (only a blast cracks it), 1 = cracked (any clear)
@@ -216,6 +217,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "x" then
 					cell.bale = 1
 					cell.crate = true
+				elseif ch == "l" or ch == "L" then
+					cell.bale = 2 -- one hit opens it, the next takes it away
+					cell.mailbox = { mail = ch == "l", open = false }
 				elseif ch == "z" then
 					cell.bale = 1
 					cell.sack = true
@@ -735,6 +739,8 @@ function Board.hash(self): string
 				table.insert(row, "K" .. clover)
 			elseif cell.sack then
 				table.insert(row, "Z" .. clover)
+			elseif cell.mailbox then
+				table.insert(row, "L" .. (if cell.mailbox.mail then "1" else "0") .. (if cell.mailbox.open then "o" else "") .. clover)
 			elseif cell.quilt then
 				table.insert(row, (if cell.patched then "Qp" else "Q") .. clover)
 			elseif cell.tarp then
@@ -794,6 +800,8 @@ function Board.snapshot(self)
 			crate = cell.crate,
 			tin = cell.tin,
 			sack = cell.sack,
+			-- What's inside shows only once it's open.
+			mailbox = cell.mailbox and { open = cell.mailbox.open, mail = cell.mailbox.open and cell.mailbox.mail },
 			quilt = cell.quilt ~= nil,
 			patched = cell.patched,
 			tarp = cell.tarp ~= nil,

@@ -68,6 +68,11 @@
 	quilt lifts off and frees its cells (a "Quilt" effect with its cells), for
 	the Quilts goal.
 
+	Mailboxes: block a cell like a 2-layer bale. The first hit (a match next
+	to it, or a blast) opens it (a "Mailbox" effect saying whether it holds a
+	letter); the next takes it away, and a letter inside counts for the
+	Letters goal (a "Letter" effect).
+
 	Clay: glazed clay under a tile only cracks under a blast (a power-up or
 	booster clearing that tile); after that, any clear of the tile there (a
 	match too) breaks the clay up, for the Clay goal. Cracked clay ("A") starts
@@ -379,6 +384,24 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_sow(wave, cell)
 		return -- nothing breaks a seed sack
 	end
+	if cell.mailbox then
+		local box = cell.mailbox
+		cell.bale -= 1
+		if not box.open then
+			box.open = true
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, mailbox = { open = true, mail = box.mail } })
+			table.insert(wave.effects, { type = "Mailbox", x = cell.x, y = cell.y, mail = box.mail })
+		else
+			cell.bale = 0
+			cell.mailbox = nil
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+			if box.mail then
+				table.insert(wave.effects, { type = "Letter", x = cell.x, y = cell.y })
+				self.goals:onLetter()
+			end
+		end
+		return
+	end
 	cell.bale -= 1
 	if cell.tin then
 		cell.tin = false
@@ -615,6 +638,9 @@ function Engine._chooseBeeTarget(self)
 			-- Bees leave quilts alone: nothing breaks them.
 		elseif cell.sack then
 			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
+		elseif cell.mailbox then
+			local worth = not cell.mailbox.open or cell.mailbox.mail
+			table.insert(if worth and goals:wants("Letters") then tiers[1] else tiers[4], cell)
 		elseif cell.bale > 0 then
 			local wanted = if cell.weed
 				then goals:wants("Weeds")

@@ -49,6 +49,8 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
+-- Mailboxes: shut, open with a letter, open and empty.
+TileStyle.MailGlyphs = { closed = "📪", full = "📬", empty = "📭" }
 TileStyle.SnowGlyph = "❄" -- a snowball's timer (no snowflake variant selector: it's a small badge)
 TileStyle.SackGlyph = "🌱" -- a seed sack (hits sow clover near it)
 TileStyle.TinGlyph = "🧵" -- a sewing tin (opening it sends a patch to a quilt)
@@ -90,6 +92,7 @@ TileStyle.GoalGlyphs = {
 	Tarps = "🎪", -- a canvas tarp
 	Webs = "🕸", -- a spider web over a tile
 	Clay = "🏺", -- clay under the tiles
+	Letters = "✉", -- a letter from a mailbox
 	Snowballs = "☃", -- a snowball (the snowman: there's no snowball emoji)
 	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
@@ -132,6 +135,7 @@ TileStyle.Board = {
 	sack = Color3.fromRGB(186, 150, 104), -- burlap
 	snowText = Color3.fromRGB(40, 90, 150), -- a snowball's timer
 	clay = Color3.fromRGB(196, 110, 70), -- terracotta under a tile
+	mailbox = Color3.fromRGB(120, 150, 200), -- a mailbox's post
 	glaze = Color3.fromRGB(255, 244, 220), -- the shine on glazed clay
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
