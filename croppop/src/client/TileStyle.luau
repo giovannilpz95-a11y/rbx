@@ -99,6 +99,7 @@ TileStyle.GoalGlyphs = {
 	Letters = "✉", -- a letter from a mailbox
 	Boxes = "📦", -- a produce box off a stack
 	Honey = "🍯", -- a honey jar from a beehive
+	Blooms = "🌷", -- a tulip bud that has bloomed
 	Snowballs = "☃", -- a snowball (the snowman: there's no snowball emoji)
 	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
@@ -150,6 +151,8 @@ TileStyle.Board = {
 	hive = Color3.fromRGB(236, 178, 52), -- a honeycomb beehive
 	truck = Color3.fromRGB(196, 92, 70), -- a red hay truck
 	snail = Color3.fromRGB(176, 214, 150), -- a snail on a leaf
+	bud = Color3.fromRGB(150, 196, 120), -- a leafy tulip bud
+	budLit = Color3.fromRGB(246, 150, 190), -- a bud opening (charged)
 	glaze = Color3.fromRGB(255, 244, 220), -- the shine on glazed clay
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster

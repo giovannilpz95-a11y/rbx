@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  T  tulip bud: blocks like a 1-layer bale; every hit charges it and the
+	     third makes it bloom (the Blooms goal), but a swap that doesn't hit
+	     a charged bud closes it back up to no charge
 	  O  garden snail: blocks a cell and never breaks; a match next to it
 	     shoves it a cell away, biting what's there and crawling in if that
 	     empties the cell, leaving goo behind. Needs a Goo goal
@@ -88,7 +91,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -143,6 +146,7 @@ local VALID_CHARS = {
 	j = true,
 	C = true,
 	O = true,
+	T = true,
 	y = true,
 	m = true,
 	M = true,
@@ -292,7 +296,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -357,6 +361,8 @@ function Levels.validate(level): string?
 				trucks += 1
 			elseif ch == "O" then
 				snails += 1
+			elseif ch == "T" then
+				buds += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -419,6 +425,15 @@ function Levels.validate(level): string?
 		end
 		if not wanted then
 			return "hay trucks in the layout but no hay bale goal"
+		end
+	end
+	if buds > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Blooms"
+		end
+		if not wanted then
+			return "tulip buds in the layout but no blooms goal"
 		end
 	end
 	if snails > 0 then
@@ -493,6 +508,10 @@ function Levels.validate(level): string?
 			end
 			if type(goal.count) ~= "number" or goal.count < 1 then
 				return "honey goal needs a count"
+			end
+		elseif goal.kind == "Blooms" then
+			if buds == 0 then
+				return "blooms goal but no tulip buds in the layout"
 			end
 		elseif goal.kind == "Boxes" then
 			if boxes == 0 then
