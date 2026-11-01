@@ -320,6 +320,8 @@ local Recipes: { [string]: RecipeDef } = {
 	Guacamole = { id = "Guacamole", displayName = "Guacamole", factory = "GreenCafe", unlockLevel = 109, inputs = { Avocados = 3, Tomatoes = 1, KeyLimes = 1 }, outputQty = 1, seconds = 3 * HOUR + 20 * MIN, sellPrice = 444, xp = 190 },
 	SmallHandbag = { id = "SmallHandbag", displayName = "Small Handbag", factory = "BagMaker", unlockLevel = 110, inputs = { SilkFabric = 2, Pearls = 1, Sugarcane = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 477, xp = 204 },
 	Suitcase = { id = "Suitcase", displayName = "Suitcase", factory = "BagMaker", unlockLevel = 112, inputs = { Plastic = 3, Rubber = 2 }, outputQty = 1, seconds = 5 * HOUR, sellPrice = 416, xp = 178 },
+	-- Level 113-116 goods
+	KidsBag = { id = "KidsBag", displayName = "Kid's Bag", factory = "BagMaker", unlockLevel = 114, inputs = { CottonFabric = 1, ColorfulFeather = 2, DownFeather = 3 }, outputQty = 1, seconds = 1 * HOUR + 15 * MIN, sellPrice = 167, xp = 72 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

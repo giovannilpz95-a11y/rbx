@@ -2238,6 +2238,67 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Pet Lodge (content bank, level 114): a warm wooden lodge with paw-print windows, a fenced
+-- run with a little agility hurdle, a dog bowl and a bone-shaped sign.
+TYPES.PetLodge = function(b, s)
+	local body = hall(b, s * 0.46, s * 0.36, 4, Palette.woodLight)
+	local t = b.into(body, true)
+	local face = -s * 0.18
+	t.wedge("Roof", Vector3.new(s * 0.5, 1.6, s * 0.4), CFrame.new(0, PLINTH + 4.8, 0), Palette.roofMustard)
+	for _, x in { -s * 0.14, s * 0.02 } do
+		t.ball("PawWindow", 1.2, Vector3.new(x, PLINTH + 2.4, face - 0.05), Palette.glass)
+	end
+	Kit.door(t, "Door", CFrame.new(s * 0.14, PLINTH, face - 0.15), 1.6, 3, Palette.woodDark, Palette.coins)
+	-- The run
+	t.block("RunFence", Vector3.new(s * 0.4, 0.8, 0.2), Vector3.new(0, PLINTH + 0.4, face - 3), Palette.flowerWhite)
+	t.block("Hurdle", Vector3.new(1.6, 0.15, 0.15), Vector3.new(-s * 0.1, PLINTH + 0.7, face - 1.8), Palette.roofRed)
+	for _, dx in { -0.8, 0.8 } do
+		t.post("HurdlePost", 0.8, 0.15, Vector3.new(-s * 0.1 + dx, PLINTH + 0.4, face - 1.8), Palette.flowerWhite)
+	end
+	t.cyl(
+		"DogBowl",
+		0.3,
+		0.8,
+		CFrame.new(s * 0.12, PLINTH + 0.15, face - 1.6) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.sky
+	)
+	-- The bone sign
+	t.block("BoneSign", Vector3.new(2.6, 0.6, 0.4), Vector3.new(0, PLINTH + 6, 0), Palette.flowerWhite)
+	for _, x in { -1.3, 1.3 } do
+		t.ball("BoneEnd", 0.8, Vector3.new(x, PLINTH + 6, 0), Palette.flowerWhite)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Roller Disco (content bank, level 116): a purple rink hall with a glittering disco ball on
+-- the roof, neon stripes, a giant roller skate by the door and an oval rink out front.
+TYPES.RollerDisco = function(b, s)
+	local body = hall(b, s * 0.52, s * 0.36, 4.4, Palette.plum)
+	local t = b.into(body, true)
+	local face = -s * 0.18
+	t.block("Roof", Vector3.new(s * 0.54, 0.4, s * 0.38), Vector3.new(0, PLINTH + 4.6, 0), Palette.stoneDark)
+	t.block("Neon", Vector3.new(s * 0.52, 0.3, 0.2), Vector3.new(0, PLINTH + 3.8, face - 0.1), Palette.flowerPink)
+	t.block("Neon", Vector3.new(s * 0.52, 0.3, 0.2), Vector3.new(0, PLINTH + 3.3, face - 0.1), Palette.sky)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 2.4, 3, Palette.glass, Palette.metal)
+	-- The rink out front
+	t.cyl(
+		"Rink",
+		0.2,
+		s * 0.34,
+		CFrame.new(0, PLINTH + 0.1, face - s * 0.2) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.sky:Lerp(Palette.flowerWhite, 0.5)
+	)
+	-- The skate by the door
+	t.block("Boot", Vector3.new(0.9, 1.4, 1.4), Vector3.new(s * 0.22, PLINTH + 1, face - 0.8), Palette.flowerWhite)
+	t.block("Sole", Vector3.new(1, 0.25, 1.8), Vector3.new(s * 0.22, PLINTH + 0.2, face - 0.9), Palette.flowerPink)
+	-- The disco ball
+	t.post("Hanger", 1, 0.15, Vector3.new(0, PLINTH + 5.3, 0), Palette.metal)
+	t.ball("DiscoBall", 2, Vector3.new(0, PLINTH + 6.6, 0), Palette.metal)
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Snip Salon (content bank, level 110): a red-and-white barbershop with a striped pole by the
 -- door, a big pair of scissors on the roof, a chair in the window and a striped awning.
 TYPES.SnipSalon = function(b, s)
