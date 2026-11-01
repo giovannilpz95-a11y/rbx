@@ -61,7 +61,7 @@ local crates: { [string]: Range } = {
 	FlipFlops = { 2, 4 }, Sandals = { 2, 2 }, FeatherHat = { 1, 2 }, MintChocIceCream = { 2, 2 }, PineappleSorbet = { 1, 2 },
 	HoneyMarshmallow = { 1, 2 }, Book = { 1, 2 }, HighlighterPen = { 1, 2 }, FishBurger = { 1, 3 },
 	Bed = { 1, 2 }, MintCandy = { 2, 2 }, SeafoodPizza = { 1, 2 }, Sneakers = { 1, 2 },
-	SushiRoll = { 2, 6 }, LobsterSushi = { 2, 3 }, BaconPoppers = { 1, 3 }, Boots = { 1, 2 }, Quiche = { 2, 2 }, BakedLobster = { 1, 2 }, HighHeels = { 1, 2 }, RoseJam = { 1, 3 }, WarmBoots = { 1, 2 }, ScallopSushi = { 1, 3 }, AromaCandle = { 2, 3 }, PuffedRice = { 2, 5 }, CoconutSoup = { 1, 2 }, BaconEggs = { 2, 2 }, SeafoodMix = { 1, 2 }, SeaweedShrimpSalad = { 2, 3 },
+	SushiRoll = { 2, 6 }, LobsterSushi = { 2, 3 }, BaconPoppers = { 1, 3 }, Boots = { 1, 2 }, Quiche = { 2, 2 }, BakedLobster = { 1, 2 }, HighHeels = { 1, 2 }, RoseJam = { 1, 3 }, WarmBoots = { 1, 2 }, ScallopSushi = { 1, 3 }, AromaCandle = { 2, 3 }, PuffedRice = { 2, 5 }, CoconutSoup = { 1, 2 }, BaconEggs = { 2, 2 }, DriedMushrooms = { 1, 2 }, RiceNoodles = { 2, 5 }, Perfume = { 1, 2 }, VitaminCocktail = { 3, 10 }, Gazpacho = { 1, 2 }, SeafoodMix = { 1, 2 }, SeaweedShrimpSalad = { 2, 3 },
 	-- Stationery Shop, Furniture Workshop
 	Eraser = { 1, 3 }, StickyNotes = { 2, 2 }, Table = { 1, 2 }, Chair = { 1, 2 },
 	-- Level 46-47 goods at older factories

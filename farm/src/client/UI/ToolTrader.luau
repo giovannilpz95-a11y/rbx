@@ -38,7 +38,7 @@ local function name(item: string): string
 end
 
 local function have(state: { [string]: any }, item: string): number
-	return state.inventory.items[item] or 0
+	return state.inventory[item] or 0
 end
 
 local function render(state: { [string]: any }, body: ScrollingFrame, title: TextLabel)

@@ -1164,6 +1164,57 @@ local function perfumery(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Juice Bar (level 65, placed by the player): a lime-green shop with a striped orange awning,
+-- a counter of fruit crates out front, a giant striped cup with a straw on the roof and a big
+-- orange slice sign that glows while it works.
+local function juiceBar(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.lime:Lerp(Palette.cream, 0.35), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.cream)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(-4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The giant cup and straw on the roof
+	local cup = Vector3.new(-1.6, TOP + 0.6, 0.6)
+	d.post("Cup", 3, 2.4, cup + Vector3.new(0, 1.5, 0), Palette.flowerWhite:Lerp(Palette.carrot, 0.15))
+	d.post("CupBand", 0.8, 2.5, cup + Vector3.new(0, 1.6, 0), Palette.carrot)
+	d.block(
+		"Straw",
+		Vector3.new(0.3, 2.4, 0.3),
+		CFrame.new(cup + Vector3.new(0.5, 3.6, 0)) * CFrame.Angles(0, 0, math.rad(-15)),
+		Palette.roofRed
+	)
+	-- The orange slice sign that glows
+	d.cyl("NeonSign", 0.4, 2.6, CFrame.new(3, TOP + 2.2, -1.4) * Kit.yaw(90), Palette.carrot, { shadow = false })
+	d.post("SignPost", 1.6, 0.3, Vector3.new(3, TOP + 0.8, -1.4), Palette.woodDark)
+	for i = 0, 3 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.carrot else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.leaf, Palette.cream)
+	-- Fruit crates out front
+	d.block("FruitCrate", Vector3.new(1.6, 0.9, 1.2), Vector3.new(-4.2, PLINTH + 0.45, FRONT - 1.4), Palette.crate)
+	d.ball("Oranges", 1.2, Vector3.new(-4.2, PLINTH + 1.1, FRONT - 1.4), Palette.carrot)
+	d.block("FruitCrate", Vector3.new(1.6, 0.9, 1.2), Vector3.new(-2.4, PLINTH + 0.45, FRONT - 1.4), Palette.crate)
+	d.ball("Limes", 1.2, Vector3.new(-2.4, PLINTH + 1.1, FRONT - 1.4), Palette.lime)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("CupIcon", Vector3.new(0.7, 1, 0.2), at, Palette.carrot, { shadow = false })
+		s.block(
+			"StrawIcon",
+			Vector3.new(0.15, 0.6, 0.2),
+			at + Vector3.new(0.2, 0.7, -0.02),
+			Palette.roofRed,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1302,6 +1353,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	SushiBar = sushiBar,
 	GrillHouse = grillHouse,
 	Perfumery = perfumery,
+	JuiceBar = juiceBar,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

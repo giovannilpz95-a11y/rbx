@@ -744,6 +744,37 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			b.ball("Drop", 0.35, at(x, 0.35, 0), Palette.stoneLight, QUIET)
 		end
 	end,
+	DriedMushrooms = function(b)
+		-- A string of dried mushroom slices
+		b.block("String", Vector3.new(1.8, 0.08, 0.08), at(0, 1.3, 0), Palette.wheat, QUIET)
+		for _, x in { -0.6, 0, 0.6 } do
+			b.cyl("Slice", 0.15, 0.6, at(x, 1, 0) * Kit.yaw(90), Palette.cocoa:Lerp(Palette.wood, 0.6), QUIET)
+		end
+		b.block("Basket", Vector3.new(1.4, 0.5, 0.9), at(0, 0.25, 0), Palette.wood, QUIET)
+	end,
+	RiceNoodles = function(b)
+		-- A bowl of noodles with chopsticks
+		b.cyl("Bowl", 0.7, 1.6, at(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.roofRed, QUIET)
+		b.cyl("Noodles", 0.12, 1.4, at(0, 0.72, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.block("Chopsticks", Vector3.new(0.1, 0.1, 1.8), tilt(0.3, 1, 0, 20, 0, 0), Palette.woodLight, QUIET)
+	end,
+	Perfume = function(b)
+		-- A faceted pink bottle with a gold cap
+		b.block("Bottle", Vector3.new(1, 1.1, 0.7), at(0, 0.55, 0), Palette.flowerPink, QUIET)
+		b.post("Neck", 0.3, 0.3, at(0, 1.25, 0), Palette.coins, QUIET)
+		b.ball("Cap", 0.45, at(0, 1.55, 0), Palette.coins, QUIET)
+	end,
+	VitaminCocktail = function(b)
+		-- A tall orange-red drink with a straw
+		b.post("Glass", 1.4, 0.8, at(0, 0.7, 0), Palette.carrot, QUIET)
+		b.block("Straw", Vector3.new(0.12, 0.9, 0.12), tilt(0.15, 1.6, 0, 0, 0, -15), Palette.lime, QUIET)
+	end,
+	Gazpacho = function(b)
+		-- A bowl of red soup with a pepper slice
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.cyl("Soup", 0.1, 1.4, at(0, 0.62, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.roofRed, QUIET)
+		b.block("Pepper", Vector3.new(0.4, 0.1, 0.2), at(0.2, 0.7, 0.1), Palette.leaf, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
