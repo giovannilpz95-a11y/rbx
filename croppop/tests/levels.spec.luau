@@ -1,6 +1,6 @@
 -- The test levels are well-formed and deal playable boards.
 
-local eq, truthy = expect.eq, expect.truthy
+local eq, truthy, falsy = expect.eq, expect.truthy, expect.falsy
 local Engine, Levels, Matcher = CropPop.Engine, CropPop.Levels, CropPop.Matcher
 
 test("every level validates", function()
@@ -10,10 +10,10 @@ test("every level validates", function()
 		truthy(not seen[level.id], "duplicate id " .. level.id)
 		seen[level.id] = true
 	end
-	eq(#Levels.List, 625)
+	eq(#Levels.List, 650)
 end)
 
-test("levels run 1 to 625 in order, with unique names and the difficulty pattern", function()
+test("levels run 1 to 650 in order, with unique names and the difficulty pattern", function()
 	local names = {}
 	for i, level in Levels.List do
 		eq(level.id, i)
@@ -339,4 +339,21 @@ test("scarecrows first show up on level 601, with a Collect goal", function()
 	end
 	eq(first and first.id, 601)
 	eq(first.goals[1].kind, "Collect")
+end)
+
+test("mud buckets first show up on level 626, with a Mud goal alone", function()
+	local first
+	for _, level in Levels.List do
+		for _, row in level.layout do
+			if not first and string.find(row, "u", 1, true) then
+				first = level
+			end
+		end
+	end
+	eq(first and first.id, 626)
+	eq(#first.goals, 1)
+	eq(first.goals[1].kind, "Mud")
+	for _, row in first.layout do
+		falsy(string.find(row, "[mM]"), "the first bucket level's mud all comes from its buckets")
+	end
 end)
