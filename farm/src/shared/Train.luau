@@ -4,6 +4,8 @@
 -- Save block `trains`:
 --   seed    the RNG state new cars and rewards are drawn from
 --   trips   trains sent so far
+--   placeOffer  set while the station waits to be offered for placing (it turned up during
+--               the first-session guide)
 --   lines   one entry per train the farm has (the first at level 5, the others bought):
 --           { cars = { Car }, bonus = Reward, returnAt? }
 --           returnAt is set while the train is away; once it has passed the train is back and

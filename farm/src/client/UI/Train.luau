@@ -17,6 +17,7 @@ local Train = require(Shared.Train)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
+local Hud = require(script.Parent.Hud)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
 
@@ -25,8 +26,6 @@ local TrainUi = {}
 local CAR_HEIGHT = 64
 local HELP_CAR_HEIGHT = 92 -- with the help flag button under Load
 local BUTTON_WIDTH = 176 -- fits "Buy missing  70 Gems"
-local ARM_SECONDS = 10
-local sendArmedAt = 0 -- sending with empty cars takes a second tap within ARM_SECONDS
 
 local function line(text: string, order: number, body: Instance, height: number?, color: Color3?)
 	return Ui.label(text, {
@@ -183,7 +182,9 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		for i, other in lines do
 			local mark = if Train.isBack(other, now) then " ✓" elseif Train.isAway(other, now) then " ⏱" else ""
 			local button = Ui.button("Train " .. i .. mark, function()
-				Panels.open("Train", tostring(i))
+				if i ~= index then
+					Panels.open("Train", tostring(i))
+				end
 			end, {
 				Size = UDim2.new(width, -6, 1, 0),
 				Position = UDim2.new(width * (i - 1), 3, 0, 0),
@@ -256,19 +257,25 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		)
 		order += 1
 		local trip = Timer.format(Train.travelSeconds(state.level))
-		local armed = os.clock() - sendArmedAt < ARM_SECONDS
+		-- Sending with every car empty asks for a second tap (Panels' confirm button keeps the
+		-- panel still while it waits)
 		local label = if loaded == 0
-			then (if armed then "Tap again to send it empty" else "Send it empty (new cars next time)")
+			then "Send it empty (new cars next time)"
 			else string.format("Send it off (%d of %d loaded, back in %s)", loaded, #train.cars, trip)
-		fit(fullButton(label, order, body, function()
-			if loaded == 0 and os.clock() - sendArmedAt >= ARM_SECONDS then
-				sendArmedAt = os.clock()
-				Panels.open("Train", tostring(index)) -- redraw with the second-tap label
-				return
-			end
-			sendArmedAt = 0
-			Remotes.fire("Train_Send", index)
-		end))
+		fit(
+			Panels.confirmButton(
+				"TrainSend" .. index,
+				label,
+				"Tap again to send it empty",
+				function()
+					Remotes.fire("Train_Send", index)
+				end,
+				{ Size = UDim2.new(1, -8, 0, 40), LayoutOrder = order, Parent = body },
+				true,
+				Ui.colors.button,
+				loaded > 0
+			)
+		)
 		order += 1
 	end
 
@@ -304,6 +311,10 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		order += 2
 	end
 	line(string.format("Trains sent: %d", trains.trips or 0), order, body, nil, Ui.colors.muted)
+	-- The Place bar, the same one a new building offers (Main's Place handler closes this panel)
+	Ui.button("Move the station", function()
+		Hud.popup({ kind = "Place", key = "station:Station" })
+	end, { Size = UDim2.new(1, -8, 0, 36), LayoutOrder = order + 1, Parent = body })
 end
 
 function TrainUi.init()
