@@ -2238,6 +2238,32 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Travel Bureau (content bank, level 106): a sky-blue office with a big globe on the roof, a
+-- little plane circling it on a wire, a suitcase by the door and a striped awning.
+TYPES.TravelBureau = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.4, 4.4, Palette.sky:Lerp(Palette.cream, 0.45))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.52, 0.4, s * 0.42), Vector3.new(0, PLINTH + 4.6, 0), Palette.flowerWhite)
+	t.block("Window", Vector3.new(s * 0.24, 2.2, 0.2), Vector3.new(-s * 0.1, PLINTH + 2, face - 0.05), Palette.glass)
+	t.wedge(
+		"Awning",
+		Vector3.new(s * 0.5, 0.6, 1.2),
+		CFrame.new(0, PLINTH + 3.8, face - 0.6) * CFrame.Angles(0, math.rad(180), 0),
+		Palette.roofTeal
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.14, PLINTH, face - 0.15), 1.6, 3, Palette.roofTeal, Palette.cream)
+	t.block("Suitcase", Vector3.new(1, 1.2, 0.5), Vector3.new(s * 0.28, PLINTH + 0.6, face - 0.8), Palette.carrot)
+	-- The globe and its plane
+	t.post("Stand", 1, 0.5, Vector3.new(0, PLINTH + 5.3, 0), Palette.coins)
+	t.ball("Globe", 2.8, Vector3.new(0, PLINTH + 7.2, 0), Palette.water)
+	t.block("Land", Vector3.new(1.4, 1, 0.3), Vector3.new(-0.3, PLINTH + 7.4, -1.25), Palette.leafLight)
+	t.block("Plane", Vector3.new(1.2, 0.25, 0.3), Vector3.new(1.9, PLINTH + 8.2, 0), Palette.flowerWhite)
+	t.block("Wings", Vector3.new(0.3, 0.1, 1.2), Vector3.new(1.9, PLINTH + 8.2, 0), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 5.4, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Skate Bowl (content bank, level 104): a concrete skate park with a curved bowl, a quarter
 -- pipe, a grind rail, a small hut with a graffiti stripe and a skateboard sign.
 TYPES.SkateBowl = function(b, s)
