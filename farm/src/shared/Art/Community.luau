@@ -2238,6 +2238,37 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Bike Rental (content bank, level 76): a green kiosk with a striped canopy, a rack of three
+-- bikes beside it and a big wheel sign on the roof.
+TYPES.BikeRental = function(b, s)
+	local body = hall(b, s * 0.3, s * 0.3, 3.6, Palette.leafLight)
+	local t = b.into(body, true)
+	local face = -s * 0.15
+	t.block("Roof", Vector3.new(s * 0.34, 0.4, s * 0.34), Vector3.new(0, PLINTH + 3.8, 0), Palette.leaf)
+	for i = 0, 3 do
+		t.wedge(
+			"Canopy",
+			Vector3.new(s * 0.075, 0.5, 1.6),
+			CFrame.new(-s * 0.1125 + i * s * 0.075, PLINTH + 3.2, face - 0.8) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.flowerWhite else Palette.leaf
+		)
+	end
+	t.block("Counter", Vector3.new(s * 0.26, 0.3, 0.6), Vector3.new(0, PLINTH + 1.6, face - 0.3), Palette.woodLight)
+	-- The wheel sign on the roof
+	t.cyl("Wheel", 0.3, 2.6, CFrame.new(0, PLINTH + 5.4, 0) * Kit.yaw(90), Palette.tire)
+	t.cyl("Hub", 0.35, 0.8, CFrame.new(0, PLINTH + 5.4, 0) * Kit.yaw(90), Palette.metal)
+	-- The rack of bikes beside the kiosk
+	t.block("Rack", Vector3.new(0.3, 0.3, s * 0.36), Vector3.new(s * 0.3, PLINTH + 0.9, 0), Palette.metal)
+	for i, color in { Palette.roofRed, Palette.sky, Palette.flowerYellow } do
+		local z = -s * 0.12 + (i - 1) * s * 0.12
+		t.cyl("BikeWheel", 0.2, 1.4, CFrame.new(s * 0.3, PLINTH + 0.7, z - 0.7) * Kit.yaw(90), Palette.tire)
+		t.cyl("BikeWheel", 0.2, 1.4, CFrame.new(s * 0.3, PLINTH + 0.7, z + 0.7) * Kit.yaw(90), Palette.tire)
+		t.block("Frame", Vector3.new(0.2, 0.3, 1.4), Vector3.new(s * 0.3, PLINTH + 1.2, z), color)
+	end
+	Kit.sproutTag(t, Vector3.new(-s * 0.1, PLINTH + 4.3, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Sky Tower (content bank, level 74): a slim glass office tower in stepped tiers, bands of
 -- window glass, a rooftop antenna with a red light and a plaza with a fountain at its foot.
 TYPES.SkyTower = function(b, s)

@@ -1255,6 +1255,34 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Doll Maker (level 76, placed by the player): a pink toy workshop with a round window, a
+-- giant rag doll sitting on the roof whose heart glows while it works, a row of little dolls in
+-- the window and a bow sign.
+local function dollMaker(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.flowerPink:Lerp(Palette.cream, 0.55), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.roofTeal)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The rag doll on the roof: body, head, yarn hair and the glowing heart
+	local doll = Vector3.new(-1.4, TOP + 0.6, 0.4)
+	d.block("DollDress", Vector3.new(2.4, 2.4, 1.6), doll + Vector3.new(0, 1.2, 0), Palette.sky)
+	d.ball("DollHead", 1.8, doll + Vector3.new(0, 3.2, 0), Palette.skinLight)
+	d.ball("DollHair", 2, doll + Vector3.new(0, 3.5, 0.3), Palette.hairGinger)
+	d.ball("NeonSign", 0.8, doll + Vector3.new(0, 1.6, -0.85), Palette.roofRed, { shadow = false })
+	d.cyl("RoundWindow", 0.3, 2.6, CFrame.new(-2.6, PLINTH + 3.2, FRONT) * Kit.yaw(90), Palette.glass)
+	for i, color in { Palette.flowerYellow, Palette.leafLight, Palette.plum } do
+		d.ball("LittleDoll", 0.6, Vector3.new(-3.4 + i * 0.6, PLINTH + 2.3, FRONT - 0.3), color)
+	end
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.roofTeal, Palette.cream)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("BowLeft", 0.6, at + Vector3.new(-0.35, 0, 0), Palette.flowerPink, { shadow = false })
+		s.ball("BowRight", 0.6, at + Vector3.new(0.35, 0, 0), Palette.flowerPink, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("RoundWindow", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Quilt Shop (level 74, placed by the player): a pale blue cottage workshop with a patchwork
 -- quilt hung on a line across the front, a giant plump pillow on the roof whose button glows
 -- while it sews, and a feather sign.
@@ -1575,6 +1603,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	HotDogStand = hotDogStand,
 	CoffeeHouse = coffeeHouse,
 	QuiltShop = quiltShop,
+	DollMaker = dollMaker,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
