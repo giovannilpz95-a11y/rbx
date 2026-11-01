@@ -212,10 +212,22 @@ end
 
 -- Board setup ------------------------------------------------------------------
 
-local function styleBale(label: TextLabel, hp: number, weed: boolean?, stone: boolean?, crate: boolean?, tarp: boolean?)
+-- kind: the cell (or phase entry) saying what the "bale" is: weed, stone,
+-- crate, tarp, tin, quilt (+ patched, x, y).
+local function styleBale(label: TextLabel, hp: number, kind)
+	local weed, stone, crate = kind.weed, kind.stone, kind.crate
+	local tarp = kind.tarp ~= nil and kind.tarp ~= false
 	label.Visible = hp > 0
 	label.TextColor3 = if tarp then TileStyle.Board.tarpText else TileStyle.Board.baleText
-	if tarp then
+	if kind.quilt then
+		local patches = TileStyle.QuiltPatchColors
+		label.BackgroundColor3 = if kind.patched then patches[(kind.x + kind.y * 2) % #patches + 1] else TileStyle.Board.quilt
+		label.TextColor3 = TileStyle.Board.quiltText
+		label.Text = if kind.patched then "" else "+" -- the stitch where a patch goes
+	elseif kind.tin then
+		label.BackgroundColor3 = TileStyle.Board.tin
+		label.Text = TileStyle.TinGlyph
+	elseif tarp then
 		label.BackgroundColor3 = TileStyle.Board.tarp
 		label.Text = "≋" -- canvas stripes
 	elseif crate then
@@ -253,7 +265,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.rainbow.Visible = cell.rainbow == true
 	guis.web.Visible = cell.web == true
 	guis.statueMark.Visible = cell.buried == true
-	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate, cell.tarp ~= nil and cell.tarp ~= false)
+	styleBale(guis.bale, cell.bale, cell)
 	styleFrost(guis, cell.frost or 0)
 end
 
@@ -671,6 +683,26 @@ function BoardView._effect(self, effect): number
 	elseif effect.type == "Crate" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), Color3.fromRGB(255, 220, 120), true)
 		return FX_TIME
+	elseif effect.type == "Patch" then
+		-- A patch flies from the opened tin to its quilt cell.
+		local patch = Instance.new("Frame")
+		patch.Name = "Patch"
+		patch.AnchorPoint = Vector2.new(0.5, 0.5)
+		patch.Size = UDim2.fromScale(0.5 / w, 0.5 / h)
+		patch.Position = self:_centerOf(effect.fromX, effect.fromY)
+		patch.BackgroundColor3 = TileStyle.QuiltPatchColors[(effect.x + effect.y * 2) % #TileStyle.QuiltPatchColors + 1]
+		patch.BorderSizePixel = 0
+		patch.Parent = self.fxLayer
+		tween(patch, BEE_TIME, { Position = self:_centerOf(effect.x, effect.y), Size = UDim2.fromScale(1 / w, 1 / h) }, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+		task.delay(BEE_TIME, function()
+			patch:Destroy()
+		end)
+		return BEE_TIME
+	elseif effect.type == "Quilt" then
+		for _, c in effect.cells do
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.quilt, true)
+		end
+		return FX_TIME
 	elseif effect.type == "Roll" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.tarp, true)
 		return FX_TIME
@@ -735,10 +767,17 @@ function BoardView._pop(self, phase)
 			self.grid[r.y][r.x] = nil
 		end
 	end
+	-- Patches first: a quilt finished this wave then lifts off with its bales.
+	for _, q in phase.quilts or {} do
+		local guis = self.cellGuis[q.y] and self.cellGuis[q.y][q.x]
+		if guis then
+			styleBale(guis.bale, 1, { quilt = true, patched = true, x = q.x, y = q.y })
+		end
+	end
 	for _, b in phase.bales do
 		local guis = self.cellGuis[b.y] and self.cellGuis[b.y][b.x]
 		if guis then
-			styleBale(guis.bale, b.hp, b.weed, b.stone)
+			styleBale(guis.bale, b.hp, b)
 		end
 	end
 	for _, m in phase.mud do

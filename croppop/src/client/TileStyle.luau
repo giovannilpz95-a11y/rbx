@@ -49,6 +49,14 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
+TileStyle.TinGlyph = "🧵" -- a sewing tin (opening it sends a patch to a quilt)
+-- Quilt patches, by cell (a checker of four fabrics).
+TileStyle.QuiltPatchColors = {
+	Color3.fromRGB(230, 120, 120),
+	Color3.fromRGB(120, 170, 220),
+	Color3.fromRGB(240, 200, 100),
+	Color3.fromRGB(140, 200, 130),
+}
 TileStyle.RainbowGlyph = "🌈" -- a rainbow patch (its tile changes colour every swap)
 -- The rainbow patch's stripes, left to right.
 TileStyle.RainbowColors = {
@@ -79,6 +87,7 @@ TileStyle.GoalGlyphs = {
 	Statues = "🗿", -- a buried statue
 	Tarps = "🎪", -- a canvas tarp
 	Webs = "🕸", -- a spider web over a tile
+	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
 
 TileStyle.BoosterGlyphs = {
@@ -113,6 +122,9 @@ TileStyle.Board = {
 	tarp = Color3.fromRGB(196, 72, 64), -- red-and-cream canvas
 	tarpText = Color3.fromRGB(255, 240, 214),
 	buried = Color3.fromRGB(206, 170, 112), -- sandy soil over a buried statue
+	quilt = Color3.fromRGB(238, 226, 200), -- a quilt cell still missing its patch
+	quiltText = Color3.fromRGB(170, 140, 110),
+	tin = Color3.fromRGB(110, 160, 190), -- a sewing tin
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

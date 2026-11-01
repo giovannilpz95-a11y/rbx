@@ -14,6 +14,7 @@
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 	  { kind = "Tarps" }                                 -- roll up every tarp cell
 	  { kind = "Webs" }                                  -- clear every web (blasts only)
+	  { kind = "Quilts" }                                -- finish every quilt (patches come from sewing tins)
 
 	Board-based targets are counted from the board unless `count` is given.
 	A weed that spreads adds one to the Weeds target.
@@ -47,8 +48,8 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate then
-			-- Surprise crates aren't bales for the HayBale goal.
+		elseif cell.crate or cell.tin or cell.quilt then
+			-- Surprise crates, sewing tins and quilts aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -83,6 +84,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
 		elseif def.kind == "Webs" then
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
+		elseif def.kind == "Quilts" then
+			table.insert(list, { kind = "Quilts", target = def.count or #board.quilts, progress = 0 })
 		elseif def.kind == "Tarps" then
 			table.insert(list, { kind = "Tarps", target = def.count or tarps, progress = 0 })
 		elseif def.kind == "Statues" then
@@ -151,6 +154,10 @@ end
 
 function Goals.onWeb(self)
 	bump(self, "Webs", nil)
+end
+
+function Goals.onQuilt(self)
+	bump(self, "Quilts", nil)
 end
 
 function Goals.onTarp(self)

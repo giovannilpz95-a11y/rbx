@@ -56,6 +56,14 @@
 	to the next of the level's colours that doesn't make a match there (a
 	"Recolor" phase: { kind = "Recolor", changes = {{id, x, y, color}} }).
 
+	Quilts and sewing tins: touching quilt cells make one quilt, which blocks
+	its cells like bales that nothing breaks. A sewing tin opens like a
+	1-layer bale (a match next to it, or a blast) and sends one patch to the
+	unfinished quilt with the fewest patches missing (a "Patch" effect from
+	the tin to the quilt cell it fills). When a quilt's last patch lands, the
+	quilt lifts off and frees its cells (a "Quilt" effect with its cells), for
+	the Quilts goal.
+
 	Webs: a web holds its tile in place and keeps it out of matches. Only a
 	blast on the cell clears the web (the tile stays), for the Webs goal.
 
@@ -188,6 +196,7 @@ local function newWave()
 		goo = {},
 		statues = {},
 		webs = {},
+		quilts = {}, -- quilt cells that got their patch: { x, y }
 		effects = {},
 		queue = {}, -- power-ups waiting to go off
 		spread = false, -- the power-up going off started on clover
@@ -252,6 +261,41 @@ function Engine._rollTarp(self, wave, tarp)
 	end
 end
 
+-- An opened sewing tin sends a patch to the unfinished quilt with the fewest
+-- missing (the first one on a tie); the last patch finishes the quilt.
+function Engine._sendPatch(self, wave, from)
+	local best = nil
+	for _, quilt in self.board.quilts do
+		if quilt.left > 0 and (best == nil or quilt.left < best.left) then
+			best = quilt
+		end
+	end
+	if not best then
+		return
+	end
+	for _, cell in best.cells do
+		if not cell.patched then
+			cell.patched = true
+			best.left -= 1
+			table.insert(wave.quilts, { x = cell.x, y = cell.y })
+			table.insert(wave.effects, { type = "Patch", fromX = from.x, fromY = from.y, x = cell.x, y = cell.y })
+			break
+		end
+	end
+	if best.left == 0 then
+		local cells = {}
+		for _, cell in best.cells do
+			cell.quilt = nil
+			cell.patched = nil
+			cell.bale = 0
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, quilt = true })
+			table.insert(cells, { x = cell.x, y = cell.y })
+		end
+		table.insert(wave.effects, { type = "Quilt", cells = cells })
+		self.goals:onQuilt()
+	end
+end
+
 -- byMatch: the hit is a match next to the bale (not a blast on it).
 function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	if cell.tarp then
@@ -265,7 +309,16 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_rollTarp(wave, tarp)
 		return
 	end
+	if cell.quilt then
+		return -- nothing breaks a quilt; patches finish it
+	end
 	cell.bale -= 1
+	if cell.tin then
+		cell.tin = false
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, tin = true })
+		self:_sendPatch(wave, cell)
+		return
+	end
 	if cell.crate then
 		cell.crate = false
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, crate = true })
@@ -441,7 +494,7 @@ function Engine._popGroups(self, wave, groups)
 		for _, cell in group.cells do
 			for _, d in NEIGHBORS do
 				local n = board:get(cell.x + d[1], cell.y + d[2])
-				if n and n.bale > 0 and not n.stone and not wave.balesTouched[n] then
+				if n and n.bale > 0 and not n.stone and not n.quilt and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					self:_damageBale(wave, n, true)
 				elseif not n then
@@ -491,11 +544,14 @@ function Engine._chooseBeeTarget(self)
 	self.board:eachCell(function(cell)
 		if wantsFences and #self.board:fencesAround(cell.x, cell.y) > 0 then
 			table.insert(tiers[1], cell)
+		elseif cell.quilt then
+			-- Bees leave quilts alone: nothing breaks them.
 		elseif cell.bale > 0 then
 			local wanted = if cell.weed
 				then goals:wants("Weeds")
 				elseif cell.stone then goals:wants("Stones")
 				elseif cell.tarp then goals:wants("Tarps")
+				elseif cell.tin then goals:wants("Quilts")
 				else goals:wants("HayBale")
 			table.insert(if wanted then tiers[1] else tiers[4], cell)
 		elseif cell.piece and not cell.piece.pumpkin then
@@ -729,6 +785,7 @@ function Engine._finishWave(self, wave, phases)
 		goo = wave.goo,
 		statues = wave.statues,
 		webs = wave.webs,
+		quilts = wave.quilts,
 		effects = wave.effects,
 	})
 end
@@ -1135,7 +1192,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 
 	if kind == "Trowel" then
 		local cell = board:get(a :: number, b :: number)
-		if not cell or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
+		if not cell or cell.quilt or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
 			return false, {}
 		end
 		local wave = newWave()
