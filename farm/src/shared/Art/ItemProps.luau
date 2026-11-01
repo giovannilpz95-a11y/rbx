@@ -6,6 +6,7 @@
 -- PARTS_MAX parts. Unknown ids get a plain crate with a coloured band.
 
 local Kit = require("./Kit")
+local Merge = require("./Merge")
 local Palette = require("./Palette")
 
 local ArtItemProps = {}
@@ -831,6 +832,105 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Peach", 0.5, at(0.25, 0.95, 0.1), Palette.carrot, QUIET)
 		b.ball("Frost", 0.4, at(0, 1.2, -0.15), Palette.flowerWhite:Lerp(Palette.sky, 0.3), QUIET)
 	end,
+	ScentedSoap = function(b)
+		-- A lilac soap bar with a honey stripe
+		b.block("Bar", Vector3.new(1.4, 0.5, 0.9), at(0, 0.25, 0), Palette.flowerPink:Lerp(Palette.sky, 0.4), QUIET)
+		b.block("Stripe", Vector3.new(1.42, 0.12, 0.3), at(0, 0.4, 0), Palette.flowerYellow, QUIET)
+		b.ball("Bubble", 0.35, at(0.4, 0.75, 0), Palette.flowerWhite, QUIET)
+	end,
+	HotDog = function(b)
+		-- A sausage in a bun with a mustard line
+		b.cyl("Bun", 1.6, 0.7, at(0, 0.3, 0), Palette.bread, QUIET)
+		b.cyl("Sausage", 1.9, 0.45, at(0, 0.55, 0), Palette.brick, QUIET)
+		b.block("Mustard", Vector3.new(1.4, 0.08, 0.12), at(0, 0.8, 0), Palette.flowerYellow, QUIET)
+	end,
+	CornDog = function(b)
+		-- A golden battered sausage on a stick
+		b.block("Stick", Vector3.new(0.12, 0.8, 0.12), at(0, 0.4, 0), Palette.woodLight, QUIET)
+		b.post("Batter", 1.2, 0.6, at(0, 1.3, 0), Palette.corn, QUIET)
+		b.ball("Tip", 0.6, at(0, 1.9, 0), Palette.corn, QUIET)
+	end,
+	Diadem = function(b)
+		-- A gold band with three jewels
+		b.cyl("Band", 0.3, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.coins, QUIET)
+		for i, x in { -0.5, 0, 0.5 } do
+			b.ball(
+				"Jewel",
+				if i == 2 then 0.5 else 0.35,
+				at(x, 0.65 + (if i == 2 then 0.15 else 0), -0.6),
+				if i == 2 then Palette.gems else Palette.sky,
+				QUIET
+			)
+		end
+	end,
+	FishAndChips = function(b)
+		-- A paper cone of chips with a fried fish
+		b.block("Paper", Vector3.new(1.4, 0.6, 1), at(0, 0.3, 0), Palette.flowerWhite, QUIET)
+		b.block("Chips", Vector3.new(0.6, 0.5, 0.8), at(-0.35, 0.8, 0), Palette.flowerYellow, QUIET)
+		b.block("Fish", Vector3.new(0.6, 0.35, 0.9), at(0.35, 0.75, 0), Palette.wheat:Lerp(Palette.carrot, 0.3), QUIET)
+	end,
+	StrawberryCake = function(b)
+		-- A round cream cake topped with strawberries
+		b.post("Cake", 0.9, 1.5, at(0, 0.45, 0), Palette.cream, QUIET)
+		b.post("Filling", 0.15, 1.52, at(0, 0.45, 0), Palette.flowerPink, QUIET)
+		for _, x in { -0.4, 0.4 } do
+			b.ball("Berry", 0.4, at(x, 1.05, 0), Palette.roofRed, QUIET)
+		end
+	end,
+	Ratatouille = function(b)
+		-- A shallow dish of layered vegetables
+		b.cyl("Dish", 0.35, 1.8, at(0, 0.18, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.brick, QUIET)
+		b.ball("Pepper", 0.45, at(-0.4, 0.45, 0), Palette.lime, QUIET)
+		b.ball("Tomato", 0.45, at(0, 0.45, 0.2), Palette.roofRed, QUIET)
+		b.ball("Potato", 0.45, at(0.4, 0.45, -0.1), Palette.wheat, QUIET)
+	end,
+	SeaSalad = function(b)
+		-- A bowl of greens with a shrimp and corn
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.ball("Greens", 1.2, at(0, 0.7, 0), Palette.leaf, QUIET)
+		b.ball("Shrimp", 0.45, at(-0.3, 1.05, 0.1), Palette.carrot, QUIET)
+		b.ball("Corn", 0.35, at(0.35, 1, -0.1), Palette.corn, QUIET)
+	end,
+	RiceCasserole = function(b)
+		-- A square dish of baked rice with a golden top
+		b.block("Dish", Vector3.new(1.6, 0.5, 1.2), at(0, 0.25, 0), Palette.brick, QUIET)
+		b.block("Rice", Vector3.new(1.4, 0.2, 1), at(0, 0.55, 0), Palette.flowerWhite, QUIET)
+		b.block("Crust", Vector3.new(1.2, 0.1, 0.8), at(0, 0.68, 0), Palette.wheat, QUIET)
+	end,
+	ChocolateSmoothie = function(b)
+		-- A brown smoothie topped with a banana slice
+		b.post("Glass", 1.3, 0.8, at(0, 0.65, 0), Palette.cocoa, QUIET)
+		b.cyl("Banana", 0.15, 0.5, at(0, 1.38, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerYellow, QUIET)
+		b.block("Straw", Vector3.new(0.12, 0.8, 0.12), tilt(-0.15, 1.5, 0, 0, 0, 15), Palette.flowerWhite, QUIET)
+	end,
+	Profiteroles = function(b)
+		-- A little pile of cream puffs with chocolate on top
+		for _, p in { { -0.35, 0.35, 0 }, { 0.35, 0.35, 0 }, { 0, 0.35, 0.4 } } do
+			b.ball("Puff", 0.7, at(p[1], p[2], p[3]), Palette.wheat, QUIET)
+		end
+		b.ball("Top", 0.7, at(0, 0.9, 0.15), Palette.cocoa, QUIET)
+	end,
+	JellyFruitSlices = function(b)
+		-- Three sugar-crusted fruit slice sweets
+		b.wedge("Red", Vector3.new(0.3, 0.6, 0.8), at(-0.45, 0.3, 0), Palette.roofRed, QUIET)
+		b.wedge("Pink", Vector3.new(0.3, 0.6, 0.8), at(0, 0.3, 0), Palette.flowerPink, QUIET)
+		b.wedge("Green", Vector3.new(0.3, 0.6, 0.8), at(0.45, 0.3, 0), Palette.lime, QUIET)
+	end,
+	JasmineOil = function(b)
+		-- A small glass bottle of oil with a white flower tag
+		b.post("Bottle", 1, 0.7, at(0, 0.5, 0), Palette.flowerYellow:Lerp(Palette.glass, 0.5), QUIET)
+		b.post("Neck", 0.4, 0.3, at(0, 1.2, 0), Palette.flowerYellow:Lerp(Palette.glass, 0.5), QUIET)
+		b.block("Cork", Vector3.new(0.3, 0.2, 0.3), at(0, 1.5, 0), Palette.cork, QUIET)
+		b.ball("Flower", 0.35, at(0, 0.6, -0.35), Palette.flowerWhite, QUIET)
+	end,
+	NicoiseSalad = function(b)
+		-- A plate of greens with egg halves, olives and tomato
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Greens", 1, at(0, 0.4, 0), Palette.leaf, QUIET)
+		b.ball("Egg", 0.4, at(-0.4, 0.35, 0.3), Palette.egg, QUIET)
+		b.ball("Olive", 0.25, at(0.35, 0.6, 0), Palette.stoneDark, QUIET)
+		b.ball("Tomato", 0.35, at(0.1, 0.65, -0.3), Palette.roofRed, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
@@ -1323,6 +1423,29 @@ function ArtItemProps.build(id: string, cf: CFrame?, name: string?): Model
 	local builder = BUILDERS[id] or crate
 	builder(b)
 	return model
+end
+
+-- The part-cut pass: a prop on display never changes, so each item's prop is merged once (Art/
+-- Merge cache, on first use, kept in ServerStorage.PropLooks) and every display gets a copy,
+-- one union instead of up to eight parts. Server only.
+local cache: Merge.Cache? = nil
+
+function ArtItemProps.useTemplates(store: Instance, geometry: any?)
+	cache = Merge.cache(store, "PropLooks", geometry)
+end
+
+-- Item `id`'s prop at `cf`, named `name`: a copy of its merged look when one is ready, else
+-- built from parts (and its look starts merging for next time).
+function ArtItemProps.placed(id: string, cf: CFrame, name: string): Model
+	if cache then
+		local look = Merge.fromCache(cache, id, function()
+			return ArtItemProps.build(id)
+		end)
+		if look then
+			return Merge.place(look, cf, name)
+		end
+	end
+	return ArtItemProps.build(id, cf, name)
 end
 
 return ArtItemProps

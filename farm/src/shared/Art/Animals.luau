@@ -172,6 +172,7 @@ end
 ArtAnimals.MERGE_SKIP = { Wool = true, Fringe = true }
 
 local looks: { [string]: Model } = {}
+local products: { [string]: Model } = {}
 
 -- Merges one animal of each kind into a template (server, once; yields per kind). Pens built
 -- afterwards get copies of it: one union per animal instead of ~10 parts (the part-cut pass).
@@ -188,6 +189,14 @@ function ArtAnimals.mergeLooks(penIds: { string }, store: Instance, geometry: an
 				looks[penId] = look
 			end
 		end
+		-- The product each animal shows when ready, merged the same way
+		if products[penId] == nil then
+			local look = ArtAnimals.product(penId, CFrame.new())
+			look.Parent = holder
+			if Merge.template(look, nil, geometry) then
+				products[penId] = look
+			end
+		end
 	end
 end
 
@@ -198,6 +207,15 @@ function ArtAnimals.placed(penId: string, cf: CFrame, name: string): Model
 		return Merge.place(look, cf, name)
 	end
 	return ArtAnimals.animal(penId, cf, name)
+end
+
+-- A ready animal's product at `cf`: a copy of its merged template when there is one.
+function ArtAnimals.placedProduct(penId: string, cf: CFrame, name: string): Model
+	local look = products[penId]
+	if look then
+		return Merge.place(look, cf, name)
+	end
+	return ArtAnimals.product(penId, cf, name)
 end
 
 -- The product a ready animal shows above its head: a Milk bottle, two Eggs or a Wool puff.

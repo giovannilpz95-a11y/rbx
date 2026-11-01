@@ -294,7 +294,36 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 67, "levels 17 to 67 are banked")
+	eq(Levels.built, 71, "levels 17 to 71 are banked")
+	eq(Levels.list[70].xpToNext, 384000, "L70 row")
+	eq(Levels.list[71].xpToNext, 396000, "L71 row")
+	eq(Recipes.SeaSalad.inputs.Shrimp, 1, "Sea Salad")
+	eq(Recipes.RiceCasserole.inputs.Rice, 5, "Rice Casserole")
+	eq(Recipes.ChocolateSmoothie.inputs.Bananas, 2, "Chocolate Smoothie")
+	eq(Recipes.Profiteroles.inputs.Dough, 2, "Profiteroles")
+	eq(Recipes.JellyFruitSlices.inputs.KeyLimes, 1, "Jelly Fruit Slices")
+	eq(Recipes.JasmineOil.seconds, 4 * 3600, "Jasmine Oil, 4 h")
+	eq(Recipes.NicoiseSalad.factory, "Bistro", "Niçoise Salad")
+	eq(Town.community.DolphinLagoon.materials.Panes, 57, "Dolphin Lagoon (Township's Dolphinarium)")
+	eq(Levels.list[68].xpToNext, 361000, "L68 row")
+	eq(Levels.list[69].xpToNext, 373000, "L69 row")
+	eq(Levels.list[69].rewardGems, 3, "L69 pays 3 Gems")
+	eq(Factories.HotDogStand.buildCost, 220000, "Hot Dog Stand (Township's Hot Dog Factory)")
+	eq(Factories.Bistro.buildSeconds, 65 * 3600, "Bistro (Township's French Restaurant), 2 d 17 h")
+	eq(Guild.maxLevel("HotDogStand"), 53, "the Hot Dog Stand has its own Guild table")
+	eq(Guild.maxLevel("Bistro"), 53, "so does the Bistro")
+	eq(Recipes.HotDog.inputs.Bread, 2, "Hot Dog from Bread, Bacon and Tomatoes")
+	eq(Recipes.CornDog.inputs.Olives, 2, "Corn Dog")
+	ok(
+		Recipes.Diadem.fromOreShed and Recipes.Diadem.inputs.PlatinumOre == 4,
+		"Diadem from Silver, Gold and Platinum Ore"
+	)
+	eq(Recipes.FishAndChips.factory, "Diner", "Fish and Chips at the Diner")
+	eq(Recipes.StrawberryCake.inputs.Cream, 1, "Strawberry Cake")
+	eq(Recipes.Ratatouille.factory, "Bistro", "Ratatouille")
+	eq(Recipes.ScentedSoap.inputs.Honeycomb, 3, "Scented Soap")
+	eq(Town.houses.TurretHouse.population, 420, "Turret House")
+	eq(Town.community.CarWash.materials.PowerSaw, 17, "Car Wash needs Power Saws")
 	eq(Levels.list[66].xpToNext, 337000, "L66 row")
 	eq(Levels.list[66].rewardGems, 3, "from 66 a level pays Gems (Township's 75 T-cash)")
 	eq(Levels.list[67].xpToNext, 349000, "L67 row")
@@ -899,6 +928,7 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 		Pendant = true,
 		Ring = true,
 		Earrings = true,
+		Diadem = true,
 	}
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]
