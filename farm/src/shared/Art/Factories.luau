@@ -1255,6 +1255,55 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Coffee House (level 72, placed by the player): a brown brick cafe with a cream awning, a
+-- giant coffee cup on the roof whose steam glows while it brews, a bean sign and a bench of
+-- sacks out front.
+local function coffeeHouse(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cocoa:Lerp(Palette.cream, 0.3), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.woodDark)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.brick)
+	-- The giant cup, its handle, the saucer and the glowing steam
+	local cup = Vector3.new(-1.4, TOP + 0.6, 0.4)
+	d.cyl(
+		"Saucer",
+		0.3,
+		4,
+		CFrame.new(cup + Vector3.new(0, 0.15, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.flowerWhite
+	)
+	d.post("Cup", 2.2, 2.6, cup + Vector3.new(0, 1.4, 0), Palette.flowerWhite)
+	d.post("Coffee", 0.1, 2.3, cup + Vector3.new(0, 2.5, 0), Palette.cocoa)
+	d.cyl("Handle", 0.4, 1.2, CFrame.new(cup + Vector3.new(1.6, 1.4, 0)) * Kit.yaw(90), Palette.flowerWhite)
+	d.ball("NeonSign", 1.1, cup + Vector3.new(0, 3.4, 0), Palette.flowerWhite, { shadow = false })
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.cream else Palette.cocoa
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.woodDark, Palette.cream)
+	for _, x in { -4.2, -2.6 } do
+		d.block("Sack", Vector3.new(1.2, 0.9, 0.9), Vector3.new(x, PLINTH + 0.45, FRONT - 1.4), Palette.sack)
+	end
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("BeanIcon", 0.9, at, Palette.cocoa, { shadow = false })
+		s.block(
+			"BeanLine",
+			Vector3.new(0.12, 0.7, 0.2),
+			at + Vector3.new(0, 0, -0.4),
+			Palette.cream,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Hot Dog Stand (level 68, placed by the player): a red and yellow stand with a giant hot dog
 -- on the roof whose mustard stripe glows while it works, a striped awning, a serving hatch and
 -- a sausage sign.
@@ -1483,6 +1532,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	JuiceBar = juiceBar,
 	CakeShop = cakeShop,
 	HotDogStand = hotDogStand,
+	CoffeeHouse = coffeeHouse,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts

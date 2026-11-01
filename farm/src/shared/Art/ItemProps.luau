@@ -931,6 +931,62 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Olive", 0.25, at(0.35, 0.6, 0), Palette.stoneDark, QUIET)
 		b.ball("Tomato", 0.35, at(0.1, 0.65, -0.3), Palette.roofRed, QUIET)
 	end,
+	Coffee = function(b)
+		-- A little pile of roasted coffee beans
+		for _, p in { { -0.3, 0.25, 0 }, { 0.3, 0.25, 0.1 }, { 0, 0.25, 0.4 }, { 0, 0.6, 0.15 } } do
+			b.ball("Bean", 0.55, at(p[1], p[2], p[3]), Palette.cocoa, QUIET)
+		end
+	end,
+	Espresso = function(b)
+		-- A small cup of coffee on a saucer
+		b.cyl("Saucer", 0.12, 1.4, at(0, 0.06, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.post("Cup", 0.7, 0.8, at(0, 0.45, 0), Palette.flowerWhite, QUIET)
+		b.post("Coffee", 0.05, 0.7, at(0, 0.8, 0), Palette.cocoa, QUIET)
+		b.cyl("Handle", 0.15, 0.4, at(0.5, 0.45, 0) * Kit.yaw(90), Palette.flowerWhite, QUIET)
+	end,
+	Lotion = function(b)
+		-- A pump bottle of pink lotion
+		b.post("Bottle", 1.2, 0.8, at(0, 0.6, 0), Palette.flowerPink:Lerp(Palette.cream, 0.4), QUIET)
+		b.post("Pump", 0.4, 0.25, at(0, 1.4, 0), Palette.flowerWhite, QUIET)
+		b.block("Nozzle", Vector3.new(0.4, 0.15, 0.15), at(0.15, 1.6, 0), Palette.flowerWhite, QUIET)
+	end,
+	PackagedMeal = function(b)
+		-- A lidded meal tray
+		b.block("Tray", Vector3.new(1.6, 0.4, 1.1), at(0, 0.2, 0), Palette.flowerWhite, QUIET)
+		b.block("Lid", Vector3.new(1.6, 0.1, 1.1), at(0, 0.45, 0), Palette.glass, QUIET)
+		b.block("Label", Vector3.new(0.6, 0.02, 0.4), at(0, 0.51, 0), Palette.roofRed, QUIET)
+	end,
+	Bouillabaisse = function(b)
+		-- A pot of orange fish soup with a shrimp
+		b.cyl("Pot", 0.7, 1.6, at(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.metal, QUIET)
+		b.cyl("Soup", 0.1, 1.4, at(0, 0.72, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.carrot, QUIET)
+		b.ball("Shrimp", 0.4, at(0.3, 0.8, 0), Palette.flowerPink, QUIET)
+	end,
+	MoleSauce = function(b)
+		-- A bowl of dark chocolate chili sauce
+		b.cyl("Bowl", 0.5, 1.4, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.carrot, QUIET)
+		b.cyl("Sauce", 0.1, 1.2, at(0, 0.52, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cocoa, QUIET)
+		b.block("Pepper", Vector3.new(0.2, 0.2, 0.6), at(0.2, 0.62, 0), Palette.roofRed, QUIET)
+	end,
+	WatermelonCooler = function(b)
+		-- A pink drink with a watermelon wedge on the rim
+		b.post("Glass", 1.3, 0.8, at(0, 0.65, 0), Palette.flowerPink, QUIET)
+		b.wedge("Melon", Vector3.new(0.15, 0.4, 0.5), at(0.35, 1.4, 0), Palette.roofRed, QUIET)
+		b.block("Rind", Vector3.new(0.16, 0.1, 0.5), at(0.35, 1.18, 0), Palette.lime, QUIET)
+	end,
+	MushroomSalad = function(b)
+		-- A bowl of rice with mushrooms on top
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark, QUIET)
+		b.ball("Rice", 1.1, at(0, 0.65, 0), Palette.flowerWhite, QUIET)
+		for _, x in { -0.3, 0.3 } do
+			b.ball("Mushroom", 0.45, at(x, 1, 0), Palette.wood, QUIET)
+		end
+	end,
+	CoffeeCake = function(b)
+		-- A square slice of cake with a crumb top
+		b.block("Cake", Vector3.new(1.2, 0.8, 1.2), at(0, 0.4, 0), Palette.wheat, QUIET)
+		b.block("Crumb", Vector3.new(1.2, 0.25, 1.2), at(0, 0.92, 0), Palette.cocoa, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

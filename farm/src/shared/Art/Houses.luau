@@ -815,6 +815,35 @@ TYPES.GlassTower = {
 -- timber beams, an overhanging upper floor, a steep brown roof and a brick chimney.
 -- Turret House (level 68): a lilac two-storey house with a round corner turret under a pointed
 -- cap, a smaller turret on the far corner and a front door under a little porch roof.
+-- Garden Flats (level 72): a wide three-storey block of flats in sandstone with balconies of
+-- plants on the front, a flat roof with a little rooftop garden and a central entrance.
+TYPES.GardenFlats = {
+	roof = Palette.woodDark,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.8, s * 0.5, STORY * 2.6
+		local body = walls(b, w, d, h, Palette.wheat:Lerp(Palette.cream, 0.5), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Roof", Vector3.new(w + 0.6, 0.6, d + 0.6), Vector3.new(0, PLINTH + h + 0.3, 0.6), roof)
+		t.block(
+			"RoofGarden",
+			Vector3.new(w * 0.5, 0.8, d * 0.5),
+			Vector3.new(-w / 6, PLINTH + h + 1, 0.6),
+			Palette.leaf
+		)
+		-- Two rows of balconies, each with its planter
+		for row = 1, 2 do
+			local y = PLINTH + STORY * row * 0.9
+			t.block("Balcony", Vector3.new(w * 0.8, 0.3, 1.2), Vector3.new(0, y, face - 0.6), Palette.stoneLight)
+			t.block("Planter", Vector3.new(w * 0.8, 0.5, 0.4), Vector3.new(0, y + 0.4, face - 1.05), Palette.leafLight)
+			Kit.window(t, "Window", CFrame.new(0, y + 1.4, face), w * 0.6, 1.6, Palette.cream, Palette.glass)
+		end
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 3, Palette.woodDark, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 1.6, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.TurretHouse = {
 	roof = Palette.roofPlum,
 	build = function(b, s, roof)
