@@ -131,7 +131,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			string.format(
 				"%s (you have %d): %s, %s",
 				name(food.item),
-				state.inventory.items[food.item] or 0,
+				state.inventory[food.item] or 0,
 				table.concat(parts, ", "),
 				Timer.format(food.seconds)
 			),
@@ -168,7 +168,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			layout.Parent = row
 			for k, entry in foods do
 				local item = entry.def.item
-				local have = state.inventory.items[item] or 0
+				local have = state.inventory[item] or 0
 				local button = Ui.button(name(item), function()
 					Remotes.fire("Otter_Feed", i, entry.id)
 				end, { Size = UDim2.new(1 / #foods, -6, 1, 0), LayoutOrder = k, Parent = row })

@@ -2359,6 +2359,13 @@ require("./duckpond")(test, eq, ok)
 require("./otterpond")(test, eq, ok)
 require("./tooltrader")(test, eq, ok)
 
+test("client panels read the flat inventory the snapshot sends", function()
+	for _, file in fs.readDir("src/client/UI") do
+		local text = fs.readFile("src/client/UI/" .. file)
+		ok(string.find(text, "inventory.items", 1, true) == nil, file .. " reads state.inventory[id], not .items")
+	end
+end)
+
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles
 ---------------------------------------------------------------------------------------------

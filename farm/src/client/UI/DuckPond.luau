@@ -138,7 +138,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 	local order = 2
 	for _, entry in foods do
 		local food = entry.def
-		local have = state.inventory.items[food.item] or 0
+		local have = state.inventory[food.item] or 0
 		line(
 			string.format(
 				"%s (you have %d): %s ducks, %s drakes, %s",
