@@ -6,7 +6,10 @@
 return table.freeze({
 	tiers = table.freeze({
 		Sunkissed = table.freeze({ displayName = "Sunkissed", chance = 0.02, value = 3, order = 1 }),
-		Heirloom = table.freeze({ displayName = "Heirloom", chance = 0.002, value = 15, order = 2 }),
+		-- Weather traits (13 §3.1-3.2): only fields growing during a sky event roll them (shared/Sky)
+		Dewkissed = table.freeze({ displayName = "Dewkissed", chance = 0.1, value = 4, order = 2, weather = true }),
+		Starlit = table.freeze({ displayName = "Starlit", chance = 0.05, value = 6, order = 3, weather = true }),
+		Heirloom = table.freeze({ displayName = "Heirloom", chance = 0.002, value = 15, order = 4 }),
 	}),
 	basketSlots = 10, -- the Prize Basket, kept apart from the Barn
 	shelfSlots = 3, -- the Prize Shelf on the plot (more from Town Records later)
