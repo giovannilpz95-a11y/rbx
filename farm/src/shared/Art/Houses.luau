@@ -993,6 +993,44 @@ TYPES.GreenRoofTower = {
 	end,
 }
 
+-- Wavy House (level 116): a playful tower whose two halves lean into each other, with a glass
+-- half pinched at the waist, wavy window bands and a little dome on top.
+TYPES.WavyHouse = {
+	roof = Palette.metal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.3, s * 0.52, STORY * 3.2
+		local body = walls(b, w, d, h, Palette.cream:Lerp(Palette.straw, 0.3), w * 0.5, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		-- The glass half, leaning in
+		t.block(
+			"GlassHalf",
+			Vector3.new(w, h, d * 0.9),
+			CFrame.new(-w * 0.55, PLINTH + h / 2, 0.6) * CFrame.Angles(0, 0, math.rad(-6)),
+			Palette.glass
+		)
+		t.block(
+			"Waist",
+			Vector3.new(w * 0.7, 0.4, d * 0.92),
+			CFrame.new(-w * 0.5, PLINTH + h * 0.5, 0.6),
+			Palette.stoneLight
+		)
+		for floor = 1, 3 do
+			t.block(
+				"Band",
+				Vector3.new(w + 0.1, 0.3, 0.1),
+				CFrame.new(w * 0.5, PLINTH + STORY * floor * 0.95, face - 0.05)
+					* CFrame.Angles(0, 0, math.rad(if floor % 2 == 0 then 6 else -6)),
+				Palette.stoneDark
+			)
+		end
+		t.ball("Dome", w * 0.8, Vector3.new(w * 0.5, PLINTH + h + 0.3, 0.6), roof)
+		Kit.door(t, "Door", CFrame.new(w * 0.5, PLINTH, face), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(w * 0.5, PLINTH + h + 1.8, -d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)

@@ -1784,6 +1784,12 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 			b.ball("Wheel", 0.15, at(x, 0.07, 0), Palette.stoneDark, QUIET)
 		end
 	end,
+	KidsBag = function(b)
+		-- A small bright school bag with a feather tassel
+		b.block("Bag", Vector3.new(0.8, 0.9, 0.4), at(0, 0.45, 0), Palette.flowerYellow, QUIET)
+		b.block("Flap", Vector3.new(0.82, 0.4, 0.42), at(0, 0.75, 0), Palette.roofRed, QUIET)
+		b.block("Feather", Vector3.new(0.1, 0.5, 0.25), tilt(0.45, 0.5, -0.1, 0, 0, -20), Palette.sky, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
