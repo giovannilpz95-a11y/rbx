@@ -2243,6 +2243,39 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Concert Hall (content bank, level 66): a plum hall with a curved white shell stage on its
+-- front, a pair of big speakers, a giant music note on the roof and a marquee board.
+TYPES.ConcertHall = function(b, s)
+	local body = hall(b, s * 0.4, s * 0.6, 5, Palette.plum)
+	local t = b.into(body, true)
+	local face = -s * 0.3
+	t.block("Roof", Vector3.new(s * 0.44, 0.5, s * 0.64), Vector3.new(0, PLINTH + 5.25, 0), Palette.stoneDark)
+	-- The shell stage on the front
+	t.ball("Shell", s * 0.36, Vector3.new(0, PLINTH + 1.2, face - 0.4), Palette.cream)
+	t.block("Stage", Vector3.new(s * 0.36, 0.6, 2.4), Vector3.new(0, PLINTH + 0.3, face - 1.4), Palette.woodLight)
+	for _, x in { -s * 0.15, s * 0.15 } do
+		t.block("Speaker", Vector3.new(1, 1.8, 0.8), Vector3.new(x, PLINTH + 1.5, face - 2.2), Palette.stoneDark)
+		t.cyl("Cone", 0.1, 0.7, CFrame.new(x, PLINTH + 1.7, face - 2.65) * Kit.yaw(90), Palette.metal)
+	end
+	-- The music note on the roof
+	t.ball("NoteHead", 1.4, Vector3.new(-0.6, PLINTH + 6.3, 0), Palette.flowerYellow)
+	t.block("NoteStem", Vector3.new(0.3, 2.6, 0.3), Vector3.new(0.05, PLINTH + 7.3, 0), Palette.flowerYellow)
+	t.block(
+		"NoteFlag",
+		Vector3.new(1, 0.4, 0.3),
+		CFrame.new(0.5, PLINTH + 8.3, 0) * CFrame.Angles(0, 0, math.rad(-30)),
+		Palette.flowerYellow
+	)
+	t.block(
+		"Marquee",
+		Vector3.new(s * 0.3, 1.1, 0.2),
+		Vector3.new(0, PLINTH + 4.3, face - 0.1),
+		Palette.flowerYellow:Lerp(Palette.cream, 0.5)
+	)
+	Kit.sproutTag(t, Vector3.new(-s * 0.14, PLINTH + 5.9, s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Planetarium (content bank, level 60): a round navy hall under a big silver dome with its
 -- observing slit open, a brass telescope poking out, gold stars on the drum and a ringed
 -- planet on a post by the door.

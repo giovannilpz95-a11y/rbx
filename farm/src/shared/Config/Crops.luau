@@ -37,6 +37,7 @@ local Crops: { [string]: CropDef } = {
 	Mint = { id = "Mint", displayName = "Mint", unlockLevel = 50, growSeconds = 2 * HOUR + 45 * MIN, seedCost = 21, sellPrice = 30, xp = 7, yield = 1, order = 15, color = { 120, 210, 150 } },
 	Rice = { id = "Rice", displayName = "Rice", unlockLevel = 56, growSeconds = 1 * HOUR + 20 * MIN, seedCost = 7, sellPrice = 14, xp = 5, yield = 1, order = 16, color = { 235, 215, 140 } },
 	Rose = { id = "Rose", displayName = "Rose", unlockLevel = 61, growSeconds = 2 * HOUR + 30 * MIN, seedCost = 18, sellPrice = 28, xp = 10, yield = 1, order = 17, color = { 220, 60, 90 } },
+	Jasmine = { id = "Jasmine", displayName = "Jasmine", unlockLevel = 67, growSeconds = 3 * HOUR + 30 * MIN, seedCost = 25, sellPrice = 37, xp = 12, yield = 1, order = 18, color = { 250, 245, 225 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }
 

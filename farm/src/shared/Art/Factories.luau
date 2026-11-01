@@ -1215,6 +1215,46 @@ local function juiceBar(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Cake Shop (level 66, placed by the player): a pale pink patisserie with a scalloped cream
+-- awning, a three-tier cake on the roof whose cherry glows while it works, a display window
+-- of cakes and a whisk sign.
+local function cakeShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.flowerPink:Lerp(Palette.cream, 0.7), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.cream)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The three-tier cake and its glowing cherry
+	local cake = Vector3.new(-1.4, TOP + 0.6, 0.4)
+	d.post("Tier1", 1.2, 4, cake + Vector3.new(0, 0.6, 0), Palette.cream)
+	d.post("Tier2", 1, 3, cake + Vector3.new(0, 1.7, 0), Palette.flowerPink)
+	d.post("Tier3", 0.9, 2, cake + Vector3.new(0, 2.65, 0), Palette.cream)
+	d.ball("NeonSign", 0.9, cake + Vector3.new(0, 3.5, 0), Palette.brick, { shadow = false })
+	for i = 0, 4 do
+		d.ball(
+			"Scallop",
+			1,
+			Vector3.new(-4 + i * 1.2, PLINTH + 5.1, FRONT - 0.5),
+			if i % 2 == 0 then Palette.cream else Palette.flowerPink
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	d.post("DisplayCake", 0.6, 1, Vector3.new(-2.6, PLINTH + 2.4, FRONT + 0.4), Palette.flowerPink)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.plum, Palette.cream)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("WhiskIcon", Vector3.new(0.6, 1, 0.2), at, Palette.stoneLight, { shadow = false })
+		s.block(
+			"HandleIcon",
+			Vector3.new(0.2, 0.6, 0.2),
+			at + Vector3.new(0, -0.75, -0.02),
+			Palette.woodDark,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1354,6 +1394,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	GrillHouse = grillHouse,
 	Perfumery = perfumery,
 	JuiceBar = juiceBar,
+	CakeShop = cakeShop,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
