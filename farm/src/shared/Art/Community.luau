@@ -2238,6 +2238,36 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Vet Clinic (content bank, level 84): a white clinic with a mint stripe, a green cross on the
+-- front, a paw-print sign on the roof, a little kennel and a waiting bench.
+TYPES.VetClinic = function(b, s)
+	local body = hall(b, s * 0.4, s * 0.56, 4.6, Palette.flowerWhite)
+	local t = b.into(body, true)
+	local face = -s * 0.28
+	t.block("Roof", Vector3.new(s * 0.44, 0.5, s * 0.6), Vector3.new(0, PLINTH + 4.85, 0), Palette.roofTeal)
+	t.block(
+		"Stripe",
+		Vector3.new(s * 0.41, 0.6, s * 0.57),
+		Vector3.new(0, PLINTH + 3.6, 0),
+		Palette.leafLight:Lerp(Palette.flowerWhite, 0.4)
+	)
+	t.block("CrossV", Vector3.new(0.6, 1.8, 0.2), Vector3.new(0, PLINTH + 3.6, face - 0.1), Palette.leaf)
+	t.block("CrossH", Vector3.new(1.8, 0.6, 0.2), Vector3.new(0, PLINTH + 3.6, face - 0.1), Palette.leaf)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 2.8, Palette.glass, Palette.flowerWhite)
+	Kit.window(t, "Window", CFrame.new(-s * 0.13, PLINTH + 1.8, face), 1.6, 1.4, Palette.flowerWhite, Palette.glass)
+	-- The paw-print sign on the roof
+	t.ball("Paw", 1.4, Vector3.new(0, PLINTH + 6, 0), Palette.wood)
+	for _, x in { -0.8, -0.27, 0.27, 0.8 } do
+		t.ball("Toe", 0.5, Vector3.new(x, PLINTH + 6.9, 0), Palette.wood)
+	end
+	-- The kennel and the bench
+	t.block("Kennel", Vector3.new(2, 1.6, 1.8), Vector3.new(s * 0.32, PLINTH + 0.8, face + 1), Palette.woodLight)
+	t.wedge("KennelRoof", Vector3.new(2.2, 0.9, 2), CFrame.new(s * 0.32, PLINTH + 2.05, face + 1), Palette.roofRed)
+	t.block("Bench", Vector3.new(2.6, 0.4, 0.9), Vector3.new(-s * 0.3, PLINTH + 0.8, face - 1), Palette.wood)
+	Kit.sproutTag(t, Vector3.new(-s * 0.12, PLINTH + 5.6, s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Savings Bank (content bank, level 82): a stately cream bank with four columns across the
 -- front, a triangular pediment, a gold coin emblem, wide steps and a clock above the door.
 TYPES.SavingsBank = function(b, s)

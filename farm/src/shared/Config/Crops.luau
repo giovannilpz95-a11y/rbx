@@ -44,6 +44,8 @@ local Crops: { [string]: CropDef } = {
 	Peanuts = { id = "Peanuts", displayName = "Peanuts", unlockLevel = 75, growSeconds = 7 * HOUR, seedCost = 35, sellPrice = 53, xp = 10, yield = 1, order = 20, color = { 215, 170, 110 } },
 	-- Township's Apple (level 80)
 	Apples = { id = "Apples", displayName = "Apples", unlockLevel = 80, growSeconds = 7 * HOUR + 30 * MIN, seedCost = 36, sellPrice = 55, xp = 18, yield = 1, order = 21, color = { 220, 50, 50 } },
+	-- Township's Tea Plant (level 84)
+	Tea = { id = "Tea", displayName = "Tea Leaves", unlockLevel = 84, growSeconds = 9 * HOUR, seedCost = 37, sellPrice = 60, xp = 21, yield = 1, order = 22, color = { 90, 150, 60 } },
 	Cocoa = { id = "Cocoa", displayName = "Cocoa", unlockLevel = 25, growSeconds = 8 * HOUR, seedCost = 9, sellPrice = 19, xp = 19, yield = 1, order = 10, color = { 120, 70, 40 } },
 }
 

@@ -1278,6 +1278,54 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Foam", 0.15, 0.8, at(0, 1.25, 0), Palette.flowerWhite, QUIET)
 		b.block("Flake", Vector3.new(0.3, 0.05, 0.15), at(0, 1.35, 0), Palette.cocoa, QUIET)
 	end,
+	Tea = function(b)
+		-- A sprig of three fresh tea leaves
+		b.block("Stem", Vector3.new(0.12, 1, 0.12), at(0, 0.5, 0), Palette.leaf, QUIET)
+		b.block("Leaf", Vector3.new(0.5, 0.1, 0.8), tilt(-0.3, 0.8, 0, 0, 0, 25), Palette.leafLight, QUIET)
+		b.block("Leaf", Vector3.new(0.5, 0.1, 0.8), tilt(0.3, 0.9, 0, 0, 0, -25), Palette.leafLight, QUIET)
+		b.block("Bud", Vector3.new(0.3, 0.4, 0.3), at(0, 1.15, 0), Palette.lime, QUIET)
+	end,
+	Saxophone = function(b)
+		-- A brass saxophone
+		b.post("Body", 1.4, 0.4, at(0, 0.8, 0), Palette.coins, QUIET)
+		b.cyl("Bell", 0.5, 0.7, at(0.25, 0.2, 0), Palette.coins, QUIET)
+		b.block("Neck", Vector3.new(0.4, 0.15, 0.15), at(-0.2, 1.55, 0), Palette.coins, QUIET)
+	end,
+	MintIcedTea = function(b)
+		-- A tall green tea with ice and mint
+		b.post("Glass", 1.4, 0.8, at(0, 0.7, 0), Palette.leafLight:Lerp(Palette.wheat, 0.4), QUIET)
+		b.block("Ice", Vector3.new(0.3, 0.3, 0.3), at(0.1, 1.3, 0), Palette.glass, QUIET)
+		b.block("Mint", Vector3.new(0.35, 0.1, 0.25), at(-0.15, 1.45, 0), Palette.leaf, QUIET)
+	end,
+	BlackTea = function(b)
+		-- A cup of dark tea on a saucer
+		b.cyl("Saucer", 0.12, 1.4, at(0, 0.06, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.post("Cup", 0.7, 0.9, at(0, 0.45, 0), Palette.flowerWhite, QUIET)
+		b.post("Tea", 0.05, 0.8, at(0, 0.8, 0), Palette.cocoa:Lerp(Palette.carrot, 0.3), QUIET)
+	end,
+	Teapot = function(b)
+		-- A round clay teapot
+		b.ball("Pot", 1, at(0, 0.5, 0), Palette.brick:Lerp(Palette.cream, 0.3), QUIET)
+		b.block(
+			"Spout",
+			Vector3.new(0.5, 0.15, 0.15),
+			tilt(0.6, 0.6, 0, 0, 0, 30),
+			Palette.brick:Lerp(Palette.cream, 0.3),
+			QUIET
+		)
+		b.post("Lid", 0.15, 0.4, at(0, 1.05, 0), Palette.brick:Lerp(Palette.cream, 0.3), QUIET)
+	end,
+	ChocolateBar = function(b)
+		-- A wrapped chocolate bar, half open
+		b.block("Wrapper", Vector3.new(1.4, 0.2, 0.7), at(-0.15, 0.1, 0), Palette.roofRed, QUIET)
+		b.block("Chocolate", Vector3.new(0.6, 0.22, 0.65), at(0.6, 0.11, 0), Palette.cocoa, QUIET)
+	end,
+	TeaBags = function(b)
+		-- A little box of tea bags with one tagged bag
+		b.block("Box", Vector3.new(1.2, 0.6, 0.6), at(0, 0.3, 0), Palette.leafLight, QUIET)
+		b.block("Bag", Vector3.new(0.4, 0.5, 0.05), at(0.2, 0.9, 0), Palette.flowerWhite, QUIET)
+		b.block("Tag", Vector3.new(0.15, 0.15, 0.05), at(0.45, 1.2, 0), Palette.roofRed, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
