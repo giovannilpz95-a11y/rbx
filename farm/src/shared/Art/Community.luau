@@ -2186,22 +2186,17 @@ end
 -- trotting the bend.
 TYPES.PonyRacecourse = function(b, s)
 	b.block("Plinth", Vector3.new(s * 0.84, PLINTH, s * 0.84), Vector3.new(0, PLINTH / 2, 0), Palette.grass)
-	local body = b.cyl(
+	-- The track and infield are flat blocks, not discs: the Body's Size.Y is its height
+	-- (a sideways cylinder's would be its diameter)
+	local body = b.block(
 		"Body",
-		0.2,
-		s * 0.78,
-		CFrame.new(0, PLINTH + 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Vector3.new(s * 0.78, 0.2, s * 0.7),
+		Vector3.new(0, PLINTH + 0.1, 0),
 		Palette.path,
 		{ collide = true }
 	)
 	local t = b.into(body, true)
-	t.cyl(
-		"Infield",
-		0.25,
-		s * 0.5,
-		CFrame.new(0, PLINTH + 0.15, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Palette.grassLight
-	)
+	t.block("Infield", Vector3.new(s * 0.5, 0.25, s * 0.4), Vector3.new(0, PLINTH + 0.15, 0), Palette.grassLight)
 	for _, x in { -s * 0.4, s * 0.4 } do
 		t.block(
 			"Rail",
