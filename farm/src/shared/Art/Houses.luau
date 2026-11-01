@@ -1031,6 +1031,43 @@ TYPES.WavyHouse = {
 	end,
 }
 
+-- Spiral Tower (level 122): a round white tower with balconies stepping around it in a spiral,
+-- each one planted, and a glass crown.
+TYPES.SpiralTower = {
+	roof = Palette.glass,
+	build = function(b, s, roof)
+		local r, h = s * 0.26, STORY * 3.4
+		local body = b.cyl(
+			"Walls",
+			s * 0.52,
+			h,
+			CFrame.new(0, PLINTH + h / 2, 0.6) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.flowerWhite
+		)
+		local t = b.into(body, true)
+		for i = 0, 4 do
+			local a = math.rad(i * 72)
+			local y = PLINTH + 1.4 + i * (h - 2) / 4
+			t.block(
+				"Balcony",
+				Vector3.new(1.6, 0.25, 1.2),
+				CFrame.new(math.cos(a) * (r + 0.4), y, 0.6 + math.sin(a) * (r + 0.4)) * CFrame.Angles(0, -a, 0),
+				Palette.stoneLight
+			)
+			t.block(
+				"Planter",
+				Vector3.new(1.4, 0.4, 0.4),
+				CFrame.new(math.cos(a) * (r + 0.8), y + 0.3, 0.6 + math.sin(a) * (r + 0.8)) * CFrame.Angles(0, -a, 0),
+				Palette.leaf
+			)
+		end
+		t.cyl("Crown", s * 0.4, 1.2, CFrame.new(0, PLINTH + h + 0.6, 0.6) * CFrame.Angles(0, 0, math.rad(90)), roof)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, 0.6 - r), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 2, 0.6), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)
