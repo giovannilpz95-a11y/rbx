@@ -348,6 +348,9 @@ local function liveSame(probe: () -> any, value: any)
 	end)
 end
 
+Panels.liveText = liveText -- for registered live panels (the Train Station)
+Panels.liveSame = liveSame
+
 local function renderOrders(state: { [string]: any })
 	titleLabel.Text = "Order Board"
 	local now = ClientStore.now()
@@ -2480,14 +2483,19 @@ local extraPanels: { [string]: (state: { [string]: any }, body: ScrollingFrame, 
 -- Panels with nothing counting down skip the once-a-second refresh
 local staticPanels: { [string]: boolean } = { Seeds = true, Debug = true }
 
--- opts.static: the panel has no countdowns, so it only re-renders when something changes
+-- opts.static: the panel has no countdowns, so it only re-renders when something changes.
+-- opts.live: its countdowns update in place (Panels.liveText / Panels.liveSame), so it
+-- re-renders only on a state change or when one of them asks to.
 function Panels.register(
 	name: string,
 	renderer: (state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?) -> (),
-	opts: { static: boolean? }?
+	opts: { static: boolean?, live: boolean? }?
 )
 	extraPanels[name] = renderer
 	staticPanels[name] = opts ~= nil and opts.static == true
+	if opts ~= nil and opts.live == true then
+		tickPanels[name] = true
+	end
 end
 
 -- Keyboard and gamepad UI navigation (\ on a keyboard) selects a button; every render

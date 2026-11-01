@@ -181,6 +181,11 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		local width = 1 / #lines
 		for i, other in lines do
 			local mark = if Train.isBack(other, now) then " ✓" elseif Train.isAway(other, now) then " ⏱" else ""
+			-- A train coming back changes its mark (and maybe what this panel shows)
+			local back = Train.isBack(other, now)
+			Panels.liveSame(function()
+				return Train.isBack(other, ClientStore.now())
+			end, back)
 			local button = Ui.button("Train " .. i .. mark, function()
 				if i ~= index then
 					Panels.open("Train", tostring(i))
@@ -215,20 +220,29 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		end)
 		order += 2
 	elseif Train.isAway(train, now) then
-		local left = (train.returnAt :: number) - now
-		line(
-			string.format(
+		local returnAt = train.returnAt :: number
+		local left = returnAt - now
+		local loaded, cars, brings = Train.loadedCount(train), #train.cars, describe(Train.rewards(train))
+		-- The countdown ticks in place; the panel rebuilds when the train is back or the price moves
+		local function awayText(): string?
+			local t = ClientStore.now()
+			if t >= returnAt then
+				return nil
+			end
+			return string.format(
 				"Train %d is out with %d of %d cars loaded. It's back in %s with %s.",
 				index,
-				Train.loadedCount(train),
-				#train.cars,
-				Timer.format(left),
-				describe(Train.rewards(train))
-			),
-			order,
-			body,
-			38
-		)
+				loaded,
+				cars,
+				Timer.format(returnAt - t),
+				brings
+			)
+		end
+		Panels.liveText(line(awayText() or "", order, body, 38), awayText)
+		local function price(): number
+			return Speedup.train(returnAt - ClientStore.now())
+		end
+		Panels.liveSame(price, price())
 		Panels.gemButton("TrainSpeedUp" .. index, "Bring it back now", Speedup.train(left), function()
 			Remotes.fire("Train_SpeedUp", index)
 		end, { Size = UDim2.new(1, -8, 0, 40), LayoutOrder = order + 1, Parent = body })
@@ -318,7 +332,9 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 end
 
 function TrainUi.init()
-	Panels.register("Train", render)
+	-- Nothing rebuilds while idle: the away countdown updates in place (Studio: idle rebuilds
+	-- swallowed taps)
+	Panels.register("Train", render, { live = true })
 end
 
 return TrainUi
