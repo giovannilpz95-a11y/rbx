@@ -1687,6 +1687,22 @@ end
 -- skipped the build checks (Debug "Build everything"). Move it to the nearest open spot to the
 -- player on the farm's land and remember it there.
 local rehoming: { [Player]: boolean } = {}
+-- Buildings that found no open spot: tried again once more land opens, or after a minute
+-- (something may have been moved out of the way), and warned about once, not on every refresh
+local REHOME_RETRY_SECONDS = 60
+local stuck: {
+	[Player]: { lands: number, at: number, keys: { [string]: boolean }, warned: { [string]: boolean } },
+} =
+	{}
+local function landsDone(data: { [string]: any }, now: number): number
+	local n = 0
+	for stage in data.land do
+		if TownRules.landDone(data, stage, now) then
+			n += 1
+		end
+	end
+	return n
+end
 local function rehome(player: Player, data: { [string]: any }, now: number)
 	if rehoming[player] then
 		return
@@ -1721,17 +1737,42 @@ local function rehome(player: Player, data: { [string]: any }, now: number)
 		end
 	end
 	if #moves == 0 then
+		stuck[player] = nil
 		return
+	end
+	local lands = landsDone(data, now)
+	local s = stuck[player]
+	if s == nil or s.lands ~= lands then
+		s = { lands = lands, at = -math.huge, keys = {}, warned = {} }
+		stuck[player] = s
+	end
+	if now < s.at + REHOME_RETRY_SECONDS then
+		local fresh = {}
+		for _, move in moves do
+			if not s.keys[move.key] then
+				table.insert(fresh, move)
+			end
+		end
+		moves = fresh
+		if #moves == 0 then
+			return
+		end
 	end
 	rehoming[player] = true
 	for _, move in moves do
 		local spot = PlotService.findOpenSpot(player, data, move.kind, PlotService.nearPlayer(player))
 		if spot then
+			s.keys[move.key] = nil
 			data.layout[move.key] = spot
 			DataService.markDirty(player, true)
 			PlotService.relocate(player, move.key)
 		else
-			warn("[PlotService] no open spot for", move.key, "on locked land")
+			s.keys[move.key] = true
+			s.at = now
+			if not s.warned[move.key] then
+				s.warned[move.key] = true
+				warn("[PlotService] no open spot for", move.key, "on locked land; trying again when land opens")
+			end
 		end
 	end
 	rehoming[player] = nil
@@ -1824,6 +1865,7 @@ function PlotService.assign(player: Player, friends: { Player }?): Model?
 end
 
 function PlotService.release(player: Player)
+	stuck[player] = nil
 	local model = plotsByPlayer[player]
 	if model then
 		model:Destroy()
