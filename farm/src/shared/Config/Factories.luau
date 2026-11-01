@@ -68,6 +68,8 @@ local Factories: { [string]: FactoryDef } = {
 	GrillHouse = { id = "GrillHouse", displayName = "Grill House", unlockLevel = 59, population = 8700, buildCost = 115000, buildSeconds = 61 * HOUR, xp = 4748, queueSlots = 2, trayCapacity = 6, order = 29, color = { 90, 70, 60 } },
 	-- Township's Perfume Factory (level 61): placed by the player
 	Perfumery = { id = "Perfumery", displayName = "Perfumery", unlockLevel = 61, population = 9480, buildCost = 130000, buildSeconds = 62 * HOUR, xp = 5367, queueSlots = 2, trayCapacity = 6, order = 30, color = { 200, 150, 210 } },
+	-- Township's Beverage Factory (level 65): placed by the player
+	JuiceBar = { id = "JuiceBar", displayName = "Juice Bar", unlockLevel = 65, population = 10900, buildCost = 190000, buildSeconds = 63 * HOUR, xp = 7842, queueSlots = 2, trayCapacity = 6, order = 31, color = { 120, 200, 90 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

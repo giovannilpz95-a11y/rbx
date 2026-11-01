@@ -2181,6 +2181,68 @@ TYPES.BlossomBoutique = function(b, s)
 	return body
 end
 
+-- Pony Racecourse (content bank, level 64): an oval of sandy track around a green infield
+-- inside a white rail, a little grandstand with a striped roof, a finish post and a pony
+-- trotting the bend.
+TYPES.PonyRacecourse = function(b, s)
+	b.block("Plinth", Vector3.new(s * 0.84, PLINTH, s * 0.84), Vector3.new(0, PLINTH / 2, 0), Palette.grass)
+	local body = b.cyl(
+		"Body",
+		0.2,
+		s * 0.78,
+		CFrame.new(0, PLINTH + 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.path,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.cyl(
+		"Infield",
+		0.25,
+		s * 0.5,
+		CFrame.new(0, PLINTH + 0.15, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.grassLight
+	)
+	for _, x in { -s * 0.4, s * 0.4 } do
+		t.block(
+			"Rail",
+			Vector3.new(0.2, 0.2, s * 0.6),
+			Vector3.new(x, PLINTH + 0.9, 0),
+			Palette.flowerWhite:Lerp(Palette.cream, 0.4)
+		)
+	end
+	-- The grandstand at the back
+	t.block("Stand", Vector3.new(s * 0.4, 1.8, 2.4), Vector3.new(0, PLINTH + 0.9, s * 0.36), Palette.woodLight)
+	t.block("Steps", Vector3.new(s * 0.4, 0.9, 1.2), Vector3.new(0, PLINTH + 2.2, s * 0.4), Palette.wood)
+	for i = 0, 3 do
+		t.wedge(
+			"StandRoof",
+			Vector3.new(s * 0.1, 0.8, 2.6),
+			CFrame.new(-s * 0.15 + i * s * 0.1, PLINTH + 4.2, s * 0.36),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream
+		)
+	end
+	t.post(
+		"FinishPost",
+		3,
+		0.3,
+		Vector3.new(s * 0.2, PLINTH + 1.5, -s * 0.3),
+		Palette.flowerWhite:Lerp(Palette.cream, 0.4)
+	)
+	t.block("FinishFlag", Vector3.new(1, 0.7, 0.1), Vector3.new(s * 0.2 + 0.5, PLINTH + 2.8, -s * 0.3), Palette.roofRed)
+	-- The pony on the bend
+	local pony = Palette.trunk:Lerp(Palette.wood, 0.5)
+	t.block("Pony", Vector3.new(0.9, 1, 2), Vector3.new(-s * 0.3, PLINTH + 1.2, -s * 0.12), pony)
+	t.block(
+		"PonyHead",
+		Vector3.new(0.7, 1, 0.8),
+		CFrame.new(-s * 0.3, PLINTH + 2, -s * 0.12 - 1.1) * CFrame.Angles(math.rad(-25), 0, 0),
+		pony
+	)
+	t.block("PonyLegs", Vector3.new(0.8, 0.7, 1.6), Vector3.new(-s * 0.3, PLINTH + 0.35, -s * 0.12), Palette.trunk)
+	Kit.sproutTag(t, Vector3.new(s * 0.3, PLINTH + 4.8, s * 0.36), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Planetarium (content bank, level 60): a round navy hall under a big silver dome with its
 -- observing slit open, a brass telescope poking out, gold stars on the drum and a ringed
 -- planet on a post by the door.
