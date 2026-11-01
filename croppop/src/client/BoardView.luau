@@ -259,6 +259,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.bucket then
 		label.BackgroundColor3 = TileStyle.Board.bucket
 		label.Text = TileStyle.BucketGlyph
+	elseif kind.stack then
+		label.BackgroundColor3 = TileStyle.Board.box
+		label.Text = TileStyle.GoalGlyphs.Boxes .. hp -- boxes left on the stack
 	elseif kind.scarecrow then
 		label.BackgroundColor3 = TileStyle.Board.scarecrow
 		label.Text = TileStyle.ScarecrowGlyph .. string.rep("•", kind.scarecrow)
@@ -771,6 +774,25 @@ function BoardView._effect(self, effect): number
 			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
+	elseif effect.type == "Box" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.box, true)
+		return FX_TIME
+	elseif effect.type == "Hop" then
+		-- The rest of the stack jumps across to its new cell.
+		local stack = Instance.new("TextLabel")
+		stack.Name = "Hop"
+		stack.AnchorPoint = Vector2.new(0.5, 0.5)
+		stack.BackgroundTransparency = 1
+		stack.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		stack.Position = self:_centerOf(effect.fromX, effect.fromY)
+		stack.Text = TileStyle.GoalGlyphs.Boxes
+		stack.TextScaled = true
+		stack.Parent = self.fxLayer
+		tween(stack, FX_TIME, { Position = self:_centerOf(effect.x, effect.y) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		task.delay(FX_TIME, function()
+			stack:Destroy()
+		end)
 		return FX_TIME
 	elseif effect.type == "Spill" then
 		-- The bucket tips over and mud splashes onto the cells around it.

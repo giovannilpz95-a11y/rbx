@@ -81,6 +81,14 @@
 	Each standing bucket counts one towards the Mud goal, and each spilt
 	layer adds one more to clear.
 
+	Produce boxes: a stack of 3 ("v") or 2 ("V") blocks a cell like a bale
+	with that many layers. Each hit (a match next to it, or a blast) takes
+	the top box for the Boxes goal (a "Box" effect); if any are left, the
+	stack hops into the nearest cell the wave just emptied (within 2 steps,
+	not one where a power-up is about to appear), with a "Hop" effect from
+	its old cell. Pop phases list the old cell with hp 0 and the new one
+	with { hp, stack = true } in bales.
+
 	Mailboxes: block a cell like a 2-layer bale. The first hit (a match next
 	to it, or a blast) opens it (a "Mailbox" effect saying whether it holds a
 	letter); the next takes it away, and a letter inside counts for the
@@ -343,6 +351,41 @@ function Engine._sow(self, wave, sack)
 	table.insert(wave.effects, { type = "Sow", fromX = sack.x, fromY = sack.y, cells = sown })
 end
 
+-- What's left of a produce box stack hops into the nearest cell the wave
+-- emptied (a random one of the nearest), or stays put if there's none.
+function Engine._hopStack(self, wave, from)
+	local reserved = {}
+	for _, create in wave.pendingCreates do
+		reserved[create.cell] = true
+	end
+	local best, bestDist = {}, 3
+	for dy = -2, 2 do
+		for dx = -2, 2 do
+			local cell = self.board:get(from.x + dx, from.y + dy)
+			local dist = math.abs(dx) + math.abs(dy)
+			if cell and dist > 0 and dist <= bestDist and Board.isEmptySlot(cell) and not reserved[cell] and not (wave.reserved and wave.reserved[cell]) then
+				if dist < bestDist then
+					best, bestDist = {}, dist
+				end
+				table.insert(best, cell)
+			end
+		end
+	end
+	if #best == 0 then
+		table.insert(wave.bales, { x = from.x, y = from.y, hp = from.bale, stack = true })
+		return
+	end
+	local to = self.rng:pick(best)
+	to.bale, to.stack = from.bale, true
+	from.bale, from.stack = 0, nil
+	if wave.balesTouched then
+		wave.balesTouched[to] = true -- the same wave's matches don't hit it again where it lands
+	end
+	table.insert(wave.bales, { x = from.x, y = from.y, hp = 0 })
+	table.insert(wave.bales, { x = to.x, y = to.y, hp = to.bale, stack = true })
+	table.insert(wave.effects, { type = "Hop", fromX = from.x, fromY = from.y, x = to.x, y = to.y, hp = to.bale })
+end
+
 -- A tipped mud bucket spills a layer of mud onto the cells around it.
 function Engine._spill(self, wave, bucket)
 	local spilt = {}
@@ -449,6 +492,18 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, bucket = true })
 		self:_spill(wave, cell)
 		self.goals:onMud() -- a tipped bucket is one off the Mud goal
+		return
+	end
+	if cell.stack then
+		cell.bale -= 1
+		table.insert(wave.effects, { type = "Box", x = cell.x, y = cell.y })
+		self.goals:onBox()
+		if cell.bale == 0 then
+			cell.stack = nil
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+		else
+			self:_hopStack(wave, cell)
+		end
 		return
 	end
 	cell.bale -= 1
@@ -628,6 +683,11 @@ function Engine._popGroups(self, wave, groups)
 			end
 			self:_removePiece(wave, cell, "match")
 		end
+		if group.power then
+			-- A hopping box stack mustn't land where this power-up appears.
+			wave.reserved = wave.reserved or {}
+			wave.reserved[group.at] = true
+		end
 		-- Matches next to a hay bale knock off one layer (once per bale per wave).
 		-- Stone walls shrug them off: only blasts break stone.
 		for _, cell in group.cells do
@@ -689,6 +749,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
 		elseif cell.bucket then
 			table.insert(if goals:wants("Mud") then tiers[1] else tiers[4], cell)
+		elseif cell.stack then
+			table.insert(if goals:wants("Boxes") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
 			local worth = not cell.mailbox.open or cell.mailbox.mail
 			table.insert(if worth and goals:wants("Letters") then tiers[1] else tiers[4], cell)

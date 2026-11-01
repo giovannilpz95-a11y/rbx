@@ -60,6 +60,7 @@ export type Cell = {
 	scarecrow: number?, -- the "bale" is a scarecrow: charges so far (it never breaks)
 	sack: boolean?, -- the "bale" is a seed sack: it never breaks, and hits sow clover near it
 	bucket: boolean?, -- the "bale" is a mud bucket: one hit tips it, spilling mud around it
+	stack: boolean?, -- the "bale" is a stack of produce boxes: each hit takes one, and the rest hop
 	mud: number, -- mud layers under the tile (0 = none)
 	clay: number?, -- clay under the tile: 2 = glazed (only a blast cracks it), 1 = cracked (any clear)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
@@ -228,6 +229,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "u" then
 					cell.bale = 1
 					cell.bucket = true
+				elseif ch == "v" or ch == "V" then
+					cell.bale = if ch == "v" then 3 else 2
+					cell.stack = true
 				elseif ch == "z" then
 					cell.bale = 1
 					cell.sack = true
@@ -751,6 +755,8 @@ function Board.hash(self): string
 				table.insert(row, "Y" .. cell.scarecrow .. clover)
 			elseif cell.bucket then
 				table.insert(row, "U" .. clover)
+			elseif cell.stack then
+				table.insert(row, "V" .. cell.bale .. clover)
 			elseif cell.mailbox then
 				table.insert(row, "L" .. (if cell.mailbox.mail then "1" else "0") .. (if cell.mailbox.open then "o" else "") .. clover)
 			elseif cell.quilt then
@@ -814,6 +820,7 @@ function Board.snapshot(self)
 			sack = cell.sack,
 			scarecrow = cell.scarecrow,
 			bucket = cell.bucket,
+			stack = cell.stack,
 			-- What's inside shows only once it's open.
 			mailbox = cell.mailbox and { open = cell.mailbox.open, mail = cell.mailbox.open and cell.mailbox.mail },
 			quilt = cell.quilt ~= nil,
