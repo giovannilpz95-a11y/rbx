@@ -259,6 +259,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.bucket then
 		label.BackgroundColor3 = TileStyle.Board.bucket
 		label.Text = TileStyle.BucketGlyph
+	elseif kind.hive then
+		label.BackgroundColor3 = TileStyle.Board.hive
+		label.Text = TileStyle.GoalGlyphs.Honey
 	elseif kind.stack then
 		label.BackgroundColor3 = TileStyle.Board.box
 		label.Text = TileStyle.GoalGlyphs.Boxes .. hp -- boxes left on the stack
@@ -776,6 +779,27 @@ function BoardView._effect(self, effect): number
 			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
+	elseif effect.type == "Honey" then
+		-- The hive wobbles and a jar of honey floats up off it.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = 10
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		local jar = Instance.new("TextLabel")
+		jar.Name = "HoneyJar"
+		jar.AnchorPoint = Vector2.new(0.5, 0.5)
+		jar.BackgroundTransparency = 1
+		jar.Size = UDim2.fromScale(0.7 / w, 0.7 / h)
+		jar.Position = self:_centerOf(effect.x, effect.y)
+		jar.Text = TileStyle.GoalGlyphs.Honey
+		jar.TextScaled = true
+		jar.Parent = self.fxLayer
+		tween(jar, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			jar:Destroy()
+		end)
 		return FX_TIME
 	elseif effect.type == "Box" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.box, true)

@@ -72,6 +72,7 @@ local BRUSH_ROWS = {
 		{ char = "u", label = TileStyle.BucketGlyph },
 		{ char = "v", label = TileStyle.GoalGlyphs.Boxes .. "3" },
 		{ char = "V", label = TileStyle.GoalGlyphs.Boxes .. "2" },
+		{ char = "j", label = TileStyle.GoalGlyphs.Honey },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -85,7 +86,7 @@ local FENCE = "|" -- the fence brush
 local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -105,6 +106,7 @@ local GOAL_BUTTONS = {
 	Clay = "+ 🏺",
 	Letters = "+ ✉",
 	Boxes = "+ 📦",
+	Honey = "+ 🍯",
 }
 
 local ui = nil
@@ -370,6 +372,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.frost, TileStyle.GoalGlyphs.Snowballs
 	elseif char == "y" then
 		return TileStyle.Board.scarecrow, TileStyle.ScarecrowGlyph
+	elseif char == "j" then
+		return TileStyle.Board.hive, TileStyle.GoalGlyphs.Honey
 	elseif char == "v" or char == "V" then
 		return TileStyle.Board.box, TileStyle.GoalGlyphs.Boxes .. (if char == "v" then "3" else "2")
 	elseif char == "u" then
@@ -546,6 +550,8 @@ local function goalLabel(goal): string
 		return "✉ all letters"
 	elseif goal.kind == "Boxes" then
 		return "📦 all boxes"
+	elseif goal.kind == "Honey" then
+		return "🍯 honey"
 	end
 	return "🌾 all bales"
 end
@@ -658,9 +664,9 @@ local function renderPanel()
 				goal.count = math.clamp(goal.count + d * 5, 5, 200)
 				render()
 			end)
-		elseif goal.kind == "Pumpkins" then
+		elseif goal.kind == "Pumpkins" or goal.kind == "Honey" then
 			stepper(goalRow, "Count", tostring(goal.count), function(d)
-				goal.count = math.clamp(goal.count + d, 1, 20)
+				goal.count = math.clamp(goal.count + d, 1, if goal.kind == "Honey" then 40 else 20)
 				render()
 			end)
 		end
@@ -680,6 +686,8 @@ local function renderPanel()
 				table.insert(state.goals, { kind = "Collect", tile = state.colors[1] or "Tomato", count = 15 })
 			elseif kind == "Pumpkins" then
 				table.insert(state.goals, { kind = "Pumpkins", count = 3 })
+			elseif kind == "Honey" then
+				table.insert(state.goals, { kind = "Honey", count = 10 })
 			else
 				table.insert(state.goals, { kind = kind })
 			end
