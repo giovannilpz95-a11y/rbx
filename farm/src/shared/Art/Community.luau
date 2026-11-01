@@ -2238,6 +2238,51 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Dog Park (content bank, level 80): a fenced green run with a striped agility hurdle, a
+-- tunnel, a dog house with a bone sign and a water bowl, and a little bench.
+TYPES.DogPark = function(b, s)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.72, 0.6, s * 0.5),
+		Vector3.new(0, PLINTH / 2, 0),
+		Palette.grassLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local top = PLINTH
+	Kit.fence(
+		t,
+		"Fence",
+		Vector3.new(-s * 0.34, top, -s * 0.23),
+		Vector3.new(s * 0.34, top, -s * 0.23),
+		1.2,
+		4,
+		Palette.woodLight
+	)
+	-- The hurdle: two posts and a striped bar
+	for _, x in { -s * 0.22, -s * 0.06 } do
+		t.post("HurdlePost", 1.6, 0.3, Vector3.new(x, top + 0.8, -s * 0.08), Palette.flowerWhite)
+	end
+	t.block(
+		"HurdleBar",
+		Vector3.new(s * 0.16, 0.25, 0.25),
+		Vector3.new(-s * 0.14, top + 1.1, -s * 0.08),
+		Palette.roofRed
+	)
+	-- The tunnel
+	t.cyl("Tunnel", 3, 1.6, CFrame.new(s * 0.18, top + 0.8, -s * 0.08), Palette.sky)
+	-- The dog house, its bone sign and the bowl
+	t.block("DogHouse", Vector3.new(2.6, 2, 2.4), Vector3.new(-s * 0.22, top + 1, s * 0.13), Palette.wood)
+	t.wedge("HouseRoof", Vector3.new(3, 1.2, 2.8), CFrame.new(-s * 0.22, top + 2.6, s * 0.13), Palette.roofRed)
+	t.block("Doorway", Vector3.new(1, 1.2, 0.1), Vector3.new(-s * 0.22, top + 0.6, s * 0.13 - 1.21), Palette.stoneDark)
+	t.block("Bone", Vector3.new(1.4, 0.35, 0.2), Vector3.new(0, top + 3.4, s * 0.1), Palette.cream)
+	t.post("BonePost", 3, 0.25, Vector3.new(0, top + 1.6, s * 0.12), Palette.woodDark)
+	t.cyl("Bowl", 0.35, 1, CFrame.new(-s * 0.12, top + 0.18, s * 0.06) * CFrame.Angles(0, 0, math.rad(90)), Palette.sky)
+	t.block("Bench", Vector3.new(3, 0.4, 1), Vector3.new(s * 0.2, top + 0.8, s * 0.16), Palette.woodLight)
+	Kit.sproutTag(t, Vector3.new(s * 0.3, top + 1.6, s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Kindergarten (content bank, level 78): a sunny yellow schoolhouse with a red roof, coloured
 -- building blocks on the corner, a little slide and a sandpit in the yard.
 TYPES.Kindergarten = function(b, s)

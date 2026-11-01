@@ -1171,6 +1171,64 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Spread", Vector3.new(0.8, 0.1, 0.3), at(0, 0.5, -0.2), Palette.cocoa:Lerp(Palette.wheat, 0.4), QUIET)
 		b.cyl("Banana", 0.12, 0.4, at(0.3, 0.55, -0.2) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerYellow, QUIET)
 	end,
+	Apples = function(b)
+		-- Two red apples with a leaf
+		b.ball("Apple", 0.9, at(-0.3, 0.45, 0), Palette.roofRed, QUIET)
+		b.ball("Apple", 0.9, at(0.4, 0.45, 0.1), Palette.roofRed, QUIET)
+		b.block("Leaf", Vector3.new(0.4, 0.1, 0.2), at(-0.2, 0.95, 0), Palette.leaf, QUIET)
+	end,
+	DownQuilt = function(b)
+		-- A folded puffy quilt
+		b.block("Quilt", Vector3.new(1.6, 0.7, 1.2), at(0, 0.35, 0), Palette.flowerWhite:Lerp(Palette.sky, 0.25), QUIET)
+		b.block("Stitch", Vector3.new(1.62, 0.08, 0.1), at(0, 0.5, 0), Palette.sky, QUIET)
+		b.block("Fold", Vector3.new(1.6, 0.3, 0.4), at(0, 0.85, 0.3), Palette.flowerWhite, QUIET)
+	end,
+	HotChocolate = function(b)
+		-- A mug of cocoa with a marshmallow
+		b.post("Mug", 1, 0.9, at(0, 0.5, 0), Palette.roofRed, QUIET)
+		b.post("Cocoa", 0.05, 0.8, at(0, 1, 0), Palette.cocoa, QUIET)
+		b.block("Marshmallow", Vector3.new(0.3, 0.25, 0.3), at(0.1, 1.1, 0), Palette.flowerWhite, QUIET)
+		b.cyl("Handle", 0.15, 0.45, at(0.6, 0.5, 0) * Kit.yaw(90), Palette.roofRed, QUIET)
+	end,
+	MushroomSoup = function(b)
+		-- A bowl of creamy soup with mushroom slices
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.cyl("Soup", 0.1, 1.4, at(0, 0.62, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.ball("Mushroom", 0.35, at(-0.3, 0.7, 0), Palette.wood, QUIET)
+		b.ball("Lime", 0.3, at(0.35, 0.7, 0.1), Palette.lime, QUIET)
+	end,
+	AppleSpritzer = function(b)
+		-- A fizzy apple drink with an apple slice
+		b.post("Glass", 1.3, 0.8, at(0, 0.65, 0), Palette.flowerYellow:Lerp(Palette.lime, 0.4), QUIET)
+		b.wedge("Slice", Vector3.new(0.15, 0.4, 0.5), at(0.35, 1.4, 0), Palette.roofRed, QUIET)
+		b.ball("Bubble", 0.2, at(-0.15, 1.35, 0), Palette.flowerWhite, QUIET)
+	end,
+	RagDoll = function(b)
+		-- A soft rag doll with yarn hair
+		b.block("Body", Vector3.new(0.7, 0.8, 0.35), at(0, 0.5, 0), Palette.leafLight, QUIET)
+		b.ball("Head", 0.55, at(0, 1.15, 0), Palette.cream, QUIET)
+		b.ball("Hair", 0.6, at(0, 1.3, 0.08), Palette.hairGinger, QUIET)
+		b.block("Arms", Vector3.new(1.2, 0.2, 0.2), at(0, 0.75, 0), Palette.cream, QUIET)
+	end,
+	WeddingCake = function(b)
+		-- Three white tiers with a pink flower
+		b.post("Tier1", 0.6, 1.5, at(0, 0.3, 0), Palette.flowerWhite, QUIET)
+		b.post("Tier2", 0.5, 1.1, at(0, 0.85, 0), Palette.flowerWhite, QUIET)
+		b.post("Tier3", 0.4, 0.7, at(0, 1.3, 0), Palette.flowerWhite, QUIET)
+		b.ball("Flower", 0.35, at(0, 1.6, 0), Palette.flowerPink, QUIET)
+	end,
+	FryingPan = function(b)
+		-- A copper pan with a wooden handle
+		b.cyl(
+			"Pan",
+			0.3,
+			1.4,
+			at(0, 0.15, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.carrot:Lerp(Palette.stoneDark, 0.35),
+			QUIET
+		)
+		b.block("Handle", Vector3.new(1, 0.15, 0.25), at(1.1, 0.2, 0), Palette.woodDark, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
