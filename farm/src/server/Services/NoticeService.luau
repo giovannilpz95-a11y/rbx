@@ -34,7 +34,9 @@ local function render()
 		for _, line in shown do
 			table.insert(lines, line.text)
 		end
-		text.Text = if #lines == 0 then "Prize Crop finds show up here." else table.concat(lines, "\n")
+		text.Text = if #lines == 0
+			then "Prize Crop finds and sky forecasts show up here."
+			else table.concat(lines, "\n")
 	end
 	-- The client's Neighbors panel lists the same lines, with Visit buttons
 	if board then

@@ -23,6 +23,7 @@ local NetService = require(script.Parent.NetService)
 local NoticeService = require(script.Parent.NoticeService)
 local PlotService = require(script.Parent.PlotService)
 local QuestService = require(script.Parent.QuestService)
+local SkyService = require(script.Parent.SkyService)
 local TownService = require(script.Parent.TownService)
 local Clock = require(script.Parent.Parent.Util.Clock)
 
@@ -76,6 +77,9 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	local boost = SeedCartRules.useHeirloomSeed(data)
 	field.prize = PrizeRules.roll(data, rng:NextNumber(), if boost > 1 then { Heirloom = boost } else nil)
 	field.watered = nil -- a helper may water each crop once (Helping Hands)
+	field.sky = nil
+	-- Planted during a Rain Shower or Starfall: it's growing during it too
+	SkyService.onPlant(player, field)
 	data.settings.lastSeed = cropId
 	PlotService.refresh(player)
 	return true
@@ -144,6 +148,7 @@ function FarmService.reap(owner: Player, fieldId: string, by: Player): (boolean,
 	field.readyAt = nil
 	field.prize = nil
 	field.watered = nil
+	field.sky = nil
 	EconomyService.add(player, "XP", crop.xp, "harvest_" .. crop.id)
 	QuestService.progress(player, "harvest", yield)
 	TownService.onHarvest(player, crop.growSeconds)

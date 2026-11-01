@@ -639,6 +639,8 @@ end
 ArtCrops.PRIZE_COLORS = {
 	Sunkissed = Palette.coins,
 	Heirloom = Palette.gems,
+	Dewkissed = Color3.fromRGB(120, 196, 255), -- rain blue
+	Starlit = Color3.fromRGB(196, 170, 255), -- starlight violet
 }
 
 function ArtCrops.prizeShimmer(crop: Model, tier: string, top: CFrame, size: number): BasePart?

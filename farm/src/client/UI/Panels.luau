@@ -800,13 +800,17 @@ local function renderBarn(state: { [string]: any })
 		)
 		order += 1
 		if #prizes == 0 then
-			Ui.label("Now and then a harvest turns up a Sunkissed or Heirloom crop. They land here.", {
-				TextColor3 = Ui.colors.muted,
-				TextSize = 13,
-				TextWrapped = true,
-				LayoutOrder = order,
-				Parent = body,
-			})
+			Ui.label(
+				"Now and then a harvest turns up a Prize Crop: Sunkissed or Heirloom, or Dewkissed and Starlit from fields growing during a Rain Shower or Starfall. They land here.",
+				{
+					TextColor3 = Ui.colors.muted,
+					TextSize = 13,
+					TextWrapped = true,
+					Size = UDim2.new(1, -8, 0, 36),
+					LayoutOrder = order,
+					Parent = body,
+				}
+			)
 			order += 1
 		end
 		for i, entry in prizes do
@@ -2434,14 +2438,14 @@ local function renderDebug(state: { [string]: any })
 	-- One tap, acting on press: the panel re-renders on every state push, which can swap a
 	-- button out between press and release and lose a plain click. Press and Activated can
 	-- both arrive for one tap, so the first one wins.
-	local function devButton(text: string, remote: string, width: number, order: number)
+	local function devButton(text: string, remote: string, width: number, order: number, arg: string?)
 		local function fire()
 			if time() - lastDevTap < 0.35 then
 				return
 			end
 			lastDevTap = time()
-			print("[Dev] " .. remote)
-			Remotes.fire(remote)
+			print("[Dev] " .. remote .. (if arg then " " .. arg else ""))
+			Remotes.fire(remote, arg)
 		end
 		local button = Ui.button(text, fire, { Size = UDim2.fromOffset(width, 34), LayoutOrder = order, Parent = body })
 		button.InputBegan:Connect(function(input)
@@ -2473,6 +2477,8 @@ local function renderDebug(state: { [string]: any })
 	devButton("Tool Trader: built, three slots, materials for its offers", "Debug_Trader", 380, 22)
 	devButton("Tonic Shed: built, one of every tonic to switch on", "Debug_Tonics", 340, 23)
 	devButton("Trains: all back now, goods for the first train's cars", "Debug_Train", 380, 24)
+	devButton("Sky: a Rain Shower now (3 minutes)", "Debug_Sky", 300, 25, "Rain")
+	devButton("Sky: a Starfall now (2 minutes)", "Debug_Sky", 300, 26, "Starfall")
 end
 
 ---------------------------------------------------------------------------------------------
