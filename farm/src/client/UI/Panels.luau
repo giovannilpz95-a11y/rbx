@@ -166,6 +166,9 @@ local function gemButton(
 end
 
 Panels.gemButton = gemButton -- for registered panels' Gem actions (the Quarry's speed-up)
+-- A button that acts on a second tap (or at once with `once`), kept steady while armed: for
+-- registered panels (the Train Station's "send it empty")
+Panels.confirmButton = confirmButton
 
 -- "Buy what's missing" (G3, shared/Missing): when `needs` is short only of items, a Gem button
 -- pays for just those and does the action in one step. Returns the button and a line naming
