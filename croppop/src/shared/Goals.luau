@@ -10,7 +10,7 @@
 	  { kind = "Clover" }                                -- grow clover on every cell (but seed sacks)
 	  { kind = "Stones" }                                -- break every stone wall (blasts only)
 	  { kind = "Fences" }                                -- break every fence (blasts only)
-	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread
+	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread (and snail trails)
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 	  { kind = "Tarps" }                                 -- roll up every tarp cell
 	  { kind = "Webs" }                                  -- clear every web (blasts only)
@@ -70,9 +70,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks, beehives and hay trucks aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives, hay trucks and snails aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then

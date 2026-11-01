@@ -74,6 +74,7 @@ local BRUSH_ROWS = {
 		{ char = "V", label = TileStyle.GoalGlyphs.Boxes .. "2" },
 		{ char = "j", label = TileStyle.GoalGlyphs.Honey },
 		{ char = "C", label = TileStyle.TruckGlyph },
+		{ char = "O", label = TileStyle.SnailGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -377,6 +378,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.hive, TileStyle.GoalGlyphs.Honey
 	elseif char == "C" then
 		return TileStyle.Board.truck, TileStyle.TruckGlyph .. "3"
+	elseif char == "O" then
+		return TileStyle.Board.snail, TileStyle.SnailGlyph
 	elseif char == "v" or char == "V" then
 		return TileStyle.Board.box, TileStyle.GoalGlyphs.Boxes .. (if char == "v" then "3" else "2")
 	elseif char == "u" then
