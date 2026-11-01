@@ -380,14 +380,24 @@ local function renderOrders(state: { [string]: any })
 				itemIcon(id, chip.iconSlot, 34)
 				complete = complete and chip.met
 			end
-			local reward = Ui.label(string.format("+%d Coins   +%d XP", order.rewardCoins, order.rewardXP), {
-				Position = UDim2.fromOffset(72, 40),
-				Size = UDim2.new(1, -72, 0, 20),
-				Font = Enum.Font.GothamBold,
-				TextColor3 = Ui.colors.muted,
-				TextSize = 15,
-				Parent = card,
-			})
+			-- Good Customer (a tonic) doubles the Coins: the card shows what delivering pays
+			local tonicCoins = Tonics.orderBonus(state, order.rewardCoins, ClientStore.now())
+			local reward = Ui.label(
+				string.format(
+					"+%d Coins%s   +%d XP",
+					order.rewardCoins + tonicCoins,
+					if tonicCoins > 0 then " (Good Customer)" else "",
+					order.rewardXP
+				),
+				{
+					Position = UDim2.fromOffset(72, 40),
+					Size = UDim2.new(1, -72, 0, 20),
+					Font = Enum.Font.GothamBold,
+					TextColor3 = if tonicCoins > 0 then Ui.colors.ready else Ui.colors.muted,
+					TextSize = 15,
+					Parent = card,
+				}
+			)
 			Ui.button("X", function()
 				Remotes.fire("Order_Discard", i)
 			end, {
