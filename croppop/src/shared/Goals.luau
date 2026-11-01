@@ -7,7 +7,7 @@
 	  { kind = "Frost" }                                 -- break every frost layer on the board
 	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
 	  { kind = "Pumpkins", count = 3 }                   -- bring N pumpkins down to the bottom row
-	  { kind = "Clover" }                                -- grow clover on every cell
+	  { kind = "Clover" }                                -- grow clover on every cell (but seed sacks)
 	  { kind = "Stones" }                                -- break every stone wall (blasts only)
 	  { kind = "Fences" }                                -- break every fence (blasts only)
 	  { kind = "Goo" }                                   -- clear every goo cell, including ones that spread
@@ -41,15 +41,15 @@ function Goals.new(defs: { any }, board)
 		if cell.goo then
 			goo += if cell.thickGoo then 2 else 1
 		end
-		if not cell.clover then
-			bare += 1
+		if not cell.clover and not cell.sack then
+			bare += 1 -- a seed sack's own cell needs no clover
 		end
 		mudLayers += cell.mud
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt then
-			-- Surprise crates, sewing tins and quilts aren't bales for the HayBale goal.
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack then
+			-- Surprise crates, sewing tins, quilts and seed sacks aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then

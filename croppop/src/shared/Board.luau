@@ -55,6 +55,7 @@ export type Cell = {
 	tin: boolean?, -- the "bale" is a sewing tin (opens like a 1-layer bale and sends a patch to a quilt)
 	quilt: any?, -- the "bale" is part of a quilt ({ cells, left }); nothing breaks it, patches finish it
 	patched: boolean?, -- this quilt cell has its patch
+	sack: boolean?, -- the "bale" is a seed sack: it never breaks, and hits sow clover near it
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
@@ -206,6 +207,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "x" then
 					cell.bale = 1
 					cell.crate = true
+				elseif ch == "z" then
+					cell.bale = 1
+					cell.sack = true
 				elseif ch == "k" then
 					cell.bale = 1
 					cell.tin = true
@@ -720,6 +724,8 @@ function Board.hash(self): string
 				table.insert(row, "X" .. clover)
 			elseif cell.tin then
 				table.insert(row, "K" .. clover)
+			elseif cell.sack then
+				table.insert(row, "Z" .. clover)
 			elseif cell.quilt then
 				table.insert(row, (if cell.patched then "Qp" else "Q") .. clover)
 			elseif cell.tarp then
@@ -772,6 +778,7 @@ function Board.snapshot(self)
 			stone = cell.stone,
 			crate = cell.crate,
 			tin = cell.tin,
+			sack = cell.sack,
 			quilt = cell.quilt ~= nil,
 			patched = cell.patched,
 			tarp = cell.tarp ~= nil,

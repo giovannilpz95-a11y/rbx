@@ -25,6 +25,10 @@
 
 	Clover: a match with a tile on clover plants clover on every cell of the
 	match, and a power-up going off on clover plants it on every cell it hits.
+	Seed sacks block a cell and never break: a match next to one (once per
+	sack per wave) or a blast on it sows clover on the nearest cells without
+	any (up to SACK_SEEDS, nearest first; a "Sow" effect with those cells).
+	The sack's own cell needs no clover.
 
 	Pumpkins: a pumpkin that reaches the bottom cell of its column is collected
 	(a Pop phase with a "Pumpkin" effect, removed with cause "pumpkin"). Refills
@@ -95,6 +99,7 @@ local BOMB_RADIUS = 2 -- Hay Bomb clears every cell within this many steps (diam
 local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
+local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
 
 local NEIGHBORS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
@@ -261,6 +266,31 @@ function Engine._rollTarp(self, wave, tarp)
 	end
 end
 
+-- A seed sack sows clover on the nearest cells without it (breadth first,
+-- in NEIGHBORS order, so it's the same every time).
+function Engine._sow(self, wave, sack)
+	local board = self.board
+	local seen = { [sack] = true }
+	local queue, head = { sack }, 1
+	local sown = {}
+	while head <= #queue and #sown < SACK_SEEDS do
+		local cell = queue[head]
+		head += 1
+		for _, d in NEIGHBORS do
+			local n = board:get(cell.x + d[1], cell.y + d[2])
+			if n and not seen[n] then
+				seen[n] = true
+				table.insert(queue, n)
+				if not n.clover and not n.sack and #sown < SACK_SEEDS then
+					self:_plantClover(wave, n)
+					table.insert(sown, { x = n.x, y = n.y })
+				end
+			end
+		end
+	end
+	table.insert(wave.effects, { type = "Sow", fromX = sack.x, fromY = sack.y, cells = sown })
+end
+
 -- An opened sewing tin sends a patch to the unfinished quilt with the fewest
 -- missing (the first one on a tie); the last patch finishes the quilt.
 function Engine._sendPatch(self, wave, from)
@@ -312,6 +342,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	if cell.quilt then
 		return -- nothing breaks a quilt; patches finish it
 	end
+	if cell.sack then
+		self:_sow(wave, cell)
+		return -- nothing breaks a seed sack
+	end
 	cell.bale -= 1
 	if cell.tin then
 		cell.tin = false
@@ -358,7 +392,7 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 end
 
 function Engine._plantClover(self, wave, cell)
-	if not cell.clover then
+	if not cell.clover and not cell.sack then
 		cell.clover = true
 		table.insert(wave.clover, { x = cell.x, y = cell.y })
 		self.goals:onClover()
@@ -546,6 +580,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(tiers[1], cell)
 		elseif cell.quilt then
 			-- Bees leave quilts alone: nothing breaks them.
+		elseif cell.sack then
+			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
 		elseif cell.bale > 0 then
 			local wanted = if cell.weed
 				then goals:wants("Weeds")
