@@ -146,6 +146,10 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		eq(Config.tonics.BumperCrop.value, 2, "double crops")
 		eq(Config.tonics.HappyHerd.value, 2, "double animal goods")
 		eq(Config.tonics.GoodCustomer.value, 2, "double order Coins")
+		eq(Tonics.orderBonus(data, 11, t), 0, "no Good Customer, no bonus")
+		local rich = openShed(30)
+		Tonics.activate(rich, "GoodCustomer", "gems", t)
+		eq(Tonics.orderBonus(rich, 11, t), 11, "Good Customer: the card and the payout both say +22")
 		eq(Config.tonics.QuickSprout.value, 0.6, "40% faster crops")
 		eq(Config.tonics.BusyBoard.value, 0.2, "orders 80% sooner")
 		-- Factories: Busy Bees Oil's 30% adds to the Guild's cut; Smelters use Hot Smelter

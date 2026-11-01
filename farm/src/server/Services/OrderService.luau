@@ -103,7 +103,7 @@ function OrderService.fulfill(player: Player, slotIndex: any): (boolean, string?
 	-- The Tinker's Guild's Coins and XP upgrades on the goods' factories
 	local guildCoins, guildXp = Guild.orderBonus(data, order.wants, order.rewardCoins, order.rewardXP)
 	-- Good Customer (a tonic) doubles the order's own Coins
-	local tonicCoins = math.floor(order.rewardCoins * (Tonics.value(data, "orderCoins", now) - 1) + 0.5)
+	local tonicCoins = Tonics.orderBonus(data, order.rewardCoins, now)
 	EconomyService.add(player, "Coins", order.rewardCoins, "order")
 	EconomyService.add(player, "Coins", bonus, "order_goodneighbors")
 	EconomyService.add(player, "Coins", guildCoins, "order_guild")
