@@ -2238,6 +2238,34 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Boatyard (content bank, level 86): a long boat shed with an open front, a sailboat on a
+-- cradle being built outside, a crane arm and a stack of planks.
+TYPES.Boatyard = function(b, s)
+	local body = hall(b, s * 0.36, s * 0.6, 5, Palette.wood)
+	local t = b.into(body, true)
+	local face = -s * 0.3
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + 5, 0), s * 0.4, s * 0.64, 2.6, Palette.roofTeal)
+	t.block("Opening", Vector3.new(s * 0.26, 4, 0.2), Vector3.new(0, PLINTH + 2, face - 0.05), Palette.stoneDark)
+	-- The boat on its cradle beside the shed
+	local boat = Vector3.new(s * 0.32, PLINTH, -s * 0.05)
+	t.block("Cradle", Vector3.new(1.6, 0.8, 4), boat + Vector3.new(0, 0.4, 0), Palette.woodDark)
+	t.wedge(
+		"Hull",
+		Vector3.new(2, 1.4, 5),
+		CFrame.new(boat + Vector3.new(0, 1.5, 0)) * CFrame.Angles(math.rad(180), 0, 0),
+		Palette.flowerWhite
+	)
+	t.block("Deck", Vector3.new(2, 0.2, 5), boat + Vector3.new(0, 2.3, 0), Palette.woodLight)
+	t.post("Mast", 4, 0.25, boat + Vector3.new(0, 4.3, 0), Palette.woodDark)
+	t.wedge("Sail", Vector3.new(0.1, 3.4, 2.4), CFrame.new(boat + Vector3.new(0, 4.4, 1.3)), Palette.cream)
+	-- The crane arm and the planks
+	t.post("CranePost", 6, 0.4, Vector3.new(-s * 0.3, PLINTH + 3, face + 1), Palette.roofRed)
+	t.block("CraneArm", Vector3.new(0.4, 0.4, 4), Vector3.new(-s * 0.3, PLINTH + 6, face - 0.8), Palette.roofRed)
+	t.block("Planks", Vector3.new(2.4, 0.8, 1), Vector3.new(-s * 0.28, PLINTH + 0.4, s * 0.2), Palette.woodLight)
+	Kit.sproutTag(t, Vector3.new(-s * 0.1, PLINTH + 7.2, s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Vet Clinic (content bank, level 84): a white clinic with a mint stripe, a green cross on the
 -- front, a paw-print sign on the roof, a little kennel and a waiting bench.
 TYPES.VetClinic = function(b, s)
