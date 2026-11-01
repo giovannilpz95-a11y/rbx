@@ -821,6 +821,34 @@ TYPES.GlassTower = {
 -- over the lower, big glass walls, a flat roof and a wooden deck in front.
 -- City Apartments (level 86): a tall narrow brick block of flats, rows of white-framed
 -- windows, a flat roof with a water tank and a canopy over the front door.
+-- Balcony Tower (level 88): a tall white high-rise with a balcony on every floor, glass doors
+-- behind them, a flat roof with a little garden and a lobby canopy.
+TYPES.BalconyTower = {
+	roof = Palette.stoneDark,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.56, s * 0.56, STORY * 3.3
+		local body = walls(b, w, d, h, Palette.flowerWhite:Lerp(Palette.stoneLight, 0.3), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.6), roof)
+		t.block("RoofGarden", Vector3.new(w * 0.5, 0.6, d * 0.4), Vector3.new(0, PLINTH + h + 0.8, 0.6), Palette.leaf)
+		for floor = 1, 3 do
+			local y = PLINTH + STORY * floor * 0.95
+			t.block("Balcony", Vector3.new(w * 0.7, 0.25, 1.1), Vector3.new(0, y, face - 0.55), Palette.stoneLight)
+			t.block(
+				"Glass",
+				Vector3.new(w * 0.6, STORY * 0.6, 0.1),
+				Vector3.new(0, y + STORY * 0.32, face - 0.05),
+				Palette.glassDeep
+			)
+		end
+		t.block("Canopy", Vector3.new(2.6, 0.25, 1.2), Vector3.new(0, PLINTH + 3.4, face - 0.6), Palette.roofTeal)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 1.4, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)

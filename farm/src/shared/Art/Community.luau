@@ -2238,6 +2238,33 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Gadget Shop (content bank, level 88): a modern navy storefront with a full glass front, a
+-- giant phone on the roof, a glowing blue strip under the eave and a satellite dish.
+TYPES.GadgetShop = function(b, s)
+	local body = hall(b, s * 0.56, s * 0.44, 4.8, Palette.stoneDark:Lerp(Palette.sky, 0.25))
+	local t = b.into(body, true)
+	local face = -s * 0.22
+	t.block("Roof", Vector3.new(s * 0.58, 0.4, s * 0.46), Vector3.new(0, PLINTH + 5, 0), Palette.stoneDark)
+	t.block("GlassFront", Vector3.new(s * 0.48, 3.4, 0.2), Vector3.new(0, PLINTH + 1.9, face - 0.05), Palette.glass)
+	t.block("Strip", Vector3.new(s * 0.56, 0.3, 0.2), Vector3.new(0, PLINTH + 4.2, face - 0.1), Palette.sky)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 1.8, 3, Palette.glass, Palette.metal)
+	-- The phone on the roof
+	t.block("Phone", Vector3.new(2.4, 4, 0.4), Vector3.new(-s * 0.1, PLINTH + 7.2, 0), Palette.stoneDark)
+	t.block("Screen", Vector3.new(2, 3.2, 0.1), Vector3.new(-s * 0.1, PLINTH + 7.3, -0.25), Palette.sky)
+	t.block("PhoneStand", Vector3.new(0.6, 1.2, 0.6), Vector3.new(-s * 0.1, PLINTH + 5.8, 0.3), Palette.metal)
+	-- The satellite dish
+	t.cyl(
+		"Dish",
+		0.3,
+		2,
+		CFrame.new(s * 0.18, PLINTH + 6, s * 0.1) * CFrame.Angles(0, 0, math.rad(60)),
+		Palette.flowerWhite
+	)
+	t.post("DishPost", 1, 0.25, Vector3.new(s * 0.18, PLINTH + 5.5, s * 0.1), Palette.metal)
+	Kit.sproutTag(t, Vector3.new(s * 0.22, PLINTH + 5.6, -s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Boatyard (content bank, level 86): a long boat shed with an open front, a sailboat on a
 -- cradle being built outside, a crane arm and a stack of planks.
 TYPES.Boatyard = function(b, s)
