@@ -1229,6 +1229,55 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		)
 		b.block("Handle", Vector3.new(1, 0.15, 0.25), at(1.1, 0.2, 0), Palette.woodDark, QUIET)
 	end,
+	Ukulele = function(b)
+		-- A small wooden ukulele
+		b.ball("Body", 0.9, at(0, 0.45, 0), Palette.wood, QUIET)
+		b.block("Neck", Vector3.new(0.2, 1, 0.15), at(0, 1.3, 0), Palette.woodDark, QUIET)
+		b.cyl("Hole", 0.05, 0.3, at(0, 0.5, -0.45) * Kit.yaw(90), Palette.woodDark, QUIET)
+	end,
+	AppleStrudel = function(b)
+		-- A golden pastry roll with an apple slice
+		b.cyl("Roll", 1.6, 0.7, at(0, 0.35, 0), Palette.wheat, QUIET)
+		b.block("Sugar", Vector3.new(1.4, 0.06, 0.4), at(0, 0.72, 0), Palette.flowerWhite, QUIET)
+		b.wedge("Apple", Vector3.new(0.15, 0.35, 0.4), at(0.95, 0.35, 0), Palette.roofRed, QUIET)
+	end,
+	TrivetMat = function(b)
+		-- A round cork mat
+		b.cyl("Mat", 0.15, 1.6, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cork, QUIET)
+		b.cyl("Rim", 0.16, 1.2, at(0, 0.09, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wood, QUIET)
+	end,
+	GrilledScallops = function(b)
+		-- Two seared scallops in their shells with a lime wedge
+		for _, x in { -0.4, 0.4 } do
+			b.wedge(
+				"Shell",
+				Vector3.new(0.7, 0.2, 0.7),
+				at(x, 0.1, 0),
+				Palette.flowerPink:Lerp(Palette.cream, 0.5),
+				QUIET
+			)
+			b.cyl("Scallop", 0.25, 0.45, at(x, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		end
+		b.ball("Lime", 0.3, at(0, 0.3, 0.4), Palette.lime, QUIET)
+	end,
+	PeanutParfait = function(b)
+		-- A tall glass of layered ice cream and peanut butter
+		b.post("Glass", 1.4, 0.7, at(0, 0.7, 0), Palette.cream, QUIET)
+		b.post("Layer", 0.3, 0.72, at(0, 0.6, 0), Palette.cocoa:Lerp(Palette.wheat, 0.4), QUIET)
+		b.ball("Nut", 0.3, at(0, 1.5, 0), Palette.wheat, QUIET)
+	end,
+	AppleJam = function(b)
+		-- A jar of golden apple jam
+		b.post("Jar", 1, 0.9, at(0, 0.5, 0), Palette.flowerYellow:Lerp(Palette.carrot, 0.3), QUIET)
+		b.post("Lid", 0.25, 0.95, at(0, 1.1, 0), Palette.roofRed, QUIET)
+		b.ball("Apple", 0.4, at(0, 0.5, -0.45), Palette.roofRed, QUIET)
+	end,
+	CoconutLatte = function(b)
+		-- A latte glass with a coconut flake top
+		b.post("Glass", 1.2, 0.8, at(0, 0.6, 0), Palette.wheat:Lerp(Palette.cream, 0.5), QUIET)
+		b.post("Foam", 0.15, 0.8, at(0, 1.25, 0), Palette.flowerWhite, QUIET)
+		b.block("Flake", Vector3.new(0.3, 0.05, 0.15), at(0, 1.35, 0), Palette.cocoa, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
