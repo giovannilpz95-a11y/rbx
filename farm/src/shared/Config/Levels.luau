@@ -13,7 +13,7 @@ export type LevelDef = {
 }
 
 local CAP = 12 -- raise on update day (week 1: 13), never past BUILT
-local BUILT = 108
+local BUILT = 112
 
 local rows = {
 	-- level, xpToNext, rewardCoins, rewardGems
@@ -127,6 +127,10 @@ local rows = {
 	{ 106, 764000, 0, 5 },
 	{ 107, 774000, 0, 5 },
 	{ 108, 783000, 0, 5 },
+	{ 109, 793000, 0, 5 },
+	{ 110, 802000, 0, 5 },
+	{ 111, 811000, 0, 5 },
+	{ 112, 821000, 0, 5 },
 }
 
 local list: { LevelDef } = {}

@@ -2238,6 +2238,91 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Snip Salon (content bank, level 110): a red-and-white barbershop with a striped pole by the
+-- door, a big pair of scissors on the roof, a chair in the window and a striped awning.
+TYPES.SnipSalon = function(b, s)
+	local body = hall(b, s * 0.42, s * 0.34, 4.2, Palette.flowerWhite)
+	local t = b.into(body, true)
+	local face = -s * 0.17
+	t.block("Roof", Vector3.new(s * 0.44, 0.4, s * 0.36), Vector3.new(0, PLINTH + 4.4, 0), Palette.roofRed)
+	t.block("Window", Vector3.new(s * 0.2, 2.2, 0.2), Vector3.new(-s * 0.08, PLINTH + 2, face - 0.05), Palette.glass)
+	t.block("Chair", Vector3.new(1, 1.2, 1), Vector3.new(-s * 0.08, PLINTH + 0.9, face + 0.6), Palette.roofRed)
+	t.wedge(
+		"Awning",
+		Vector3.new(s * 0.42, 0.6, 1.2),
+		CFrame.new(0, PLINTH + 3.6, face - 0.6) * CFrame.Angles(0, math.rad(180), 0),
+		Palette.roofRed
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.12, PLINTH, face - 0.15), 1.6, 3, Palette.sky, Palette.flowerWhite)
+	-- The striped pole
+	t.post("Pole", 3, 0.6, Vector3.new(s * 0.22, PLINTH + 1.5, face - 0.5), Palette.flowerWhite)
+	for i = 0, 2 do
+		t.block(
+			"Stripe",
+			Vector3.new(0.65, 0.3, 0.65),
+			CFrame.new(s * 0.22, PLINTH + 0.6 + i * 0.9, face - 0.5) * CFrame.Angles(0, math.rad(45), math.rad(20)),
+			if i % 2 == 0 then Palette.roofRed else Palette.sky
+		)
+	end
+	t.ball("PoleTop", 0.7, Vector3.new(s * 0.22, PLINTH + 3.2, face - 0.5), Palette.coins)
+	-- The scissors on the roof
+	for _, a in { 25, -25 } do
+		t.block(
+			"Blade",
+			Vector3.new(3, 0.3, 0.3),
+			CFrame.new(0, PLINTH + 5.6, 0) * CFrame.Angles(0, 0, math.rad(a)),
+			Palette.metal
+		)
+	end
+	for _, x in { -1.6, 1.6 } do
+		t.cyl("Ring", 0.2, 0.9, CFrame.new(x, PLINTH + 5.6, 0) * CFrame.Angles(0, math.rad(90), 0), Palette.stoneDark)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.16, PLINTH + 5.2, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Power Hub (content bank, level 112): a canopy of solar panels over three charging posts, a
+-- small green kiosk with a lightning-bolt sign and a parked bubble car.
+TYPES.PowerHub = function(b, s)
+	local body = hall(b, s * 0.24, s * 0.22, 3, Palette.leaf:Lerp(Palette.stoneLight, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.11
+	t.block("KioskRoof", Vector3.new(s * 0.26, 0.3, s * 0.24), Vector3.new(0, PLINTH + 3.15, 0), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.1), 1.4, 2.4, Palette.glass, Palette.metal)
+	-- The canopy and posts beside the kiosk
+	local cx = -s * 0.24
+	t.block("Canopy", Vector3.new(s * 0.36, 0.3, s * 0.3), Vector3.new(cx, PLINTH + 4, 0), Palette.stoneDark)
+	t.block("Panels", Vector3.new(s * 0.34, 0.1, s * 0.28), Vector3.new(cx, PLINTH + 4.2, 0), Palette.glassDeep)
+	for _, z in { -s * 0.1, s * 0.1 } do
+		t.post("CanopyLeg", 4, 0.3, Vector3.new(cx, PLINTH + 2, z), Palette.metal)
+	end
+	for i = -1, 1 do
+		t.block(
+			"Charger",
+			Vector3.new(0.6, 1.6, 0.4),
+			Vector3.new(cx + i * 1.8, PLINTH + 0.8, face - 0.4),
+			Palette.flowerWhite
+		)
+		t.block(
+			"Screen",
+			Vector3.new(0.4, 0.3, 0.05),
+			Vector3.new(cx + i * 1.8, PLINTH + 1.3, face - 0.62),
+			Palette.lime
+		)
+	end
+	-- The bubble car
+	t.ball("Car", 2, Vector3.new(cx, PLINTH + 1, s * 0.06), Palette.sky)
+	-- The bolt sign
+	t.wedge(
+		"Bolt",
+		Vector3.new(0.3, 1.2, 0.8),
+		CFrame.new(0, PLINTH + 4.2, 0) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.flowerYellow
+	)
+	Kit.sproutTag(t, Vector3.new(s * 0.08, PLINTH + 3.8, s * 0.08), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Wedding Boutique (content bank, level 108): a white boutique with a pale pink roof, a gown on
 -- a stand in the bay window, a heart sign, a rose arch at the door and a pair of bells.
 TYPES.WeddingBoutique = function(b, s)

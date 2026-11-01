@@ -1763,6 +1763,27 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Carrot", Vector3.new(0.12, 0.6, 0.12), tilt(0.25, 0.8, 0, 0, 0, -20), Palette.carrot, QUIET)
 		b.ball("Lime", 0.3, at(-0.45, 0.25, 0.4), Palette.lime, QUIET)
 	end,
+	Guacamole = function(b)
+		-- A stone bowl of green guacamole with a lime wedge and chips
+		b.cyl("Bowl", 0.4, 1.2, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark, QUIET)
+		b.ball("Guac", 0.9, at(0, 0.45, 0), Palette.lime:Lerp(Palette.leaf, 0.3), QUIET)
+		b.wedge("Chip", Vector3.new(0.1, 0.4, 0.4), at(0.55, 0.3, 0.2), Palette.corn, QUIET)
+		b.ball("Lime", 0.3, at(-0.45, 0.25, 0.35), Palette.lime, QUIET)
+	end,
+	SmallHandbag = function(b)
+		-- A little silk handbag with a pearl clasp
+		b.block("Bag", Vector3.new(0.9, 0.6, 0.35), at(0, 0.3, 0), Palette.plum, QUIET)
+		b.block("Handle", Vector3.new(0.5, 0.1, 0.1), at(0, 0.85, 0), Palette.coins, QUIET)
+		b.ball("Pearl", 0.2, at(0, 0.5, -0.2), Palette.flowerWhite, QUIET)
+	end,
+	Suitcase = function(b)
+		-- A hard-shell suitcase standing on its wheels
+		b.block("Case", Vector3.new(0.9, 1.2, 0.45), at(0, 0.7, 0), Palette.roofTeal, QUIET)
+		b.block("Handle", Vector3.new(0.4, 0.1, 0.1), at(0, 1.35, 0), Palette.stoneDark, QUIET)
+		for _, x in { -0.3, 0.3 } do
+			b.ball("Wheel", 0.15, at(x, 0.07, 0), Palette.stoneDark, QUIET)
+		end
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
