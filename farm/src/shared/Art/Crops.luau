@@ -395,6 +395,22 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Jasmine (level 67): climbing vines on low trellis rows, then the vines starred with small
+-- white flowers.
+GROWING.Jasmine = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Trellis", Vector3.new(7.4, 1.4, 0.3), Vector3.new(0, 1.2, z), Palette.woodLight)
+		b.block("Vine", Vector3.new(6.6, 0.9, 0.6), Vector3.new(0, 1.1, z), Palette.leaf)
+	end
+end
+READY.Jasmine = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Trellis", Vector3.new(7.4, 1.6, 0.3), Vector3.new(0, 1.3, z), Palette.woodLight)
+		b.block("Vine", Vector3.new(6.8, 1.3, 0.7), Vector3.new(0, 1.3, z), Palette.leaf)
+		b.block("Flowers", Vector3.new(6.2, 0.4, 0.8), Vector3.new(0, 2, z), color)
+	end
+end
+
 -- Rose (level 61): low leafy bushes in rows, then the same bushes dotted with open blooms.
 GROWING.Rose = function(b)
 	for _, z in ArtCrops.ROWS do
