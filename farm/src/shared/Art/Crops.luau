@@ -395,6 +395,20 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Tea Leaves (level 84): neat clipped hedge rows, then the hedges flushed with bright new
+-- leaf tips.
+GROWING.Tea = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Hedge", Vector3.new(6.6, 1.2, 1.2), Vector3.new(0, 1, z), Palette.treeTopDark)
+	end
+end
+READY.Tea = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Hedge", Vector3.new(6.8, 1.6, 1.4), Vector3.new(0, 1.2, z), Palette.treeTopDark)
+		b.block("Tips", Vector3.new(6.6, 0.3, 1.3), Vector3.new(0, 2.1, z), color)
+	end
+end
+
 -- Apples (level 80): rows of little round-topped apple trees, then the trees hung with red
 -- apples.
 GROWING.Apples = function(b)
