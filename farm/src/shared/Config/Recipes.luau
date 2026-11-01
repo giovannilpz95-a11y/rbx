@@ -204,6 +204,13 @@ local Recipes: { [string]: RecipeDef } = {
 	CaramelizedMushrooms = { id = "CaramelizedMushrooms", displayName = "Caramelized Mushrooms", factory = "JamKitchen", unlockLevel = 75, inputs = { Mushroom = 3, Sugar = 2 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 297, xp = 127 },
 	IcedTea = { id = "IcedTea", displayName = "Iced Tea", factory = "JuiceBar", unlockLevel = 75, inputs = { Jasmine = 3, KeyLimes = 1 }, outputQty = 1, seconds = 1 * HOUR + 40 * MIN, sellPrice = 262, xp = 112 },
 	MintCake = { id = "MintCake", displayName = "Mint Cake", factory = "CakeShop", unlockLevel = 75, inputs = { Wheat = 3, Mint = 2, Eggs = 2, Sugar = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 132, xp = 57 },
+	-- Level 76-77 goods (Township's Porcelain Doll needs Clay, which we don't have, so it's skipped)
+	Puppet = { id = "Puppet", displayName = "Puppet", factory = "DollMaker", unlockLevel = 76, inputs = { PineTrees = 2, CottonFabric = 1, Yarn = 1 }, outputQty = 1, seconds = 1 * HOUR + 40 * MIN, sellPrice = 161, xp = 69 },
+	LobsterOmelet = { id = "LobsterOmelet", displayName = "Lobster Omelet", factory = "GrillHouse", unlockLevel = 76, inputs = { Lobsters = 1, Eggs = 2, Bread = 1 }, outputQty = 1, seconds = 2 * HOUR + 15 * MIN, sellPrice = 201, xp = 86 },
+	Parka = { id = "Parka", displayName = "Parka", factory = "QuiltShop", unlockLevel = 76, inputs = { DownFeather = 3, SilkFabric = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 225, xp = 96 },
+	SaltedPeanuts = { id = "SaltedPeanuts", displayName = "Salted Peanuts", factory = "SnackFactory", unlockLevel = 76, inputs = { Peanuts = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 199, xp = 85 },
+	CaffeMocha = { id = "CaffeMocha", displayName = "Caffè Mocha", factory = "CoffeeHouse", unlockLevel = 77, inputs = { Coffee = 2, Cocoa = 2, Cream = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 179, xp = 77 },
+	ChocolateCake = { id = "ChocolateCake", displayName = "Chocolate Cake", factory = "CakeShop", unlockLevel = 77, inputs = { Cocoa = 3, Sugar = 1, Butter = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 146, xp = 63 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

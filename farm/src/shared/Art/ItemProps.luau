@@ -1037,6 +1037,43 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Icing", 0.15, 1.55, at(0, 0.95, 0), Palette.cream, QUIET)
 		b.block("Leaf", Vector3.new(0.5, 0.1, 0.25), at(0, 1.1, 0), Palette.leaf, QUIET)
 	end,
+	Puppet = function(b)
+		-- A wooden puppet hanging from its cross bar
+		b.block("Bar", Vector3.new(1.2, 0.12, 0.12), at(0, 1.9, 0), Palette.woodDark, QUIET)
+		b.ball("Head", 0.5, at(0, 1.2, 0), Palette.woodLight, QUIET)
+		b.block("Body", Vector3.new(0.5, 0.6, 0.3), at(0, 0.7, 0), Palette.roofRed, QUIET)
+		b.block("Legs", Vector3.new(0.4, 0.4, 0.2), at(0, 0.2, 0), Palette.sky, QUIET)
+	end,
+	LobsterOmelet = function(b)
+		-- A folded omelet with a red lobster claw on top
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.cyl("Omelet", 1.4, 0.6, at(0, 0.35, 0), Palette.flowerYellow, QUIET)
+		b.ball("Claw", 0.45, at(0.2, 0.7, 0), Palette.roofRed, QUIET)
+	end,
+	Parka = function(b)
+		-- A puffy blue winter coat with a fur hood
+		b.block("Coat", Vector3.new(1.2, 1.3, 0.6), at(0, 0.65, 0), Palette.sky, QUIET)
+		b.block("Sleeves", Vector3.new(1.8, 0.4, 0.5), at(0, 1.05, 0), Palette.sky, QUIET)
+		b.ball("Hood", 0.7, at(0, 1.45, 0.05), Palette.cream, QUIET)
+	end,
+	SaltedPeanuts = function(b)
+		-- A paper bag of peanuts
+		b.block("Bag", Vector3.new(1, 1.2, 0.6), at(0, 0.6, 0), Palette.roofRed, QUIET)
+		b.block("Label", Vector3.new(0.6, 0.4, 0.02), at(0, 0.6, -0.31), Palette.flowerWhite, QUIET)
+		b.ball("Nut", 0.4, at(0, 1.3, 0), Palette.wheat, QUIET)
+	end,
+	CaffeMocha = function(b)
+		-- A glass mug of coffee with whipped cream and chocolate
+		b.post("Mug", 1.1, 0.8, at(0, 0.55, 0), Palette.cocoa, QUIET)
+		b.ball("Cream", 0.75, at(0, 1.2, 0), Palette.cream, QUIET)
+		b.block("Drizzle", Vector3.new(0.5, 0.06, 0.1), at(0, 1.5, 0), Palette.cocoa, QUIET)
+	end,
+	ChocolateCake = function(b)
+		-- A round chocolate cake with a cherry
+		b.post("Cake", 0.9, 1.5, at(0, 0.45, 0), Palette.cocoa, QUIET)
+		b.post("Icing", 0.15, 1.55, at(0, 0.95, 0), Palette.cocoa:Lerp(Palette.stoneDark, 0.4), QUIET)
+		b.ball("Cherry", 0.35, at(0, 1.2, 0), Palette.roofRed, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
