@@ -14,6 +14,7 @@ local Missing = require(Shared.Missing)
 local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
 local Profile = require(Shared.Profile)
+local QuarryConfig = require(Shared.Config.Quarry)
 local Recipes = require(Shared.Config.Recipes)
 local Town = require(Shared.Config.Town)
 
@@ -92,11 +93,19 @@ function MissingService.buy(player: Player, context: any, a: any, b: any): (bool
 		return false
 	end
 	local lines = Missing.list(needs, function(item)
+		if QuarryConfig.ores[item] then
+			return (data.oreShed or {})[item] or 0 -- ore lives in the Ore Shed
+		end
 		return InventoryService.count(player, item)
 	end)
 	local price = Missing.price(lines)
 	if price == nil then
-		return false
+		for _, line in lines do
+			if QuarryConfig.ores[line.item] then
+				return false, "Ore can't be bought with Gems. Dig for more in the Quarry."
+			end
+		end
+		return false, "Some of that can't be bought with Gems"
 	end
 	if #lines == 0 then
 		return action() -- nothing missing after all (the Barn filled up meanwhile)

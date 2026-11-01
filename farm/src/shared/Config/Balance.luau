@@ -29,6 +29,7 @@ return table.freeze({
 		"Apples",
 		"Tea",
 		"Soybeans",
+		"Lavender",
 		"Silk",
 	}),
 	enabledFactories = table.freeze({
@@ -73,6 +74,9 @@ return table.freeze({
 		"MusicWorkshop",
 		"TeaHouse",
 		"FlowerShop",
+		"Trattoria",
+		"PartyShop",
+		"GardenCenter",
 	}),
 	enabledPens = table.freeze({
 		"CowBarn",

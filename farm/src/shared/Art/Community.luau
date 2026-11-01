@@ -2238,6 +2238,124 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Trail Camp (content bank, level 98): a log lodge with a green roof, two canvas tents, a
+-- campfire ring, a flagpole and a wooden trail sign.
+TYPES.TrailCamp = function(b, s)
+	local body = hall(b, s * 0.4, s * 0.32, 3.6, Palette.woodDark)
+	local t = b.into(body, true)
+	local face = -s * 0.16
+	t.wedge("Roof", Vector3.new(s * 0.44, 1.6, s * 0.36), CFrame.new(0, PLINTH + 4.4, 0), Palette.leaf)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 1.6, 2.8, Palette.wood, Palette.woodLight)
+	-- Two tents
+	for i, x in { -s * 0.3, s * 0.3 } do
+		t.wedge(
+			"Tent",
+			Vector3.new(2.6, 2, 2.4),
+			CFrame.new(x, PLINTH + 1, face - 2.4) * Kit.yaw(if i == 1 then 90 else -90),
+			if i == 1 then Palette.carrot else Palette.straw
+		)
+	end
+	-- The campfire ring
+	t.cyl(
+		"FireRing",
+		0.4,
+		1.8,
+		CFrame.new(0, PLINTH + 0.2, face - 2.6) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stone
+	)
+	t.ball("Fire", 0.8, Vector3.new(0, PLINTH + 0.6, face - 2.6), Palette.carrot)
+	-- The flagpole
+	t.post("Pole", 6, 0.2, Vector3.new(s * 0.18, PLINTH + 3, s * 0.12), Palette.metal)
+	t.block("Flag", Vector3.new(0.1, 1, 1.6), Vector3.new(s * 0.18, PLINTH + 5.4, s * 0.12 - 0.8), Palette.leafLight)
+	Kit.sproutTag(t, Vector3.new(-s * 0.16, PLINTH + 4.8, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Radio Dish (content bank, level 96): a big white radio telescope dish tilted to the sky on a
+-- turntable, with a small control hut, a blinking red tip and a cable run.
+TYPES.RadioDish = function(b, s)
+	local body = hall(b, s * 0.34, s * 0.3, 3.4, Palette.stoneLight)
+	local t = b.into(body, true)
+	local face = -s * 0.15
+	t.block("HutRoof", Vector3.new(s * 0.36, 0.4, s * 0.32), Vector3.new(0, PLINTH + 3.6, 0), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 1.6, 2.8, Palette.metal, Palette.stoneDark)
+	t.block("Window", Vector3.new(1.6, 1, 0.1), Vector3.new(-s * 0.1, PLINTH + 2.2, face - 0.1), Palette.glass)
+	-- The dish on its turntable beside the hut
+	local x = s * 0.22
+	t.cyl(
+		"Turntable",
+		0.8,
+		3.4,
+		CFrame.new(x, PLINTH + 0.4, s * 0.05) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.metal
+	)
+	t.post("Mount", 3.6, 0.8, Vector3.new(x, PLINTH + 2.6, s * 0.05), Palette.flowerWhite)
+	t.cyl(
+		"Dish",
+		0.6,
+		6.4,
+		CFrame.new(x, PLINTH + 5.6, s * 0.05) * CFrame.Angles(0, 0, math.rad(55)),
+		Palette.flowerWhite
+	)
+	t.post("Feed", 2, 0.2, Vector3.new(x - 0.9, PLINTH + 6.6, s * 0.05), Palette.metal)
+	t.ball("Tip", 0.4, Vector3.new(x - 0.9, PLINTH + 7.7, s * 0.05), Palette.roofRed)
+	t.block("Cable", Vector3.new(s * 0.14, 0.2, 0.2), Vector3.new(s * 0.1, PLINTH + 0.2, s * 0.05), Palette.stoneDark)
+	Kit.sproutTag(t, Vector3.new(-s * 0.12, PLINTH + 4.2, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Dive Shop (content bank, level 94): a sea-blue dive centre with a round porthole window, a
+-- training pool out front with a diving board, an air tank rack and a big diving-mask sign.
+TYPES.DiveShop = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.4, 4.4, Palette.sky:Lerp(Palette.roofTeal, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.52, 0.4, s * 0.42), Vector3.new(0, PLINTH + 4.6, 0), Palette.flowerWhite)
+	t.cyl(
+		"Porthole",
+		0.2,
+		2,
+		CFrame.new(-s * 0.12, PLINTH + 2.6, face - 0.1) * CFrame.Angles(0, math.rad(90), 0),
+		Palette.glass
+	)
+	Kit.door(t, "Door", CFrame.new(s * 0.12, PLINTH, face - 0.15), 1.6, 3, Palette.flowerWhite, Palette.metal)
+	-- The training pool and diving board
+	t.block("PoolRim", Vector3.new(s * 0.4, 0.5, 3), Vector3.new(0, PLINTH + 0.25, face - 2.2), Palette.stoneLight)
+	t.block("Pool", Vector3.new(s * 0.36, 0.2, 2.6), Vector3.new(0, PLINTH + 0.45, face - 2.2), Palette.water)
+	t.block("Board", Vector3.new(0.8, 0.15, 2), Vector3.new(-s * 0.16, PLINTH + 1.2, face - 1.4), Palette.flowerWhite)
+	-- The tank rack
+	for _, x in { s * 0.2, s * 0.24 } do
+		t.post("Tank", 1.6, 0.4, Vector3.new(x, PLINTH + 0.8, face + 0.6), Palette.flowerYellow)
+	end
+	-- The mask sign on the roof
+	t.block("Mask", Vector3.new(3, 1.4, 0.3), Vector3.new(0, PLINTH + 5.8, 0), Palette.stoneDark)
+	t.block("Lens", Vector3.new(2.4, 0.9, 0.1), Vector3.new(0, PLINTH + 5.8, -0.2), Palette.sky)
+	Kit.sproutTag(t, Vector3.new(-s * 0.2, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Game Arena (content bank, level 92): a purple dome arena with a big screen over the doors,
+-- glowing green trim, a giant game controller on the roof and two banner poles.
+TYPES.GameArena = function(b, s)
+	local body = hall(b, s * 0.62, s * 0.48, 4.6, Palette.plum)
+	local t = b.into(body, true)
+	local face = -s * 0.24
+	t.ball("Dome", s * 0.42, Vector3.new(0, PLINTH + 4.6, 0), Palette.plum:Lerp(Palette.stoneLight, 0.3))
+	t.block("Screen", Vector3.new(s * 0.36, 2, 0.2), Vector3.new(0, PLINTH + 3.5, face - 0.1), Palette.sky)
+	t.block("Trim", Vector3.new(s * 0.62, 0.3, 0.2), Vector3.new(0, PLINTH + 2.3, face - 0.1), Palette.lime)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.15), 2.4, 2.2, Palette.glass, Palette.metal)
+	-- The controller on the roof
+	t.block("Pad", Vector3.new(3.4, 0.8, 1.6), Vector3.new(0, PLINTH + 4.6 + s * 0.21, 0), Palette.stoneDark)
+	t.ball("Button", 0.5, Vector3.new(0.9, PLINTH + 5.1 + s * 0.21, -0.3), Palette.roofRed)
+	t.ball("Button", 0.5, Vector3.new(-0.9, PLINTH + 5.1 + s * 0.21, -0.3), Palette.lime)
+	for _, x in { -s * 0.28, s * 0.28 } do
+		t.post("Pole", 5, 0.2, Vector3.new(x, PLINTH + 2.5, face - 1), Palette.metal)
+		t.block("Banner", Vector3.new(0.1, 1.6, 1), Vector3.new(x, PLINTH + 4, face - 1.5), Palette.lime)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.24, PLINTH + 5.4, s * 0.16), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Cue Club (content bank, level 90): a dark green clubhouse with brick trim, a big cue-and-ball
 -- sign on the roof, an awning, and a billiard table seen through the wide front window.
 TYPES.CueClub = function(b, s)
