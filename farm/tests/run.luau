@@ -34,6 +34,7 @@ local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local DuckPondConfig = require("../src/shared/Config/DuckPond")
+local OtterPondConfig = require("../src/shared/Config/OtterPond")
 local IslesConfig = require("../src/shared/Config/Isles")
 local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
@@ -147,6 +148,9 @@ test("every recipe of an enabled factory can be made in the MVP", function()
 	end
 	for id in DuckPondConfig.feathers do
 		enabled[id] = DuckPondConfig.unlockLevel <= Levels.built -- left by ducks at the Duck Pond
+	end
+	for id in OtterPondConfig.goods do
+		enabled[id] = OtterPondConfig.unlockLevel <= Levels.built -- caught by otters at the Otter Pond
 	end
 	for id, recipe in Recipes do
 		enabled[id] = table.find(Balance.enabledFactories, recipe.factory) ~= nil
@@ -2311,6 +2315,7 @@ require("./quests")(test, eq, ok)
 require("./seedcart")(test, eq, ok)
 require("./harbor")(test, eq, ok)
 require("./duckpond")(test, eq, ok)
+require("./otterpond")(test, eq, ok)
 
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles

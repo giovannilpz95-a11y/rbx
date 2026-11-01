@@ -586,6 +586,41 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Bacon", Vector3.new(0.4, 0.1, 0.25), at(-0.3, 0.55, 0.2), Palette.cowMuzzle, QUIET)
 		b.block("Bacon", Vector3.new(0.4, 0.1, 0.25), at(0.35, 0.55, -0.25), Palette.cowMuzzle, QUIET)
 	end,
+	Seaweed = function(b)
+		-- Wavy green fronds on a rock
+		b.ball("Rock", 0.9, at(0, 0.3, 0), Palette.stone, QUIET)
+		b.block("Frond", Vector3.new(0.3, 1.6, 0.2), tilt(-0.3, 1, 0, 0, 0, 12), Palette.treeTopDark, QUIET)
+		b.block("Frond", Vector3.new(0.3, 1.3, 0.2), tilt(0.3, 0.9, 0.1, 0, 0, -15), Palette.leaf, QUIET)
+	end,
+	Scallop = function(b)
+		-- A pink fan shell
+		b.cyl("Shell", 0.25, 1.6, at(0, 0.8, 0) * Kit.yaw(90), Palette.flowerPink:Lerp(Palette.cream, 0.4), QUIET)
+		b.block("Hinge", Vector3.new(0.6, 0.35, 0.28), at(0, 0.1, 0), Palette.flowerPink, QUIET)
+		for _, a in { -30, 0, 30 } do
+			b.block("Rib", Vector3.new(0.08, 1.4, 0.27), tilt(0, 0.8, 0, 0, 0, a), Palette.cream, QUIET)
+		end
+	end,
+	Pearls = function(b)
+		-- An open shell holding three pearls
+		b.cyl("Shell", 0.2, 1.8, at(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
+		for i, x in { -0.4, 0, 0.4 } do
+			b.ball("Pearl", 0.5, at(x, 0.4, (i % 2) * 0.2), Palette.cream, QUIET)
+		end
+	end,
+	SeafoodMix = function(b)
+		-- A bowl of shrimp, scallops and fish
+		b.post("Bowl", 0.7, 1.6, at(0, 0.35, 0), Palette.sky, QUIET)
+		b.ball("Shrimp", 0.45, at(-0.35, 0.8, 0), Palette.carrot, QUIET)
+		b.ball("Scallop", 0.45, at(0.35, 0.8, 0.1), Palette.cream, QUIET)
+		b.block("Fish", Vector3.new(0.6, 0.2, 0.3), at(0, 0.8, -0.3), Palette.stoneLight, QUIET)
+	end,
+	SeaweedShrimpSalad = function(b)
+		-- A plate of green seaweed topped with two shrimp
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Seaweed", 1.1, at(0, 0.45, 0), Palette.treeTopDark, QUIET)
+		b.ball("Shrimp", 0.4, at(-0.25, 0.95, 0), Palette.carrot, QUIET)
+		b.ball("Shrimp", 0.4, at(0.25, 0.9, 0.15), Palette.carrot, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

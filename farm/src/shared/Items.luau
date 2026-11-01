@@ -5,6 +5,7 @@ local Animals = require("./Config/Animals")
 local Barn = require("./Config/Barn")
 local Crops = require("./Config/Crops")
 local DuckPond = require("./Config/DuckPond")
+local OtterPond = require("./Config/OtterPond")
 local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
 local Town = require("./Config/Town")
@@ -106,6 +107,26 @@ for id, feather in DuckPond.feathers do
 		isFeed = false,
 	}
 	unitSecondsCache[id] = featherTimes[id]
+end
+
+-- Otter Pond catch (Config/OtterPond): a Bacon trip's wait plus the Bacon, shared over what
+-- it brings back on average of each good
+local bacon = OtterPond.foods.Bacon
+for id, good in OtterPond.goods do
+	local range = bacon.catch[id]
+	local perTrip = (range[1] + range[2]) / 2
+	local seconds = (bacon.seconds + unitSeconds(bacon.item, 0)) / perTrip
+	Items[id] = {
+		id = id,
+		displayName = good.displayName,
+		kind = "Animal",
+		unlockLevel = OtterPond.unlockLevel,
+		sellPrice = good.sellPrice,
+		xpPerUnit = good.xp,
+		unitSeconds = seconds,
+		isFeed = false,
+	}
+	unitSecondsCache[id] = seconds
 end
 
 -- Far Isle goods (Config/Isles): only Sailboats bring them back

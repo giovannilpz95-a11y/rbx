@@ -10,6 +10,8 @@ local BarnRules = require(Shared.BarnRules)
 local Blimp = require(Shared.Blimp)
 local DuckPond = require(Shared.DuckPond)
 local DuckPondConfig = require(Shared.Config.DuckPond)
+local OtterPond = require(Shared.OtterPond)
+local OtterPondConfig = require(Shared.Config.OtterPond)
 local Harbor = require(Shared.Harbor)
 local IslesConfig = require(Shared.Config.Isles)
 local Levels = require(Shared.Config.Levels)
@@ -312,6 +314,35 @@ function DebugService.pond(player: Player): (boolean, string?)
 	return true
 end
 
+-- The Otter Pond: built now (ignoring level and Coins), all three otters, any trip over, and
+-- one of each food
+function DebugService.otters(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	if data.level < OtterPondConfig.unlockLevel then
+		return false, string.format("Reach level %d first (+1 level)", OtterPondConfig.unlockLevel)
+	end
+	if data.otterPond.readyAt == nil then
+		OtterPond.build(data, now, Random.new():NextInteger(1, 2147483646))
+	end
+	OtterPond.finishBuild(data, now)
+	data.otterPond.otters = #OtterPondConfig.otterCoins
+	for i = 1, data.otterPond.otters do
+		OtterPond.skip(data, i, now)
+	end
+	for _, food in OtterPondConfig.foods do
+		data.inventory.items[food.item] = (data.inventory.items[food.item] or 0) + 1
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: Otter Pond built, three otters, trips over, +1 Egg, Bacon and Fish")
+	return true
+end
+
 -- Airship Freight (Features/F04): the Blimp Mast repaired and the Cargo Blimp docked now,
 -- ignoring level, land and Coins. Pressed while it's docked, it sends it off (no rewards) and
 -- brings a fresh load in.
@@ -512,6 +543,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Blimp, 1, 2, DebugService.blimp)
 	NetService.on(Net.Debug_Harbor, 1, 2, DebugService.harbor)
 	NetService.on(Net.Debug_Pond, 1, 2, DebugService.pond)
+	NetService.on(Net.Debug_Otters, 1, 2, DebugService.otters)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)
