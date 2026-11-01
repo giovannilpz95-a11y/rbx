@@ -2466,6 +2466,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Otter Pond: built, three otters, trips over, an Egg, Bacon and Fish", "Debug_Otters", 380, 21)
 	devButton("Tool Trader: built, three slots, materials for its offers", "Debug_Trader", 380, 22)
 	devButton("Tonic Shed: built, one of every tonic to switch on", "Debug_Tonics", 340, 23)
+	devButton("Trains: all back now, goods for the first train's cars", "Debug_Train", 380, 24)
 end
 
 ---------------------------------------------------------------------------------------------

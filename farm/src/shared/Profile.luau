@@ -188,6 +188,11 @@ function Profile.template(): { [string]: any }
 			seed = 0,
 			visits = 0,
 		},
+		trains = { -- the Train Station (shared/Train); the first train arrives at level 5
+			seed = 0,
+			trips = 0,
+			lines = {}, -- one per train: { cars, bonus, returnAt? }
+		},
 		otterPond = { -- the Otter Pond (shared/OtterPond); readyAt is set when building starts
 			seed = 0,
 			otters = 1,

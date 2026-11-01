@@ -15,6 +15,7 @@ local ToolTrader = require("./Config/ToolTrader")
 local TonicsConfig = require("./Config/Tonics")
 local Tools = require("./Config/Tools")
 local Town = require("./Config/Town")
+local TrainConfig = require("./Config/Train")
 
 export type Unlock = {
 	kind: "Crop" | "Recipe" | "Factory" | "Pen" | "House" | "Community" | "Decor" | "Feature",
@@ -80,6 +81,16 @@ function Unlocks.at(level: number): { Unlock }
 	for id, pond in DuckPondConfig.ponds do
 		if pond.unlockLevel == level then
 			table.insert(out, { kind = "Feature", id = id, name = pond.displayName })
+		end
+	end
+	for i, train in TrainConfig.trains do
+		if train.level == level then
+			table.insert(
+				out,
+				if i == 1
+					then { kind = "Feature", id = "TrainStation", name = "Train Station" }
+					else { kind = "Feature", id = "Train" .. i, name = "Train " .. i }
+			)
 		end
 	end
 	if level == TonicsConfig.unlockLevel then

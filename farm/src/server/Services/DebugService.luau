@@ -15,6 +15,8 @@ local OtterPondConfig = require(Shared.Config.OtterPond)
 local ToolTrader = require(Shared.ToolTrader)
 local ToolTraderConfig = require(Shared.Config.ToolTrader)
 local Tonics = require(Shared.Tonics)
+local Train = require(Shared.Train)
+local TrainConfig = require(Shared.Config.Train)
 local TonicsConfig = require(Shared.Config.Tonics)
 local Harbor = require(Shared.Harbor)
 local IslesConfig = require(Shared.Config.Isles)
@@ -319,7 +321,47 @@ function DebugService.pond(player: Player): (boolean, string?)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	NetService.pushState(player)
-	NetService.toast(player, "Dev: Duck Pond dug out, ducks gone, +1 Bread, Bagel and Banana Bread")
+	local names = {}
+	for id, def in DuckPondConfig.ponds do
+		if data.level >= def.unlockLevel then
+			table.insert(names, def.displayName)
+		end
+	end
+	table.sort(names)
+	NetService.toast(
+		player,
+		"Dev: " .. table.concat(names, " and ") .. " dug out, ducks gone, +1 Bread, Bagel and Banana Bread"
+	)
+	return true
+end
+
+-- The Train Station: the first train given if it's due, every train back now, and the goods
+-- for every car still waiting on the first train
+function DebugService.train(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	if data.level < TrainConfig.unlockLevel then
+		return false, string.format("Reach level %d first (+1 level)", TrainConfig.unlockLevel)
+	end
+	local now = Clock.now()
+	Train.ensure(data)
+	for _, line in Train.lines(data) do
+		Train.speedUp(line, now)
+	end
+	local first = Train.lines(data)[1]
+	if first and first.returnAt == nil then
+		for _, car in first.cars do
+			if not car.loaded then
+				data.inventory.items[car.item] = (data.inventory.items[car.item] or 0) + car.qty
+			end
+		end
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: every train back, and goods for the first train's cars")
 	return true
 end
 
@@ -607,6 +649,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Blimp, 1, 2, DebugService.blimp)
 	NetService.on(Net.Debug_Harbor, 1, 2, DebugService.harbor)
 	NetService.on(Net.Debug_Pond, 1, 2, DebugService.pond)
+	NetService.on(Net.Debug_Train, 1, 2, DebugService.train)
 	NetService.on(Net.Debug_Otters, 1, 2, DebugService.otters)
 	NetService.on(Net.Debug_Trader, 1, 2, DebugService.trader)
 	NetService.on(Net.Debug_Tonics, 1, 2, DebugService.tonics)

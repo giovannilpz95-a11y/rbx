@@ -4,7 +4,7 @@
 -- action goes ahead in the same step. Nothing is charged unless the action succeeds.
 --
 --   Missing_Buy("Recipe", factoryId, recipeId) | ("Order", slotIndex)
---             | ("Community", buildingId) | ("Barn") | ("Blimp", row, slot)
+--             | ("Community", buildingId) | ("Barn") | ("Blimp", row, slot) | ("Train", train, car)
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local BarnRules = require(Shared.BarnRules)
@@ -17,6 +17,7 @@ local Profile = require(Shared.Profile)
 local QuarryConfig = require(Shared.Config.Quarry)
 local Recipes = require(Shared.Config.Recipes)
 local Town = require(Shared.Config.Town)
+local Train = require(Shared.Train)
 
 local BlimpService = require(script.Parent.BlimpService)
 local DataService = require(script.Parent.DataService)
@@ -26,6 +27,8 @@ local InventoryService = require(script.Parent.InventoryService)
 local NetService = require(script.Parent.NetService)
 local OrderService = require(script.Parent.OrderService)
 local TownService = require(script.Parent.TownService)
+local TrainService = require(script.Parent.TrainService)
+local Clock = require(script.Parent.Parent.Util.Clock)
 
 local MissingService = {}
 
@@ -73,6 +76,14 @@ local function resolve(
 		end
 		return { [crate.item] = crate.qty }, function()
 			return BlimpService.fill(player, a, b)
+		end
+	elseif context == "Train" then
+		local car = Train.canLoad(data, a, b, Clock.now())
+		if car == nil then
+			return nil, nil
+		end
+		return { [car.item] = car.qty }, function()
+			return TrainService.load(player, a, b)
 		end
 	elseif context == "Barn" then
 		return BarnRules.upgradeCost(data.inventory.upgrades + 1),

@@ -1282,6 +1282,26 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		for _ in DuckPondConfig.ponds do
 			total += ArtDuckPond.PARTS_MAX
 		end
+		-- The Train Station with all three trains home, five full cars each: the station and
+		-- tracks merged, each train merged around its engine with its crates (a load rebuilds it)
+		local station = Instance.new("Model")
+		local static = Instance.new("Model")
+		static.Parent = station
+		local _, platform = ArtRail.farmStation(static, CFrame.new())
+		-- (+1: the departure board carries a SurfaceGui on the server, so it stays apart)
+		local trainParts = ArtMerge.count(static, platform) + 1
+		for lane = 1, #ArtRail.FARM_LANES do
+			local holder = Instance.new("Model")
+			holder.Parent = station
+			local engine, cars = ArtRail.farmTrain(holder, CFrame.new(), lane, 5)
+			for _, car in cars do
+				ArtRail.setCarCrates(car, ArtRail.CAR_CRATES)
+			end
+			-- each car's item sign carries a SurfaceGui on the server, so it stays apart
+			trainParts += ArtMerge.count(holder, engine:FindFirstChild("Chassis") :: BasePart) + #cars
+		end
+		total += trainParts
+		print(string.format("      Train Station with three full trains: %d parts", trainParts))
 		-- The Otter Pond with three otters home
 		total += ArtOtterPond.PARTS_MAX
 		-- The Tool Trader with all three offer crates
