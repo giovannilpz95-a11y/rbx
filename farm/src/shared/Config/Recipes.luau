@@ -280,6 +280,12 @@ local Recipes: { [string]: RecipeDef } = {
 	AppleTea = { id = "AppleTea", displayName = "Apple Tea", factory = "TeaHouse", unlockLevel = 94, inputs = { Tea = 1, Apples = 2, Honeycomb = 1, KeyLimes = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 361, xp = 155 },
 	FlowerBasket = { id = "FlowerBasket", displayName = "Flower Basket", factory = "FlowerShop", unlockLevel = 95, inputs = { Rose = 3, Jasmine = 4, PineTrees = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 316, xp = 135 },
 	Balloon = { id = "Balloon", displayName = "Balloon", factory = "PartyShop", unlockLevel = 95, inputs = { Yarn = 1, Rubber = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 117, xp = 50 },
+	-- Level 96-97 goods
+	PastaArrabbiata = { id = "PastaArrabbiata", displayName = "Pasta Arrabbiata", factory = "Trattoria", unlockLevel = 96, inputs = { Wheat = 3, Eggs = 2, Peppers = 2, Cheese = 1 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 111, xp = 48 },
+	MilkOolongTea = { id = "MilkOolongTea", displayName = "Milk Oolong Tea", factory = "TeaHouse", unlockLevel = 96, inputs = { Tea = 1, Milk = 2, TeaCeremonySet = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 322, xp = 138 },
+	LavenderBouquet = { id = "LavenderBouquet", displayName = "Lavender Bouquet", factory = "FlowerShop", unlockLevel = 96, inputs = { Lavender = 2, Sugarcane = 3 }, outputQty = 1, seconds = 2 * HOUR + 20 * MIN, sellPrice = 131, xp = 56 },
+	CottonCandy = { id = "CottonCandy", displayName = "Cotton Candy", factory = "PartyShop", unlockLevel = 97, inputs = { Sugar = 2, CaneSyrup = 1, Rose = 2 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 137, xp = 59 },
+	GardenTools = { id = "GardenTools", displayName = "Garden Tools", factory = "GardenCenter", unlockLevel = 97, inputs = { PineTrees = 1, CopperOre = 3, Plastic = 1 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 142, xp = 61 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },
