@@ -294,7 +294,20 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 61, "levels 17 to 61 are banked")
+	eq(Levels.built, 63, "levels 17 to 63 are banked")
+	eq(Levels.list[62].xpToNext, 273515, "L62 row")
+	eq(Levels.list[63].xpToNext, 300000, "L63 row")
+	eq(Recipes.PuffedRice.inputs.Rice, 4, "Puffed Rice from Rice and Cane Syrup")
+	eq(Recipes.CoconutSoup.inputs.Shrimp, 2, "Coconut Soup from Coconuts, Shrimp and Key Limes")
+	eq(Town.houses.TimberedManor.population, 380, "Timbered Manor")
+	eq(Town.community.BlossomBoutique.materials.Jackhammer, 8, "Blossom Boutique needs Jackhammers")
+	eq(Animals.pens.MushroomShed.buildCost, 29000, "Mushroom Shed (Township's Mushroom Farm)")
+	eq(Animals.pens.MushroomShed.produceSeconds, 5 * 3600, "Mushrooms take 5 h")
+	eq(Animals.pens.MushroomShed.extraAnimalCosts[3], 9500, "Mushroom Logs 4 to 6")
+	ok(table.find(Balance.enabledPens, "MushroomShed") ~= nil, "Mushroom Shed enabled")
+	eq(Recipes.Substrate.outputQty, 3, "Substrate comes 3 to a batch")
+	eq(Recipes.BaconEggs.inputs.Eggs, 2, "Bacon & Eggs")
+	ok(Recipes.Earrings.fromOreShed and Recipes.Earrings.inputs.PlatinumOre == 5, "Earrings from Gold and Platinum Ore")
 	eq(Levels.list[60].xpToNext, 244220, "L60 row")
 	eq(Levels.list[61].xpToNext, 258565, "L61 row")
 	ok(table.find(Balance.enabledCrops, "Rose") ~= nil and Crops.Rose.growSeconds == 9000, "Rose, 2 h 30")
@@ -861,6 +874,7 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 		Dough = true,
 		Pendant = true,
 		Ring = true,
+		Earrings = true,
 	}
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]
