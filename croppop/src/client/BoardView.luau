@@ -592,29 +592,31 @@ function BoardView.load(self, game)
 		corner.Parent = label
 	end
 
-	-- Fences: a wooden bar on the edge right of or below their cell.
+	-- Fences: a wooden bar on the edge right of or below their cell. Hedges
+	-- are thicker and green.
 	self.fenceGuis = {}
 	for _, fence in board.fences do
 		local bar = Instance.new("Frame")
-		bar.Name = "Fence"
-		bar.BackgroundColor3 = TileStyle.Board.fence
+		bar.Name = if fence.hedge then "Hedge" else "Fence"
+		bar.BackgroundColor3 = if fence.hedge then TileStyle.Board.hedge else TileStyle.Board.fence
+		local thick = if fence.hedge then 0.22 else 0.14
 		bar.BorderSizePixel = 0
 		local w, h = board.width, board.height
 		if fence.side == "r" then
 			bar.AnchorPoint = Vector2.new(0.5, 0.5)
 			bar.Position = UDim2.fromScale(fence.x / w, (fence.y - 0.5) / h)
-			bar.Size = UDim2.fromScale(0.14 / w, 0.92 / h)
+			bar.Size = UDim2.fromScale(thick / w, 0.92 / h)
 		else
 			bar.AnchorPoint = Vector2.new(0.5, 0.5)
 			bar.Position = UDim2.fromScale((fence.x - 0.5) / w, fence.y / h)
-			bar.Size = UDim2.fromScale(0.92 / w, 0.14 / h)
+			bar.Size = UDim2.fromScale(0.92 / w, thick / h)
 		end
 		bar.Parent = self.baleLayer
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0.5, 0)
 		corner.Parent = bar
 		local stroke = Instance.new("UIStroke")
-		stroke.Color = Color3.fromRGB(70, 46, 22)
+		stroke.Color = if fence.hedge then TileStyle.Board.hedgeEdge else Color3.fromRGB(70, 46, 22)
 		stroke.Parent = bar
 		self.fenceGuis[fence.x .. "," .. fence.y .. fence.side] = bar
 	end

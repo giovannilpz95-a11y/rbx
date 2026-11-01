@@ -63,7 +63,8 @@
 
 	Fences sit outside the layout too, as `fences = { { x, y, "r" | "d" } }`: a
 	fence on the edge right of (x, y) ("r") or below it ("d"). Nothing swaps
-	across a fence; only blasts break it (the Fences goal).
+	across a fence; only blasts break it (the Fences goal). "R" or "D" makes it
+	a hedge instead: the same, but nothing breaks it (and it isn't a goal).
 
 	Portals sit outside the layout, as `portals = { { from = { x, y }, to = { x, y } } }`:
 	pieces falling out of `from` land in `to` instead of the cell below.
@@ -78,7 +79,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -168,15 +169,16 @@ function Levels.checkFences(level): string?
 	end
 	local seen = {}
 	for i, f in fences do
-		if type(f) ~= "table" or (f[3] ~= "r" and f[3] ~= "d") then
-			return "fence " .. i .. " must be { x, y, \"r\" or \"d\" }"
+		local side = type(f) == "table" and type(f[3]) == "string" and string.lower(f[3])
+		if side ~= "r" and side ~= "d" then
+			return "fence " .. i .. " must be { x, y, \"r\" or \"d\" } (\"R\" or \"D\" for a hedge)"
 		end
 		local x, y = f[1], f[2]
-		local ox, oy = if f[3] == "r" then x + 1 else x, if f[3] == "d" then (y or 0) + 1 else y
+		local ox, oy = if side == "r" then x + 1 else x, if side == "d" then (y or 0) + 1 else y
 		if not (isCell(x, y) and isCell(ox, oy)) then
 			return "fence " .. i .. " must sit between two board cells"
 		end
-		local key = string.format("%d,%d,%s", x, y, f[3])
+		local key = string.format("%d,%d,%s", x, y, side)
 		if seen[key] then
 			return "fence " .. i .. " is listed twice"
 		end
@@ -469,8 +471,12 @@ function Levels.validate(level): string?
 				return "statues goal but no buried statues in the layout"
 			end
 		elseif goal.kind == "Fences" then
-			if not level.fences or #level.fences == 0 then
-				return "fences goal but no fences"
+			local breakable = false
+			for _, f in level.fences or {} do
+				breakable = breakable or f[3] == "r" or f[3] == "d"
+			end
+			if not breakable then
+				return "fences goal but no fences (hedges don't count)"
 			end
 		elseif goal.kind == "Clover" then
 			if clover == 0 and sacks == 0 then

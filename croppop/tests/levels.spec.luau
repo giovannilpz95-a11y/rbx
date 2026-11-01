@@ -10,10 +10,10 @@ test("every level validates", function()
 		truthy(not seen[level.id], "duplicate id " .. level.id)
 		seen[level.id] = true
 	end
-	eq(#Levels.List, 675)
+	eq(#Levels.List, 700)
 end)
 
-test("levels run 1 to 675 in order, with unique names and the difficulty pattern", function()
+test("levels run 1 to 700 in order, with unique names and the difficulty pattern", function()
 	local names = {}
 	for i, level in Levels.List do
 		eq(level.id, i)
@@ -370,4 +370,19 @@ test("produce box stacks first show up on level 651, with a Boxes goal alone", f
 	eq(first and first.id, 651)
 	eq(#first.goals, 1)
 	eq(first.goals[1].kind, "Boxes")
+end)
+
+test("hedges first show up on level 676, which only asks to collect tiles", function()
+	local first
+	for _, level in Levels.List do
+		for _, f in level.fences or {} do
+			if not first and (f[3] == "R" or f[3] == "D") then
+				first = level
+			end
+		end
+	end
+	eq(first and first.id, 676)
+	for _, goal in first.goals do
+		eq(goal.kind, "Collect")
+	end
 end)

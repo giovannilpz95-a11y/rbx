@@ -76,10 +76,13 @@ local BRUSH_ROWS = {
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
 		{ char = "|", label = "🚧" },
+		-- The same for a hedge (a fence nothing breaks).
+		{ char = "=", label = "🌳" },
 	},
 }
 local PORTAL = "o" -- the portal brush
 local FENCE = "|" -- the fence brush
+local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
 local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes" }
@@ -240,7 +243,8 @@ local function resize(dw: number, dh: number)
 	state.portalStart = nil
 	for i = #state.fences, 1, -1 do
 		local f = state.fences[i]
-		if f[1] + (if f[3] == "r" then 1 else 0) > w or f[2] + (if f[3] == "d" then 1 else 0) > h then
+		local side = string.lower(f[3])
+		if f[1] + (if side == "r" then 1 else 0) > w or f[2] + (if side == "d" then 1 else 0) > h then
 			table.remove(state.fences, i)
 		end
 	end
@@ -406,8 +410,9 @@ local function tapPortal(x: number, y: number)
 	end
 end
 
--- The fence brush: tap a cell, then a neighbour, to add or remove the fence between them.
-local function tapFence(x: number, y: number)
+-- The fence brush: tap a cell, then a neighbour, to add or remove the fence
+-- between them (the hedge brush the same for a hedge; either swaps the other).
+local function tapFence(x: number, y: number, hedge: boolean?)
 	local start = state.fenceStart
 	if not start or math.abs(start[1] - x) + math.abs(start[2] - y) ~= 1 then
 		state.fenceStart = if NOT_CELL[state.grid[y][x]] then nil else { x, y }
@@ -419,13 +424,17 @@ local function tapFence(x: number, y: number)
 	end
 	local fx, fy = math.min(x, start[1]), math.min(y, start[2])
 	local side = if start[2] == y then "r" else "d"
+	local want = if hedge then string.upper(side) else side
 	for i, f in state.fences do
-		if f[1] == fx and f[2] == fy and f[3] == side then
+		if f[1] == fx and f[2] == fy and string.lower(f[3]) == side then
 			table.remove(state.fences, i)
-			return
+			if f[3] == want then
+				return
+			end
+			break
 		end
 	end
-	table.insert(state.fences, { fx, fy, side })
+	table.insert(state.fences, { fx, fy, want })
 end
 
 -- A hole or basket can't hold a portal end or a fence.
@@ -437,7 +446,8 @@ local function dropPortalsAt(x: number, y: number)
 	end
 	for j = #state.fences, 1, -1 do
 		local f = state.fences[j]
-		local ox, oy = f[1] + (if f[3] == "r" then 1 else 0), f[2] + (if f[3] == "d" then 1 else 0)
+		local side = string.lower(f[3])
+		local ox, oy = f[1] + (if side == "r" then 1 else 0), f[2] + (if side == "d" then 1 else 0)
 		if (f[1] == x and f[2] == y) or (ox == x and oy == y) then
 			table.remove(state.fences, j)
 		end
@@ -449,7 +459,7 @@ local function fenceText(x: number, y: number): string
 	local text = ""
 	for _, f in state.fences do
 		if f[1] == x and f[2] == y then
-			text ..= if f[3] == "r" then " |" else " _"
+			text ..= if f[3] == "r" then " |" elseif f[3] == "d" then " _" elseif f[3] == "R" then " ‖" else " ="
 		end
 	end
 	if state.fenceStart and state.fenceStart[1] == x and state.fenceStart[2] == y then
@@ -487,8 +497,8 @@ local function renderGrid()
 			cell.Activated:Connect(function()
 				if state.brush == PORTAL then
 					tapPortal(x, y)
-				elseif state.brush == FENCE then
-					tapFence(x, y)
+				elseif state.brush == FENCE or state.brush == HEDGE then
+					tapFence(x, y, state.brush == HEDGE)
 				else
 					state.grid[y][x] = state.brush
 					if NOT_CELL[state.brush] then
@@ -863,13 +873,14 @@ function LevelEditor.export(): string?
 	return text
 end
 
--- For tests: paint one cell with a brush character ("o" taps the portal brush, "|" the fence brush).
+-- For tests: paint one cell with a brush character ("o" taps the portal brush,
+-- "|" the fence brush, "=" the hedge brush).
 function LevelEditor.paint(x: number, y: number, char: string)
 	state.brush = char
 	if char == PORTAL then
 		tapPortal(x, y)
-	elseif char == FENCE then
-		tapFence(x, y)
+	elseif char == FENCE or char == HEDGE then
+		tapFence(x, y, char == HEDGE)
 	else
 		state.grid[y][x] = char
 		if NOT_CELL[char] then

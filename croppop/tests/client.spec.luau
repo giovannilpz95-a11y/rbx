@@ -1016,6 +1016,30 @@ test("the fence brush adds and removes the fence between two cells", function()
 	panel.Brushes["Brush."].Activated:Fire()
 end)
 
+test("the hedge brush puts a hedge on an edge, swapping out a fence there", function()
+	local panel = playerGui.CropPopEditor.Backdrop.Panel
+	local grid = playerGui.CropPopEditor.Backdrop.GridArea.Grid
+	local before = #LevelEditor.current().fences
+	panel.MoreBrushes["Brush="].Activated:Fire()
+	grid.Cell4_4.Activated:Fire()
+	grid.Cell5_4.Activated:Fire()
+	local fences = LevelEditor.current().fences
+	eq(#fences, before + 1)
+	eq(table.concat(fences[#fences], ","), "4,4,R")
+	truthy(string.find(grid.Cell4_4.Text, "‖", 1, true))
+	-- The fence brush on the same edge swaps the hedge for a fence.
+	panel.MoreBrushes["Brush|"].Activated:Fire()
+	grid.Cell4_4.Activated:Fire()
+	grid.Cell5_4.Activated:Fire()
+	fences = LevelEditor.current().fences
+	eq(#fences, before + 1)
+	eq(table.concat(fences[#fences], ","), "4,4,r")
+	grid.Cell4_4.Activated:Fire()
+	grid.Cell5_4.Activated:Fire()
+	eq(#LevelEditor.current().fences, before)
+	panel.Brushes["Brush."].Activated:Fire()
+end)
+
 test("loading a Trail level fills the editor with it", function()
 	local panel = playerGui.CropPopEditor.Backdrop.Panel
 	panel.Load.LoadIdUp.Activated:Fire()
