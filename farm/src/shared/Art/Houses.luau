@@ -1039,8 +1039,8 @@ TYPES.SpiralTower = {
 		local r, h = s * 0.26, STORY * 3.4
 		local body = b.cyl(
 			"Walls",
-			s * 0.52,
 			h,
+			s * 0.52,
 			CFrame.new(0, PLINTH + h / 2, 0.6) * CFrame.Angles(0, 0, math.rad(90)),
 			Palette.flowerWhite
 		)
@@ -1061,7 +1061,7 @@ TYPES.SpiralTower = {
 				Palette.leaf
 			)
 		end
-		t.cyl("Crown", s * 0.4, 1.2, CFrame.new(0, PLINTH + h + 0.6, 0.6) * CFrame.Angles(0, 0, math.rad(90)), roof)
+		t.cyl("Crown", 1.2, s * 0.4, CFrame.new(0, PLINTH + h + 0.6, 0.6) * CFrame.Angles(0, 0, math.rad(90)), roof)
 		Kit.door(t, "Door", CFrame.new(0, PLINTH, 0.6 - r), 1.6, 3, Palette.glass, Palette.metal)
 		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 2, 0.6), 2.5, Palette.wood, Palette.lime)
 		return body
