@@ -2238,6 +2238,69 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Dolphin Lagoon (content bank, level 70): a round blue pool ringed in white stone, a dolphin
+-- leaping out of the middle past a hoop, a grandstand of benches behind and a little ball on
+-- the water.
+TYPES.DolphinLagoon = function(b, s)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.7, 0.6, s * 0.7),
+		Vector3.new(0, PLINTH / 2, 0),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local top = PLINTH
+	t.cyl(
+		"Rim",
+		0.8,
+		s * 0.56,
+		CFrame.new(0, top + 0.4, -s * 0.06) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.flowerWhite
+	)
+	t.cyl(
+		"Pool",
+		0.85,
+		s * 0.5,
+		CFrame.new(0, top + 0.42, -s * 0.06) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.water
+	)
+	-- The leaping dolphin and its hoop
+	local leap = CFrame.new(0, top + 3.2, -s * 0.06) * CFrame.Angles(0, 0, math.rad(35))
+	t.ball("Dolphin", 1.6, leap, Palette.sky:Lerp(Palette.stoneDark, 0.35))
+	t.block(
+		"Snout",
+		Vector3.new(0.9, 0.5, 0.5),
+		leap * CFrame.new(1.1, 0, 0),
+		Palette.sky:Lerp(Palette.stoneDark, 0.35)
+	)
+	t.wedge(
+		"Fin",
+		Vector3.new(0.3, 0.8, 0.8),
+		leap * CFrame.new(-0.1, 0.9, 0),
+		Palette.sky:Lerp(Palette.stoneDark, 0.5)
+	)
+	t.wedge("Tail", Vector3.new(1.2, 0.3, 0.8), leap * CFrame.new(-1.2, 0, 0), Palette.sky:Lerp(Palette.stoneDark, 0.5))
+	t.cyl("Hoop", 0.25, 2.6, CFrame.new(2.4, top + 3.6, -s * 0.06), Palette.roofRed)
+	t.post("HoopPost", 2.4, 0.25, Vector3.new(2.4, top + 1.2, -s * 0.06 - 1.4), Palette.metal)
+	t.ball("Ball", 0.9, Vector3.new(-s * 0.14, top + 1.1, -s * 0.18), Palette.flowerYellow)
+	-- The grandstand behind
+	for i = 0, 2 do
+		t.block(
+			"Bench",
+			Vector3.new(s * 0.6, 0.7, 1.2),
+			Vector3.new(0, top + 0.35 + i * 0.7, s * 0.24 + i * 1.1),
+			if i % 2 == 0 then Palette.sky else Palette.flowerWhite
+		)
+	end
+	t.block("Canopy", Vector3.new(s * 0.62, 0.3, 3.6), Vector3.new(0, top + 3.9, s * 0.28), Palette.roofTeal)
+	for _, x in { -s * 0.29, s * 0.29 } do
+		t.post("Pole", 3.6, 0.3, Vector3.new(x, top + 1.8, s * 0.17), Palette.metal)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.26, top + 4.6, s * 0.3), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Car Wash (content bank, level 68): a long open bay with blue roller brushes either side of
 -- the lane, soap bubbles, a car-shaped sign on the roof and a striped entrance arch.
 TYPES.CarWash = function(b, s)
