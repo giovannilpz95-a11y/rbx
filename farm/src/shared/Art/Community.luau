@@ -2238,6 +2238,134 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Savings Bank (content bank, level 82): a stately cream bank with four columns across the
+-- front, a triangular pediment, a gold coin emblem, wide steps and a clock above the door.
+TYPES.SavingsBank = function(b, s)
+	local body = hall(b, s * 0.56, s * 0.44, 5.5, Palette.cream)
+	local t = b.into(body, true)
+	local face = -s * 0.22
+	t.block("Steps", Vector3.new(s * 0.5, 0.6, 1.6), Vector3.new(0, PLINTH + 0.3, face - 1), Palette.stoneLight)
+	for i = 0, 3 do
+		t.post("Column", 5, 0.9, Vector3.new(-s * 0.21 + i * s * 0.14, PLINTH + 2.9, face - 1.4), Palette.flowerWhite)
+	end
+	t.block("Beam", Vector3.new(s * 0.56, 0.6, 2), Vector3.new(0, PLINTH + 5.7, face - 0.8), Palette.flowerWhite)
+	t.wedge("Pediment", Vector3.new(s * 0.56, 1.8, 2), CFrame.new(0, PLINTH + 6.9, face - 0.8), Palette.cream)
+	t.cyl("Coin", 0.3, 1.4, CFrame.new(0, PLINTH + 6.7, face - 1.85) * Kit.yaw(90), Palette.coins)
+	t.block("Roof", Vector3.new(s * 0.58, 0.5, s * 0.46), Vector3.new(0, PLINTH + 5.75, 0), Palette.stone)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 2, 3.4, Palette.woodDark, Palette.coins)
+	t.cyl("Clock", 0.2, 1.2, CFrame.new(0, PLINTH + 4.4, face - 0.1) * Kit.yaw(90), Palette.flowerWhite)
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 6.5, s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Dog Park (content bank, level 80): a fenced green run with a striped agility hurdle, a
+-- tunnel, a dog house with a bone sign and a water bowl, and a little bench.
+TYPES.DogPark = function(b, s)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.72, 0.6, s * 0.5),
+		Vector3.new(0, PLINTH / 2, 0),
+		Palette.grassLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local top = PLINTH
+	Kit.fence(
+		t,
+		"Fence",
+		Vector3.new(-s * 0.34, top, -s * 0.23),
+		Vector3.new(s * 0.34, top, -s * 0.23),
+		1.2,
+		4,
+		Palette.woodLight
+	)
+	-- The hurdle: two posts and a striped bar
+	for _, x in { -s * 0.22, -s * 0.06 } do
+		t.post("HurdlePost", 1.6, 0.3, Vector3.new(x, top + 0.8, -s * 0.08), Palette.flowerWhite)
+	end
+	t.block(
+		"HurdleBar",
+		Vector3.new(s * 0.16, 0.25, 0.25),
+		Vector3.new(-s * 0.14, top + 1.1, -s * 0.08),
+		Palette.roofRed
+	)
+	-- The tunnel
+	t.cyl("Tunnel", 3, 1.6, CFrame.new(s * 0.18, top + 0.8, -s * 0.08), Palette.sky)
+	-- The dog house, its bone sign and the bowl
+	t.block("DogHouse", Vector3.new(2.6, 2, 2.4), Vector3.new(-s * 0.22, top + 1, s * 0.13), Palette.wood)
+	t.wedge("HouseRoof", Vector3.new(3, 1.2, 2.8), CFrame.new(-s * 0.22, top + 2.6, s * 0.13), Palette.roofRed)
+	t.block("Doorway", Vector3.new(1, 1.2, 0.1), Vector3.new(-s * 0.22, top + 0.6, s * 0.13 - 1.21), Palette.stoneDark)
+	t.block("Bone", Vector3.new(1.4, 0.35, 0.2), Vector3.new(0, top + 3.4, s * 0.1), Palette.cream)
+	t.post("BonePost", 3, 0.25, Vector3.new(0, top + 1.6, s * 0.12), Palette.woodDark)
+	t.cyl("Bowl", 0.35, 1, CFrame.new(-s * 0.12, top + 0.18, s * 0.06) * CFrame.Angles(0, 0, math.rad(90)), Palette.sky)
+	t.block("Bench", Vector3.new(3, 0.4, 1), Vector3.new(s * 0.2, top + 0.8, s * 0.16), Palette.woodLight)
+	Kit.sproutTag(t, Vector3.new(s * 0.3, top + 1.6, s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Kindergarten (content bank, level 78): a sunny yellow schoolhouse with a red roof, coloured
+-- building blocks on the corner, a little slide and a sandpit in the yard.
+TYPES.Kindergarten = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.36, 4, Palette.flowerYellow:Lerp(Palette.cream, 0.3))
+	local t = b.into(body, true)
+	local face = -s * 0.18
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + 4, 0), s * 0.54, s * 0.4, 2.4, Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 2.8, Palette.sky, Palette.flowerWhite)
+	Kit.window(t, "Window", CFrame.new(-s * 0.15, PLINTH + 2.2, face), 2, 1.6, Palette.flowerWhite, Palette.glass)
+	-- Building blocks stacked on the corner
+	for i, color in { Palette.roofRed, Palette.sky, Palette.lime } do
+		t.block(
+			"Block",
+			Vector3.new(1.2, 1.2, 1.2),
+			Vector3.new(s * 0.2, PLINTH + 0.6 + (i - 1) * 1.2, face - 0.8),
+			color
+		)
+	end
+	-- The slide and the sandpit
+	t.block("SlideSteps", Vector3.new(0.8, 2.4, 0.8), Vector3.new(-s * 0.32, PLINTH + 1.2, 0), Palette.sky)
+	t.wedge(
+		"Slide",
+		Vector3.new(0.8, 2.4, 2.6),
+		CFrame.new(-s * 0.32, PLINTH + 1.2, -1.7) * Kit.yaw(180),
+		Palette.roofRed
+	)
+	t.block("Sandpit", Vector3.new(3, 0.3, 3), Vector3.new(s * 0.3, PLINTH + 0.15, s * 0.1), Palette.wheat)
+	t.ball("Bucket", 0.6, Vector3.new(s * 0.3, PLINTH + 0.5, s * 0.1), Palette.flowerPink)
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5.4, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Bike Rental (content bank, level 76): a green kiosk with a striped canopy, a rack of three
+-- bikes beside it and a big wheel sign on the roof.
+TYPES.BikeRental = function(b, s)
+	local body = hall(b, s * 0.3, s * 0.3, 3.6, Palette.leafLight)
+	local t = b.into(body, true)
+	local face = -s * 0.15
+	t.block("Roof", Vector3.new(s * 0.34, 0.4, s * 0.34), Vector3.new(0, PLINTH + 3.8, 0), Palette.leaf)
+	for i = 0, 3 do
+		t.wedge(
+			"Canopy",
+			Vector3.new(s * 0.075, 0.5, 1.6),
+			CFrame.new(-s * 0.1125 + i * s * 0.075, PLINTH + 3.2, face - 0.8) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.flowerWhite else Palette.leaf
+		)
+	end
+	t.block("Counter", Vector3.new(s * 0.26, 0.3, 0.6), Vector3.new(0, PLINTH + 1.6, face - 0.3), Palette.woodLight)
+	-- The wheel sign on the roof
+	t.cyl("Wheel", 0.3, 2.6, CFrame.new(0, PLINTH + 5.4, 0) * Kit.yaw(90), Palette.tire)
+	t.cyl("Hub", 0.35, 0.8, CFrame.new(0, PLINTH + 5.4, 0) * Kit.yaw(90), Palette.metal)
+	-- The rack of bikes beside the kiosk
+	t.block("Rack", Vector3.new(0.3, 0.3, s * 0.36), Vector3.new(s * 0.3, PLINTH + 0.9, 0), Palette.metal)
+	for i, color in { Palette.roofRed, Palette.sky, Palette.flowerYellow } do
+		local z = -s * 0.12 + (i - 1) * s * 0.12
+		t.cyl("BikeWheel", 0.2, 1.4, CFrame.new(s * 0.3, PLINTH + 0.7, z - 0.7) * Kit.yaw(90), Palette.tire)
+		t.cyl("BikeWheel", 0.2, 1.4, CFrame.new(s * 0.3, PLINTH + 0.7, z + 0.7) * Kit.yaw(90), Palette.tire)
+		t.block("Frame", Vector3.new(0.2, 0.3, 1.4), Vector3.new(s * 0.3, PLINTH + 1.2, z), color)
+	end
+	Kit.sproutTag(t, Vector3.new(-s * 0.1, PLINTH + 4.3, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Sky Tower (content bank, level 74): a slim glass office tower in stepped tiers, bands of
 -- window glass, a rooftop antenna with a red light and a plaza with a fountain at its foot.
 TYPES.SkyTower = function(b, s)

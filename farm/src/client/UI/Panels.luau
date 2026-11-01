@@ -380,14 +380,24 @@ local function renderOrders(state: { [string]: any })
 				itemIcon(id, chip.iconSlot, 34)
 				complete = complete and chip.met
 			end
-			local reward = Ui.label(string.format("+%d Coins   +%d XP", order.rewardCoins, order.rewardXP), {
-				Position = UDim2.fromOffset(72, 40),
-				Size = UDim2.new(1, -72, 0, 20),
-				Font = Enum.Font.GothamBold,
-				TextColor3 = Ui.colors.muted,
-				TextSize = 15,
-				Parent = card,
-			})
+			-- Good Customer (a tonic) doubles the Coins: the card shows what delivering pays
+			local tonicCoins = Tonics.orderBonus(state, order.rewardCoins, ClientStore.now())
+			local reward = Ui.label(
+				string.format(
+					"+%d Coins%s   +%d XP",
+					order.rewardCoins + tonicCoins,
+					if tonicCoins > 0 then " (Good Customer)" else "",
+					order.rewardXP
+				),
+				{
+					Position = UDim2.fromOffset(72, 40),
+					Size = UDim2.new(1, -72, 0, 20),
+					Font = Enum.Font.GothamBold,
+					TextColor3 = if tonicCoins > 0 then Ui.colors.ready else Ui.colors.muted,
+					TextSize = 15,
+					Parent = card,
+				}
+			)
 			Ui.button("X", function()
 				Remotes.fire("Order_Discard", i)
 			end, {
@@ -1235,10 +1245,14 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		order += 1
 		local inputs = {}
 		local enough = true
+		local needsOre = false -- ore can't be bought with Gems
 		for input, qty in recipe.inputs do
 			table.insert(inputs, string.format("%d %s", qty, itemName(input)))
 			if ClientStore.itemCount(input) < qty then
 				enough = false
+			end
+			if QuarryConfig.ores[input] then
+				needsOre = true
 			end
 		end
 		local locked = state.level < recipe.unlockLevel
@@ -1259,7 +1273,7 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 		end
 		local hasRoom = #preview.queue < preview.slots
 		local buy, what = nil, nil
-		if not enough and not locked and hasRoom and not recipe.fromOreShed then
+		if not enough and not locked and hasRoom and not needsOre then
 			buy, what = missingButton("recipe:" .. id, recipe.inputs, {
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, 0, 0, 0),

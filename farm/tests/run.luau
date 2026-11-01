@@ -115,8 +115,10 @@ test("every recipe input and factory exists", function()
 		eq(recipe.id, id, "recipe id")
 		ok(Factories[recipe.factory] ~= nil, id .. " factory " .. recipe.factory)
 		for input in recipe.inputs do
-			-- Bars smelt Quarry ore, which lives in the Ore Shed rather than the Barn
-			local exists = if recipe.fromOreShed then QuarryConfig.ores[input] ~= nil else Items[input] ~= nil
+			-- Quarry ore and Clay live in the Ore Shed rather than the Barn; a recipe can mix both
+			local exists = if recipe.fromOreShed
+				then QuarryConfig.ores[input] ~= nil
+				else Items[input] ~= nil or QuarryConfig.ores[input] ~= nil
 			ok(exists, id .. " input " .. input)
 		end
 	end
@@ -295,7 +297,55 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 75, "levels 17 to 75 are banked")
+	eq(Levels.built, 83, "levels 17 to 83 are banked")
+	eq(Levels.list[82].xpToNext, 520000, "L82 row")
+	eq(Levels.list[83].xpToNext, 531000, "L83 row")
+	eq(Factories.MusicWorkshop.buildCost, 390000, "Music Workshop (Township's Music Factory)")
+	eq(Guild.maxLevel("MusicWorkshop"), 53, "the Music Workshop has its own Guild table")
+	eq(Recipes.Ukulele.inputs.CopperOre, 3, "Ukulele mixes Pine Trees and Copper Ore")
+	eq(Recipes.AppleStrudel.inputs.Apples, 2, "Apple Strudel")
+	eq(Recipes.TrivetMat.inputs.CorkOak, 3, "Trivet Mat")
+	eq(Recipes.GrilledScallops.inputs.Scallop, 2, "Grilled Scallops")
+	eq(Recipes.PeanutParfait.inputs.PeanutButter, 1, "Peanut Butter Parfait")
+	eq(Recipes.AppleJam.inputs.Apples, 3, "Apple Jam")
+	eq(Recipes.CoconutLatte.inputs.Coconuts, 2, "Coconut Latte")
+	eq(Town.community.SavingsBank.materials.Panes, 95, "Savings Bank (Township's Bank)")
+	eq(Levels.list[80].xpToNext, 498000, "L80 row")
+	eq(Levels.list[81].xpToNext, 509000, "L81 row")
+	ok(table.find(Balance.enabledCrops, "Apples") ~= nil and Crops.Apples.growSeconds == 27000, "Apples, 7 h 30")
+	eq(Levels.gifts[80].Apples, 3, "Apples to start with")
+	eq(Recipes.DownQuilt.inputs.DownFeather, 5, "Down Quilt")
+	eq(Recipes.HotChocolate.inputs.Cocoa, 2, "Hot Chocolate")
+	eq(Recipes.MushroomSoup.inputs.DriedMushrooms, 1, "Mushroom Soup")
+	eq(Recipes.AppleSpritzer.inputs.Apples, 2, "Apple Spritzer")
+	eq(Recipes.RagDoll.inputs.Cotton, 2, "Rag Doll")
+	eq(Recipes.WeddingCake.seconds, 6 * 3600, "Wedding Cake, 6 h")
+	eq(Recipes.FryingPan.inputs.CopperOre, 4, "Frying Pan mixes ore and Pine Trees")
+	eq(Town.community.DogPark.materials.Bricks, 90, "Dog Park (Township's Canine Center)")
+	eq(Levels.list[78].xpToNext, 476000, "L78 row")
+	eq(Levels.list[79].xpToNext, 487000, "L79 row")
+	eq(Factories.CookwareShop.buildCost, 340000, "Cookware Shop (Township's Kitchenware Factory)")
+	eq(Guild.maxLevel("CookwareShop"), 53, "the Cookware Shop has its own Guild table")
+	ok(Recipes.Cup.fromOreShed and Recipes.Cup.inputs.Clay == 2, "Cup from 2 Clay")
+	eq(Recipes.TropicalMix.inputs.Sugarcane, 3, "Tropical Mix")
+	eq(Recipes.PeanutButter.inputs.CaneSyrup, 1, "Peanut Butter")
+	eq(Recipes.FashionDoll.inputs.Glue, 1, "Fashion Doll")
+	eq(Recipes.FaceMask.inputs.Clay, 1, "Face Mask mixes Clay and Seaweed")
+	eq(Recipes.Toothpaste.inputs.Mint, 1, "Toothpaste")
+	eq(Recipes.PeanutButterCrepes.inputs.PeanutButter, 1, "Peanut Butter Crêpes")
+	eq(Town.houses.GlassHouse.population, 520, "Glass House")
+	eq(Town.community.Kindergarten.materials.Jackhammer, 27, "Kindergarten")
+	eq(Levels.list[76].xpToNext, 453000, "L76 row")
+	eq(Levels.list[77].xpToNext, 465000, "L77 row")
+	eq(Factories.DollMaker.buildCost, 310000, "Doll Maker (Township's Doll Factory)")
+	eq(Guild.maxLevel("DollMaker"), 53, "the Doll Maker has its own Guild table")
+	eq(Recipes.Puppet.inputs.Yarn, 1, "Puppet")
+	eq(Recipes.LobsterOmelet.inputs.Lobsters, 1, "Lobster Omelet")
+	eq(Recipes.Parka.inputs.DownFeather, 3, "Parka")
+	eq(Recipes.SaltedPeanuts.inputs.Peanuts, 3, "Salted Peanuts")
+	eq(Recipes.CaffeMocha.inputs.Cocoa, 2, "Caffè Mocha")
+	eq(Recipes.ChocolateCake.inputs.Cocoa, 3, "Chocolate Cake")
+	eq(Town.community.BikeRental.materials.Panes, 78, "Bike Rental")
 	eq(Levels.list[74].xpToNext, 431000, "L74 row")
 	eq(Levels.list[75].xpToNext, 442000, "L75 row")
 	ok(table.find(Balance.enabledCrops, "Peanuts") ~= nil and Crops.Peanuts.growSeconds == 7 * 3600, "Peanuts, 7 h")
@@ -875,6 +925,18 @@ test("the Smelters: Township's Foundry numbers, Bars from Ore Shed ore", functio
 	eq(data.oreShed.CopperOre, 2, "2 ore left")
 	ok(Quarry.takeOre(data, { CopperOre = 2 }), "the rest")
 	eq(data.oreShed.CopperOre, nil, "empty ore cleared")
+	-- Clay sits in the Ore Shed with the ore; mixed recipes take it from there and the rest
+	-- from the Barn
+	ok(QuarryConfig.ores.Clay ~= nil and QuarryConfig.ores.Clay.fromDepth > 1, "Clay turns up a little way down")
+	data.oreShed.Clay = 2
+	ok(not Quarry.hasOre(data, { Clay = 3 }), "3 Clay is more than the shed has")
+	ok(Quarry.hasOre(data, { Clay = 2 }) and data.oreShed.Clay == 2, "checking takes nothing")
+	eq(Recipes.PorcelainDoll.inputs.Clay, 3, "Porcelain Doll from Clay and Silk Fabric")
+	ok(
+		Recipes.FloorLamp.fromOreShed == nil and Recipes.FloorLamp.inputs.CopperOre == 5,
+		"Floor Lamp mixes ore and Plastic"
+	)
+	eq(table.find(OrderGen.makeablePool(data), "FloorLamp"), nil, "goods that need ore never show up on orders")
 	eq(table.find(OrderGen.makeablePool(data), "CopperBar"), nil, "Bars never show up on orders")
 end)
 
@@ -960,6 +1022,8 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 		Ring = true,
 		Earrings = true,
 		Diadem = true,
+		PearlChoker = true,
+		FeatherEarrings = true,
 	}
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]

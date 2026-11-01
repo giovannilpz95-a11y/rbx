@@ -166,6 +166,12 @@ local function stat(data: { [string]: any }, name: Config.Stat, now: number): nu
 end
 Tonics.value = stat
 
+-- The Coins Good Customer adds to an order paying `rewardCoins` (0 when it isn't running).
+-- The server pays this and the order card shows it, so the two always agree.
+function Tonics.orderBonus(data: { [string]: any }, rewardCoins: number, now: number): number
+	return math.floor(rewardCoins * (stat(data, "orderCoins", now) - 1) + 0.5)
+end
+
 function Tonics.isSmelter(factoryId: string): boolean
 	local def = Factories[factoryId]
 	return factoryId == "Smelter" or (def ~= nil and def.makes == "Smelter")

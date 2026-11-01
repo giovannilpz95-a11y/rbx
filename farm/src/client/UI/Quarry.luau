@@ -36,6 +36,7 @@ local ORE_COLORS = {
 	SilverOre = Color3.fromRGB(225, 230, 240),
 	GoldOre = Color3.fromRGB(250, 205, 60),
 	PlatinumOre = Color3.fromRGB(185, 215, 235),
+	Clay = Color3.fromRGB(190, 110, 80),
 }
 
 -- Acts on press: the panel re-renders every second, which can swap a cell out between press

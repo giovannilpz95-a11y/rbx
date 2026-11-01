@@ -395,6 +395,22 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Apples (level 80): rows of little round-topped apple trees, then the trees hung with red
+-- apples.
+GROWING.Apples = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Trunks", Vector3.new(6, 1, 0.3), Vector3.new(0, 0.9, z), Palette.trunk)
+		b.block("Canopy", Vector3.new(6.6, 1.2, 1.2), Vector3.new(0, 1.9, z), Palette.treeTop)
+	end
+end
+READY.Apples = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Trunks", Vector3.new(6, 1.2, 0.3), Vector3.new(0, 1, z), Palette.trunk)
+		b.block("Canopy", Vector3.new(6.8, 1.6, 1.4), Vector3.new(0, 2.2, z), Palette.treeTop)
+		b.block("Apples", Vector3.new(6.2, 0.5, 1.5), Vector3.new(0, 2, z), color)
+	end
+end
+
 -- Peanuts (level 75): low clover-leaved rows, then the rows lifted with the tan pods showing
 -- along the soil.
 GROWING.Peanuts = function(b)
