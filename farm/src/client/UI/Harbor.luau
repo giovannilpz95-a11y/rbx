@@ -58,8 +58,8 @@ local function name(item: string): string
 end
 
 -- "Peaches x3 · Watermelons 80% · Plums 53% · Sea Chest 10%"
-local function oddsText(isle: Config.IsleDef, bar: string?): string
-	local u, r, c = Harbor.odds(isle.id, bar)
+local function oddsText(state: { [string]: any }, isle: Config.IsleDef, bar: string?): string
+	local u, r, c = Harbor.odds(isle.id, bar, Harbor.isleLevels(state, isle.id))
 	local parts = {
 		string.format("%s x%d", name(isle.goods[1]), Config.commonQty),
 		string.format("%s %s", name(isle.goods[2]), pct(u)),
@@ -145,7 +145,7 @@ local function boatCard(state: { [string]: any }, index: number, boat: { [string
 						"Sail to %s: %d Coins, %s%s",
 						isle.displayName,
 						isle.sendCoins,
-						Timer.format(isle.tripSeconds),
+						Timer.format(Harbor.tripSeconds(state, isle.id)),
 						if chosenBar then " + " .. name(chosenBar) else ""
 					),
 					function()
@@ -201,6 +201,83 @@ local function boatCard(state: { [string]: any }, index: number, boat: { [string
 	)
 end
 
+-- "5 Copper, 1 Silver" with what the Barn holds, and whether it holds enough
+local function barsText(cost: { [string]: number }): (string, boolean)
+	local parts, enough = {}, true
+	for _, bar in Config.bars do
+		local need = cost[bar]
+		if need then
+			local have = ClientStore.itemCount(bar)
+			enough = enough and have >= need
+			table.insert(parts, string.format("%d %s (%d)", need, (name(bar):gsub(" Bar", "")), have))
+		end
+	end
+	return table.concat(parts, ", "), enough
+end
+
+-- The isle's Tinker's Guild upgrades: its level and bonuses, and a button per stat the next
+-- upgrade can raise
+local function upgradeRows(state: { [string]: any }, isle: Config.IsleDef, card: Instance, order: number)
+	local now = ClientStore.now()
+	local levels = Harbor.isleLevels(state, isle.id)
+	local level = Harbor.isleLevel(levels)
+	local up = Config.upgrades
+	local function text(t: string, o: number, color: Color3?, height: number?)
+		Ui.label(t, {
+			TextWrapped = true,
+			TextSize = 14,
+			TextColor3 = color or Ui.colors.text,
+			Size = UDim2.new(1, 0, 0, height or 20),
+			LayoutOrder = o,
+			Parent = card,
+		})
+	end
+	text(
+		string.format(
+			"Guild level %d/%d:  trips -%s  ·  %s +%s  ·  %s +%s",
+			level,
+			Harbor.MAX_ISLE_LEVEL,
+			pct(up.timeStep * levels.time),
+			name(isle.goods[2]),
+			pct(up.oddsStep * levels.uncommon),
+			name(isle.goods[3]),
+			pct(up.oddsStep * levels.rare)
+		),
+		order,
+		Ui.colors.muted,
+		38
+	)
+	local choices = Harbor.upgradeChoices(isle.id, levels)
+	if #choices == 0 then
+		return
+	end
+	local cost, reason = Harbor.canUpgradeIsle(state, isle.id, choices[1], now)
+	if cost == nil then
+		if reason then
+			text(reason .. " to upgrade this isle with Bars.", order + 1, Ui.colors.muted)
+		end
+		return
+	end
+	local costText, enough = barsText(cost)
+	text("Next upgrade: " .. costText, order + 1, if enough then nil else Ui.colors.danger, 38)
+	local row = Ui.new("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 34),
+		LayoutOrder = order + 2,
+		Parent = card,
+	}, { Ui.list(4, true) })
+	for _, stat in choices do
+		local label = if stat == "time"
+			then string.format("Shorter trips (-%s)", pct(up.timeStep))
+			elseif stat == "uncommon" then string.format("%s +%s", name(isle.goods[2]), pct(up.oddsStep))
+			else string.format("%s +%s", name(isle.goods[3]), pct(up.oddsStep))
+		local button = Ui.button(label, function()
+			Remotes.fire("Harbor_Upgrade", isle.id, stat)
+		end, { Size = UDim2.new(1 / #choices, -4, 1, 0), Parent = row })
+		Ui.setEnabled(button, enough)
+	end
+end
+
 local function isleCard(state: { [string]: any }, isle: Config.IsleDef, order: number, body: Instance)
 	local now = ClientStore.now()
 	local card = Ui.card({
@@ -233,13 +310,16 @@ local function isleCard(state: { [string]: any }, isle: Config.IsleDef, order: n
 		if status == "Open" then Ui.colors.ready else nil
 	)
 	text(
-		isle.theme .. string.format(". %d Coins a trip, %s.", isle.sendCoins, Timer.format(isle.tripSeconds)),
+		isle.theme
+			.. string.format(". %d Coins a trip, %s.", isle.sendCoins, Timer.format(Harbor.tripSeconds(state, isle.id))),
 		2,
 		Ui.colors.muted,
 		38
 	)
-	text(oddsText(isle, chosenBar), 3, nil, 38)
-	if status == "Opening" then
+	text(oddsText(state, isle, chosenBar), 3, nil, 38)
+	if status == "Open" then
+		upgradeRows(state, isle, card, 10)
+	elseif status == "Opening" then
 		local left = state.harbor.isles[isle.id].readyAt - now
 		text("Opening: " .. Timer.format(left) .. " left", 4)
 		Panels.gemButton("HarborIsle" .. isle.id, "Finish now", Speedup.building(left), function()

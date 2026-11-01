@@ -13,8 +13,11 @@
 --              after the first
 --   driftDay   UTC day of the last Driftwood Crate opened
 --   chests     Sea Chests found, for records
+--   upgrades   isle id -> its Tinker's Guild upgrades { time, uncommon, rare }; its level is 1
+--              + their sum (Config.upgrades)
 
 local Config = require("./Config/Isles")
+local Guild = require("./Guild")
 local Rng = require("./Rng")
 local TownRules = require("./TownRules")
 
@@ -22,6 +25,8 @@ local Harbor = {}
 
 export type Crate = { item: string, qty: number }
 export type Prize = { item: string, qty: number }
+export type Stat = "time" | "uncommon" | "rare"
+export type IsleLevels = { time: number, uncommon: number, rare: number }
 export type Boat = {
 	isle: string?,
 	departAt: number?,
@@ -189,11 +194,15 @@ function Harbor.barRow(bar: any): number?
 	return if index then index + 1 else nil
 end
 
--- Chances (0-1) of the uncommon good, the rare good and a Sea Chest on a trip to this isle
-function Harbor.odds(isleId: string, bar: string?): (number, number, number)
+-- Chances (0-1) of the uncommon good, the rare good and a Sea Chest on a trip to this isle,
+-- with the isle's Guild upgrades when `levels` is given
+function Harbor.odds(isleId: string, bar: string?, levels: IsleLevels?): (number, number, number)
 	local def = Config.byId[isleId]
 	local row = def.odds[Harbor.barRow(bar) or 1]
-	return row[1], row[2], row[3]
+	local step = Config.upgrades.oddsStep
+	local u = math.min(1, row[1] + step * (if levels then levels.uncommon else 0))
+	local r = math.min(1, row[2] + step * (if levels then levels.rare else 0))
+	return u, r, row[3]
 end
 
 local function pickWeighted(seed: number, entries: { any }): (any, number)
@@ -214,13 +223,14 @@ local function pickWeighted(seed: number, entries: { any }): (any, number)
 end
 
 -- What a trip to `isleId` with `bar` brings back, drawn from `seed`: the crates (common good
--- first, x3 always; the others when their roll hits) and maybe a Sea Chest prize. Returns them
--- and the next seed.
-function Harbor.roll(isleId: string, bar: string?, seed: number): ({ Crate }, Prize?, number)
+-- first, x3 always; the others when their roll hits) and maybe a Sea Chest prize. `levels` are
+-- the isle's Guild upgrades (nil = none). Returns them and the next seed.
+function Harbor.roll(isleId: string, bar: string?, seed: number, levels: IsleLevels?): ({ Crate }, Prize?, number)
 	seed = Rng.normalize(seed)
 	local def = Config.byId[isleId]
 	local row = Harbor.barRow(bar) or 1
-	local chances = def.odds[row]
+	local u, r3, c = Harbor.odds(isleId, bar, levels)
+	local chances = { u, r3, c }
 	local qty = Config.qty[row]
 	local cargo: { Crate } = { { item = def.goods[1], qty = Config.commonQty } }
 	for tier = 2, 3 do
@@ -271,12 +281,11 @@ end
 function Harbor.send(data: { [string]: any }, index: number, isleId: string, bar: string?, now: number, scale: number?)
 	local harbor = data.harbor
 	local boat = harbor.boats[index]
-	local def = Config.byId[isleId]
-	local cargo, chest, seed = Harbor.roll(isleId, bar, harbor.seed)
+	local cargo, chest, seed = Harbor.roll(isleId, bar, harbor.seed, Harbor.isleLevels(data, isleId))
 	harbor.seed = seed
 	boat.isle = isleId
 	boat.departAt = now
-	boat.returnAt = now + secs(def.tripSeconds, scale)
+	boat.returnAt = now + secs(Harbor.tripSeconds(data, isleId), scale)
 	boat.bar = bar
 	boat.cargo = cargo
 	boat.chest = chest
@@ -332,6 +341,102 @@ function Harbor.skip(boat: Boat, now: number): boolean
 	end
 	boat.returnAt = now
 	return true
+end
+
+---------------------------------------------------------------------------------------------
+-- Isle upgrades at the Tinker's Guild
+---------------------------------------------------------------------------------------------
+
+Harbor.STATS = table.freeze({ "time", "uncommon", "rare" }) :: { Stat }
+Harbor.MAX_ISLE_LEVEL = #Config.upgrades.costs[Config.isles[1].id] + 1
+
+function Harbor.isleLevels(data: { [string]: any }, isleId: string): IsleLevels
+	local entry = (data.harbor.upgrades or {})[isleId]
+	if type(entry) ~= "table" then
+		entry = {}
+	end
+	return { time = entry.time or 0, uncommon = entry.uncommon or 0, rare = entry.rare or 0 }
+end
+
+function Harbor.isleLevel(levels: IsleLevels): number
+	return 1 + levels.time + levels.uncommon + levels.rare
+end
+
+-- Bars for an isle's next upgrade from `level`, or nil at the top level
+function Harbor.upgradeCost(isleId: string, level: number): { [string]: number }?
+	local rows = Config.upgrades.costs[isleId]
+	local row = rows and rows[level]
+	if row == nil then
+		return nil
+	end
+	local cost = {}
+	for i, bar in Config.bars do
+		if row[i] > 0 then
+			cost[bar] = row[i]
+		end
+	end
+	return cost
+end
+
+-- The stats an isle's next upgrade can raise (pick one): trip time on its fixed levels, else
+-- the uncommon or the rare good's chance while it's under the cap
+function Harbor.upgradeChoices(isleId: string, levels: IsleLevels): { Stat }
+	local level = Harbor.isleLevel(levels)
+	if Config.upgrades.costs[isleId] == nil or level >= Harbor.MAX_ISLE_LEVEL then
+		return {}
+	end
+	if table.find(Config.upgrades.timeLevels, level + 1) then
+		return { "time" }
+	end
+	local cap = math.round(Config.upgrades.oddsMax / Config.upgrades.oddsStep)
+	local out: { Stat } = {}
+	if levels.uncommon < cap then
+		table.insert(out, "uncommon")
+	end
+	if levels.rare < cap then
+		table.insert(out, "rare")
+	end
+	return out
+end
+
+-- Can this isle take an upgrade to `stat` now? Returns its Bar cost when it can (the Bars are
+-- checked by the caller, which holds the Barn).
+function Harbor.canUpgradeIsle(
+	data: { [string]: any },
+	isleId: any,
+	stat: any,
+	now: number
+): ({ [string]: number }?, string?)
+	local def = type(isleId) == "string" and Config.byId[isleId] or nil
+	if def == nil then
+		return nil
+	elseif not Guild.isBuilt(data, now) then
+		return nil, "Build the Tinker's Guild first"
+	elseif not Harbor.isleOpen(data, def.id, now) then
+		return nil, string.format("Open %s first", def.displayName)
+	end
+	local levels = Harbor.isleLevels(data, def.id)
+	if not table.find(Harbor.upgradeChoices(def.id, levels), stat :: Stat) then
+		return nil, if Harbor.isleLevel(levels) >= Harbor.MAX_ISLE_LEVEL then "Already at the top level" else nil
+	end
+	return Harbor.upgradeCost(def.id, Harbor.isleLevel(levels))
+end
+
+-- Raises `stat` by one (check canUpgradeIsle and take the Bars first). Boats already at sea
+-- keep the time and cargo they left with.
+function Harbor.upgradeIsle(data: { [string]: any }, isleId: string, stat: Stat)
+	local harbor = data.harbor
+	harbor.upgrades = harbor.upgrades or {}
+	local levels = Harbor.isleLevels(data, isleId)
+	levels[stat] += 1
+	harbor.upgrades[isleId] = levels
+end
+
+-- A trip's length to this isle with its upgrades (before the Studio time scale)
+function Harbor.tripSeconds(data: { [string]: any }, isleId: string): number
+	local def = Config.byId[isleId]
+	local mult = math.max(0, 1 - Config.upgrades.timeStep * Harbor.isleLevels(data, isleId).time)
+	return math.floor(def.tripSeconds * mult + 0.5)
 end
 
 ---------------------------------------------------------------------------------------------
