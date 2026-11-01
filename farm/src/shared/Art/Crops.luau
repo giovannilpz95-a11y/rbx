@@ -389,6 +389,24 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Rice (level 56): a flooded paddy with rows of bright green shoots, then tall golden
+-- stalks bowing under their heads of grain.
+GROWING.Rice = function(b)
+	b.block("Paddy", Vector3.new(9, 0.2, 9), Vector3.new(0, 0.6, 0), Palette.water)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.5, 0, 2.5 } do
+			b.block("Shoots", Vector3.new(0.6, 1, 0.6), Vector3.new(x, 1.1, z), Palette.lime)
+		end
+	end
+end
+READY.Rice = function(b, color)
+	b.block("Paddy", Vector3.new(9, 0.2, 9), Vector3.new(0, 0.6, 0), Palette.water)
+	for _, z in ArtCrops.ROWS do
+		b.block("Stalks", Vector3.new(7, 1.6, 0.9), Vector3.new(0, 1.4, z), color)
+		b.block("Heads", Vector3.new(7, 0.4, 1.2), Vector3.new(0, 2.2, z - 0.3), Palette.wheat)
+	end
+end
+
 -- Silk (level 31): rows of low mulberry bushes, then the bushes hung with plump white cocoons.
 GROWING.Silk = function(b)
 	for _, z in ArtCrops.ROWS do

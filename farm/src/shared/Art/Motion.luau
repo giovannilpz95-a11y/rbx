@@ -45,6 +45,7 @@ ArtMotion.SPECS = {
 	FurnitureWorkshop = { kind = "spin", pivot = "Saw", speed = 4 },
 	Cobbler = { kind = "bob", pivot = "Hammer", speed = 6, amplitude = 0.6 },
 	Jeweler = { kind = "spin", pivot = "Gem", speed = 1.2 },
+	SushiBar = { kind = "glow", pivot = "NeonSign", speed = 2.5, color = Palette.flowerYellow },
 	Smelter = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 	Smelter2 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },
 	Smelter3 = { kind = "glow", pivot = "FurnaceGlow", speed = 2, color = Palette.roofMustard },

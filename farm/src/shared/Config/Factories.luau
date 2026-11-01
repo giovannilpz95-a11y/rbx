@@ -62,6 +62,8 @@ local Factories: { [string]: FactoryDef } = {
 	Cobbler = { id = "Cobbler", displayName = "Cobbler", unlockLevel = 50, population = 5465, buildCost = 60000, buildSeconds = 52 * HOUR, xp = 2480, queueSlots = 2, trayCapacity = 6, order = 26, color = { 150, 100, 70 } },
 	-- Township's Jewelry Store (level 53): cuts Quarry ore into jewellery; placed by the player
 	Jeweler = { id = "Jeweler", displayName = "Jeweler", unlockLevel = 53, population = 5860, buildCost = 70000, buildSeconds = 56 * HOUR, xp = 2892, queueSlots = 1, trayCapacity = 6, order = 27, color = { 120, 200, 220 } },
+	-- Township's Asian Restaurant (level 56): placed by the player
+	SushiBar = { id = "SushiBar", displayName = "Sushi Bar", unlockLevel = 56, population = 7500, buildCost = 95000, buildSeconds = 60 * HOUR, xp = 3923, queueSlots = 2, trayCapacity = 6, order = 28, color = { 200, 60, 60 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

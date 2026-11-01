@@ -538,6 +538,40 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.wedge("Toe", Vector3.new(0.85, 0.45, 0.5), tilt(0, 0.45, -0.7, 0, 180, 0), Palette.cream, QUIET)
 		b.block("Stripe", Vector3.new(0.88, 0.15, 0.7), at(0, 0.5, 0.1), Palette.sky, QUIET)
 	end,
+	Rice = function(b)
+		-- A cloth sack of rice, open at the top
+		b.block("Sack", Vector3.new(1.3, 1.4, 1), at(0, 0.7, 0), Palette.sack, QUIET)
+		b.block("Grain", Vector3.new(1.1, 0.3, 0.85), at(0, 1.45, 0), Palette.cream, QUIET)
+		b.block("Band", Vector3.new(1.32, 0.3, 1.02), at(0, 0.7, 0), Palette.roofRed, QUIET)
+	end,
+	SushiRoll = function(b)
+		-- Three slices of roll: rice ringed with seaweed, a pink centre
+		for i, x in { -0.6, 0, 0.6 } do
+			b.cyl("Nori", 0.5, 0.75, at(x, 0.4, i * 0.05) * Kit.yaw(90), Palette.treeTopDark, QUIET)
+			b.cyl("Rice", 0.52, 0.5, at(x, 0.4, i * 0.05) * Kit.yaw(90), Palette.cream, QUIET)
+		end
+	end,
+	LobsterSushi = function(b)
+		-- Two rice blocks topped with red lobster
+		for _, x in { -0.45, 0.45 } do
+			b.block("Rice", Vector3.new(0.7, 0.45, 1.2), at(x, 0.22, 0), Palette.cream, QUIET)
+			b.block("Lobster", Vector3.new(0.75, 0.25, 1.3), at(x, 0.55, 0), Palette.roofRed, QUIET)
+		end
+	end,
+	BaconPoppers = function(b)
+		-- Green peppers wrapped in bacon
+		for _, x in { -0.45, 0.45 } do
+			b.block("Pepper", Vector3.new(0.45, 0.45, 1.3), at(x, 0.25, 0), Palette.leaf, QUIET)
+			b.block("Bacon", Vector3.new(0.5, 0.5, 0.4), at(x, 0.25, 0), Palette.cowMuzzle, QUIET)
+		end
+		b.block("Stem", Vector3.new(0.15, 0.15, 0.3), at(-0.45, 0.3, -0.75), Palette.treeTopDark, QUIET)
+	end,
+	Ring = function(b)
+		-- A gold band with a big sparkling stone
+		b.cyl("Band", 0.3, 1.4, at(0, 0.75, 0) * Kit.yaw(90), Palette.coins, QUIET)
+		b.cyl("Hole", 0.32, 0.9, at(0, 0.75, 0) * Kit.yaw(90), Palette.cream, QUIET)
+		b.block("Stone", Vector3.new(0.5, 0.5, 0.5), tilt(0, 1.55, 0, 45, 0, 45), Palette.sky, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
