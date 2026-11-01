@@ -266,7 +266,10 @@ function DebugService.harbor(player: Player): (boolean, string?)
 		end
 	end
 	for _, bar in IslesConfig.bars do
-		data.inventory.items[bar] = (data.inventory.items[bar] or 0) + 2
+		data.inventory.items[bar] = (data.inventory.items[bar] or 0) + 20
+	end
+	if data.guild.readyAt == nil or data.guild.readyAt > now then
+		data.guild.readyAt = now -- the isle upgrades need the Tinker's Guild
 	end
 	for _, boat in data.harbor.boats do
 		if boat.returnAt and boat.returnAt > now then
@@ -277,7 +280,10 @@ function DebugService.harbor(player: Player): (boolean, string?)
 	DataService.markDirty(player, true)
 	PlotService.refresh(player)
 	NetService.pushState(player)
-	NetService.toast(player, "Dev: Harbor repaired, isles open, +2 of each Bar, boats home, a new Driftwood Crate")
+	NetService.toast(
+		player,
+		"Dev: Harbor repaired, isles open, Guild built, +20 of each Bar, boats home, a new Driftwood Crate"
+	)
 	return true
 end
 

@@ -178,6 +178,7 @@ function Profile.template(): { [string]: any }
 			trips = {}, -- isle id -> voyages unloaded
 			driftDay = -1, -- UTC day of the last Driftwood Crate
 			chests = 0,
+			upgrades = {}, -- isle id -> Tinker's Guild upgrades { time, uncommon, rare }
 		},
 		duckPond = { -- the Duck Pond (shared/DuckPond); readyAt is set when digging starts
 			seed = 0,

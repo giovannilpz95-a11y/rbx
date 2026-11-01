@@ -79,6 +79,7 @@ return table.freeze({
 	Harbor_Unload = "Harbor_Unload", -- boat: unload a boat that's back into the Barn
 	Harbor_Skip = "Harbor_Skip", -- boat: bring it home now (Gems)
 	Harbor_Drift = "Harbor_Drift", -- (open today's Driftwood Crate)
+	Harbor_Upgrade = "Harbor_Upgrade", -- isleId, stat: a Tinker's Guild upgrade for an isle (Bars)
 	Pond_Dig = "Pond_Dig", -- (start digging out the Duck Pond, Coins; shared/DuckPond)
 	Pond_SpeedUp = "Pond_SpeedUp", -- (finish digging now, Gems)
 	Pond_Feed = "Pond_Feed", -- food: put a Bread, Bagel or Banana Bread out for the ducks
@@ -99,7 +100,7 @@ return table.freeze({
 	Debug_Grant = "Debug_Grant", -- Gems, Coins and tools for testing paid paths (Studio only)
 	Debug_Blimp = "Debug_Blimp", -- the Blimp Mast repaired and the Cargo Blimp docked now (Studio only)
 	Debug_Pond = "Debug_Pond", -- the Duck Pond dug out, any visit over, one of each food (Studio only)
-	Debug_Harbor = "Debug_Harbor", -- the Harbor repaired, isles open to your level, Bars, boats home now (Studio only)
+	Debug_Harbor = "Debug_Harbor", -- the Harbor repaired, isles open to your level, the Guild built, Bars, boats home now (Studio only)
 	Debug_Quarry = "Debug_Quarry", -- Bars, ore, Pickaxes, an open Quarry and Population (Studio only)
 	Debug_Fuzz = "Debug_Fuzz", -- junk arguments into every remote handler, farm restored after (Studio only)
 	Debug_LevelUp = "Debug_LevelUp", -- open the content bank's levels and give one level's XP (Studio only)
