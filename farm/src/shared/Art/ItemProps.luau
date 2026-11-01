@@ -1127,6 +1127,50 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Head", 0.5, at(0, 1.15, 0), Palette.flowerWhite, QUIET)
 		b.ball("Hair", 0.55, at(0, 1.3, 0.08), Palette.hairDark, QUIET)
 	end,
+	Cup = function(b)
+		-- A terracotta cup with a handle
+		b.post("Cup", 0.9, 0.9, at(0, 0.45, 0), Palette.brick:Lerp(Palette.cream, 0.3), QUIET)
+		b.cyl("Handle", 0.15, 0.5, at(0.55, 0.5, 0) * Kit.yaw(90), Palette.brick:Lerp(Palette.cream, 0.3), QUIET)
+	end,
+	TropicalMix = function(b)
+		-- A coconut shell drink with a pineapple wedge and straw
+		b.ball("Shell", 1.2, at(0, 0.55, 0), Palette.cocoa, QUIET)
+		b.post("Drink", 0.1, 0.9, at(0, 1.1, 0), Palette.flowerYellow, QUIET)
+		b.wedge("Pineapple", Vector3.new(0.15, 0.4, 0.4), at(0.4, 1.25, 0), Palette.flowerYellow, QUIET)
+		b.block("Straw", Vector3.new(0.1, 0.8, 0.1), tilt(-0.15, 1.4, 0, 0, 0, 15), Palette.roofRed, QUIET)
+	end,
+	PeanutButter = function(b)
+		-- A jar of peanut butter with a red lid
+		b.post("Jar", 1, 0.9, at(0, 0.5, 0), Palette.wheat:Lerp(Palette.cocoa, 0.3), QUIET)
+		b.post("Lid", 0.25, 0.95, at(0, 1.1, 0), Palette.roofRed, QUIET)
+		b.block("Label", Vector3.new(0.5, 0.4, 0.02), at(0, 0.5, -0.46), Palette.cream, QUIET)
+	end,
+	FashionDoll = function(b)
+		-- A slim doll in a bright dress with long hair
+		b.wedge("Dress", Vector3.new(0.6, 0.8, 0.4), at(0, 0.6, 0), Palette.plum, QUIET)
+		b.block("Legs", Vector3.new(0.3, 0.3, 0.2), at(0, 0.15, 0), Palette.skinLight, QUIET)
+		b.ball("Head", 0.4, at(0, 1.2, 0), Palette.skinLight, QUIET)
+		b.block("Hair", Vector3.new(0.45, 0.6, 0.2), at(0, 1.1, 0.12), Palette.flowerYellow, QUIET)
+	end,
+	FaceMask = function(b)
+		-- A little tub of green clay mask
+		b.post("Tub", 0.6, 1.2, at(0, 0.3, 0), Palette.flowerWhite, QUIET)
+		b.post("Mask", 0.1, 1.1, at(0, 0.62, 0), Palette.leafLight, QUIET)
+		b.ball("Cucumber", 0.35, at(0.2, 0.72, 0), Palette.lime, QUIET)
+	end,
+	Toothpaste = function(b)
+		-- A tube of toothpaste with a mint stripe
+		b.cyl("Tube", 1.5, 0.5, at(0, 0.25, 0), Palette.flowerWhite, QUIET)
+		b.cyl("Stripe", 1.2, 0.52, at(-0.05, 0.25, 0), Palette.leafLight, QUIET)
+		b.cyl("Cap", 0.3, 0.35, at(0.85, 0.25, 0), Palette.sky, QUIET)
+	end,
+	PeanutButterCrepes = function(b)
+		-- Folded crepes with peanut butter and banana slices
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.wedge("Crepe", Vector3.new(1.2, 0.3, 1.2), at(0, 0.3, 0), Palette.wheat, QUIET)
+		b.block("Spread", Vector3.new(0.8, 0.1, 0.3), at(0, 0.5, -0.2), Palette.cocoa:Lerp(Palette.wheat, 0.4), QUIET)
+		b.cyl("Banana", 0.12, 0.4, at(0.3, 0.55, -0.2) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerYellow, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

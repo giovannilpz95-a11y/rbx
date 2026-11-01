@@ -817,6 +817,47 @@ TYPES.GlassTower = {
 -- cap, a smaller turret on the far corner and a front door under a little porch roof.
 -- Garden Flats (level 72): a wide three-storey block of flats in sandstone with balconies of
 -- plants on the front, a flat roof with a little rooftop garden and a central entrance.
+-- Glass House (level 78): a modern two-storey house of white boxes, the upper one sliding out
+-- over the lower, big glass walls, a flat roof and a wooden deck in front.
+TYPES.GlassHouse = {
+	roof = Palette.stoneDark,
+	build = function(b, s, roof)
+		local w, d = s * 0.7, s * 0.5
+		local body = walls(b, w, d, STORY, Palette.flowerWhite, 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		-- The upper box slides out to one side over the deck
+		t.block(
+			"Upper",
+			Vector3.new(w * 0.8, STORY * 0.9, d),
+			Vector3.new(w * 0.2, PLINTH + STORY * 1.45, 0.6),
+			Palette.flowerWhite
+		)
+		t.block(
+			"Roof",
+			Vector3.new(w * 0.84, 0.4, d + 0.4),
+			Vector3.new(w * 0.2, PLINTH + STORY * 1.9 + 0.2, 0.6),
+			roof
+		)
+		t.block(
+			"GlassLow",
+			Vector3.new(w * 0.6, STORY * 0.7, 0.2),
+			Vector3.new(-w * 0.1, PLINTH + STORY * 0.4, face - 0.05),
+			Palette.glassDeep
+		)
+		t.block(
+			"GlassHigh",
+			Vector3.new(w * 0.7, STORY * 0.6, 0.2),
+			Vector3.new(w * 0.2, PLINTH + STORY * 1.45, face - 0.05),
+			Palette.glassDeep
+		)
+		t.block("Deck", Vector3.new(w, 0.3, 2), Vector3.new(0, PLINTH + 0.15, face - 1), Palette.woodLight)
+		Kit.door(t, "Door", CFrame.new(w * 0.35, PLINTH, face), 1.6, 3.2, Palette.woodDark, Palette.stoneDark)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + STORY + 1, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.GardenFlats = {
 	roof = Palette.woodDark,
 	build = function(b, s, roof)

@@ -81,6 +81,8 @@ local Factories: { [string]: FactoryDef } = {
 	QuiltShop = { id = "QuiltShop", displayName = "Quilt Shop", unlockLevel = 74, population = 13100, buildCost = 290000, buildSeconds = 67 * HOUR, xp = 11967, queueSlots = 2, trayCapacity = 6, order = 36, color = { 200, 220, 240 } },
 	-- Township's Doll Factory (level 76): placed by the player
 	DollMaker = { id = "DollMaker", displayName = "Doll Maker", unlockLevel = 76, population = 13900, buildCost = 310000, buildSeconds = 67 * HOUR, xp = 12792, queueSlots = 2, trayCapacity = 6, order = 37, color = { 240, 180, 200 } },
+	-- Township's Kitchenware Factory (level 78): placed by the player
+	CookwareShop = { id = "CookwareShop", displayName = "Cookware Shop", unlockLevel = 78, population = 14500, buildCost = 340000, buildSeconds = 72 * HOUR, xp = 14030, queueSlots = 2, trayCapacity = 6, order = 38, color = { 200, 120, 80 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

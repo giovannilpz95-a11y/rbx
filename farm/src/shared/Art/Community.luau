@@ -2238,6 +2238,38 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Kindergarten (content bank, level 78): a sunny yellow schoolhouse with a red roof, coloured
+-- building blocks on the corner, a little slide and a sandpit in the yard.
+TYPES.Kindergarten = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.36, 4, Palette.flowerYellow:Lerp(Palette.cream, 0.3))
+	local t = b.into(body, true)
+	local face = -s * 0.18
+	Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + 4, 0), s * 0.54, s * 0.4, 2.4, Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 2.8, Palette.sky, Palette.flowerWhite)
+	Kit.window(t, "Window", CFrame.new(-s * 0.15, PLINTH + 2.2, face), 2, 1.6, Palette.flowerWhite, Palette.glass)
+	-- Building blocks stacked on the corner
+	for i, color in { Palette.roofRed, Palette.sky, Palette.lime } do
+		t.block(
+			"Block",
+			Vector3.new(1.2, 1.2, 1.2),
+			Vector3.new(s * 0.2, PLINTH + 0.6 + (i - 1) * 1.2, face - 0.8),
+			color
+		)
+	end
+	-- The slide and the sandpit
+	t.block("SlideSteps", Vector3.new(0.8, 2.4, 0.8), Vector3.new(-s * 0.32, PLINTH + 1.2, 0), Palette.sky)
+	t.wedge(
+		"Slide",
+		Vector3.new(0.8, 2.4, 2.6),
+		CFrame.new(-s * 0.32, PLINTH + 1.2, -1.7) * Kit.yaw(180),
+		Palette.roofRed
+	)
+	t.block("Sandpit", Vector3.new(3, 0.3, 3), Vector3.new(s * 0.3, PLINTH + 0.15, s * 0.1), Palette.wheat)
+	t.ball("Bucket", 0.6, Vector3.new(s * 0.3, PLINTH + 0.5, s * 0.1), Palette.flowerPink)
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5.4, s * 0.1), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Bike Rental (content bank, level 76): a green kiosk with a striped canopy, a rack of three
 -- bikes beside it and a big wheel sign on the roof.
 TYPES.BikeRental = function(b, s)
