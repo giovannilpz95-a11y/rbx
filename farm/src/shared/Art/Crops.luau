@@ -395,6 +395,20 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Coffee Beans (level 72): rows of glossy dark-leaved bushes, then the bushes dotted with
+-- clusters of red coffee cherries.
+GROWING.Coffee = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block("Bush", Vector3.new(6.6, 1.4, 1), Vector3.new(0, 1.1, z), Palette.treeTopDark)
+	end
+end
+READY.Coffee = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block("Bush", Vector3.new(6.8, 2, 1.2), Vector3.new(0, 1.4, z), Palette.treeTopDark)
+		b.block("Cherries", Vector3.new(6, 0.5, 1.3), Vector3.new(0, 1.6, z), color)
+	end
+end
+
 -- Jasmine (level 67): climbing vines on low trellis rows, then the vines starred with small
 -- white flowers.
 GROWING.Jasmine = function(b)

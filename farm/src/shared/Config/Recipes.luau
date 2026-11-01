@@ -187,6 +187,15 @@ local Recipes: { [string]: RecipeDef } = {
 	JellyFruitSlices = { id = "JellyFruitSlices", displayName = "Jelly Fruit Slices", factory = "CandyFactory", unlockLevel = 71, inputs = { WatermelonJam = 1, StrawberryJam = 1, KeyLimes = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 436, xp = 187 },
 	JasmineOil = { id = "JasmineOil", displayName = "Jasmine Oil", factory = "Perfumery", unlockLevel = 71, inputs = { Jasmine = 3, Olives = 2 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 345, xp = 148 },
 	NicoiseSalad = { id = "NicoiseSalad", displayName = "Niçoise Salad", factory = "Bistro", unlockLevel = 71, inputs = { Olives = 3, Tomatoes = 2, Fish = 1, Eggs = 1 }, outputQty = 1, seconds = 2 * HOUR + 40 * MIN, sellPrice = 399, xp = 171 },
+	-- Level 72-73 goods
+	Espresso = { id = "Espresso", displayName = "Espresso", factory = "CoffeeHouse", unlockLevel = 72, inputs = { Coffee = 3, Sugar = 1 }, outputQty = 1, seconds = 15 * MIN, sellPrice = 187, xp = 80 },
+	Lotion = { id = "Lotion", displayName = "Lotion", factory = "Perfumery", unlockLevel = 72, inputs = { Rose = 2, Coconuts = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 280, xp = 120 },
+	PackagedMeal = { id = "PackagedMeal", displayName = "Packaged Meal", factory = "PrepKitchen", unlockLevel = 72, inputs = { RiceCasserole = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 301, xp = 129 },
+	Bouillabaisse = { id = "Bouillabaisse", displayName = "Bouillabaisse", factory = "Bistro", unlockLevel = 72, inputs = { Fish = 1, Shrimp = 3, Potatoes = 2, Tomatoes = 1 }, outputQty = 1, seconds = 3 * HOUR + 10 * MIN, sellPrice = 535, xp = 229 },
+	MoleSauce = { id = "MoleSauce", displayName = "Mole Sauce", factory = "Cantina", unlockLevel = 73, inputs = { Cocoa = 3, Peppers = 3 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 149, xp = 64 },
+	WatermelonCooler = { id = "WatermelonCooler", displayName = "Watermelon Cooler", factory = "JuiceBar", unlockLevel = 73, inputs = { Watermelons = 2, Sugar = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 136, xp = 58 },
+	MushroomSalad = { id = "MushroomSalad", displayName = "Mushroom Salad", factory = "SushiBar", unlockLevel = 73, inputs = { Mushroom = 2, Rice = 2, Peppers = 1 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 392, xp = 63 },
+	CoffeeCake = { id = "CoffeeCake", displayName = "Coffee Cake", factory = "CakeShop", unlockLevel = 73, inputs = { Wheat = 2, Coffee = 2, Eggs = 2, Butter = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 217, xp = 93 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

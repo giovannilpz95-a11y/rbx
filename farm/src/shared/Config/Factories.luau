@@ -75,6 +75,8 @@ local Factories: { [string]: FactoryDef } = {
 	-- Township's Hot Dog Factory (level 68) and French Restaurant (69): placed by the player
 	HotDogStand = { id = "HotDogStand", displayName = "Hot Dog Stand", unlockLevel = 68, population = 11300, buildCost = 220000, buildSeconds = 64 * HOUR, xp = 9080, queueSlots = 2, trayCapacity = 6, order = 33, color = { 230, 80, 60 } },
 	Bistro = { id = "Bistro", displayName = "Bistro", unlockLevel = 69, population = 12180, buildCost = 240000, buildSeconds = 65 * HOUR, xp = 9905, queueSlots = 2, trayCapacity = 6, order = 34, color = { 60, 80, 140 } },
+	-- Township's Coffee Factory (level 72): placed by the player
+	CoffeeHouse = { id = "CoffeeHouse", displayName = "Coffee House", unlockLevel = 72, population = 12600, buildCost = 270000, buildSeconds = 66 * HOUR, xp = 11142, queueSlots = 2, trayCapacity = 6, order = 35, color = { 120, 80, 50 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 

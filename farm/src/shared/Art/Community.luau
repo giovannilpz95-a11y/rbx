@@ -2238,6 +2238,32 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Lighthouse (content bank, level 72): a tall white tower banded in red on a rocky base, a
+-- glass lamp room at the top with a lamp, a gallery rail and a red cap, and a keeper's hut.
+TYPES.Lighthouse = function(b, s)
+	local body =
+		b.block("Body", Vector3.new(s * 0.6, 1, s * 0.6), Vector3.new(0, 0.5, 0), Palette.stone, { collide = true })
+	local t = b.into(body, true)
+	local base = 1
+	t.ball("Rock", 3, Vector3.new(-s * 0.2, base + 0.4, -s * 0.18), Palette.stoneDark)
+	t.ball("Rock", 2.4, Vector3.new(s * 0.22, base + 0.3, -s * 0.2), Palette.stoneDark)
+	-- The tower: white with two red bands
+	t.post("Tower", 12, 3.6, Vector3.new(0, base + 6, 0), Palette.flowerWhite)
+	for _, y in { 3.5, 8 } do
+		t.post("Band", 1.4, 3.7, Vector3.new(0, base + y, 0), Palette.roofRed)
+	end
+	t.cyl("Gallery", 0.4, 4.6, CFrame.new(0, base + 12.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark)
+	t.post("LampRoom", 2, 2.8, Vector3.new(0, base + 13.4, 0), Palette.glass)
+	t.ball("Lamp", 1.6, Vector3.new(0, base + 13.4, 0), Palette.lantern, { shadow = false })
+	t.wedge("Cap", Vector3.new(3.2, 1.6, 3.2), CFrame.new(0, base + 15.2, 0), Palette.roofRed)
+	Kit.door(t, "Door", CFrame.new(0, base, -1.8), 1.4, 2.6, Palette.roofRed, Palette.flowerWhite)
+	-- The keeper's hut
+	t.block("Hut", Vector3.new(3.6, 2.6, 3), Vector3.new(s * 0.2, base + 1.3, s * 0.15), Palette.cream)
+	t.wedge("HutRoof", Vector3.new(3.8, 1.2, 3.2), CFrame.new(s * 0.2, base + 3.2, s * 0.15), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(-s * 0.22, base + 2.6, s * 0.2), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Dolphin Lagoon (content bank, level 70): a round blue pool ringed in white stone, a dolphin
 -- leaping out of the middle past a hoop, a grandstand of benches behind and a little ball on
 -- the water.
