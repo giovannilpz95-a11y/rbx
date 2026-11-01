@@ -11,6 +11,7 @@ local DailyRules = require(Shared.Daily)
 local Items = require(Shared.Items)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tonics = require(Shared.Tonics)
 local Tools = require(Shared.Config.Tools)
 local TownRules = require(Shared.TownRules)
 
@@ -48,6 +49,11 @@ local function fullButton(text: string, order: number, body: Instance, fn: () ->
 	return Ui.button(text, fn, { Size = UDim2.new(1, -8, 0, 40), LayoutOrder = order, Parent = body })
 end
 
+-- A trip's time for a boat sent now (Swift Sails, a tonic, halves it)
+local function tripSeconds(state: { [string]: any }, isleId: string): number
+	return Harbor.tripSeconds(state, isleId) * Tonics.value(state, "sailTime", ClientStore.now())
+end
+
 local function pct(p: number): string
 	return string.format("%d%%", math.floor(p * 100 + 0.5))
 end
@@ -59,7 +65,9 @@ end
 
 -- "Peaches x3 · Watermelons 80% · Plums 53% · Sea Chest 10%"
 local function oddsText(state: { [string]: any }, isle: Config.IsleDef, bar: string?): string
-	local u, r, c = Harbor.odds(isle.id, bar, Harbor.isleLevels(state, isle.id))
+	-- Fair Winds (a tonic) makes the Bar count double: the odds shown are the boosted ones
+	local power = if bar then Tonics.value(state, "barPower", ClientStore.now()) else 1
+	local u, r, c = Harbor.odds(isle.id, bar, Harbor.isleLevels(state, isle.id), power)
 	local parts = {
 		string.format("%s x%d", name(isle.goods[1]), Config.commonQty),
 		string.format("%s %s", name(isle.goods[2]), pct(u)),
@@ -74,7 +82,10 @@ end
 local function barPicker(order: number, body: Instance)
 	heading("Ballast Bar", order, body)
 	line(
-		"Send one Bar along and the rarer goods come back more often, with a chance of a Sea Chest.",
+		"Send one Bar along and the rarer goods come back more often, with a chance of a Sea Chest."
+			.. if Tonics.value(ClientStore.state or {}, "barPower", ClientStore.now()) > 1
+				then " Fair Winds is running: a Bar counts double."
+				else "",
 		order + 1,
 		body,
 		38,
@@ -145,7 +156,7 @@ local function boatCard(state: { [string]: any }, index: number, boat: { [string
 						"Sail to %s: %d Coins, %s%s",
 						isle.displayName,
 						isle.sendCoins,
-						Timer.format(Harbor.tripSeconds(state, isle.id)),
+						Timer.format(tripSeconds(state, isle.id)),
 						if chosenBar then " + " .. name(chosenBar) else ""
 					),
 					function()
@@ -310,8 +321,7 @@ local function isleCard(state: { [string]: any }, isle: Config.IsleDef, order: n
 		if status == "Open" then Ui.colors.ready else nil
 	)
 	text(
-		isle.theme
-			.. string.format(". %d Coins a trip, %s.", isle.sendCoins, Timer.format(Harbor.tripSeconds(state, isle.id))),
+		isle.theme .. string.format(". %d Coins a trip, %s.", isle.sendCoins, Timer.format(tripSeconds(state, isle.id))),
 		2,
 		Ui.colors.muted,
 		38

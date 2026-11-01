@@ -15,6 +15,8 @@ local Land = require(Shared.Config.Land)
 local QuarryConfig = require(Shared.Config.Quarry)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tonics = require(Shared.Tonics)
+local TonicsConfig = require(Shared.Config.Tonics)
 local Tools = require(Shared.Config.Tools)
 local TownRules = require(Shared.TownRules)
 
@@ -68,6 +70,7 @@ local function prizeText(prize: { item: string, qty: number }): string
 	local name = if tool
 		then (if prize.qty == 1 then tool.displayName else tool.plural)
 		elseif prize.item == QuarryConfig.pickaxe then (if prize.qty == 1 then "Pickaxe" else "Pickaxes")
+		elseif Tonics.isTonic(prize.item) then TonicsConfig.tonics[prize.item].displayName .. " tonic"
 		elseif Items[prize.item] then Items[prize.item].displayName
 		else prize.item
 	return string.format("%d %s", prize.qty, name)
@@ -110,6 +113,7 @@ local function crateCard(row: number, slot: number, crate: Blimp.Crate, body: In
 	local def = Items[crate.item]
 	local have = ClientStore.itemCount(crate.item)
 	local coins, xp = Blimp.crateRewards(crate)
+	coins *= Tonics.value(ClientStore.state or {}, "blimpCoins", ClientStore.now()) -- Sky Bonus
 	Ui.label(string.format("%d %s", crate.qty, def.displayName), {
 		Font = Ui.theme.Type.display,
 		TextSize = 15,

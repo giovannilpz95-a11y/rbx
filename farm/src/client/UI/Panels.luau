@@ -40,6 +40,7 @@ local Tutorial = require(Shared.Tutorial)
 local Decor = require(Shared.Config.Decor)
 local DecorRules = require(Shared.DecorRules)
 local Timer = require(Shared.Timer)
+local Tonics = require(Shared.Tonics)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
@@ -1247,7 +1248,11 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 				then string.format("%d %s", recipe.outputQty, recipe.displayName)
 				else recipe.displayName,
 			table.concat(inputs, ", "),
-			Timer.format(recipe.seconds * Guild.timeMult(state, factoryId) * (state.timeScale or 1))
+			Timer.format(
+				recipe.seconds
+					* Tonics.factoryMult(state, factoryId, Guild.timeMult(state, factoryId), ClientStore.now())
+					* (state.timeScale or 1)
+			)
 		)
 		if locked then
 			text = string.format("Lv %d  ·  ", recipe.unlockLevel) .. text -- first, so "Lv 10" never wraps
@@ -2223,7 +2228,7 @@ local function renderSeeds(state: { [string]: any })
 			"%s   %s   %s",
 			crop.displayName,
 			cost,
-			Timer.format(crop.growSeconds * (state.timeScale or 1))
+			Timer.format(crop.growSeconds * Tonics.value(state, "growTime", ClientStore.now()) * (state.timeScale or 1))
 		)
 		if locked then
 			text ..= string.format("   (level %d)", crop.unlockLevel)
@@ -2446,6 +2451,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Duck Pond: dug out, ducks gone, a Bread, Bagel and Banana Bread", "Debug_Pond", 380, 20)
 	devButton("Otter Pond: built, three otters, trips over, an Egg, Bacon and Fish", "Debug_Otters", 380, 21)
 	devButton("Tool Trader: built, three slots, materials for its offers", "Debug_Trader", 380, 22)
+	devButton("Tonic Shed: built, one of every tonic to switch on", "Debug_Tonics", 340, 23)
 end
 
 ---------------------------------------------------------------------------------------------

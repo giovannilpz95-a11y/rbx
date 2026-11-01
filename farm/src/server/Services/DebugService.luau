@@ -14,6 +14,8 @@ local OtterPond = require(Shared.OtterPond)
 local OtterPondConfig = require(Shared.Config.OtterPond)
 local ToolTrader = require(Shared.ToolTrader)
 local ToolTraderConfig = require(Shared.Config.ToolTrader)
+local Tonics = require(Shared.Tonics)
+local TonicsConfig = require(Shared.Config.Tonics)
 local Harbor = require(Shared.Harbor)
 local IslesConfig = require(Shared.Config.Isles)
 local Levels = require(Shared.Config.Levels)
@@ -378,6 +380,28 @@ function DebugService.trader(player: Player): (boolean, string?)
 	return true
 end
 
+-- The Tonic Shed (Features/F09): built now (ignoring level, Population and Coins) and one of
+-- every tonic in its store, to switch on for free
+function DebugService.tonics(player: Player): (boolean, string?)
+	local data = DataService.get(player)
+	if not RunService:IsStudio() or data == nil then
+		return false
+	end
+	local now = Clock.now()
+	if data.tonics.readyAt == nil then
+		Tonics.build(data, now)
+	end
+	Tonics.finishBuild(data, now)
+	for _, def in TonicsConfig.list do
+		Tonics.give(data, def.id, 1)
+	end
+	DataService.markDirty(player, true)
+	PlotService.refresh(player)
+	NetService.pushState(player)
+	NetService.toast(player, "Dev: Tonic Shed built, one of every tonic to switch on for free")
+	return true
+end
+
 -- Airship Freight (Features/F04): the Blimp Mast repaired and the Cargo Blimp docked now,
 -- ignoring level, land and Coins. Pressed while it's docked, it sends it off (no rewards) and
 -- brings a fresh load in.
@@ -580,6 +604,7 @@ function DebugService.init()
 	NetService.on(Net.Debug_Pond, 1, 2, DebugService.pond)
 	NetService.on(Net.Debug_Otters, 1, 2, DebugService.otters)
 	NetService.on(Net.Debug_Trader, 1, 2, DebugService.trader)
+	NetService.on(Net.Debug_Tonics, 1, 2, DebugService.tonics)
 	NetService.on(Net.Debug_Fuzz, 1, 1, DebugService.fuzz)
 	NetService.on(Net.Debug_LevelUp, 2, 4, DebugService.levelUp)
 	NetService.on(Net.Debug_Records, 2, 4, DebugService.records)

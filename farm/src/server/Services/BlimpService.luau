@@ -13,8 +13,10 @@ local Items = require(Shared.Items)
 local Net = require(Shared.Net)
 local Speedup = require(Shared.Speedup)
 local Tools = require(Shared.Config.Tools)
+local TonicsConfig = require(Shared.Config.Tonics)
 local QuarryConfig = require(Shared.Config.Quarry)
 local Timer = require(Shared.Timer)
+local Tonics = require(Shared.Tonics)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -102,6 +104,8 @@ function BlimpService.fill(player: Player, row: any, slot: any): (boolean, strin
 	end
 	Blimp.fill(crate, player.UserId)
 	local coins, xp = Blimp.crateRewards(crate)
+	-- Sky Bonus (a tonic) doubles the Coins
+	coins *= Tonics.value(data, "blimpCoins", Clock.now())
 	EconomyService.add(player, "Coins", coins, "blimp_crate")
 	EconomyService.add(player, "XP", xp, "blimp_crate")
 	changed(player)
@@ -121,7 +125,9 @@ end
 -- Put a prize where it belongs: tools in the Tool Shed, everything else in the Barn (rewards
 -- go in even past the Barn's cap, like the level-up gifts)
 local function give(data: { [string]: any }, item: string, qty: number)
-	if Tools.tools[item] or item == QuarryConfig.pickaxe then
+	if Tonics.isTonic(item) then
+		Tonics.give(data, item, qty) -- waits in the Tonic Shed
+	elseif Tools.tools[item] or item == QuarryConfig.pickaxe then
 		data.toolShed.items[item] = (data.toolShed.items[item] or 0) + qty
 	else
 		data.inventory.items[item] = (data.inventory.items[item] or 0) + qty
@@ -133,6 +139,7 @@ local function prizeName(item: string, qty: number): string
 	local name = if tool
 		then (if qty == 1 then tool.displayName else tool.plural)
 		elseif item == QuarryConfig.pickaxe then (if qty == 1 then "Pickaxe" else "Pickaxes")
+		elseif Tonics.isTonic(item) then TonicsConfig.tonics[item].displayName .. " tonic"
 		elseif Items[item] then Items[item].displayName
 		else item
 	return string.format("%d %s", qty, name)
@@ -145,6 +152,7 @@ function BlimpService.send(player: Player): (boolean, string?)
 	if payout == nil then
 		return false, "The Cargo Blimp isn't here"
 	end
+	payout.coins *= Tonics.value(data, "blimpCoins", Clock.now())
 	if payout.coins > 0 then
 		EconomyService.add(player, "Coins", payout.coins, "blimp_rows")
 	end

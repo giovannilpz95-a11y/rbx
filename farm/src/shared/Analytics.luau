@@ -99,6 +99,7 @@ local PREFIX_SKU: { [string]: string } = {
 	questchest = "QuestChest",
 	cart = "SeedCart",
 	market = "Market", -- stall buys and sales, and the passing trader
+	tonic = "Tonic", -- the Tonic Shed: building it and Gem tonics (shared/Tonics)
 	debug = "DevGrant", -- Studio only; never reaches live analytics
 }
 
@@ -127,7 +128,9 @@ function Analytics.sku(reason: string, currency: string): (string, string)
 		return sku, "Onboarding"
 	elseif sku == "DailyLogin" then
 		return sku, "TimedReward"
-	elseif currency == "Gems" and (sku == "BuyMissingItem" or sku == "GemSlot" or sku == "CropPop") then
+	elseif
+		currency == "Gems" and (sku == "BuyMissingItem" or sku == "GemSlot" or sku == "CropPop" or sku == "Tonic")
+	then
 		return sku, "ContextualPurchase"
 	end
 	return sku, "Gameplay"

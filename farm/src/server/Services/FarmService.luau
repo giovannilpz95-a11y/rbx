@@ -13,6 +13,7 @@ local PrizeRules = require(Shared.Prize)
 local SeedCartRules = require(Shared.SeedCart)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tonics = require(Shared.Tonics)
 local Tutorial = require(Shared.Tutorial)
 
 local DataService = require(script.Parent.DataService)
@@ -67,6 +68,8 @@ function FarmService.plant(player: Player, fieldId: any, cropId: any): (boolean,
 	field.plantedAt = now
 	-- A Welcome Boost (friend joined) grows crops planted now a little faster
 	local seconds = SocialRules.growSeconds(crop.growSeconds, SocialRules.boostActive(data.social, now))
+	-- Quick Sprout (a tonic) grows crops planted while it runs faster
+	seconds *= Tonics.value(data, "growTime", now)
 	field.readyAt = now + Clock.duration(Tutorial.seconds(data, cropId, seconds))
 	-- Rolled now, so speed-ups can't buy it. An Heirloom Seed from the Seed Cart goes into
 	-- the next field planted.
@@ -97,7 +100,9 @@ function FarmService.reap(owner: Player, fieldId: string, by: Player): (boolean,
 	local crop = Crops[field.crop]
 	-- A Prize Crop goes to the Prize Basket; with the basket full it's an ordinary unit
 	local prize = if field.prize and PrizeRules.hasRoom(data) then field.prize else nil
-	local toBarn = if prize then crop.yield - 1 else crop.yield
+	-- Bumper Crop (a tonic) doubles what the field gives
+	local yield = crop.yield * Tonics.value(data, "fieldYield", Clock.now())
+	local toBarn = if prize then yield - 1 else yield
 	if toBarn > 0 and not InventoryService.add(player, { [crop.id] = toBarn }) then
 		return false,
 			if by == owner
@@ -140,7 +145,7 @@ function FarmService.reap(owner: Player, fieldId: string, by: Player): (boolean,
 	field.prize = nil
 	field.watered = nil
 	EconomyService.add(player, "XP", crop.xp, "harvest_" .. crop.id)
-	QuestService.progress(player, "harvest", crop.yield)
+	QuestService.progress(player, "harvest", yield)
 	TownService.onHarvest(player, crop.growSeconds)
 	PlotService.refresh(player)
 	return true

@@ -19,6 +19,7 @@
 local Config = require("./Config/Isles")
 local Guild = require("./Guild")
 local Rng = require("./Rng")
+local Tonics = require("./Tonics")
 local TownRules = require("./TownRules")
 
 local Harbor = {}
@@ -195,14 +196,26 @@ function Harbor.barRow(bar: any): number?
 end
 
 -- Chances (0-1) of the uncommon good, the rare good and a Sea Chest on a trip to this isle,
--- with the isle's Guild upgrades when `levels` is given
-function Harbor.odds(isleId: string, bar: string?, levels: IsleLevels?): (number, number, number)
+-- with the isle's Guild upgrades when `levels` is given. `power` (Fair Winds, a tonic: 2)
+-- multiplies how far the Bar moves each chance from the no-Bar row.
+function Harbor.odds(isleId: string, bar: string?, levels: IsleLevels?, power: number?): (number, number, number)
 	local def = Config.byId[isleId]
 	local row = def.odds[Harbor.barRow(bar) or 1]
+	local base = def.odds[1]
+	local p = power or 1
+	local function boosted(i: number): number
+		return math.min(1, base[i] + (row[i] - base[i]) * p)
+	end
 	local step = Config.upgrades.oddsStep
-	local u = math.min(1, row[1] + step * (if levels then levels.uncommon else 0))
-	local r = math.min(1, row[2] + step * (if levels then levels.rare else 0))
-	return u, r, row[3]
+	local u = math.min(1, boosted(1) + step * (if levels then levels.uncommon else 0))
+	local r = math.min(1, boosted(2) + step * (if levels then levels.rare else 0))
+	return u, r, boosted(3)
+end
+
+-- The amounts row a Bar picks (none = 1), pushed further by `power`
+function Harbor.qtyRow(bar: string?, power: number?): number
+	local row = Harbor.barRow(bar) or 1
+	return math.min(#Config.qty, 1 + math.floor((row - 1) * (power or 1)))
 end
 
 local function pickWeighted(seed: number, entries: { any }): (any, number)
@@ -224,14 +237,20 @@ end
 
 -- What a trip to `isleId` with `bar` brings back, drawn from `seed`: the crates (common good
 -- first, x3 always; the others when their roll hits) and maybe a Sea Chest prize. `levels` are
--- the isle's Guild upgrades (nil = none). Returns them and the next seed.
-function Harbor.roll(isleId: string, bar: string?, seed: number, levels: IsleLevels?): ({ Crate }, Prize?, number)
+-- the isle's Guild upgrades (nil = none); `power` is Fair Winds' Bar multiplier (nil = 1).
+-- Returns them and the next seed.
+function Harbor.roll(
+	isleId: string,
+	bar: string?,
+	seed: number,
+	levels: IsleLevels?,
+	power: number?
+): ({ Crate }, Prize?, number)
 	seed = Rng.normalize(seed)
 	local def = Config.byId[isleId]
-	local row = Harbor.barRow(bar) or 1
-	local u, r3, c = Harbor.odds(isleId, bar, levels)
+	local u, r3, c = Harbor.odds(isleId, bar, levels, power)
 	local chances = { u, r3, c }
-	local qty = Config.qty[row]
+	local qty = Config.qty[Harbor.qtyRow(bar, power)]
 	local cargo: { Crate } = { { item = def.goods[1], qty = Config.commonQty } }
 	for tier = 2, 3 do
 		local r
@@ -277,15 +296,17 @@ function Harbor.canSend(data: { [string]: any }, index: any, isleId: any, bar: a
 	return def.sendCoins
 end
 
--- Send a boat (check canSend and take the Coins and Bar first): its cargo is rolled now
+-- Send a boat (check canSend and take the Coins and Bar first): its cargo is rolled now, with
+-- the tonics running as it leaves (Fair Winds: Bars count double; Swift Sails: half the trip)
 function Harbor.send(data: { [string]: any }, index: number, isleId: string, bar: string?, now: number, scale: number?)
 	local harbor = data.harbor
 	local boat = harbor.boats[index]
-	local cargo, chest, seed = Harbor.roll(isleId, bar, harbor.seed, Harbor.isleLevels(data, isleId))
+	local power = if bar then Tonics.value(data, "barPower", now) else 1
+	local cargo, chest, seed = Harbor.roll(isleId, bar, harbor.seed, Harbor.isleLevels(data, isleId), power)
 	harbor.seed = seed
 	boat.isle = isleId
 	boat.departAt = now
-	boat.returnAt = now + secs(Harbor.tripSeconds(data, isleId), scale)
+	boat.returnAt = now + secs(Harbor.tripSeconds(data, isleId) * Tonics.value(data, "sailTime", now), scale)
 	boat.bar = bar
 	boat.cargo = cargo
 	boat.chest = chest

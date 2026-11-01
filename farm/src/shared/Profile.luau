@@ -196,6 +196,10 @@ function Profile.template(): { [string]: any }
 			trades = 0,
 			offers = {}, -- slot index (string) -> { tools, cost } or { waitUntil }
 		},
+		tonics = { -- the Tonic Shed (shared/Tonics); readyAt is set when building starts
+			active = {}, -- { { id, endsAt } } running now
+			owned = {}, -- tonic id -> earned tonics waiting to be switched on
+		},
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart

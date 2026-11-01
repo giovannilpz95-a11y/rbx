@@ -6,7 +6,8 @@
 -- plot-local position and an extra turn (0 / 90 / 180 / 270 degrees) on top of the way it
 -- faces by default. Buildings without an entry stand where the farm layout puts them.
 -- Keys: "field:F7", "factory:Bakery", "pen:ChickenCoop", "house:<lot>", "community:<id>",
--- "harbor:Harbor", "pond:DuckPond", "otters:OtterPond", "trader:ToolTrader".
+-- "harbor:Harbor", "pond:DuckPond", "otters:OtterPond", "trader:ToolTrader",
+-- "tonics:TonicShed".
 --
 -- Footprints are in plot-local studs at the default facing: width along X, depth along Z,
 -- and the footprint's centre offset from the building's position (a factory's output table
@@ -16,6 +17,7 @@ local Balance = require("./Config/Balance")
 local DuckPondConfig = require("./Config/DuckPond")
 local OtterPondConfig = require("./Config/OtterPond")
 local ToolTraderConfig = require("./Config/ToolTrader")
+local TonicsConfig = require("./Config/Tonics")
 local Isles = require("./Config/Isles")
 local Land = require("./Config/Land")
 local TownRules = require("./TownRules")
@@ -35,6 +37,7 @@ Layout.KINDS = table.freeze({
 	pond = table.freeze({ w = 14, d = 14, ox = 0, oz = 0 }), -- Art/DuckPond SIZE
 	otters = table.freeze({ w = 16, d = 14, ox = 0, oz = 0 }), -- Art/OtterPond WIDTH x DEPTH
 	trader = table.freeze({ w = 12, d = 12, ox = 0, oz = 0 }), -- Art/ToolTrader SIZE
+	tonics = table.freeze({ w = 12, d = 12, ox = 0, oz = 0 }), -- Art/TonicShed SIZE
 }) :: { [string]: Footprint }
 
 Layout.DISPLAY = table.freeze({
@@ -47,6 +50,7 @@ Layout.DISPLAY = table.freeze({
 	pond = "Duck Pond",
 	otters = "Otter Pond",
 	trader = "Tool Trader",
+	tonics = "Tonic Shed",
 })
 
 Layout.GRID = 2 -- positions snap to a 2-stud grid
@@ -122,6 +126,9 @@ function Layout.exists(data: { [string]: any }, kind: string, id: string): boole
 	elseif kind == "trader" then
 		-- The Tool Trader's empty lot is on the farm from its level, built or not
 		return id == "ToolTrader" and data.level >= ToolTraderConfig.unlockLevel
+	elseif kind == "tonics" then
+		-- The Tonic Shed's empty lot is on the farm from its level, built or not
+		return id == "TonicShed" and data.level >= TonicsConfig.unlockLevel
 	end
 	return false
 end

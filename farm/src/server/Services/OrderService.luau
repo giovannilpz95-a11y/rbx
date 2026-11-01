@@ -11,6 +11,7 @@ local Net = require(Shared.Net)
 local OrderConfig = require(Shared.Config.Orders)
 local OrderGen = require(Shared.OrderGen)
 local Speedup = require(Shared.Speedup)
+local Tonics = require(Shared.Tonics)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -91,26 +92,32 @@ function OrderService.fulfill(player: Player, slotIndex: any): (boolean, string?
 		return false, "You don't have everything for that order yet"
 	end
 	local data = DataService.get(player) :: { [string]: any }
+	local now = Clock.now()
 	data.orders.delivered += 1
 	slot.order = nil
-	slot.refreshAt = Clock.now() + Clock.duration(OrderConfig.truckReturnSeconds)
+	-- Busy Board (a tonic) brings the next order sooner
+	local wait = Clock.duration(OrderConfig.truckReturnSeconds * Tonics.value(data, "orderWait", now))
+	slot.refreshAt = now + wait
 	-- Good Neighbors: a little more with friends around (14 Multiplayer Features G1)
 	local bonus = SocialService.neighborBonusCoins(player, order.rewardCoins)
 	-- The Tinker's Guild's Coins and XP upgrades on the goods' factories
 	local guildCoins, guildXp = Guild.orderBonus(data, order.wants, order.rewardCoins, order.rewardXP)
+	-- Good Customer (a tonic) doubles the order's own Coins
+	local tonicCoins = math.floor(order.rewardCoins * (Tonics.value(data, "orderCoins", now) - 1) + 0.5)
 	EconomyService.add(player, "Coins", order.rewardCoins, "order")
 	EconomyService.add(player, "Coins", bonus, "order_goodneighbors")
 	EconomyService.add(player, "Coins", guildCoins, "order_guild")
+	EconomyService.add(player, "Coins", tonicCoins, "order_tonic")
 	EconomyService.add(player, "XP", order.rewardXP + guildXp, "order")
 	TelemetryService.custom(player, "OrderFulfilled", order.rewardCoins, "Board")
 	QuestService.progress(player, "order", 1)
 	NetService.popup(player, {
 		kind = "Order",
-		coins = order.rewardCoins + bonus + guildCoins,
+		coins = order.rewardCoins + bonus + guildCoins + tonicCoins,
 		xp = order.rewardXP + guildXp,
 		neighbors = bonus,
 	})
-	PlotService.driveTruck(player, Clock.duration(OrderConfig.truckReturnSeconds))
+	PlotService.driveTruck(player, wait)
 	TownService.onOrderDelivered(player)
 	return true
 end
@@ -121,7 +128,9 @@ function OrderService.discard(player: Player, slotIndex: any): (boolean, string?
 		return false
 	end
 	slot.order = nil
-	slot.refreshAt = Clock.now() + Clock.duration(OrderConfig.discardRefreshSeconds)
+	local now = Clock.now()
+	local data = DataService.get(player) :: { [string]: any }
+	slot.refreshAt = now + Clock.duration(OrderConfig.discardRefreshSeconds * Tonics.value(data, "orderWait", now))
 	return true
 end
 

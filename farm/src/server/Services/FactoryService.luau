@@ -12,6 +12,7 @@ local Quarry = require(Shared.Quarry)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
+local Tonics = require(Shared.Tonics)
 local Tutorial = require(Shared.Tutorial)
 local TownRules = require(Shared.TownRules)
 local Layout = require(Shared.Layout)
@@ -125,7 +126,9 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	elseif not InventoryService.remove(player, recipe.inputs) then
 		return false, "Not enough ingredients in the Barn"
 	end
-	local seconds = Tutorial.seconds(data, recipeId, recipe.seconds) * Guild.timeMult(data, factoryId)
+	-- The Tinker's Guild's time upgrades, with Busy Bees Oil or Hot Smelter (tonics) on top
+	local mult = Tonics.factoryMult(data, factoryId, Guild.timeMult(data, factoryId), Clock.now())
+	local seconds = Tutorial.seconds(data, recipeId, recipe.seconds) * mult
 	table.insert(factory.queue, { recipe = recipeId, seconds = Clock.duration(seconds), qty = recipe.outputQty })
 	FactoryService.advance(player)
 	PlotService.refresh(player)
