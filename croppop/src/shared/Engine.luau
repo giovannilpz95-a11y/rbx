@@ -74,6 +74,13 @@
 	starts charging again. Pop phases list { x, y, hp = 1, scarecrow = charges }
 	in bales.
 
+	Mud buckets: block a cell like a 1-layer bale. A hit (a match next to
+	one, or a blast) tips it over: it goes, and it spills one layer of mud
+	onto every cell in the 3x3 around it (its own too) that has no mud, clay
+	or bale (a "Spill" effect with those cells; Pop phases list them in mud).
+	Each standing bucket counts one towards the Mud goal, and each spilt
+	layer adds one more to clear.
+
 	Mailboxes: block a cell like a 2-layer bale. The first hit (a match next
 	to it, or a blast) opens it (a "Mailbox" effect saying whether it holds a
 	letter); the next takes it away, and a letter inside counts for the
@@ -336,6 +343,23 @@ function Engine._sow(self, wave, sack)
 	table.insert(wave.effects, { type = "Sow", fromX = sack.x, fromY = sack.y, cells = sown })
 end
 
+-- A tipped mud bucket spills a layer of mud onto the cells around it.
+function Engine._spill(self, wave, bucket)
+	local spilt = {}
+	for dy = -1, 1 do
+		for dx = -1, 1 do
+			local cell = self.board:get(bucket.x + dx, bucket.y + dy)
+			if cell and cell.bale == 0 and cell.mud == 0 and not cell.clay then
+				cell.mud = 1
+				table.insert(wave.mud, { x = cell.x, y = cell.y, layers = 1 })
+				table.insert(spilt, { x = cell.x, y = cell.y })
+				self.goals:onMudSpilt()
+			end
+		end
+	end
+	table.insert(wave.effects, { type = "Spill", x = bucket.x, y = bucket.y, cells = spilt })
+end
+
 -- An opened sewing tin sends a patch to the unfinished quilt with the fewest
 -- missing (the first one on a tie); the last patch finishes the quilt.
 function Engine._sendPatch(self, wave, from)
@@ -417,6 +441,14 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 				self.goals:onLetter()
 			end
 		end
+		return
+	end
+	if cell.bucket then
+		cell.bale = 0
+		cell.bucket = nil
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0, bucket = true })
+		self:_spill(wave, cell)
+		self.goals:onMud() -- a tipped bucket is one off the Mud goal
 		return
 	end
 	cell.bale -= 1
@@ -655,6 +687,8 @@ function Engine._chooseBeeTarget(self)
 			-- Bees leave quilts alone: nothing breaks them.
 		elseif cell.sack then
 			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
+		elseif cell.bucket then
+			table.insert(if goals:wants("Mud") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
 			local worth = not cell.mailbox.open or cell.mailbox.mail
 			table.insert(if worth and goals:wants("Letters") then tiers[1] else tiers[4], cell)

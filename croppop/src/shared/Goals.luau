@@ -2,7 +2,7 @@
 	Crop Pop level goals:
 
 	  { kind = "Collect", tile = "Tomato", count = 15 }  -- pop N tiles of one kind
-	  { kind = "Mud" }                                   -- clear every mud layer on the board
+	  { kind = "Mud" }                                   -- clear every mud layer on the board (and tip every mud bucket)
 	  { kind = "HayBale" }                               -- break every hay bale on the board
 	  { kind = "Frost" }                                 -- break every frost layer on the board
 	  { kind = "Weeds" }                                 -- pull every weed, including ones that spread
@@ -20,7 +20,8 @@
 	  { kind = "Quilts" }                                -- finish every quilt (patches come from sewing tins)
 
 	Board-based targets are counted from the board unless `count` is given.
-	A weed that spreads adds one to the Weeds target.
+	A weed that spreads adds one to the Weeds target. Each mud bucket counts one
+	for the Mud goal, and each layer of mud it spills adds one.
 ]]
 
 local Tiles = require(script.Parent.Tiles)
@@ -36,7 +37,7 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local clay, letters = 0, 0
+	local clay, letters, buckets = 0, 0, 0
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.web then
@@ -52,14 +53,18 @@ function Goals.new(defs: { any }, board)
 		if cell.clay then
 			clay += 1
 		end
+		if cell.bucket then
+			buckets += 1
+		end
 		if cell.mailbox and cell.mailbox.mail then
 			letters += 1
 		end
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow then
-			-- Surprise crates, sewing tins, quilts and seed sacks aren't bales for the HayBale goal.
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket then
+			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
+			-- mud buckets aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -79,7 +84,7 @@ function Goals.new(defs: { any }, board)
 				progress = 0,
 			})
 		elseif def.kind == "Mud" then
-			table.insert(list, { kind = "Mud", target = def.count or mudLayers, progress = 0 })
+			table.insert(list, { kind = "Mud", target = def.count or mudLayers + buckets, progress = 0 })
 		elseif def.kind == "HayBale" then
 			table.insert(list, { kind = "HayBale", target = def.count or bales, progress = 0 })
 		elseif def.kind == "Frost" then
@@ -133,6 +138,15 @@ end
 
 function Goals.onMud(self)
 	bump(self, "Mud", nil)
+end
+
+-- A mud bucket spilt a layer of mud: one more to clear.
+function Goals.onMudSpilt(self)
+	for _, goal in self.list do
+		if goal.kind == "Mud" then
+			goal.target += 1
+		end
+	end
 end
 
 function Goals.onBale(self)

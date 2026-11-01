@@ -256,6 +256,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.sack then
 		label.BackgroundColor3 = TileStyle.Board.sack
 		label.Text = TileStyle.SackGlyph
+	elseif kind.bucket then
+		label.BackgroundColor3 = TileStyle.Board.bucket
+		label.Text = TileStyle.BucketGlyph
 	elseif kind.scarecrow then
 		label.BackgroundColor3 = TileStyle.Board.scarecrow
 		label.Text = TileStyle.ScarecrowGlyph .. string.rep("•", kind.scarecrow)
@@ -768,6 +771,25 @@ function BoardView._effect(self, effect): number
 			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
+	elseif effect.type == "Spill" then
+		-- The bucket tips over and mud splashes onto the cells around it.
+		local bucket = Instance.new("TextLabel")
+		bucket.Name = "Bucket"
+		bucket.AnchorPoint = Vector2.new(0.5, 0.5)
+		bucket.BackgroundTransparency = 1
+		bucket.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		bucket.Position = self:_centerOf(effect.x, effect.y)
+		bucket.Text = TileStyle.BucketGlyph
+		bucket.TextScaled = true
+		bucket.Parent = self.fxLayer
+		tween(bucket, FX_TIME, { Rotation = 100, TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			bucket:Destroy()
+		end)
+		for _, c in effect.cells do
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.mud, true)
+		end
 		return FX_TIME
 	elseif effect.type == "Mailbox" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.mailbox, true)
