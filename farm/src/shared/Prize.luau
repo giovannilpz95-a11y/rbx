@@ -14,8 +14,10 @@ function PrizeRules.roll(data: { [string]: any }, roll: number, boost: { [string
 		return nil
 	end
 	local ids = {}
-	for id in Prize.tiers do
-		table.insert(ids, id)
+	for id, tier in Prize.tiers do
+		if not (tier :: any).weather then -- weather traits roll only during sky events
+			table.insert(ids, id)
+		end
 	end
 	table.sort(ids, function(a, b)
 		return Prize.tiers[a].chance < Prize.tiers[b].chance

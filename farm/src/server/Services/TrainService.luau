@@ -74,7 +74,7 @@ function TrainService.rewardName(item: string, qty: number): string
 end
 
 -- Rewards go past the Barn's cap (as the Town Express); tools and Pickaxes to the Tool Shed
-local function give(data: { [string]: any }, rewards: { [string]: number })
+function TrainService.give(data: { [string]: any }, rewards: { [string]: number })
 	for item, qty in rewards do
 		if Tools.tools[item] or item == QuarryConfig.pickaxe then
 			data.toolShed.items[item] = (data.toolShed.items[item] or 0) + qty
@@ -166,7 +166,7 @@ function TrainService.unload(player: Player, index: any): (boolean, string?)
 	if rewards == nil then
 		return false
 	end
-	give(data, rewards)
+	TrainService.give(data, rewards)
 	if next(rewards) then
 		NetService.toast(player, "The train brought back " .. describe(rewards) .. ".")
 	else
