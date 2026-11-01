@@ -1499,6 +1499,44 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Cup", 0.3, 0.3, at(0.35, 0.27, -0.2), Palette.brick, QUIET)
 		b.post("Cup", 0.3, 0.3, at(0.5, 0.27, 0.2), Palette.brick, QUIET)
 	end,
+	Lavender = function(b)
+		-- A tied bunch of purple lavender spikes
+		for _, x in { -0.2, 0, 0.2 } do
+			b.block("Stem", Vector3.new(0.1, 1, 0.1), at(x, 0.5, 0), Palette.leafLight, QUIET)
+			b.block(
+				"Spike",
+				Vector3.new(0.2, 0.5, 0.2),
+				at(x, 1.2, 0),
+				Palette.plum:Lerp(Palette.flowerPink, 0.3),
+				QUIET
+			)
+		end
+		b.block("Tie", Vector3.new(0.6, 0.12, 0.2), at(0, 0.4, 0), Palette.cream, QUIET)
+	end,
+	Bruschetta = function(b)
+		-- Toasted bread slices topped with tomato and shrimp
+		b.block("Toast", Vector3.new(1.4, 0.2, 0.6), at(0, 0.1, 0), Palette.wheat, QUIET)
+		b.block("Tomato", Vector3.new(1.2, 0.15, 0.5), at(0, 0.27, 0), Palette.roofRed, QUIET)
+		b.ball("Shrimp", 0.35, at(-0.3, 0.45, 0), Palette.carrot, QUIET)
+		b.ball("Shrimp", 0.35, at(0.3, 0.45, 0), Palette.carrot, QUIET)
+	end,
+	AppleTea = function(b)
+		-- A glass mug of amber tea with an apple slice
+		b.post("Mug", 0.9, 0.7, at(0, 0.45, 0), Palette.coins:Lerp(Palette.glass, 0.5), QUIET)
+		b.wedge("Slice", Vector3.new(0.15, 0.35, 0.4), at(0.3, 0.95, 0), Palette.roofRed, QUIET)
+	end,
+	FlowerBasket = function(b)
+		-- A woven basket overflowing with roses and jasmine
+		b.post("Basket", 0.6, 1.2, at(0, 0.3, 0), Palette.straw, QUIET)
+		b.ball("Rose", 0.45, at(-0.25, 0.75, 0), Palette.roofRed, QUIET)
+		b.ball("Jasmine", 0.4, at(0.25, 0.75, 0.1), Palette.flowerWhite, QUIET)
+		b.ball("Rose", 0.4, at(0, 0.8, -0.25), Palette.flowerPink, QUIET)
+	end,
+	Balloon = function(b)
+		-- A red balloon on a string
+		b.ball("Balloon", 0.9, at(0, 1.3, 0), Palette.roofRed, QUIET)
+		b.block("String", Vector3.new(0.05, 0.85, 0.05), at(0, 0.45, 0), Palette.flowerWhite, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

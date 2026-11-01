@@ -395,6 +395,29 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Lavender (level 94): silver-green mounded rows, then each row tipped with purple spikes.
+GROWING.Lavender = function(b)
+	for _, z in ArtCrops.ROWS do
+		b.block(
+			"Mound",
+			Vector3.new(6.4, 0.9, 1.1),
+			Vector3.new(0, 0.8, z),
+			Palette.leafLight:Lerp(Palette.stoneLight, 0.4)
+		)
+	end
+end
+READY.Lavender = function(b, color)
+	for _, z in ArtCrops.ROWS do
+		b.block(
+			"Mound",
+			Vector3.new(6.6, 1, 1.2),
+			Vector3.new(0, 0.85, z),
+			Palette.leafLight:Lerp(Palette.stoneLight, 0.4)
+		)
+		b.block("Spikes", Vector3.new(6.4, 0.7, 0.9), Vector3.new(0, 1.7, z), color)
+	end
+end
+
 -- Soybeans (level 90): low bushy rows, then the bushes turn golden and hang with fat pods.
 GROWING.Soybeans = function(b)
 	for _, z in ArtCrops.ROWS do

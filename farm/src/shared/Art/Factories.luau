@@ -1255,6 +1255,50 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Party Shop (level 95, placed by the player): a sunny yellow shop strung with bunting, a
+-- bunch of balloons tied to the roof, a giant gift box whose bow lamp glows while it works,
+-- a striped awning and a party-hat sign.
+local function partyShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.flowerYellow:Lerp(Palette.cream, 0.5), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.roofPlum)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The gift box on the roof and its glowing bow
+	local gift = Vector3.new(-1.6, TOP + 0.6, 0.4)
+	d.block("Gift", Vector3.new(2.6, 2.2, 2.6), gift + Vector3.new(0, 1.1, 0), Palette.sky)
+	d.block("Ribbon", Vector3.new(0.4, 2.3, 2.7), gift + Vector3.new(0, 1.1, 0), Palette.flowerPink)
+	d.ball("NeonSign", 1, gift + Vector3.new(0, 2.6, 0), Palette.roofRed, { shadow = false })
+	-- Balloons tied to the corner
+	for i, color in { Palette.roofRed, Palette.lime, Palette.sky } do
+		d.ball("Balloon", 1.1, Vector3.new(2.6 + i * 0.5, TOP + 3.4 + (i % 2) * 0.6, -2.4 + i * 0.3), color)
+	end
+	d.post("String", 2.6, 0.08, Vector3.new(3.4, TOP + 1.9, -1.8), Palette.flowerWhite)
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.roofPlum else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.roofPlum, Palette.cream)
+	d.block("Bunting", Vector3.new(11, 0.4, 0.1), Vector3.new(0, TOP - 0.4, FRONT - 0.1), Palette.flowerPink)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.wedge(
+			"HatIcon",
+			Vector3.new(0.2, 0.9, 0.7),
+			at + Vector3.new(0, 0.05, -0.02),
+			Palette.lime,
+			{ shadow = false }
+		)
+		s.ball("PomIcon", 0.3, at + Vector3.new(0, 0.55, -0.02), Palette.roofRed, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, 3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Trattoria (level 92, placed by the player): a terracotta Italian restaurant with green
 -- shutters, a striped red-and-white awning over tables outside, a brick pizza oven chimney,
 -- an olive-oil bottle on the roof whose round cork lamp glows while it cooks, and an olive
@@ -1834,6 +1878,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	TeaHouse = teaHouse,
 	FlowerShop = flowerShop,
 	Trattoria = trattoria,
+	PartyShop = partyShop,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
