@@ -813,6 +813,37 @@ TYPES.GlassTower = {
 
 -- Timbered Manor (content bank, level 62): a cream two-storey house criss-crossed with dark
 -- timber beams, an overhanging upper floor, a steep brown roof and a brick chimney.
+-- Turret House (level 68): a lilac two-storey house with a round corner turret under a pointed
+-- cap, a smaller turret on the far corner and a front door under a little porch roof.
+TYPES.TurretHouse = {
+	roof = Palette.roofPlum,
+	build = function(b, s, roof)
+		local w, d = s * 0.6, s * 0.48
+		local body =
+			walls(b, w, d, STORY * 1.6, Palette.flowerPink:Lerp(Palette.sky, 0.45):Lerp(Palette.cream, 0.5), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		t.block("Roof", Vector3.new(w + 0.6, 0.6, d + 0.6), Vector3.new(0, PLINTH + STORY * 1.6 + 0.3, 0.6), roof)
+		-- The big turret on the near corner and the small one on the far corner
+		local big = Vector3.new(-w / 2, 0, face - 0.6)
+		t.post("Turret", STORY * 2, 3, big + Vector3.new(0, PLINTH + STORY, 0), Palette.cream)
+		t.wedge("Cap", Vector3.new(3.4, 3, 3.4), CFrame.new(big + Vector3.new(0, PLINTH + STORY * 2 + 1.5, 0)), roof)
+		local small = Vector3.new(w / 2, 0, -d / 2 + 0.6)
+		t.post("Turret", STORY * 1.9, 2, small + Vector3.new(0, PLINTH + STORY * 0.95, 0), Palette.cream)
+		t.wedge(
+			"Cap",
+			Vector3.new(2.4, 2.2, 2.4),
+			CFrame.new(small + Vector3.new(0, PLINTH + STORY * 1.9 + 1.1, 0)),
+			roof
+		)
+		Kit.window(t, "Window", CFrame.new(w / 5, PLINTH + STORY * 1.15, face), 1.4, 1.6, Palette.cream, Palette.glass)
+		Kit.door(t, "Door", CFrame.new(w / 5, PLINTH, face), 1.6, 3.2, Palette.plum, Palette.cream)
+		t.block("Porch", Vector3.new(2.6, 0.3, 1.4), Vector3.new(w / 5, PLINTH + 3.7, face - 0.7), roof)
+		Kit.sproutTag(t, Vector3.new(w / 4, PLINTH + STORY * 1.6 + 1.6, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.TimberedManor = {
 	roof = Palette.cocoa,
 	build = function(b, s, roof)
