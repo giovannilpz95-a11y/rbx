@@ -88,6 +88,16 @@
 	once. The truck goes with its last bale. The HayBale goal counts each
 	truck as its 3 bales.
 
+	Garden snails: block a cell and never break, and blasts and boosters
+	don't move them. A match next to one (once per snail per wave) shoves it
+	one cell straight away from the matched tile: the snail bites whatever
+	is there (a tile goes, an obstacle takes a hit, a web comes off), and if
+	that leaves the cell empty, it crawls in (a "Crawl" effect), leaving a
+	goo trail on the cell it left (one more for the Goo goal). It can't
+	go off the board, across a fence or hedge, into another snail, or where
+	a power-up is about to appear. Shoves happen once the wave's matches
+	are all popped.
+
 	Beehives: block a cell and never break. Each hit (a match next to one,
 	once per wave, or a blast on it) sends a honey jar to the Honey goal (a
 	"Honey" effect from the hive).
@@ -476,7 +486,55 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
+-- A match shoved a snail one cell along (dx, dy): it bites what's there and
+-- crawls in if that empties the cell, leaving goo where it was.
+function Engine._shoveSnail(self, wave, snail, dx: number, dy: number)
+	local board = self.board
+	local to = board:get(snail.x + dx, snail.y + dy)
+	if not to or to.snail or board:fenceBetween(snail.x, snail.y, to.x, to.y) then
+		return
+	end
+	local function reserved(cell)
+		for _, create in wave.pendingCreates do
+			if create.cell == cell then
+				return true
+			end
+		end
+		return wave.reserved ~= nil and wave.reserved[cell] == true
+	end
+	if reserved(to) then
+		return
+	end
+	if to.web then
+		to.web = false -- the snail eats the web; the tile stays
+		table.insert(wave.webs, { x = to.x, y = to.y })
+		self.goals:onWeb()
+	elseif to.bale > 0 then
+		wave.balesTouched[to] = true
+		self:_damageBale(wave, to)
+	elseif to.piece then
+		self:_removePiece(wave, to, "snail")
+	end
+	if not Board.isEmptySlot(to) or to.web or reserved(to) then
+		return -- something's still there: the snail stays put
+	end
+	to.bale, to.snail = 1, true
+	snail.bale, snail.snail = 0, nil
+	wave.balesTouched[to] = true -- the same wave doesn't shove it again
+	table.insert(wave.bales, { x = snail.x, y = snail.y, hp = 0 })
+	table.insert(wave.bales, { x = to.x, y = to.y, hp = 1, snail = true })
+	table.insert(wave.effects, { type = "Crawl", fromX = snail.x, fromY = snail.y, x = to.x, y = to.y })
+	if not snail.goo then
+		snail.goo = true
+		self.goals:onGooGrown()
+		table.insert(wave.goo, { x = snail.x, y = snail.y, on = true, thick = snail.thickGoo == true })
+	end
+end
+
 function Engine._damageBale(self, wave, cell, byMatch: boolean?)
+	if cell.snail then
+		return -- blasts don't budge a snail; only matches next to it shove it
+	end
 	if cell.tarp then
 		local tarp = cell.tarp
 		if byMatch then
@@ -745,7 +803,11 @@ function Engine._popGroups(self, wave, groups)
 		for _, cell in group.cells do
 			for _, d in NEIGHBORS do
 				local n = board:get(cell.x + d[1], cell.y + d[2])
-				if n and n.bale > 0 and not n.stone and not n.quilt and not wave.balesTouched[n] then
+				if n and n.snail and not wave.balesTouched[n] then
+					wave.balesTouched[n] = true
+					wave.shoves = wave.shoves or {}
+					table.insert(wave.shoves, { snail = n, dx = d[1], dy = d[2] })
+				elseif n and n.bale > 0 and not n.stone and not n.quilt and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					self:_damageBale(wave, n, true)
 				elseif not n then
@@ -766,6 +828,11 @@ function Engine._popGroups(self, wave, groups)
 			self.stats.made[group.power] = (self.stats.made[group.power] or 0) + 1
 		end
 	end
+	-- Snails move once every match has popped, so they know where power-ups go.
+	for _, shove in wave.shoves or {} do
+		self:_shoveSnail(wave, shove.snail, shove.dx, shove.dy)
+	end
+	wave.shoves = nil
 end
 
 function Engine._mostCommonColor(self): number?
@@ -795,8 +862,8 @@ function Engine._chooseBeeTarget(self)
 	self.board:eachCell(function(cell)
 		if wantsFences and #self.board:fencesAround(cell.x, cell.y) > 0 then
 			table.insert(tiers[1], cell)
-		elseif cell.quilt then
-			-- Bees leave quilts alone: nothing breaks them.
+		elseif cell.quilt or cell.snail then
+			-- Bees leave quilts and snails alone: nothing breaks them.
 		elseif cell.sack then
 			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
 		elseif cell.bucket then
@@ -1506,7 +1573,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 
 	if kind == "Trowel" then
 		local cell = board:get(a :: number, b :: number)
-		if not cell or cell.quilt or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
+		if not cell or cell.quilt or cell.snail or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
 			return false, {}
 		end
 		local wave = newWave()
