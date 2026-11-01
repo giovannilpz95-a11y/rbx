@@ -68,6 +68,13 @@
 	quilt lifts off and frees its cells (a "Quilt" effect with its cells), for
 	the Quilts goal.
 
+	Snowballs: tiles that start on "i" cells carry a timer (SNOW_TIMER swaps).
+	They match and fall like any tile; clearing one counts for the Snowballs
+	goal. After every swap each timer ticks down (a "Tick" phase:
+	{ kind = "Tick", timers = {{id, x, y, timer, burst?}} }), and a snowball
+	that reaches 0 bursts: it frosts the plain unfrozen tiles around it (all 8
+	neighbours; a Pop phase with a "Freeze" effect) and starts its timer again.
+
 	Webs: a web holds its tile in place and keeps it out of matches. Only a
 	blast on the cell clears the web (the tile stays), for the Webs goal.
 
@@ -99,6 +106,7 @@ local BOMB_RADIUS = 2 -- Hay Bomb clears every cell within this many steps (diam
 local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
+local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
 
@@ -140,6 +148,12 @@ function Engine.new(level, seed: number, options: Options?)
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
 		gooCleared = 0, -- during the current action (stops goo spreading)
 	}, Engine)
+
+	for _, cell in board.startSnowballs do
+		if cell.piece and not cell.piece.pumpkin then
+			cell.piece.timer = SNOW_TIMER
+		end
+	end
 
 	-- As many pumpkins on the board at once as the layout starts with (at least 1).
 	local startPumpkins = 0
@@ -227,6 +241,9 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	cell.piece = nil
 	table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = cause })
 	self.goals:onCollect(piece.color)
+	if piece.timer then
+		self.goals:onSnowball()
+	end
 	if cell.goo then
 		if cell.thickGoo then
 			cell.thickGoo = false -- the tile goes; a thin layer of goo stays
@@ -591,7 +608,9 @@ function Engine._chooseBeeTarget(self)
 				else goals:wants("HayBale")
 			table.insert(if wanted then tiers[1] else tiers[4], cell)
 		elseif cell.piece and not cell.piece.pumpkin then
-			if cell.frost > 0 and goals:wants("Frost") then
+			if cell.piece.timer and goals:wants("Snowballs") then
+				table.insert(tiers[2], cell)
+			elseif cell.frost > 0 and goals:wants("Frost") then
 				table.insert(tiers[2], cell)
 			elseif cell.mud > 0 and goals:wants("Mud") then
 				table.insert(tiers[2], cell)
@@ -1159,6 +1178,48 @@ end
 
 -- Rainbow patches: each plain tile on one moves on to the next level colour
 -- that doesn't make a match there (it keeps its colour if none fits).
+-- Every snowball ticks down; one at 0 frosts the tiles around it and starts again.
+function Engine._tickSnowballs(self, phases)
+	local board = self.board
+	local timers, bursting = {}, {}
+	board:eachCell(function(cell)
+		local piece = cell.piece
+		if piece and piece.timer then
+			piece.timer -= 1
+			local burst = piece.timer <= 0
+			if burst then
+				piece.timer = SNOW_TIMER
+				table.insert(bursting, cell)
+			end
+			table.insert(timers, { id = piece.id, x = cell.x, y = cell.y, timer = piece.timer, burst = burst or nil })
+		end
+	end)
+	if #timers == 0 then
+		return
+	end
+	table.insert(phases, { kind = "Tick", timers = timers })
+	if #bursting == 0 then
+		return
+	end
+	local wave = newWave()
+	for _, cell in bursting do
+		table.insert(wave.effects, { type = "Freeze", x = cell.x, y = cell.y })
+		for dy = -1, 1 do
+			for dx = -1, 1 do
+				local n = board:get(cell.x + dx, cell.y + dy)
+				if n and n ~= cell and n.frost == 0 and Board.isPlainTile(n) and not n.piece.timer then
+					n.frost = 1
+					table.insert(wave.frost, { x = n.x, y = n.y, layers = 1 })
+				end
+			end
+		end
+	end
+	self:_finishWave(wave, phases)
+	if not Matcher.hasPossibleMove(board) then
+		table.insert(phases, { kind = "Shuffle", moves = board:shuffle(self.rng, self.colors) })
+	end
+end
+
 function Engine._recolor(self, phases)
 	local board = self.board
 	local colors = self.colors
@@ -1176,7 +1237,7 @@ function Engine._recolor(self, phases)
 				piece.color = start
 			end
 			if piece.color ~= start then
-				table.insert(changes, { id = piece.id, x = cell.x, y = cell.y, color = piece.color })
+				table.insert(changes, { id = piece.id, x = cell.x, y = cell.y, color = piece.color, timer = piece.timer })
 			end
 		end
 	end)
@@ -1199,6 +1260,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	end
 	if wasSwap and self.board.hasRainbow and not self.goals:isComplete() then
 		self:_recolor(phases)
+	end
+	if wasSwap and #self.board.startSnowballs > 0 and not self.goals:isComplete() then
+		self:_tickSnowballs(phases)
 	end
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then

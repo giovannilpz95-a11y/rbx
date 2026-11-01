@@ -49,6 +49,7 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
+TileStyle.SnowGlyph = "❄" -- a snowball's timer (no snowflake variant selector: it's a small badge)
 TileStyle.SackGlyph = "🌱" -- a seed sack (hits sow clover near it)
 TileStyle.TinGlyph = "🧵" -- a sewing tin (opening it sends a patch to a quilt)
 -- Quilt patches, by cell (a checker of four fabrics).
@@ -88,6 +89,7 @@ TileStyle.GoalGlyphs = {
 	Statues = "🗿", -- a buried statue
 	Tarps = "🎪", -- a canvas tarp
 	Webs = "🕸", -- a spider web over a tile
+	Snowballs = "☃", -- a snowball (the snowman: there's no snowball emoji)
 	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
 
@@ -127,6 +129,7 @@ TileStyle.Board = {
 	quiltText = Color3.fromRGB(170, 140, 110),
 	tin = Color3.fromRGB(110, 160, 190), -- a sewing tin
 	sack = Color3.fromRGB(186, 150, 104), -- burlap
+	snowText = Color3.fromRGB(40, 90, 150), -- a snowball's timer
 	text = Palette.text,
 	accent = Palette.button.attention.face, -- buttons, the moves box, a picked booster
 	accentText = Palette.accentText, -- orange text on cream

@@ -159,10 +159,36 @@ local function makeTile(): Frame
 	badgeCorner.CornerRadius = UDim.new(0.5, 0)
 	badgeCorner.Parent = badge
 
+	-- A snowball's timer: swaps left before it bursts.
+	local timer = Instance.new("TextLabel")
+	timer.Name = "Timer"
+	timer.AnchorPoint = Vector2.new(0, 1)
+	timer.Position = UDim2.fromScale(0, 1)
+	timer.Size = UDim2.fromScale(0.5, 0.45)
+	timer.BackgroundColor3 = TileStyle.Board.frost
+	timer.TextScaled = true
+	timer.Font = TileStyle.Font
+	timer.TextColor3 = TileStyle.Board.snowText
+	timer.ZIndex = 2
+	timer.Visible = false
+	timer.Parent = tile
+	local timerCorner = Instance.new("UICorner")
+	timerCorner.CornerRadius = UDim.new(0.5, 0)
+	timerCorner.Parent = timer
+
 	return tile
 end
 
+local function styleTimer(tile: Frame, timer: number?)
+	local label = tile:FindFirstChild("Timer") :: TextLabel?
+	if label then
+		label.Visible = timer ~= nil
+		label.Text = if timer then TileStyle.SnowGlyph .. timer else ""
+	end
+end
+
 local function styleTile(tile: Frame, piece)
+	styleTimer(tile, piece.timer)
 	local face = tile:FindFirstChild("Face") :: TextLabel
 	local badge = tile:FindFirstChild("Badge") :: TextLabel
 	local corner = face:FindFirstChild("Corner") :: UICorner
@@ -915,13 +941,27 @@ function BoardView._recolor(self, phase)
 	for _, c in phase.changes do
 		local tile = self.tiles[c.id]
 		if tile then
-			styleTile(tile, { color = c.color })
+			styleTile(tile, { color = c.color, timer = c.timer })
 			local face = tile:FindFirstChild("Face") :: TextLabel
 			face.Rotation = -90
 			tween(face, POP_TIME, { Rotation = 0 }, Enum.EasingStyle.Back)
 		end
 	end
 	task.wait(POP_TIME)
+end
+
+-- Snowball timers tick down; one that bursts flashes (its frost comes in the next Pop).
+function BoardView._tick(self, phase)
+	for _, t in phase.timers do
+		local tile = self.tiles[t.id]
+		if tile then
+			styleTimer(tile, t.timer)
+			if t.burst then
+				self:_flash(self:_centerOf(t.x, t.y), UDim2.fromScale(3 / self.width, 3 / self.height), TileStyle.Board.frost, true)
+			end
+		end
+	end
+	task.wait(POP_TIME / 2)
 end
 
 -- Plays the phases from Engine:trySwap in order. Yields.
@@ -942,6 +982,8 @@ function BoardView.play(self, phases)
 			self:_shuffle(phase)
 		elseif phase.kind == "Recolor" then
 			self:_recolor(phase)
+		elseif phase.kind == "Tick" then
+			self:_tick(phase)
 		end
 	end
 end

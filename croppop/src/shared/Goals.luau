@@ -14,6 +14,7 @@
 	  { kind = "Statues" }                               -- dig up every buried statue (blasts only)
 	  { kind = "Tarps" }                                 -- roll up every tarp cell
 	  { kind = "Webs" }                                  -- clear every web (blasts only)
+	  { kind = "Snowballs" }                             -- clear every snowball (they burst and come back if left)
 	  { kind = "Quilts" }                                -- finish every quilt (patches come from sewing tins)
 
 	Board-based targets are counted from the board unless `count` is given.
@@ -84,6 +85,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Goo", target = def.count or goo, progress = 0 })
 		elseif def.kind == "Webs" then
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
+		elseif def.kind == "Snowballs" then
+			table.insert(list, { kind = "Snowballs", target = def.count or #board.startSnowballs, progress = 0 })
 		elseif def.kind == "Quilts" then
 			table.insert(list, { kind = "Quilts", target = def.count or #board.quilts, progress = 0 })
 		elseif def.kind == "Tarps" then
@@ -154,6 +157,10 @@ end
 
 function Goals.onWeb(self)
 	bump(self, "Webs", nil)
+end
+
+function Goals.onSnowball(self)
+	bump(self, "Snowballs", nil)
 end
 
 function Goals.onQuilt(self)

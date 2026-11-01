@@ -5,10 +5,10 @@ local Engine, Levels, Matcher, Replay, Rng = CropPop.Engine, CropPop.Levels, Cro
 
 local RUNS = 1000
 
--- Bales, weeds, crates, tarps, webs, quilts, sewing tins, seed sacks and frozen tiles all stop tiles falling, so cells below them can sit empty.
+-- Bales, weeds, crates, tarps, webs, quilts, sewing tins, seed sacks, frozen tiles and snowballs (their bursts freeze tiles) all stop tiles falling, so cells below them can sit empty.
 local function hasBales(level)
 	for _, row in level.layout do
-		if string.find(row, "[123wfFsSxtnqkz]") then
+		if string.find(row, "[123wfFsSxtnqkzi]") then
 			return true
 		end
 	end
