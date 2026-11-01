@@ -1326,6 +1326,49 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Bag", Vector3.new(0.4, 0.5, 0.05), at(0.2, 0.9, 0), Palette.flowerWhite, QUIET)
 		b.block("Tag", Vector3.new(0.15, 0.15, 0.05), at(0.45, 1.2, 0), Palette.roofRed, QUIET)
 	end,
+	Drum = function(b)
+		-- A red snare drum with drumsticks
+		b.cyl("Shell", 0.8, 1.4, at(0, 0.4, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.roofRed, QUIET)
+		b.cyl("Head", 0.06, 1.42, at(0, 0.82, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.block("Stick", Vector3.new(0.1, 0.1, 1.2), tilt(0.2, 1, 0, 30, 20, 0), Palette.woodLight, QUIET)
+	end,
+	JasmineWhiteTea = function(b)
+		-- A glass cup of pale tea with a jasmine flower
+		b.post("Cup", 0.8, 0.8, at(0, 0.4, 0), Palette.flowerYellow:Lerp(Palette.glass, 0.6), QUIET)
+		b.ball("Flower", 0.35, at(0, 0.85, 0), Palette.flowerWhite, QUIET)
+	end,
+	SummerBouquet = function(b)
+		-- Wheat and roses wrapped in paper
+		b.wedge(
+			"Wrap",
+			Vector3.new(0.9, 1, 0.9),
+			at(0, 0.5, 0) * CFrame.Angles(math.rad(180), 0, 0),
+			Palette.cream,
+			QUIET
+		)
+		b.block("Wheat", Vector3.new(0.15, 0.7, 0.15), at(-0.25, 1.3, 0), Palette.wheat, QUIET)
+		b.ball("Rose", 0.45, at(0.1, 1.2, 0), Palette.roofRed, QUIET)
+		b.ball("Rose", 0.4, at(0.3, 1.05, 0.15), Palette.flowerPink, QUIET)
+	end,
+	EveningGown = function(b)
+		-- A long silk gown with a pearl necklace
+		b.wedge("Skirt", Vector3.new(1, 1.2, 0.6), at(0, 0.6, 0), Palette.plum, QUIET)
+		b.block("Bodice", Vector3.new(0.5, 0.5, 0.3), at(0, 1.45, 0), Palette.plum, QUIET)
+		b.block("Pearls", Vector3.new(0.45, 0.1, 0.32), at(0, 1.65, 0), Palette.flowerWhite, QUIET)
+	end,
+	PeanutSauce = function(b)
+		-- A dish of satay sauce with a lime wedge
+		b.cyl("Dish", 0.4, 1.4, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark, QUIET)
+		b.cyl(
+			"Sauce",
+			0.1,
+			1.2,
+			at(0, 0.42, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.carrot:Lerp(Palette.cocoa, 0.4),
+			QUIET
+		)
+		b.ball("Lime", 0.3, at(0.45, 0.5, 0), Palette.lime, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

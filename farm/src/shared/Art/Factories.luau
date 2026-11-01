@@ -1255,6 +1255,56 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Flower Shop (level 87, placed by the player): a pink florist with buckets of flowers out
+-- front, a giant bouquet on the roof whose sunflower heart glows while it works, a striped
+-- awning and a tulip sign.
+local function flowerShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.flowerPink:Lerp(Palette.cream, 0.6), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.leaf)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The bouquet on the roof: wrap, three blooms and the glowing sunflower
+	local bunch = Vector3.new(-1.4, TOP + 0.6, 0.4)
+	d.wedge(
+		"Wrap",
+		Vector3.new(2.4, 2.4, 2.4),
+		CFrame.new(bunch + Vector3.new(0, 1.2, 0)) * CFrame.Angles(math.rad(180), 0, 0),
+		Palette.cream
+	)
+	for i, color in { Palette.roofRed, Palette.flowerPink, Palette.plum } do
+		d.ball("Bloom", 1.2, bunch + Vector3.new(-1.2 + i * 0.6, 3 + (i % 2) * 0.4, (i - 2) * 0.5), color)
+	end
+	d.ball("NeonSign", 1.3, bunch + Vector3.new(0, 3.8, -0.3), Palette.carrot, { shadow = false })
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.flowerPink else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.leaf, Palette.cream)
+	for i, color in { Palette.flowerYellow, Palette.roofRed } do
+		local x = -4.4 + i * 1.6
+		d.post("Bucket", 0.9, 1, Vector3.new(x, PLINTH + 0.45, FRONT - 1.4), Palette.metal)
+		d.ball("Flowers", 1.1, Vector3.new(x, PLINTH + 1.3, FRONT - 1.4), color)
+	end
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("TulipIcon", 0.8, at + Vector3.new(0, 0.2, 0), Palette.roofRed, { shadow = false })
+		s.block(
+			"StemIcon",
+			Vector3.new(0.12, 0.6, 0.2),
+			at + Vector3.new(0, -0.4, -0.02),
+			Palette.leaf,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Tea House (level 84, placed by the player): a green-roofed teahouse with a wide eave, a
 -- giant teapot on the roof whose round lantern glows while it brews, paper lanterns over the
 -- door and a leaf sign.
@@ -1739,6 +1789,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	CookwareShop = cookwareShop,
 	MusicWorkshop = musicWorkshop,
 	TeaHouse = teaHouse,
+	FlowerShop = flowerShop,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
