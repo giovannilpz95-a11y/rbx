@@ -831,6 +831,58 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.ball("Peach", 0.5, at(0.25, 0.95, 0.1), Palette.carrot, QUIET)
 		b.ball("Frost", 0.4, at(0, 1.2, -0.15), Palette.flowerWhite:Lerp(Palette.sky, 0.3), QUIET)
 	end,
+	ScentedSoap = function(b)
+		-- A lilac soap bar with a honey stripe
+		b.block("Bar", Vector3.new(1.4, 0.5, 0.9), at(0, 0.25, 0), Palette.flowerPink:Lerp(Palette.sky, 0.4), QUIET)
+		b.block("Stripe", Vector3.new(1.42, 0.12, 0.3), at(0, 0.4, 0), Palette.flowerYellow, QUIET)
+		b.ball("Bubble", 0.35, at(0.4, 0.75, 0), Palette.flowerWhite, QUIET)
+	end,
+	HotDog = function(b)
+		-- A sausage in a bun with a mustard line
+		b.cyl("Bun", 1.6, 0.7, at(0, 0.3, 0), Palette.bread, QUIET)
+		b.cyl("Sausage", 1.9, 0.45, at(0, 0.55, 0), Palette.brick, QUIET)
+		b.block("Mustard", Vector3.new(1.4, 0.08, 0.12), at(0, 0.8, 0), Palette.flowerYellow, QUIET)
+	end,
+	CornDog = function(b)
+		-- A golden battered sausage on a stick
+		b.block("Stick", Vector3.new(0.12, 0.8, 0.12), at(0, 0.4, 0), Palette.woodLight, QUIET)
+		b.post("Batter", 1.2, 0.6, at(0, 1.3, 0), Palette.corn, QUIET)
+		b.ball("Tip", 0.6, at(0, 1.9, 0), Palette.corn, QUIET)
+	end,
+	Diadem = function(b)
+		-- A gold band with three jewels
+		b.cyl("Band", 0.3, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.coins, QUIET)
+		for i, x in { -0.5, 0, 0.5 } do
+			b.ball(
+				"Jewel",
+				if i == 2 then 0.5 else 0.35,
+				at(x, 0.65 + (if i == 2 then 0.15 else 0), -0.6),
+				if i == 2 then Palette.gems else Palette.sky,
+				QUIET
+			)
+		end
+	end,
+	FishAndChips = function(b)
+		-- A paper cone of chips with a fried fish
+		b.block("Paper", Vector3.new(1.4, 0.6, 1), at(0, 0.3, 0), Palette.flowerWhite, QUIET)
+		b.block("Chips", Vector3.new(0.6, 0.5, 0.8), at(-0.35, 0.8, 0), Palette.flowerYellow, QUIET)
+		b.block("Fish", Vector3.new(0.6, 0.35, 0.9), at(0.35, 0.75, 0), Palette.wheat:Lerp(Palette.carrot, 0.3), QUIET)
+	end,
+	StrawberryCake = function(b)
+		-- A round cream cake topped with strawberries
+		b.post("Cake", 0.9, 1.5, at(0, 0.45, 0), Palette.cream, QUIET)
+		b.post("Filling", 0.15, 1.52, at(0, 0.45, 0), Palette.flowerPink, QUIET)
+		for _, x in { -0.4, 0.4 } do
+			b.ball("Berry", 0.4, at(x, 1.05, 0), Palette.roofRed, QUIET)
+		end
+	end,
+	Ratatouille = function(b)
+		-- A shallow dish of layered vegetables
+		b.cyl("Dish", 0.35, 1.8, at(0, 0.18, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.brick, QUIET)
+		b.ball("Pepper", 0.45, at(-0.4, 0.45, 0), Palette.lime, QUIET)
+		b.ball("Tomato", 0.45, at(0, 0.45, 0.2), Palette.roofRed, QUIET)
+		b.ball("Potato", 0.45, at(0.4, 0.45, -0.1), Palette.wheat, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

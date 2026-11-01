@@ -1255,6 +1255,93 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Hot Dog Stand (level 68, placed by the player): a red and yellow stand with a giant hot dog
+-- on the roof whose mustard stripe glows while it works, a striped awning, a serving hatch and
+-- a sausage sign.
+local function hotDogStand(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.roofRed:Lerp(Palette.cream, 0.25), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.flowerYellow)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.metal)
+	-- The giant hot dog: a bun, the sausage and its glowing mustard
+	local dog = Vector3.new(-1, TOP + 1.4, 0.4)
+	d.cyl("Bun", 6, 1.8, CFrame.new(dog), Palette.bread)
+	d.cyl("Sausage", 7, 1.1, CFrame.new(dog + Vector3.new(0, 0.7, 0)), Palette.brick)
+	d.block(
+		"NeonSign",
+		Vector3.new(5.6, 0.2, 0.3),
+		dog + Vector3.new(0, 1.3, 0),
+		Palette.flowerYellow,
+		{ shadow = false }
+	)
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.roofRed else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.flowerYellow, Palette.glass)
+	d.block("Counter", Vector3.new(3.8, 0.3, 0.9), Vector3.new(-2.6, PLINTH + 2, FRONT - 0.45), Palette.woodLight)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.roofRed, Palette.cream)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.block("BunIcon", Vector3.new(1.1, 0.4, 0.2), at + Vector3.new(0, -0.15, 0), Palette.bread, { shadow = false })
+		s.block(
+			"DogIcon",
+			Vector3.new(1.3, 0.25, 0.2),
+			at + Vector3.new(0, 0.15, -0.02),
+			Palette.brick,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
+-- Bistro (level 69, placed by the player): a navy shopfront with a long blue and white awning,
+-- two little cafe tables out front, a flower box and a round lantern sign that glows while it
+-- cooks.
+local function bistro(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cream, Palette.stoneDark)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.stoneDark)
+	d.wedge(
+		"Mansard",
+		Vector3.new(11, 2, 1.6),
+		CFrame.new(0, TOP + 1.6, FRONT - 0.8 + 1.6) * Kit.yaw(180),
+		Palette.stoneDark
+	)
+	local chimney = d.post("Chimney", 2.4, 0.9, Vector3.new(-4.2, TOP + 1.8, 3), Palette.brick)
+	d.block(
+		"Facade",
+		Vector3.new(11.2, 3.6, 0.3),
+		Vector3.new(0, PLINTH + 1.8, FRONT - 0.1),
+		Palette.sky:Lerp(Palette.stoneDark, 0.6)
+	)
+	for i = 0, 5 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1.4, 0.5, 1.6),
+			CFrame.new(-3.5 + i * 1.4, PLINTH + 4.4, FRONT - 0.8) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.sky else Palette.flowerWhite
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 2.2, FRONT - 0.3), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT - 0.3), 2.2, 3.6, Palette.stoneDark, Palette.cream)
+	for _, x in { -4.2, -1.2 } do
+		d.post("Table", 1, 1.1, Vector3.new(x, PLINTH + 0.5, FRONT - 2.2), Palette.flowerWhite)
+	end
+	d.block("FlowerBox", Vector3.new(3.4, 0.5, 0.6), Vector3.new(-2.6, PLINTH + 5.9, FRONT - 0.3), Palette.woodDark)
+	d.block("Flowers", Vector3.new(3.2, 0.4, 0.5), Vector3.new(-2.6, PLINTH + 6.3, FRONT - 0.3), Palette.roofRed)
+	d.ball("NeonSign", 1.2, Vector3.new(3.8, PLINTH + 6.4, FRONT - 0.8), Palette.lantern, { shadow = false })
+	d.block("SignArm", Vector3.new(0.2, 0.2, 1), Vector3.new(3.8, PLINTH + 7.1, FRONT - 0.4), Palette.metal)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1395,6 +1482,8 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Perfumery = perfumery,
 	JuiceBar = juiceBar,
 	CakeShop = cakeShop,
+	HotDogStand = hotDogStand,
+	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)

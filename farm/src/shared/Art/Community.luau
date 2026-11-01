@@ -2238,6 +2238,33 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Car Wash (content bank, level 68): a long open bay with blue roller brushes either side of
+-- the lane, soap bubbles, a car-shaped sign on the roof and a striped entrance arch.
+TYPES.CarWash = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.36, 4.5, Palette.flowerWhite:Lerp(Palette.sky, 0.25))
+	local t = b.into(body, true)
+	local face = -s * 0.18
+	t.block("Roof", Vector3.new(s * 0.54, 0.5, s * 0.4), Vector3.new(0, PLINTH + 4.75, 0), Palette.sky)
+	-- The open bay through the front, the brushes either side and the bubbles
+	t.block("Bay", Vector3.new(s * 0.2, 3.4, 0.2), Vector3.new(0, PLINTH + 1.7, face - 0.05), Palette.stoneDark)
+	for _, x in { -s * 0.13, s * 0.13 } do
+		t.post("Brush", 3.4, 1.4, Vector3.new(x, PLINTH + 1.7, face - 0.9), Palette.sky)
+	end
+	for i, x in { -1.2, 0.4, 1.4 } do
+		t.ball("Bubble", 0.9 + i * 0.2, Vector3.new(x, PLINTH + 3.8 + (i % 2) * 0.6, face - 0.6), Palette.flowerWhite)
+	end
+	t.block("Arch", Vector3.new(s * 0.32, 0.6, 0.4), Vector3.new(0, PLINTH + 4.1, face - 0.3), Palette.flowerYellow)
+	-- The car sign on the roof
+	t.block("CarBody", Vector3.new(3.2, 0.9, 0.3), Vector3.new(0, PLINTH + 5.6, 0), Palette.roofRed)
+	t.block("CarTop", Vector3.new(1.8, 0.7, 0.3), Vector3.new(0, PLINTH + 6.4, 0), Palette.roofRed)
+	for _, x in { -1, 1 } do
+		t.cyl("Wheel", 0.35, 0.8, CFrame.new(x, PLINTH + 5.1, 0) * Kit.yaw(90), Palette.tire)
+	end
+	t.block("Lane", Vector3.new(s * 0.2, 0.1, 2.4), Vector3.new(0, PLINTH + 0.05, face - 1.2), Palette.road)
+	Kit.sproutTag(t, Vector3.new(-s * 0.2, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Concert Hall (content bank, level 66): a plum hall with a curved white shell stage on its
 -- front, a pair of big speakers, a giant music note on the roof and a marquee board.
 TYPES.ConcertHall = function(b, s)
