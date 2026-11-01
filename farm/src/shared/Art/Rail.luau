@@ -39,11 +39,13 @@ local FLOOR = 1.2 -- platform top
 -- a loaf-arch window, a hanging station clock, a departure board on the back wall, a bench and
 -- a small loading crane that swings crates into the cars. Returns the model, the departure
 -- board (for a SurfaceGui) and the crane (its "Jib" carries a HingeCFrame to swing about).
+-- `scale` builds it smaller (the farm's own station, Services/TrainService).
 ---------------------------------------------------------------------------------------------
 
-function ArtRail.station(parent: Instance, cf: CFrame): (Model, Part, Model)
+function ArtRail.station(parent: Instance, cf: CFrame, scale: number?): (Model, Part, Model)
 	local model = Kit.model("TrainStation", parent)
-	local b = Kit.builder(model, cf, true)
+	local s = scale or 1
+	local b = Kit.builder(model, cf, true, scale)
 	b.block("Platform", Vector3.new(30, FLOOR, 8), Vector3.new(0, FLOOR / 2, 0), Palette.woodLight, SOLID)
 	b.block("EdgeLine", Vector3.new(30, 0.1, 0.5), Vector3.new(0, FLOOR + 0.05, -3.6), Palette.roofMustard, QUIET)
 	b.block("Steps", Vector3.new(2, FLOOR / 2, 8), Vector3.new(16, FLOOR / 4, 0), Palette.wood, SOLID)
@@ -67,7 +69,7 @@ function ArtRail.station(parent: Instance, cf: CFrame): (Model, Part, Model)
 	local hand =
 		b.block("ClockHand", Vector3.new(0.12, 0.6, 0.05), CFrame.new(-4.5, FLOOR + 4.85, -2.85), Palette.cocoa, QUIET)
 	-- the client ticks it round this point
-	hand:SetAttribute("HingeCFrame", CFrame.new(-4.5, FLOOR + 4.6, -2.85))
+	hand:SetAttribute("HingeCFrame", CFrame.new(Vector3.new(-4.5, FLOOR + 4.6, -2.85) * s))
 
 	-- Back wall with the departure board, and a bench in front of it
 	b.block("BackWall", Vector3.new(18, 3.4, 0.4), Vector3.new(0, FLOOR + 1.7, 3.8), Palette.oat, SOLID)
@@ -93,7 +95,7 @@ function ArtRail.station(parent: Instance, cf: CFrame): (Model, Part, Model)
 	local c = b.into(crane, true)
 	c.post("Mast", 6, 0.7, Vector3.new(11, FLOOR + 3, 2.6), Palette.woodDark)
 	local jib = c.block("Jib", Vector3.new(0.5, 0.5, 7.4), Vector3.new(11, FLOOR + 6, -0.5), Palette.roofMustard)
-	jib:SetAttribute("HingeCFrame", cf * CFrame.new(11, FLOOR + 6, 2.6))
+	jib:SetAttribute("HingeCFrame", cf * CFrame.new(Vector3.new(11, FLOOR + 6, 2.6) * s))
 	c.block("Rope", Vector3.new(0.12, 2.6, 0.12), Vector3.new(11, FLOOR + 4.6, -3.8), Palette.sack, QUIET)
 	c.block("CraneCrate", Vector3.new(1.4, 1.2, 1.4), Vector3.new(11, FLOOR + 2.8, -3.8), Palette.crate)
 	return model, board, crane
@@ -361,6 +363,55 @@ function ArtRail.setExpressProgress(station: Model, fraction: number)
 		end
 	end
 	station:SetAttribute("Progress", fraction)
+end
+
+---------------------------------------------------------------------------------------------
+-- The farm's own Train Station (Services/TrainService, Layout kind "station"): the station at
+-- FARM_STATION_SCALE at the back of a FARM_SIZE footprint, and a track per train in front of
+-- it (front, the track side, at local -Z), the first nearest the platform. The trains run at
+-- FARM_TRAIN_SCALE with the engine's nose at FARM_FRONT_X.
+---------------------------------------------------------------------------------------------
+
+ArtRail.FARM_SIZE = Vector3.new(38, 0, 20)
+ArtRail.FARM_STATION_SCALE = 0.7
+ArtRail.FARM_TRAIN_SCALE = 0.55
+ArtRail.FARM_STATION_Z = 5
+ArtRail.FARM_LANES = { -0.5, -4.5, -8.5 }
+ArtRail.FARM_FRONT_X = 18.5
+ArtRail.FARM_CAR_GAP = 0.2
+
+-- The station and the three tracks into `parent` (all of it stays put, so it can be merged).
+-- Returns the station model, its platform (the tap target) and the departure board.
+function ArtRail.farmStation(parent: Instance, cf: CFrame): (Model, BasePart, Part)
+	local station, board =
+		ArtRail.station(parent, cf * CFrame.new(0, 0, ArtRail.FARM_STATION_Z), ArtRail.FARM_STATION_SCALE)
+	local length = ArtRail.TRACK_LENGTH * ArtRail.FARM_TRAIN_SCALE
+	for _, z in ArtRail.FARM_LANES do
+		for i = -2, 1 do
+			ArtRail.track("Straight", parent, cf * CFrame.new((i + 0.5) * length, 0, z), ArtRail.FARM_TRAIN_SCALE)
+		end
+	end
+	return station, station:FindFirstChild("Platform") :: BasePart, board
+end
+
+-- A train on track `lane` with `cars` cargo cars into `parent`: returns the engine, the cars
+-- (front first, named Car1, Car2, ...) and their item signs
+function ArtRail.farmTrain(parent: Instance, cf: CFrame, lane: number, cars: number): (Model, { Model }, { Part })
+	local s = ArtRail.FARM_TRAIN_SCALE
+	local z = ArtRail.FARM_LANES[lane]
+	local engineLength = ArtRail.ENGINE_LENGTH * s
+	local carLength = ArtRail.CAR_LENGTH * s
+	local x = ArtRail.FARM_FRONT_X - engineLength / 2
+	local engine = ArtRail.engine(parent, cf * CFrame.new(x, 0, z), s)
+	x -= engineLength / 2 + ArtRail.FARM_CAR_GAP + carLength / 2
+	local models, signs = {}, {}
+	for i = 1, cars do
+		local car, sign = ArtRail.cargoCar(parent, cf * CFrame.new(x, 0, z), s)
+		car.Name = "Car" .. i
+		models[i], signs[i] = car, sign
+		x -= carLength + ArtRail.FARM_CAR_GAP
+	end
+	return engine, models, signs
 end
 
 -- `scale` builds a bigger piece (the Town Express runs on EXPRESS_SCALE track: a scaled piece

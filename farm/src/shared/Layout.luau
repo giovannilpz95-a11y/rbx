@@ -7,7 +7,7 @@
 -- faces by default. Buildings without an entry stand where the farm layout puts them.
 -- Keys: "field:F7", "factory:Bakery", "pen:ChickenCoop", "house:<lot>", "community:<id>",
 -- "harbor:Harbor", "pond:DuckPond", "otters:OtterPond", "trader:ToolTrader",
--- "tonics:TonicShed".
+-- "tonics:TonicShed", "station:Station".
 --
 -- Footprints are in plot-local studs at the default facing: width along X, depth along Z,
 -- and the footprint's centre offset from the building's position (a factory's output table
@@ -18,6 +18,7 @@ local DuckPondConfig = require("./Config/DuckPond")
 local OtterPondConfig = require("./Config/OtterPond")
 local ToolTraderConfig = require("./Config/ToolTrader")
 local TonicsConfig = require("./Config/Tonics")
+local TrainConfig = require("./Config/Train")
 local Isles = require("./Config/Isles")
 local Land = require("./Config/Land")
 local TownRules = require("./TownRules")
@@ -38,6 +39,7 @@ Layout.KINDS = table.freeze({
 	otters = table.freeze({ w = 16, d = 14, ox = 0, oz = 0 }), -- Art/OtterPond WIDTH x DEPTH
 	trader = table.freeze({ w = 12, d = 12, ox = 0, oz = 0 }), -- Art/ToolTrader SIZE
 	tonics = table.freeze({ w = 12, d = 12, ox = 0, oz = 0 }), -- Art/TonicShed SIZE
+	station = table.freeze({ w = 38, d = 20, ox = 0, oz = 0 }), -- the Train Station with its three tracks
 }) :: { [string]: Footprint }
 
 Layout.DISPLAY = table.freeze({
@@ -51,6 +53,7 @@ Layout.DISPLAY = table.freeze({
 	otters = "Otter Pond",
 	trader = "Tool Trader",
 	tonics = "Tonic Shed",
+	station = "Train Station",
 })
 
 Layout.GRID = 2 -- positions snap to a 2-stud grid
@@ -130,6 +133,9 @@ function Layout.exists(data: { [string]: any }, kind: string, id: string): boole
 	elseif kind == "tonics" then
 		-- The Tonic Shed's empty lot is on the farm from its level, built or not
 		return id == "TonicShed" and data.level >= TonicsConfig.unlockLevel
+	elseif kind == "station" then
+		-- The Train Station stands on the farm from the first train's level
+		return id == "Station" and data.level >= TrainConfig.unlockLevel
 	end
 	return false
 end
