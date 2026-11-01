@@ -811,6 +811,48 @@ TYPES.GlassTower = {
 	end,
 }
 
+-- Timbered Manor (content bank, level 62): a cream two-storey house criss-crossed with dark
+-- timber beams, an overhanging upper floor, a steep brown roof and a brick chimney.
+TYPES.TimberedManor = {
+	roof = Palette.cocoa,
+	build = function(b, s, roof)
+		local w, d = s * 0.66, s * 0.5
+		local body = walls(b, w, d, STORY, Palette.cream, 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		-- The jettied upper floor
+		t.block(
+			"Upper",
+			Vector3.new(w + 0.8, STORY * 0.9, d + 0.8),
+			Vector3.new(0, PLINTH + STORY * 1.45, 0.6),
+			Palette.cream
+		)
+		for _, x in { -w / 2, -w / 6, w / 6, w / 2 } do
+			t.block(
+				"Beam",
+				Vector3.new(0.4, STORY * 1.9, 0.15),
+				Vector3.new(x, PLINTH + STORY * 0.95, face - 0.45),
+				Palette.woodDark
+			)
+		end
+		t.block("Beam", Vector3.new(w + 0.9, 0.4, 0.15), Vector3.new(0, PLINTH + STORY, face - 0.5), Palette.woodDark)
+		Kit.gableRoof(t, "Roof", Vector3.new(0, PLINTH + STORY * 1.9, 0.6), w + 1.4, d + 1.4, 3.6, roof)
+		t.block("Chimney", Vector3.new(1.2, 3, 1.2), Vector3.new(w / 3, PLINTH + STORY * 2.2, 1.6), Palette.brick)
+		Kit.window(
+			t,
+			"Window",
+			CFrame.new(-w / 3, PLINTH + STORY * 1.45, face - 0.4),
+			1.4,
+			1.6,
+			Palette.woodDark,
+			Palette.glass
+		)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3.2, Palette.woodDark, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + STORY * 2.4, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Heritage Row (content bank, level 58): an old red-brick terrace of three narrow town houses
 -- with white trim, stepped gables and a black lamp post out front.
 TYPES.HeritageRow = {

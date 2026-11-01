@@ -224,6 +224,9 @@ function ArtMotion.animalOffset(penId: string, mood: string?, t: number): CFrame
 	elseif penId == "PigPen" then
 		-- Pigs waddle: a side-to-side roll
 		return CFrame.Angles(0, 0, math.rad(math.sin(t * 6) * 4))
+	elseif penId == "MushroomShed" then
+		-- The mushrooms swell and settle as they grow
+		return CFrame.new(0, math.max(0, math.sin(t * 1.5)) * 0.08, 0)
 	elseif penId == "BeeYard" then
 		-- The hive hums: a fast small shiver
 		return CFrame.Angles(0, 0, math.rad(math.sin(t * 14) * 1.5))

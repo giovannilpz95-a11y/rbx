@@ -703,6 +703,47 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Handles", Vector3.new(1.4, 0.2, 0.25), at(0, 1.75, 0), Palette.stoneDark, QUIET)
 		b.cyl("Chisel", 0.6, 0.15, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
 	end,
+	Mushroom = function(b)
+		-- Two brown mushrooms
+		b.post("Stem", 0.8, 0.45, at(-0.3, 0.4, 0), Palette.cream, QUIET)
+		b.ball("Cap", 1.1, at(-0.3, 0.95, 0), Palette.cocoa:Lerp(Palette.wood, 0.4), QUIET)
+		b.post("Stem", 0.5, 0.35, at(0.45, 0.25, 0.2), Palette.cream, QUIET)
+		b.ball("Cap", 0.8, at(0.45, 0.6, 0.2), Palette.cocoa:Lerp(Palette.wood, 0.4), QUIET)
+	end,
+	Substrate = function(b)
+		-- A tied sack of dark compost
+		b.block("Sack", Vector3.new(1.2, 1.3, 0.9), at(0, 0.65, 0), Palette.sack, QUIET)
+		b.block("Top", Vector3.new(1, 0.25, 0.75), at(0, 1.4, 0), Palette.soilDark, QUIET)
+		b.block("Tie", Vector3.new(0.5, 0.3, 0.5), at(0, 1.62, 0), Palette.leaf, QUIET)
+	end,
+	PuffedRice = function(b)
+		-- A bowl heaped with puffed grains
+		b.cyl("Bowl", 0.6, 1.6, at(0, 0.3, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.sky, QUIET)
+		b.ball("Heap", 1.4, at(0, 0.75, 0), Palette.wheat, QUIET)
+	end,
+	CoconutSoup = function(b)
+		-- Soup served in half a coconut with a lime slice
+		b.ball("Shell", 1.6, at(0, 0.5, 0), Palette.trunk, QUIET)
+		b.cyl("Soup", 0.1, 1.4, at(0, 1.05, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Shrimp", 0.35, at(-0.3, 1.15, 0.1), Palette.carrot, QUIET)
+		b.wedge("Lime", Vector3.new(0.2, 0.35, 0.45), at(0.55, 1.2, 0), Palette.lime, QUIET)
+	end,
+	BaconEggs = function(b)
+		-- Two fried eggs and bacon strips on a plate
+		b.cyl("Plate", 0.15, 2, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		for _, x in { -0.45, 0.45 } do
+			b.cyl("White", 0.08, 0.8, at(x, 0.2, -0.2) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+			b.ball("Yolk", 0.35, at(x, 0.25, -0.2), Palette.flowerYellow, QUIET)
+		end
+		b.block("Bacon", Vector3.new(1.2, 0.1, 0.25), at(0, 0.2, 0.45), Palette.cowMuzzle, QUIET)
+	end,
+	Earrings = function(b)
+		-- A pair of gold hoops with platinum drops
+		for _, x in { -0.45, 0.45 } do
+			b.cyl("Hoop", 0.12, 0.8, at(x, 0.9, 0), Palette.coins, QUIET)
+			b.ball("Drop", 0.35, at(x, 0.35, 0), Palette.stoneLight, QUIET)
+		end
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

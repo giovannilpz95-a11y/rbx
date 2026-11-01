@@ -53,6 +53,8 @@ local Pens: { [string]: PenDef } = {
 	-- Township's Pig Farm (level 42): placed by the player once it's built
 	PigPen = { id = "PigPen", displayName = "Pig Pen", animalName = "Pig", animalPlural = "Pigs", unlockLevel = 42, given = false, buildCost = 12000, buildSeconds = 43 * HOUR, xp = 500, feed = "PigFeed", product = "Bacon", productName = "Bacon", produceSeconds = 7 * HOUR, sellPrice = 32, productXP = 14, startAnimals = 3, extraAnimalCosts = { 2100, 2400, 3150 }, order = 10, color = { 245, 180, 180 }, productColor = { 220, 110, 100 } },
 	PigPen2 = { id = "PigPen2", displayName = "Second Pig Pen", animalName = "Pig", animalPlural = "Pigs", unlockLevel = 54, given = false, buildCost = 35000, buildSeconds = 57 * HOUR, xp = 1448, feed = "PigFeed", product = "Bacon", productName = "Bacon", produceSeconds = 7 * HOUR, sellPrice = 32, productXP = 14, startAnimals = 3, extraAnimalCosts = { 12600, 14000, 15400 }, order = 12, color = { 245, 180, 180 }, productColor = { 220, 110, 100 }, copyOf = "PigPen" },
+	-- Township's Mushroom Farm (level 63): placed by the player once it's built; Substrate from the Feed Mill
+	MushroomShed = { id = "MushroomShed", displayName = "Mushroom Shed", animalName = "Mushroom Log", animalPlural = "Mushroom Logs", unlockLevel = 63, given = false, buildCost = 29000, buildSeconds = 72 * HOUR, xp = 1201, feed = "Substrate", product = "Mushroom", productName = "Mushroom", produceSeconds = 5 * HOUR, sellPrice = 69, productXP = 30, startAnimals = 3, extraAnimalCosts = { 5700, 7600, 9500 }, order = 13, color = { 120, 90, 70 }, productColor = { 200, 160, 120 } },
 }
 
 for _, pen in Pens do

@@ -2144,6 +2144,43 @@ TYPES.AutoWorkshop = function(b, s)
 	return body
 end
 
+-- Blossom Boutique (content bank, level 62): a pink flower shop with a big glass front, a
+-- green-and-white awning, buckets of flowers on tiered stands outside and a tulip sign.
+TYPES.BlossomBoutique = function(b, s)
+	local body = hall(b, s * 0.6, s * 0.4, 4.4, Palette.flowerPink:Lerp(Palette.cream, 0.55))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.64, 0.5, s * 0.44), Vector3.new(0, PLINTH + 4.65, 0), Palette.cream)
+	t.block(
+		"Shopfront",
+		Vector3.new(s * 0.34, 2.6, 0.2),
+		Vector3.new(-s * 0.1, PLINTH + 1.9, face - 0.05),
+		Palette.glass,
+		{ transparency = 0.25 }
+	)
+	for i = 0, 4 do
+		t.wedge(
+			"Awning",
+			Vector3.new(s * 0.12, 0.6, 1.4),
+			CFrame.new(-s * 0.24 + i * s * 0.12, PLINTH + 3.7, face - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.leaf else Palette.cream
+		)
+	end
+	Kit.door(t, "Door", CFrame.new(s * 0.2, PLINTH, face), 1.4, 2.8, Palette.leaf, Palette.cream)
+	-- Tiered flower stand with its buckets
+	t.block("Stand", Vector3.new(s * 0.3, 0.6, 1.2), Vector3.new(-s * 0.1, PLINTH + 0.3, face - 1.4), Palette.woodLight)
+	for i, color in { Palette.roofRed, Palette.flowerYellow, Palette.flowerWhite, Palette.plum } do
+		local x = -s * 0.22 + (i - 1) * s * 0.08
+		t.post("Bucket", 0.6, 0.6, Vector3.new(x, PLINTH + 0.9, face - 1.4), Palette.metal)
+		t.ball("Bunch", 0.8, Vector3.new(x, PLINTH + 1.5, face - 1.4), color)
+	end
+	-- The tulip sign on the roof
+	t.post("SignStem", 1.6, 0.2, Vector3.new(0, PLINTH + 5.7, face + 1), Palette.leaf)
+	t.ball("Tulip", 1.4, Vector3.new(0, PLINTH + 6.8, face + 1), Palette.roofRed)
+	Kit.sproutTag(t, Vector3.new(s * 0.24, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Planetarium (content bank, level 60): a round navy hall under a big silver dome with its
 -- observing slit open, a brass telescope poking out, gold stars on the drum and a ringed
 -- planet on a post by the door.
