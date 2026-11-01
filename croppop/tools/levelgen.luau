@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 475
+local LAST = tonumber(ARGS[2]) or 500
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -123,6 +123,11 @@ local NAMES = {
 	"Morning Dew", "Dusty Rafters", "Gossamer Glen", "Hayloft Webs", "Knotty Pine",
 	"Tangle Wood", "Cobweb Cottage", "Misty Gate", "Woodshed Webs", "Spider Hollow",
 	"Lantern Barn", "Netting Nook", "Thread Mill", "Web of Hedges", "Grand Lantern Ball",
+	"Patchwork Quilt", "Sewing Bee", "Granny's Quilt", "Thimble Lane", "Rag Rug Row",
+	"Calico Corner", "Button Barn", "Mending Day", "Gingham Picnic", "Quilting Fair",
+	"Needle Point", "Cotton Field", "Bobbin Mill", "Stitch in Time", "Hearth Rug",
+	"Darning Nook", "Woolly Fold", "Pincushion Hill", "Flannel Farm", "Lavender Sachet",
+	"Feather Quilt", "Spinning Wheel", "Tea Cosy Cottage", "Seamstress Row", "Grand Quilt Show",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -145,7 +150,8 @@ local TARP_INTRO = 376 -- first level with tarps
 local THICK_GOO_INTRO = 401 -- first level with thick goo
 local RAINBOW_INTRO = 426 -- first level with rainbow patches
 local WEB_INTRO = 451 -- first level with webs
-local INTROS = { [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local QUILT_INTRO = 476 -- first level with quilts and sewing tins
+local INTROS = { [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -476,6 +482,7 @@ local function mechanics(id)
 		thickGoo = id >= THICK_GOO_INTRO, -- "e"
 		rainbow = id >= RAINBOW_INTRO, -- "r"
 		webs = id >= WEB_INTRO, -- "n"
+		quilts = id >= QUILT_INTRO, -- "q" and "k"
 	}
 end
 
@@ -483,6 +490,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_QUILTS = { "Quilts", "Webs", "Rainbow", "Collect", "Quilts", "Goo", "Tarps", "Statues", "Quilts", "Springs", "Mud", "Mix" }
 local FOCUS_WEBS = { "Webs", "Rainbow", "Goo", "Collect", "Webs", "Tarps", "Springs", "Statues", "Webs", "Crates", "Mud", "Mix" }
 local FOCUS_RAINBOW = { "Rainbow", "Goo", "Tarps", "Collect", "Rainbow", "Springs", "Statues", "Crates", "Rainbow", "Fences", "Mud", "Mix" }
 local FOCUS_THICK_GOO = { "Goo", "Tarps", "Springs", "Collect", "Goo", "Statues", "Crates", "Fences", "Goo", "Hens", "Mud", "Mix" }
@@ -509,6 +517,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Quilt", "Patch", "Sewing", "Stitch", "Thimble", "Needle", "Bobbin", "Calico", "Gingham", "Button", "Mending", "Darning", "Seamstress", "Pincushion" }, focus = "Quilts", needs = "quilts" },
 	{ words = { "Web", "Spider", "Silk", "Gossamer", "Tangle", "Netting", "Thread" }, focus = "Webs", needs = "webs" },
 	{ words = { "Rainbow", "Dye", "Paint", "Colour", "Prism", "Hue", "Spectrum", "Chameleon", "Crayon" }, focus = "Rainbow", needs = "rainbow" },
 	{ words = { "Tarp", "Canvas", "Awning", "Tent", "Marquee", "Shade", "Cover", "Big Top" }, focus = "Tarps", needs = "tarps" },
@@ -555,6 +564,8 @@ local function focusOf(id, name)
 		return "Rainbow"
 	elseif id == WEB_INTRO then
 		return "Webs"
+	elseif id == QUILT_INTRO then
+		return "Quilts"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -566,7 +577,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -661,7 +672,7 @@ end
 -- Tarps: centred runs of plain cells in a row (so they stay mirrored), with
 -- tiles above them to fall in once they roll up, never stacked. The first
 -- tarp level has one run of four.
-local NOT_FALLING = "123wsSxtfF#dhG" -- cells nothing falls out of
+local NOT_FALLING = "123wsSxtfF#dhGqk" -- cells nothing falls out of
 local function placeTarps(g, rng, id)
 	local want = if id == TARP_INTRO then 1 else rng:int(1, 2)
 	local placed = 0
@@ -690,6 +701,67 @@ local function placeTarps(g, rng, id)
 		end
 	end
 	return placed
+end
+
+-- Quilts: a centred block of plain cells (so it stays mirrored), with tiles
+-- above it to fall in once it lifts off; later levels sometimes add a second
+-- one lower down. Then one sewing tin per quilt cell (rounded up to mirrored
+-- pairs, and now and then a spare pair). The first quilt level has one small
+-- quilt. Returns the quilt cells placed (0 if there weren't tins enough).
+local function placeQuilts(g, rng, id)
+	local odd = g.w % 2 == 1
+	local want = if id == QUILT_INTRO or rng:int(1, 3) < 3 then 1 else 2
+	local cells, placed, lastY = 0, 0, 0
+	for _ = 1, 30 do
+		if placed >= want then
+			break
+		end
+		local qw = if id == QUILT_INTRO then (if odd then 3 else 2) elseif odd then rng:pick({ 1, 3, 3 }) else rng:pick({ 2, 2, 4 })
+		local qh = if id == QUILT_INTRO then (if odd then 1 else 2) else rng:int(1, 2)
+		if qw * qh > 6 or (placed > 0 and qw * qh > 4) then
+			qh = 1
+		end
+		local x0 = (g.w - qw) // 2 + 1
+		local y0 = rng:int(math.max(3, lastY + 2), g.h - qh)
+		local ok = y0 + qh - 1 <= g.h - 1 or placed > 0
+		for y = y0 - 1, y0 + qh do
+			for x = x0, x0 + qw - 1 do
+				local c = g[y] and g[y][x]
+				local inside = y >= y0 and y < y0 + qh
+				if (inside and c ~= ".") or (y == y0 - 1 and (c == nil or string.find(NOT_FALLING, c, 1, true))) or (not inside and c == "q") then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			for y = y0, y0 + qh - 1 do
+				for x = x0, x0 + qw - 1 do
+					g[y][x] = "q"
+				end
+			end
+			cells += qw * qh
+			placed += 1
+			lastY = y0 + qh - 1
+		end
+	end
+	if placed == 0 then
+		return 0
+	end
+	local tins = cells + cells % 2 + (if id ~= QUILT_INTRO and rng:int(1, 2) == 1 then 2 else 0)
+	for _ = 1, 60 do
+		if tins <= 0 then
+			break
+		end
+		local x, y = rng:int(1, g.w // 2), rng:int(2, g.h - 1)
+		if g[y][x] == "." and g[y][g.w - x + 1] == "." and g[y - 1][x] ~= "q" then
+			setSym(g, x, y, "k")
+			tins -= 2
+		end
+	end
+	if tins > 0 then
+		return 0
+	end
+	return cells
 end
 
 -- Webs on a few plain cells, mirrored (only blasts clear them, so not many):
@@ -1070,6 +1142,11 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	if focus == "Quilts" or (focus == "Mix" and mech.quilts and rng:int(1, 3) == 1) then
+		if placeQuilts(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Statues" or (focus == "Mix" and mech.statues and rng:int(1, 3) == 1) then
 		if placeStatues(g, rng, id) == 0 and focus == "Statues" then
 			return nil
@@ -1177,6 +1254,9 @@ local function draft(id, variant)
 	end
 	if has(g, "n") > 0 then
 		table.insert(goals, { kind = "Webs" })
+	end
+	if has(g, "q") > 0 then
+		table.insert(goals, { kind = "Quilts" })
 	end
 	if #goals > 3 then
 		return nil -- the goal bar shows 3 at most

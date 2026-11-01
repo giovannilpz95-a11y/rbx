@@ -52,6 +52,9 @@ export type Cell = {
 	stone: boolean, -- the "bale" is a stone wall (only blasts break it, not matches next to it)
 	tarp: any?, -- the "bale" is part of a tarp ({ cells, left }), rolled up from its right end
 	crate: boolean?, -- the "bale" is a surprise crate (opens like a 1-layer bale and reveals something)
+	tin: boolean?, -- the "bale" is a sewing tin (opens like a 1-layer bale and sends a patch to a quilt)
+	quilt: any?, -- the "bale" is part of a quilt ({ cells, left }); nothing breaks it, patches finish it
+	patched: boolean?, -- this quilt cell has its patch
 	mud: number, -- mud layers under the tile (0 = none)
 	frost: number, -- frost layers over the tile (0 = none); the tile is frozen in place
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
@@ -94,6 +97,9 @@ function Board.new(width: number, height: number)
 		-- Tarps ("t" in the layout; touching t cells in a row make one tarp):
 		-- { cells = { Cell } left to right, left = cells still covered }.
 		tarps = {},
+		-- Quilts ("q" in the layout; touching q cells make one quilt):
+		-- { cells = { Cell } in reading order, left = patches still missing }.
+		quilts = {},
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -200,6 +206,12 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "x" then
 					cell.bale = 1
 					cell.crate = true
+				elseif ch == "k" then
+					cell.bale = 1
+					cell.tin = true
+				elseif ch == "q" then
+					cell.bale = 1
+					cell.quilt = true -- replaced by its quilt below
 				elseif ch == "s" or ch == "S" then
 					cell.bale = if ch == "S" then 2 else 1
 					cell.stone = true
@@ -226,30 +238,48 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 			end
 		end
 	end
-	-- Touching buried cells (up, down, left, right) make up one statue.
-	self:eachCell(function(cell)
-		if cell.buried and not cell.statue then
-			local statue = { cells = {}, left = 0 }
-			local stack = { cell }
-			cell.statue = statue
-			while #stack > 0 do
-				local c = table.remove(stack)
-				table.insert(statue.cells, c)
-				statue.left += 1
-				for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
-					local n = self:get(c.x + d[1], c.y + d[2])
-					if n and n.buried and not n.statue then
-						n.statue = statue
-						table.insert(stack, n)
+	-- Touching buried cells (up, down, left, right) make up one statue, and
+	-- touching quilt cells one quilt.
+	local function group(isPart, field, list)
+		self:eachCell(function(cell)
+			if isPart(cell) and cell[field] == nil then
+				local whole = { cells = {}, left = 0 }
+				local stack = { cell }
+				cell[field] = whole
+				while #stack > 0 do
+					local c = table.remove(stack)
+					table.insert(whole.cells, c)
+					whole.left += 1
+					for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+						local n = self:get(c.x + d[1], c.y + d[2])
+						if n and isPart(n) and n[field] == nil then
+							n[field] = whole
+							table.insert(stack, n)
+						end
 					end
 				end
+				table.sort(whole.cells, function(a, b)
+					return a.y * 100 + a.x < b.y * 100 + b.x
+				end)
+				table.insert(list, whole)
 			end
-			table.sort(statue.cells, function(a, b)
-				return a.y * 100 + a.x < b.y * 100 + b.x
-			end)
-			table.insert(self.statues, statue)
+		end)
+	end
+	group(function(cell)
+		return cell.buried == true
+	end, "statue", self.statues)
+	local quiltCells = {}
+	self:eachCell(function(cell)
+		if cell.quilt == true then
+			cell.quilt = nil
+			quiltCells[cell] = true
 		end
 	end)
+	if next(quiltCells) then
+		group(function(cell)
+			return quiltCells[cell] == true
+		end, "quilt", self.quilts)
+	end
 	for _, portal in portals or {} do
 		local from = self:get(portal.from[1], portal.from[2])
 		local to = self:get(portal.to[1], portal.to[2])
@@ -688,6 +718,10 @@ function Board.hash(self): string
 				table.insert(row, "#")
 			elseif cell.crate then
 				table.insert(row, "X" .. clover)
+			elseif cell.tin then
+				table.insert(row, "K" .. clover)
+			elseif cell.quilt then
+				table.insert(row, (if cell.patched then "Qp" else "Q") .. clover)
 			elseif cell.tarp then
 				table.insert(row, "T" .. clover)
 			elseif cell.weed then
@@ -737,6 +771,9 @@ function Board.snapshot(self)
 			weed = cell.weed,
 			stone = cell.stone,
 			crate = cell.crate,
+			tin = cell.tin,
+			quilt = cell.quilt ~= nil,
+			patched = cell.patched,
 			tarp = cell.tarp ~= nil,
 			mud = cell.mud,
 			frost = cell.frost,

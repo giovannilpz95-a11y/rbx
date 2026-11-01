@@ -24,6 +24,12 @@
 	     the web (the Webs goal)
 	  r  rainbow patch under the tile: after every swap the plain tile on it
 	     changes to the next colour that doesn't make a match
+	  q  quilt: touching q cells make one quilt, blocking like bales that
+	     nothing breaks; it needs one patch per cell, and when the last patch
+	     lands it lifts off (the Quilts goal)
+	  k  sewing tin: blocks like a 1-layer bale; a match next to it or a blast
+	     opens it and sends a patch to a quilt (a level needs at least one tin
+	     per quilt cell)
 	  x  surprise crate: blocks like a 1-layer bale; a match next to it or a blast
 	     opens it, and it leaves a power-up (or now and then a hay bale)
 	  h  hen house: not a cell, and nothing falls past it; it drops a new tile
@@ -53,7 +59,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -94,6 +100,8 @@ local VALID_CHARS = {
 	G = true,
 	h = true,
 	x = true,
+	q = true,
+	k = true,
 	m = true,
 	M = true,
 	f = true,
@@ -241,7 +249,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -284,6 +292,10 @@ function Levels.validate(level): string?
 				tarps += 1
 			elseif ch == "n" then
 				webs += 1
+			elseif ch == "q" then
+				quilts += 1
+			elseif ch == "k" then
+				tins += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -330,6 +342,9 @@ function Levels.validate(level): string?
 			return "goo springs in the layout but no goo goal"
 		end
 	end
+	if tins < quilts then
+		return "quilts need one sewing tin per quilt cell (" .. quilts .. " cells, " .. tins .. " tins)"
+	end
 	for _, goal in level.goals do
 		if goal.kind == "Collect" then
 			if not table.find(level.colors, goal.tile) then
@@ -365,6 +380,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Webs" then
 			if webs == 0 then
 				return "webs goal but no webs in the layout"
+			end
+		elseif goal.kind == "Quilts" then
+			if quilts == 0 then
+				return "quilts goal but no quilts in the layout"
 			end
 		elseif goal.kind == "Tarps" then
 			if tarps == 0 then
