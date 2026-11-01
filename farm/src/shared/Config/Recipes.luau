@@ -135,6 +135,11 @@ local Recipes: { [string]: RecipeDef } = {
 	MintCandy = { id = "MintCandy", displayName = "Mint Candy", factory = "CandyFactory", unlockLevel = 54, inputs = { Mint = 2, CaneSyrup = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 114, xp = 49 },
 	SeafoodPizza = { id = "SeafoodPizza", displayName = "Seafood Pizza", factory = "Bakery", unlockLevel = 55, inputs = { Wheat = 2, Fish = 1, Shrimp = 1, Cheese = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 241, xp = 103 },
 	Sneakers = { id = "Sneakers", displayName = "Sneakers", factory = "Cobbler", unlockLevel = 55, inputs = { Rubber = 1, CottonFabric = 1, Glue = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 234, xp = 100 },
+	-- Level 56-57 goods
+	SushiRoll = { id = "SushiRoll", displayName = "Sushi Roll", factory = "SushiBar", unlockLevel = 56, inputs = { Rice = 5, Fish = 1 }, outputQty = 1, seconds = 45 * MIN, sellPrice = 159, xp = 68 },
+	LobsterSushi = { id = "LobsterSushi", displayName = "Lobster Sushi", factory = "SushiBar", unlockLevel = 57, inputs = { Lobsters = 1, Rice = 4 }, outputQty = 1, seconds = 1 * HOUR + 15 * MIN, sellPrice = 231, xp = 99 },
+	BaconPoppers = { id = "BaconPoppers", displayName = "Bacon Poppers", factory = "Cantina", unlockLevel = 57, inputs = { Peppers = 2, Bacon = 1, Cheese = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 124, xp = 53 },
+	Ring = { id = "Ring", displayName = "Ring", factory = "Jeweler", unlockLevel = 57, inputs = { SilverOre = 6, GoldOre = 4 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 426, xp = 183, fromOreShed = true },
 	-- Jeweler (Township's Jewelry Store): Quarry ore from the Ore Shed, like the Smelter
 	Pendant = { id = "Pendant", displayName = "Pendant", factory = "Jeweler", unlockLevel = 53, inputs = { SilverOre = 9 }, outputQty = 1, seconds = 30 * MIN, sellPrice = 345, xp = 148, fromOreShed = true },
 	BulletinBoard = { id = "BulletinBoard", displayName = "Bulletin Board", factory = "StationeryShop", unlockLevel = 48, inputs = { CorkOak = 3, Paper = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 124, xp = 53 },

@@ -1037,6 +1037,42 @@ local function jeweler(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = anim }
 end
 
+-- Sushi Bar (level 56, placed by the player): a cream shop under a sweeping red roof with
+-- upturned eaves, a noren curtain over the door, a big paper lantern on a post that glows
+-- while it works, and a giant sushi roll on the roof.
+local function sushiBar(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.cream, Palette.woodDark)
+	local d = b.into(body, true)
+	Kit.gableRoof(d, "Roof", Vector3.new(0, TOP, 0), 12.4, 10.2, 2.4, Palette.roofRed, Palette.woodDark)
+	for _, x in { -6.2, 6.2 } do
+		d.wedge(
+			"Eave",
+			Vector3.new(0.6, 0.8, 10.2),
+			CFrame.new(x, TOP + 0.2, 0) * Kit.yaw(if x < 0 then 0 else 180),
+			Palette.roofRed
+		)
+	end
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(-4, TOP + 2.2, 2.6), Palette.stoneLight)
+	-- The sushi roll on the ridge: rice, its seaweed band and the salmon on top
+	local roll = Vector3.new(1.6, TOP + 3.1, 0.4)
+	d.cyl("Rice", 2.4, 2, CFrame.new(roll), Palette.cream)
+	d.cyl("Nori", 0.9, 2.1, CFrame.new(roll), Palette.treeTopDark)
+	d.block("Salmon", Vector3.new(2.6, 0.5, 1.4), roll + Vector3.new(0, 1, 0), Palette.carrot)
+	-- The lantern on its post by the door
+	d.post("LanternPost", 3.6, 0.3, Vector3.new(5, 1.8, FRONT - 1.4), Palette.woodDark)
+	d.ball("NeonSign", 1.4, Vector3.new(5, 4, FRONT - 1.4), Palette.roofRed, { shadow = false })
+	Kit.window(d, "Window", CFrame.new(-2.4, PLINTH + 3.2, FRONT), 3.2, 2.2, Palette.woodDark, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.4, PLINTH, FRONT), 2.4, 4.2, Palette.woodDark, Palette.cream)
+	d.block("Noren", Vector3.new(2.6, 1.2, 0.1), Vector3.new(2.4, PLINTH + 3.6, FRONT - 0.45), Palette.glassDeep)
+	sign(d, Vector3.new(2.4, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.cyl("RollIcon", 0.2, 1.3, at * CFrame.Angles(0, math.rad(90), 0), Palette.treeTopDark, { shadow = false })
+		s.cyl("RollRice", 0.22, 0.8, at * CFrame.Angles(0, math.rad(90), 0), Palette.cream, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(-4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Smelter (level 21, beside the Quarry): a fieldstone forge under a slate roof with a tall
 -- round brick stack. The furnace mouth beside the door glows while it smelts, an anvil stands
 -- out front and a stack of Bars waits on a pallet. The second Smelter wears a teal roof.
@@ -1172,6 +1208,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	FurnitureWorkshop = furnitureWorkshop,
 	Cobbler = cobbler,
 	Jeweler = jeweler,
+	SushiBar = sushiBar,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts
 		return smelter(model, b, Palette.roofTeal)
