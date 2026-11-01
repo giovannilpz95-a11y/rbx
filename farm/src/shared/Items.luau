@@ -8,6 +8,7 @@ local DuckPond = require("./Config/DuckPond")
 local OtterPond = require("./Config/OtterPond")
 local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
+local ToolTrader = require("./Config/ToolTrader")
 local Town = require("./Config/Town")
 
 export type ItemDef = {
@@ -173,6 +174,21 @@ local function addMaterials(materials: { [string]: { displayName: string } }, un
 end
 addMaterials(Town.materials, Town.materialsFromLevel)
 addMaterials(Barn.materials, Barn.materialsFromLevel)
+
+-- Power tools from the Tool Trader (Config/ToolTrader): Barn materials that sell, as in
+-- Township, but never go on orders or the Market
+for id, tool in ToolTrader.tools do
+	Items[id] = {
+		id = id,
+		displayName = tool.displayName,
+		kind = "Material",
+		unlockLevel = tool.unlockLevel,
+		sellPrice = tool.sellPrice,
+		xpPerUnit = 0,
+		unitSeconds = 0,
+		isFeed = false,
+	}
+end
 
 for _, item in Items do
 	table.freeze(item)

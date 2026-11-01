@@ -33,6 +33,7 @@ local QuarryConfig = require(Shared.Config.Quarry)
 local Products = require(Shared.Config.Products)
 local PrizeRules = require(Shared.Prize)
 local Tools = require(Shared.Config.Tools)
+local ToolTraderConfig = require(Shared.Config.ToolTrader)
 local Town = require(Shared.Config.Town)
 local TownRules = require(Shared.TownRules)
 local Tutorial = require(Shared.Tutorial)
@@ -226,6 +227,16 @@ local function sortedKeys(defs: { [string]: { order: number } }): { string }
 		return defs[a].order < defs[b].order
 	end)
 	return ids
+end
+
+-- What Community Buildings can ask for, in order: building materials, then the Tool Trader's
+-- power tools (level 60+)
+local function buildNeeds(): { string }
+	local out = sortedKeys(Town.materials)
+	for _, id in sortedKeys(ToolTraderConfig.tools) do
+		table.insert(out, id)
+	end
+	return out
 end
 
 local function sortedIds(defs: { [string]: { order: number } }, enabled: { string }): { string }
@@ -1533,14 +1544,14 @@ local function renderBuildings(state: { [string]: any })
 			local entry = state.town.community[id]
 			local locked = state.level < def.unlockLevel
 			local parts, enough = {}, true
-			for _, material in sortedKeys(Town.materials) do
+			for _, material in buildNeeds() do
 				local need = def.materials[material]
 				if need then
 					local have = ClientStore.itemCount(material)
 					enough = enough and have >= need
 					table.insert(
 						parts,
-						string.format("%s %d/%d", Town.materials[material].displayName, math.min(have, need), need)
+						string.format("%s %d/%d", Items[material].displayName, math.min(have, need), need)
 					)
 				end
 			end
@@ -1965,15 +1976,12 @@ local function renderTown(state: { [string]: any })
 		end
 		local parts = {}
 		local enough = true
-		for _, material in sortedKeys(Town.materials) do
+		for _, material in buildNeeds() do
 			local need = def.materials[material]
 			if need then
 				local have = ClientStore.itemCount(material)
 				enough = enough and have >= need
-				table.insert(
-					parts,
-					string.format("%s %d/%d", Town.materials[material].displayName, math.min(have, need), need)
-				)
+				table.insert(parts, string.format("%s %d/%d", Items[material].displayName, math.min(have, need), need))
 			end
 		end
 		local status = if entry == nil
@@ -2437,6 +2445,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Harbor: repaired, isles open, Guild built, Bars, boats home now", "Debug_Harbor", 380, 19)
 	devButton("Duck Pond: dug out, ducks gone, a Bread, Bagel and Banana Bread", "Debug_Pond", 380, 20)
 	devButton("Otter Pond: built, three otters, trips over, an Egg, Bacon and Fish", "Debug_Otters", 380, 21)
+	devButton("Tool Trader: built, three slots, materials for its offers", "Debug_Trader", 380, 22)
 end
 
 ---------------------------------------------------------------------------------------------

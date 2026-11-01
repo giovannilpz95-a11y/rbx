@@ -35,6 +35,7 @@ local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local DuckPondConfig = require("../src/shared/Config/DuckPond")
 local OtterPondConfig = require("../src/shared/Config/OtterPond")
+local ToolTraderConfig = require("../src/shared/Config/ToolTrader")
 local IslesConfig = require("../src/shared/Config/Isles")
 local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
@@ -1545,7 +1546,11 @@ test("Township baseline town rows", function()
 		end
 		ok(def.unlockLevel <= Levels.built, def.id .. " past the content bank")
 		for material in def.materials do
-			ok(Town.materials[material] ~= nil and Items[material].kind == "Material", def.id .. " " .. material)
+			ok(
+				(Town.materials[material] ~= nil or ToolTraderConfig.tools[material] ~= nil)
+					and Items[material].kind == "Material",
+				def.id .. " " .. material
+			)
 		end
 	end
 	eq(Town.baseCap + total, 385, "Cap with every MVP Community Building (Township's level-12 max Population)")
@@ -2328,6 +2333,7 @@ require("./seedcart")(test, eq, ok)
 require("./harbor")(test, eq, ok)
 require("./duckpond")(test, eq, ok)
 require("./otterpond")(test, eq, ok)
+require("./tooltrader")(test, eq, ok)
 
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles

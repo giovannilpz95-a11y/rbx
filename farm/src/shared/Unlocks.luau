@@ -10,6 +10,7 @@ local Decor = require("./Config/Decor")
 local Factories = require("./Config/Factories")
 local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
+local ToolTrader = require("./Config/ToolTrader")
 local Tools = require("./Config/Tools")
 local Town = require("./Config/Town")
 
@@ -73,6 +74,9 @@ function Unlocks.at(level: number): { Unlock }
 	end
 	if level == Isles.unlockLevel then
 		table.insert(out, { kind = "Feature", id = "Harbor", name = "Harbor" })
+	end
+	if level == ToolTrader.unlockLevel then
+		table.insert(out, { kind = "Feature", id = "ToolTrader", name = "Tool Trader" })
 	end
 	for _, isle in Isles.isles do
 		if isle.unlockLevel == level and isle.unlockCoins > 0 then
