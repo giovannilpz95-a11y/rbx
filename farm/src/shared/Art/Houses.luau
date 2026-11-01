@@ -778,6 +778,72 @@ TYPES.CourtyardBlock = {
 	end,
 }
 
+-- Glass Tower (content bank, level 56): a slim modern tower of pale-blue glass in a white
+-- frame, stepping back at the top, with a rooftop garden and a white entrance canopy.
+TYPES.GlassTower = {
+	roof = Palette.leaf,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.5, s * 0.5, STORY * 4
+		local body = walls(b, w, d, h, Palette.cream, 0, 0.3)
+		local t = b.into(body, true)
+		local face = 0.3 + front(d)
+		t.block(
+			"Glass",
+			Vector3.new(w * 0.8, h - 1.4, 0.2),
+			Vector3.new(0, PLINTH + h / 2 + 0.6, face - 0.05),
+			Palette.glass
+		)
+		for i = 1, 3 do
+			t.block(
+				"Floor",
+				Vector3.new(w * 0.82, 0.3, 0.25),
+				Vector3.new(0, PLINTH + STORY * i, face - 0.1),
+				Palette.cream
+			)
+		end
+		t.block("Top", Vector3.new(w * 0.7, 2, d * 0.7), Vector3.new(0, PLINTH + h + 1, 0.3), Palette.glass)
+		t.block("Garden", Vector3.new(w + 0.2, 0.4, d + 0.2), Vector3.new(0, PLINTH + h + 0.2, 0.3), roof)
+		t.ball("Shrub", 1.2, Vector3.new(w / 3, PLINTH + h + 0.8, face + 0.8), Palette.leaf)
+		t.block("Canopy", Vector3.new(3, 0.3, 1.4), Vector3.new(0, PLINTH + 3, face - 0.7), Palette.cream)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.8, 2.8, Palette.glassDeep, Palette.cream)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 2.4, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Heritage Row (content bank, level 58): an old red-brick terrace of three narrow town houses
+-- with white trim, stepped gables and a black lamp post out front.
+TYPES.HeritageRow = {
+	roof = Palette.stoneDark,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.8, s * 0.48, STORY * 2.4
+		local body = walls(b, w, d, h, Palette.brick, 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		for i = -1, 1 do
+			local x = i * w / 3
+			t.block(
+				"Gable",
+				Vector3.new(w / 3 - 0.4, 2 + (i + 1) % 2, d),
+				Vector3.new(x, PLINTH + h + 1 + ((i + 1) % 2) / 2, 0.6),
+				roof
+			)
+			Kit.window(t, "Window", CFrame.new(x, PLINTH + STORY + 1.8, face), 1.2, 1.8, Palette.cream, Palette.glass)
+		end
+		t.block("Trim", Vector3.new(w + 0.2, 0.4, d + 0.2), Vector3.new(0, PLINTH + h, 0.6), Palette.cream)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3.2, Palette.treeTopDark, Palette.cream)
+		t.post("Lamp", 3.6, 0.25, Vector3.new(-w / 3, PLINTH + 1.8, face - 1.4), Palette.stoneDark)
+		t.block(
+			"LampHead",
+			Vector3.new(0.6, 0.7, 0.6),
+			Vector3.new(-w / 3, PLINTH + 3.9, face - 1.4),
+			Palette.flowerYellow
+		)
+		Kit.sproutTag(t, Vector3.new(w / 3, PLINTH + h + 2.6, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 -- Terrace Condos (content bank, level 32): a modern block of two stacked flats, the upper one
 -- set back behind a railed terrace, under a flat roof, with a side stair to the top door.
 TYPES.Condos = {

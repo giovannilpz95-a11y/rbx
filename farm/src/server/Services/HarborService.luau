@@ -186,6 +186,28 @@ function HarborService.send(player: Player, index: any, isleId: any, bar: any): 
 	return true
 end
 
+-- A Tinker's Guild upgrade for an isle, paid in Bars from the Barn: shorter trips or better
+-- odds for every boat that leaves for it from now on
+function HarborService.upgrade(player: Player, isleId: any, stat: any): (boolean, string?)
+	if not NetService.check.id(isleId) or not NetService.check.id(stat) then
+		return false
+	end
+	local data = DataService.get(player) :: { [string]: any }
+	local cost, reason = Harbor.canUpgradeIsle(data, isleId, stat, Clock.now())
+	if cost == nil then
+		return false, reason
+	end
+	if not InventoryService.remove(player, cost) then
+		return false, "Not enough Bars. Smelt more at a Smelter."
+	end
+	Harbor.upgradeIsle(data, isleId, stat)
+	local level = Harbor.isleLevel(Harbor.isleLevels(data, isleId))
+	TelemetryService.custom(player, "HarborUpgrade", level, isleId .. ":" .. stat)
+	changed(player)
+	NetService.toast(player, string.format("%s is now level %d.", Config.byId[isleId].displayName, level))
+	return true
+end
+
 -- Unload a boat that's back: its crates into the Barn (they need room) and any Sea Chest
 function HarborService.unload(player: Player, index: any): (boolean, string?)
 	local data = DataService.get(player) :: { [string]: any }
@@ -434,6 +456,7 @@ function HarborService.init()
 	NetService.on(Net.Harbor_Unload, 2, 4, HarborService.unload)
 	NetService.on(Net.Harbor_Skip, 2, 4, HarborService.skip)
 	NetService.on(Net.Harbor_Drift, 1, 2, HarborService.drift)
+	NetService.on(Net.Harbor_Upgrade, 2, 4, HarborService.upgrade)
 
 	Players.PlayerRemoving:Connect(function(player)
 		visual[player] = nil

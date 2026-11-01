@@ -538,6 +538,89 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.wedge("Toe", Vector3.new(0.85, 0.45, 0.5), tilt(0, 0.45, -0.7, 0, 180, 0), Palette.cream, QUIET)
 		b.block("Stripe", Vector3.new(0.88, 0.15, 0.7), at(0, 0.5, 0.1), Palette.sky, QUIET)
 	end,
+	Rice = function(b)
+		-- A cloth sack of rice, open at the top
+		b.block("Sack", Vector3.new(1.3, 1.4, 1), at(0, 0.7, 0), Palette.sack, QUIET)
+		b.block("Grain", Vector3.new(1.1, 0.3, 0.85), at(0, 1.45, 0), Palette.cream, QUIET)
+		b.block("Band", Vector3.new(1.32, 0.3, 1.02), at(0, 0.7, 0), Palette.roofRed, QUIET)
+	end,
+	SushiRoll = function(b)
+		-- Three slices of roll: rice ringed with seaweed, a pink centre
+		for i, x in { -0.6, 0, 0.6 } do
+			b.cyl("Nori", 0.5, 0.75, at(x, 0.4, i * 0.05) * Kit.yaw(90), Palette.treeTopDark, QUIET)
+			b.cyl("Rice", 0.52, 0.5, at(x, 0.4, i * 0.05) * Kit.yaw(90), Palette.cream, QUIET)
+		end
+	end,
+	LobsterSushi = function(b)
+		-- Two rice blocks topped with red lobster
+		for _, x in { -0.45, 0.45 } do
+			b.block("Rice", Vector3.new(0.7, 0.45, 1.2), at(x, 0.22, 0), Palette.cream, QUIET)
+			b.block("Lobster", Vector3.new(0.75, 0.25, 1.3), at(x, 0.55, 0), Palette.roofRed, QUIET)
+		end
+	end,
+	BaconPoppers = function(b)
+		-- Green peppers wrapped in bacon
+		for _, x in { -0.45, 0.45 } do
+			b.block("Pepper", Vector3.new(0.45, 0.45, 1.3), at(x, 0.25, 0), Palette.leaf, QUIET)
+			b.block("Bacon", Vector3.new(0.5, 0.5, 0.4), at(x, 0.25, 0), Palette.cowMuzzle, QUIET)
+		end
+		b.block("Stem", Vector3.new(0.15, 0.15, 0.3), at(-0.45, 0.3, -0.75), Palette.treeTopDark, QUIET)
+	end,
+	Ring = function(b)
+		-- A gold band with a big sparkling stone
+		b.cyl("Band", 0.3, 1.4, at(0, 0.75, 0) * Kit.yaw(90), Palette.coins, QUIET)
+		b.cyl("Hole", 0.32, 0.9, at(0, 0.75, 0) * Kit.yaw(90), Palette.cream, QUIET)
+		b.block("Stone", Vector3.new(0.5, 0.5, 0.5), tilt(0, 1.55, 0, 45, 0, 45), Palette.sky, QUIET)
+	end,
+	Boots = function(b)
+		-- A tall brown boot
+		b.block("Leg", Vector3.new(0.8, 1.6, 0.9), at(0, 1, 0.3), Palette.trunk, QUIET)
+		b.block("Foot", Vector3.new(0.8, 0.6, 1.6), at(0, 0.3, -0.1), Palette.trunk, QUIET)
+		b.block("Sole", Vector3.new(0.85, 0.15, 1.7), at(0, 0.07, -0.1), Palette.stoneDark, QUIET)
+		b.block("Cuff", Vector3.new(0.85, 0.25, 0.95), at(0, 1.75, 0.3), Palette.wood, QUIET)
+	end,
+	Quiche = function(b)
+		-- A golden tart with bacon bits
+		b.cyl("Crust", 0.5, 1.9, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.cyl("Filling", 0.52, 1.6, at(0, 0.27, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.corn, QUIET)
+		b.block("Bacon", Vector3.new(0.4, 0.1, 0.25), at(-0.3, 0.55, 0.2), Palette.cowMuzzle, QUIET)
+		b.block("Bacon", Vector3.new(0.4, 0.1, 0.25), at(0.35, 0.55, -0.25), Palette.cowMuzzle, QUIET)
+	end,
+	Seaweed = function(b)
+		-- Wavy green fronds on a rock
+		b.ball("Rock", 0.9, at(0, 0.3, 0), Palette.stone, QUIET)
+		b.block("Frond", Vector3.new(0.3, 1.6, 0.2), tilt(-0.3, 1, 0, 0, 0, 12), Palette.treeTopDark, QUIET)
+		b.block("Frond", Vector3.new(0.3, 1.3, 0.2), tilt(0.3, 0.9, 0.1, 0, 0, -15), Palette.leaf, QUIET)
+	end,
+	Scallop = function(b)
+		-- A pink fan shell
+		b.cyl("Shell", 0.25, 1.6, at(0, 0.8, 0) * Kit.yaw(90), Palette.flowerPink:Lerp(Palette.cream, 0.4), QUIET)
+		b.block("Hinge", Vector3.new(0.6, 0.35, 0.28), at(0, 0.1, 0), Palette.flowerPink, QUIET)
+		for _, a in { -30, 0, 30 } do
+			b.block("Rib", Vector3.new(0.08, 1.4, 0.27), tilt(0, 0.8, 0, 0, 0, a), Palette.cream, QUIET)
+		end
+	end,
+	Pearls = function(b)
+		-- An open shell holding three pearls
+		b.cyl("Shell", 0.2, 1.8, at(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
+		for i, x in { -0.4, 0, 0.4 } do
+			b.ball("Pearl", 0.5, at(x, 0.4, (i % 2) * 0.2), Palette.cream, QUIET)
+		end
+	end,
+	SeafoodMix = function(b)
+		-- A bowl of shrimp, scallops and fish
+		b.post("Bowl", 0.7, 1.6, at(0, 0.35, 0), Palette.sky, QUIET)
+		b.ball("Shrimp", 0.45, at(-0.35, 0.8, 0), Palette.carrot, QUIET)
+		b.ball("Scallop", 0.45, at(0.35, 0.8, 0.1), Palette.cream, QUIET)
+		b.block("Fish", Vector3.new(0.6, 0.2, 0.3), at(0, 0.8, -0.3), Palette.stoneLight, QUIET)
+	end,
+	SeaweedShrimpSalad = function(b)
+		-- A plate of green seaweed topped with two shrimp
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+		b.ball("Seaweed", 1.1, at(0, 0.45, 0), Palette.treeTopDark, QUIET)
+		b.ball("Shrimp", 0.4, at(-0.25, 0.95, 0), Palette.carrot, QUIET)
+		b.ball("Shrimp", 0.4, at(0.25, 0.9, 0.15), Palette.carrot, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

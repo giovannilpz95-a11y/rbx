@@ -13,7 +13,7 @@ export type LevelDef = {
 }
 
 local CAP = 12 -- raise on update day (week 1: 13), never past BUILT
-local BUILT = 55
+local BUILT = 59
 
 local rows = {
 	-- level, xpToNext, rewardCoins, rewardGems
@@ -73,6 +73,10 @@ local rows = {
 	{ 53, 159476, 6600, 0 },
 	{ 54, 170009, 6900, 0 },
 	{ 55, 181043, 7200, 0 },
+	{ 56, 192590, 7500, 0 },
+	{ 57, 204667, 7900, 0 },
+	{ 58, 217286, 8200, 0 },
+	{ 59, 230467, 8500, 0 },
 }
 
 local list: { LevelDef } = {}
@@ -105,6 +109,7 @@ local gifts: { [number]: { [string]: number } } = {
 	[38] = { CorkOak = 3 },
 	[43] = { Peppers = 3 },
 	[50] = { Mint = 3 },
+	[56] = { Rice = 3 },
 }
 for _, gift in gifts do
 	table.freeze(gift)

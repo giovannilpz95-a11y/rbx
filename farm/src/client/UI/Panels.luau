@@ -293,10 +293,44 @@ local ORDER_CARD = 104
 -- An updater returns false when its line needs more than new text (a price moved, a timer
 -- ran out), and then the panel rebuilds once. Cleared on every render.
 local liveUpdaters: { () -> boolean } = {}
-local tickPanels: { [string]: boolean } = { Orders = true }
+-- Barn, Shop, Decor and Away have no timers at all, so they only rebuild on a state change.
+-- Factory windows (keyed by factory id) count as tick panels too (see the tick loop).
+local tickPanels: { [string]: boolean } = {
+	Orders = true,
+	Barn = true,
+	Shop = true,
+	Decor = true,
+	Away = true,
+	Buildings = true,
+	Pen = true,
+}
 
 local function live(update: () -> boolean)
 	table.insert(liveUpdaters, update)
+end
+
+-- Keep a label's countdown current. `compute` gives the new text, or nil when the line is
+-- over; a change in anything but the digits (a timer ended, a status moved on) rebuilds.
+local function stripDigits(text: string): string
+	return (text:gsub("%d", ""))
+end
+
+local function liveText(label: TextLabel, compute: () -> string?)
+	live(function()
+		local text = compute()
+		if text == nil or stripDigits(text) ~= stripDigits(label.Text) then
+			return false
+		end
+		label.Text = text
+		return true
+	end)
+end
+
+-- Rebuild when `probe()` stops returning `value` (a Gem price moved, the player walked off)
+local function liveSame(probe: () -> any, value: any)
+	live(function()
+		return probe() == value
+	end)
 end
 
 local function renderOrders(state: { [string]: any })
@@ -1037,6 +1071,15 @@ local function factoryQueueAndShelf(
 					Parent = slot,
 				})
 				Kit.setBar(bar, 1 - Timer.remaining(job.readyAt, now) / seconds)
+				local readyAt = job.readyAt
+				live(function()
+					local t = ClientStore.now()
+					if t >= readyAt then
+						return false -- done: the shelf and queue change
+					end
+					Kit.setBar(bar, 1 - Timer.remaining(readyAt, t) / seconds)
+					return true
+				end)
 				local stroke = slot:FindFirstChildOfClass("UIStroke")
 				if stroke then
 					stroke.Color = Ui.colors.ready
@@ -1062,15 +1105,25 @@ local function factoryQueueAndShelf(
 	-- The running job: name, time left and Finish
 	local first = preview.queue[1]
 	if first and first.readyAt and first.readyAt > now then
-		Ui.label(
-			string.format("%s  %s left", itemName(first.recipe), Timer.format(Timer.remaining(first.readyAt, now))),
-			{
-				Position = UDim2.fromOffset(0, 88),
-				Size = UDim2.new(1, -170, 0, 22),
-				TextColor3 = Ui.colors.muted,
-				Parent = queueRow,
-			}
-		)
+		local readyAt = first.readyAt
+		local function runningText(): string?
+			local t = ClientStore.now()
+			if t >= readyAt then
+				return nil
+			end
+			return string.format("%s  %s left", itemName(first.recipe), Timer.format(Timer.remaining(readyAt, t)))
+		end
+		local running = Ui.label(runningText() or "", {
+			Position = UDim2.fromOffset(0, 88),
+			Size = UDim2.new(1, -170, 0, 22),
+			TextColor3 = Ui.colors.muted,
+			Parent = queueRow,
+		})
+		liveText(running, runningText)
+		local function jobPrice(): number
+			return Speedup.production(readyAt - ClientStore.now())
+		end
+		liveSame(jobPrice, jobPrice())
 		gemButton("job:" .. factoryId, "Finish", Speedup.production(first.readyAt - now), function()
 			Remotes.fire("Factory_SpeedUp", factoryId)
 		end, {
@@ -1120,8 +1173,22 @@ local function renderFactory(state: { [string]: any }, factoryId: string)
 	if preview.underConstruction then
 		local left = Timer.remaining(preview.constructionReadyAt, now)
 		local line = row(42, 1)
-		Ui.label("Building... " .. Timer.format(left) .. " left", { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+		local readyAt = preview.constructionReadyAt
+		local building = Ui.label(
+			"Building... " .. Timer.format(left) .. " left",
+			{ Size = UDim2.new(1, -170, 1, 0), Parent = line }
+		)
+		liveText(building, function()
+			local t = ClientStore.now()
+			return if t < readyAt then "Building... " .. Timer.format(Timer.remaining(readyAt, t)) .. " left" else nil
+		end)
 		local free = Tutorial.freeFinish(state, factoryId)
+		if not free then
+			local function buildPrice(): number
+				return Speedup.building(Timer.remaining(readyAt, ClientStore.now()))
+			end
+			liveSame(buildPrice, buildPrice())
+		end
 		gemButton("build:" .. factoryId, "Finish", if free then 0 else Speedup.building(left), function()
 			Remotes.fire("Factory_SpeedUp", factoryId)
 		end, {
@@ -1305,6 +1372,7 @@ local function buildCard(
 		Parent = card,
 	}, 16)
 	fitText(line1, {
+		Name = "Line1",
 		Position = UDim2.fromOffset(6, 108),
 		Size = UDim2.new(1, -12, 0, 16),
 		TextColor3 = Ui.colors.muted,
@@ -1312,6 +1380,7 @@ local function buildCard(
 		Parent = card,
 	}, 13)
 	fitText(line2, {
+		Name = "Line2",
 		Position = UDim2.fromOffset(6, 124),
 		Size = UDim2.new(1, -12, 0, 16),
 		TextColor3 = line2Color or Ui.colors.muted,
@@ -1377,6 +1446,10 @@ local function renderBuildings(state: { [string]: any })
 				if not built and not locked and TownRules.population(state, now) < def.population then danger else nil,
 				if locked and not built then def.unlockLevel else nil
 			)
+			-- Its status line counts down in place (and the card rebuilds when it moves on)
+			liveText(card:FindFirstChild("Line2") :: TextLabel, function()
+				return factoryStatus(ClientStore.state, id)
+			end)
 			if not locked or built then
 				cardButton(card, if built then "Open" else "Build", true, function()
 					Panels.open(id)
@@ -1405,6 +1478,9 @@ local function renderBuildings(state: { [string]: any })
 				nil,
 				if locked and not built then def.unlockLevel else nil
 			)
+			liveText(card:FindFirstChild("Line2") :: TextLabel, function()
+				return penStatus(ClientStore.state, id)
+			end)
 			if not locked or built then
 				cardButton(card, if built then "Open" else "Build", true, function()
 					Panels.open("Pen", id)
@@ -1419,6 +1495,9 @@ local function renderBuildings(state: { [string]: any })
 			local nextLevel = TownRules.nextCopyLevel(state, id)
 			local ok, reason = TownRules.canBuildHouse(state, id, now)
 			local locked = if allowed == 0 then def.copyLevels[1] else nil
+			liveSame(function()
+				return (TownRules.canBuildHouse(ClientStore.state, id, ClientStore.now()))
+			end, ok)
 			local card = buildCard(
 				cards,
 				i,
@@ -1484,6 +1563,13 @@ local function renderBuildings(state: { [string]: any })
 				if entry == nil and not enough then danger else nil,
 				if locked and entry == nil then def.unlockLevel else nil
 			)
+			if entry and not TownRules.isDone(entry, now) then
+				local readyAt = entry.readyAt
+				liveText(card:FindFirstChild("Line2") :: TextLabel, function()
+					local t = ClientStore.now()
+					return if t < readyAt then "Building " .. Timer.format(Timer.remaining(readyAt, t)) else nil
+				end)
+			end
 			if entry == nil and not locked then
 				local canPay = state.currencies.Coins >= def.coinCost
 				local buy = if not enough and canPay
@@ -1598,7 +1684,19 @@ local function renderPen(state: { [string]: any }, penId: string)
 	if not Pen.isOperational(pen, now) then
 		local left = Timer.remaining(pen.constructionReadyAt, now)
 		local line = row(42, 1)
-		Ui.label("Building... " .. Timer.format(left) .. " left", { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+		local readyAt = pen.constructionReadyAt
+		local building = Ui.label(
+			"Building... " .. Timer.format(left) .. " left",
+			{ Size = UDim2.new(1, -170, 1, 0), Parent = line }
+		)
+		liveText(building, function()
+			local t = ClientStore.now()
+			return if t < readyAt then "Building... " .. Timer.format(Timer.remaining(readyAt, t)) .. " left" else nil
+		end)
+		local function buildPrice(): number
+			return Speedup.building(Timer.remaining(readyAt, ClientStore.now()))
+		end
+		liveSame(buildPrice, buildPrice())
 		gemButton("build:" .. penId, "Finish", Speedup.building(left), function()
 			Remotes.fire("Pen_SpeedUp", penId)
 		end, {
@@ -1612,6 +1710,15 @@ local function renderPen(state: { [string]: any }, penId: string)
 
 	local counts = Pen.counts(pen, now)
 	local near = Panels.nearPen(penId)
+	-- Rebuild when the player walks up or away, or an animal finishes or gets hungry
+	liveSame(function()
+		return Panels.nearPen(penId)
+	end, near)
+	local function countsKey(): string
+		local c = Pen.counts(pen, ClientStore.now())
+		return string.format("%d:%d:%d", c.ready, c.producing, c.hungry)
+	end
+	liveSame(countsKey, countsKey())
 	local feedName = itemName(def.feed)
 	local bags = ClientStore.itemCount(def.feed)
 	local scoops = pen.feedLeft or 0
@@ -1631,7 +1738,23 @@ local function renderPen(state: { [string]: any }, penId: string)
 	local next_ = if counts.nextReadyAt
 		then string.format("Next %s in %s.  ", def.productName, Timer.format(Timer.remaining(counts.nextReadyAt, now)))
 		else ""
-	Ui.label(
+	local function feedText(): string
+		local t = ClientStore.now()
+		local c = Pen.counts(pen, t)
+		local nextText = if c.nextReadyAt
+			then string.format("Next %s in %s.  ", def.productName, Timer.format(Timer.remaining(c.nextReadyAt, t)))
+			else ""
+		return string.format(
+			"%s%s in the Barn: %d bag%s (1 bag feeds %d)%s",
+			nextText,
+			feedName,
+			bags,
+			if bags == 1 then "" else "s",
+			Animals.feedPerBag,
+			if scoops > 0 then string.format(", %d left in the trough", scoops) else ""
+		)
+	end
+	local feedLabel = Ui.label(
 		string.format(
 			"%s%s in the Barn: %d bag%s (1 bag feeds %d)%s",
 			next_,
@@ -1650,6 +1773,7 @@ local function renderPen(state: { [string]: any }, penId: string)
 			Parent = status,
 		}
 	)
+	liveText(feedLabel, feedText)
 
 	local actions = row(42, 2)
 	local holder = Ui.new("Frame", {
@@ -1675,6 +1799,10 @@ local function renderPen(state: { [string]: any }, penId: string)
 	)
 	Ui.setEnabled(buy, cost ~= nil and state.currencies.Coins >= cost)
 	if counts.producing > 0 then
+		local function allPrice(): number
+			return Speedup.pen(pen, ClientStore.now())
+		end
+		liveSame(allPrice, allPrice())
 		gemButton("animals:" .. penId, "Finish all", Speedup.pen(pen, now), function()
 			Remotes.fire("Pen_SpeedUp", penId)
 		end, { Size = UDim2.fromOffset(180, 30), LayoutOrder = 3, Parent = row(42, 3) })
@@ -2306,8 +2434,9 @@ local function renderDebug(state: { [string]: any })
 	devButton("Town Express: leave now", "Debug_ExpressLeave", 240, 16)
 	devButton("Fill every open House lot with a Cottage", "Debug_FillLots", 340, 17)
 	devButton("Population for every building (Houses become the biggest type)", "Debug_Population", 380, 18)
-	devButton("Harbor: repaired, isles open to your level, Bars, boats home now", "Debug_Harbor", 380, 19)
+	devButton("Harbor: repaired, isles open, Guild built, Bars, boats home now", "Debug_Harbor", 380, 19)
 	devButton("Duck Pond: dug out, ducks gone, a Bread, Bagel and Banana Bread", "Debug_Pond", 380, 20)
+	devButton("Otter Pond: built, three otters, trips over, an Egg, Bacon and Fish", "Debug_Otters", 380, 21)
 end
 
 ---------------------------------------------------------------------------------------------
@@ -2503,7 +2632,7 @@ function Panels.init()
 			if current == nil or staticPanels[current] or anyArmed() then
 				continue
 			end
-			if tickPanels[current] then
+			if tickPanels[current] or Factories[current] then
 				-- Only the countdowns change: update their text, rebuild only if one asks
 				local rebuild = false
 				for _, update in liveUpdaters do

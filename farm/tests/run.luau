@@ -34,6 +34,7 @@ local PrizeRules = require("../src/shared/Prize")
 local Factories = require("../src/shared/Config/Factories")
 local Items = require("../src/shared/Items")
 local DuckPondConfig = require("../src/shared/Config/DuckPond")
+local OtterPondConfig = require("../src/shared/Config/OtterPond")
 local IslesConfig = require("../src/shared/Config/Isles")
 local Land = require("../src/shared/Config/Land")
 local Levels = require("../src/shared/Config/Levels")
@@ -147,6 +148,9 @@ test("every recipe of an enabled factory can be made in the MVP", function()
 	end
 	for id in DuckPondConfig.feathers do
 		enabled[id] = DuckPondConfig.unlockLevel <= Levels.built -- left by ducks at the Duck Pond
+	end
+	for id in OtterPondConfig.goods do
+		enabled[id] = OtterPondConfig.unlockLevel <= Levels.built -- caught by otters at the Otter Pond
 	end
 	for id, recipe in Recipes do
 		enabled[id] = table.find(Balance.enabledFactories, recipe.factory) ~= nil
@@ -289,7 +293,29 @@ test("the content bank stays locked at the live cap", function()
 	ok(Town.community.ClockTower.unlockLevel > Levels.cap, "Clock Tower")
 	ok(Town.houses.GardenVilla.copyLevels[1] > Levels.cap, "Garden Villa")
 	ok(table.find(Balance.enabledCrops, "Strawberries") ~= nil, "Strawberries enabled")
-	eq(Levels.built, 55, "levels 17 to 55 are banked")
+	eq(Levels.built, 59, "levels 17 to 59 are banked")
+	eq(Levels.list[58].xpToNext, 217286, "L58 row")
+	eq(Levels.list[59].xpToNext, 230467, "L59 row")
+	eq(Factories.GrillHouse.buildCost, 115000, "Grill House (Township's Grill Factory)")
+	eq(Guild.maxLevel("GrillHouse"), 53, "the Grill House has its own Guild table")
+	eq(Recipes.Boots.inputs.SilkFabric, 1, "Boots from Rubber, Silk Fabric and Glue")
+	eq(Recipes.Quiche.inputs.Bacon, 2, "Quiche from Wheat, Bacon and Eggs")
+	eq(Town.houses.HeritageRow.population, 330, "Heritage Row")
+	eq(Town.community.ClimbingWall.capBonus, 430, "Climbing Wall")
+	eq(Town.community.AutoWorkshop.capBonus, 450, "Auto Workshop")
+	eq(Levels.list[56].xpToNext, 192590, "L56 row")
+	eq(Levels.list[57].xpToNext, 204667, "L57 row")
+	ok(table.find(Balance.enabledCrops, "Rice") ~= nil and Crops.Rice.growSeconds == 3600 + 20 * 60, "Rice, 1 h 20")
+	eq(Levels.gifts[56].Rice, 3, "Rice to start with")
+	eq(Factories.SushiBar.buildCost, 95000, "Sushi Bar (Township's Asian Restaurant)")
+	eq(Guild.maxLevel("SushiBar"), 53, "the Sushi Bar has its own Guild table")
+	eq(Recipes.SushiRoll.inputs.Rice, 5, "Sushi Roll from Rice and Fish")
+	eq(Recipes.LobsterSushi.inputs.Lobsters, 1, "Lobster Sushi from Lobsters and Rice")
+	eq(Recipes.BaconPoppers.inputs.Bacon, 1, "Bacon Poppers from Peppers, Bacon and Cheese")
+	ok(Recipes.Ring.fromOreShed and Recipes.Ring.inputs.GoldOre == 4, "Ring from Silver and Gold Ore")
+	eq(Town.houses.GlassTower.population, 270, "Glass Tower")
+	eq(Town.community.DonutCafe.capBonus, 390, "Donut Café")
+	eq(Town.community.Speedway.capBonus, 410, "Speedway")
 	eq(Levels.list[54].xpToNext, 170009, "L54 row")
 	eq(Levels.list[55].xpToNext, 181043, "L55 row")
 	eq(Animals.pens.PigPen2.copyOf, "PigPen", "second Pig Pen")
@@ -814,8 +840,15 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 	-- Every crate good is a real, sellable, non-feed item; every sellable crop, animal good
 	-- and factory good is on the list except the Bars and Dough
 	-- (the Jeweler's ore jewellery never flies either)
-	local skip =
-		{ CopperBar = true, SilverBar = true, GoldBar = true, PlatinumBar = true, Dough = true, Pendant = true }
+	local skip = {
+		CopperBar = true,
+		SilverBar = true,
+		GoldBar = true,
+		PlatinumBar = true,
+		Dough = true,
+		Pendant = true,
+		Ring = true,
+	}
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]
 		ok(def ~= nil and def.sellPrice > 0 and not def.isFeed, id .. " is a sellable good")
@@ -2282,6 +2315,7 @@ require("./quests")(test, eq, ok)
 require("./seedcart")(test, eq, ok)
 require("./harbor")(test, eq, ok)
 require("./duckpond")(test, eq, ok)
+require("./otterpond")(test, eq, ok)
 
 ---------------------------------------------------------------------------------------------
 -- Every Luau file compiles

@@ -7,6 +7,7 @@
 -- bed ≤ 4 parts, any crop stage ≤ 12 parts.
 
 local Kit = require("./Kit")
+local Merge = require("./Merge")
 local Palette = require("./Palette")
 
 local ArtCrops = {}
@@ -389,6 +390,24 @@ READY.Mint = function(b, color)
 	end
 end
 
+-- Rice (level 56): a flooded paddy with rows of bright green shoots, then tall golden
+-- stalks bowing under their heads of grain.
+GROWING.Rice = function(b)
+	b.block("Paddy", Vector3.new(9, 0.2, 9), Vector3.new(0, 0.6, 0), Palette.water)
+	for _, z in ArtCrops.ROWS do
+		for _, x in { -2.5, 0, 2.5 } do
+			b.block("Shoots", Vector3.new(0.6, 1, 0.6), Vector3.new(x, 1.1, z), Palette.lime)
+		end
+	end
+end
+READY.Rice = function(b, color)
+	b.block("Paddy", Vector3.new(9, 0.2, 9), Vector3.new(0, 0.6, 0), Palette.water)
+	for _, z in ArtCrops.ROWS do
+		b.block("Stalks", Vector3.new(7, 1.6, 0.9), Vector3.new(0, 1.4, z), color)
+		b.block("Heads", Vector3.new(7, 0.4, 1.2), Vector3.new(0, 2.2, z - 0.3), Palette.wheat)
+	end
+end
+
 -- Silk (level 31): rows of low mulberry bushes, then the bushes hung with plump white cocoons.
 GROWING.Silk = function(b)
 	for _, z in ArtCrops.ROWS do
@@ -451,6 +470,29 @@ function ArtCrops.build(cropId: string, stage: number, top: CFrame, color: { num
 		(READY[cropId] or genericReady)(b, tint)
 	end
 	return model
+end
+
+-- The part-cut pass: a crop only ever sways as a whole (Art/Motion cropSway), so each crop's
+-- look at each stage is merged once into a template (Art/Merge cache, made on first use) and
+-- every field gets a copy, one union instead of up to a dozen parts. Server only.
+local cache: Merge.Cache? = nil
+
+function ArtCrops.useTemplates(store: Instance, geometry: any?)
+	cache = Merge.cache(store, "CropLooks", geometry)
+end
+
+-- A crop at `stage` on the bed top `top`: a copy of its merged look when one is ready, else
+-- built from parts (and its look starts merging for next time).
+function ArtCrops.placed(cropId: string, stage: number, top: CFrame, color: { number }?): Model
+	if cache then
+		local look = Merge.fromCache(cache, cropId .. "/" .. stage, function()
+			return ArtCrops.build(cropId, stage, CFrame.new(), color)
+		end, nil, true)
+		if look then
+			return Merge.place(look, top, "Crop")
+		end
+	end
+	return ArtCrops.build(cropId, stage, top, color)
 end
 
 -- Crops that have their own growing and ready looks (the rest use the generic rows).

@@ -120,7 +120,40 @@ local function trackProduct(product: Model)
 	end)
 end
 
+-- A merged crop is one union (Art/Crops placed), which can reach the client a beat after its
+-- model: once parts land under a ready crop, collect them again (and its fly-to-Barn copy).
+local pending: { [Model]: boolean } = {}
+
+local function rebindCrop(crop: Model)
+	pending[crop] = nil
+	local e = ready[crop]
+	if e == nil then
+		return
+	end
+	for i, p in e.parts do
+		p.CFrame = e.base[i]
+	end
+	table.clear(e.parts)
+	table.clear(e.base)
+	for _, d in crop:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(e.parts, d)
+			table.insert(e.base, d.CFrame)
+		end
+	end
+	e.copy:Destroy()
+	e.copy = detachedCopy(crop)
+end
+
 local function track(d: Instance)
+	if d:IsA("BasePart") then
+		local crop = d:FindFirstAncestor("Crop")
+		if crop and crop:IsA("Model") and ready[crop] and not pending[crop] then
+			pending[crop] = true
+			task.defer(rebindCrop, crop)
+		end
+		return
+	end
 	if not d:IsA("Model") then
 		return
 	end

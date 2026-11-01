@@ -344,4 +344,113 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(not Layout.exists(data, "harbor", "Other"), "only one")
 		eq(Layout.parse("harbor:Harbor"), "harbor", "its key parses")
 	end)
+
+	test("harbor: isle upgrades at the Tinker's Guild", function()
+		local up = Config.upgrades
+		for _, isle in Config.isles do
+			local rows = up.costs[isle.id]
+			ok(rows ~= nil, isle.id .. " has an upgrade table")
+			eq(#rows, 30, isle.id .. " goes to level 31")
+			for n, row in rows do
+				eq(#row, #Config.bars, isle.id .. " row " .. n .. " has a column per Bar")
+				local any = false
+				for _, v in row do
+					any = any or v > 0
+				end
+				ok(any, isle.id .. " row " .. n .. " costs something")
+			end
+		end
+		-- The wiki's totals for Blossom Cay's table
+		local total = { 0, 0, 0, 0 }
+		for _, row in up.costs.BlossomCay do
+			for i, v in row do
+				total[i] += v
+			end
+		end
+		eq(table.concat(total, ","), "395,178,154,60", "Blossom Cay totals")
+		eq(Harbor.MAX_ISLE_LEVEL, 31, "max level 31")
+
+		local data, now = harborFarm(35)
+		local fresh = Harbor.isleLevels(data, "BlossomCay")
+		eq(Harbor.isleLevel(fresh), 1, "isles start at level 1")
+		local cost, reason = Harbor.canUpgradeIsle(data, "BlossomCay", "time", now)
+		eq(cost, nil, "no upgrades before the Guild")
+		ok(reason ~= nil and reason:find("Guild") ~= nil, "says why")
+		data.guild.readyAt = now
+		eq(Harbor.canUpgradeIsle(data, "VineyardKey", "time", now), nil, "only open isles")
+		eq(Harbor.canUpgradeIsle(data, "BlossomCay", "rare", now), nil, "level 2 is a time upgrade")
+		cost = Harbor.canUpgradeIsle(data, "BlossomCay", "time", now)
+		ok(cost ~= nil, "Blossom Cay can upgrade")
+		local c = cost :: { [string]: number }
+		eq(c.CopperBar, 5, "5 Copper")
+		eq(c.SilverBar, 1, "1 Silver")
+		eq(c.GoldBar, nil, "no Gold")
+		eq(c.PlatinumBar, 2, "2 Platinum")
+		eq(Harbor.canUpgradeIsle(data, "BlossomCay", "Coins", now), nil, "unknown stats refused")
+
+		-- Level 2: -5% trip time; boats already out keep their time
+		Harbor.send(data, 1, "BlossomCay", nil, now)
+		local returnAt = data.harbor.boats[1].returnAt
+		Harbor.upgradeIsle(data, "BlossomCay", "time")
+		eq(data.harbor.boats[1].returnAt, returnAt, "a boat at sea keeps its time")
+		eq(Harbor.tripSeconds(data, "BlossomCay"), math.floor(4 * HOUR * 0.95 + 0.5), "-5%")
+		-- Level 3 is a pick of the uncommon or the rare good
+		local choices = Harbor.upgradeChoices("BlossomCay", Harbor.isleLevels(data, "BlossomCay"))
+		eq(table.concat(choices, ","), "uncommon,rare", "odd levels pick a good")
+		Harbor.upgradeIsle(data, "BlossomCay", "rare")
+		local u0, r0, c0 = Harbor.odds("BlossomCay", nil)
+		local u1, r1, c1 = Harbor.odds("BlossomCay", nil, Harbor.isleLevels(data, "BlossomCay"))
+		eq(u1, u0, "uncommon unchanged")
+		ok(math.abs(r1 - (r0 + 0.01)) < 1e-9, "rare +1%")
+		eq(c1, c0, "chest chance unchanged")
+
+		-- All the way up: -50% time, +10% each, nothing past 31
+		local levels = Harbor.isleLevels(data, "BlossomCay")
+		while true do
+			local pick = Harbor.upgradeChoices("BlossomCay", levels)
+			if #pick == 0 then
+				break
+			end
+			local stat = pick[#pick]
+			if stat == "rare" and levels.rare >= levels.uncommon then
+				stat = pick[1]
+			end
+			data.harbor.upgrades.BlossomCay = levels
+			Harbor.upgradeIsle(data, "BlossomCay", stat)
+			levels = Harbor.isleLevels(data, "BlossomCay")
+		end
+		eq(Harbor.isleLevel(levels), 31, "tops out at 31")
+		eq(levels.time, 10, "10 time upgrades")
+		eq(levels.uncommon, 10, "10 uncommon")
+		eq(levels.rare, 10, "10 rare")
+		eq(Harbor.tripSeconds(data, "BlossomCay"), 2 * HOUR, "-50%: 4 h -> 2 h")
+		local cost31, why = Harbor.canUpgradeIsle(data, "BlossomCay", "rare", now)
+		eq(cost31, nil, "no upgrade past 31")
+		eq(why, "Already at the top level", "says so")
+		local uMax = Harbor.odds("BlossomCay", "PlatinumBar", levels)
+		ok(uMax <= 1, "chances stay chances")
+
+		-- A trip rolled with the upgrades: the new time, and the better odds feed the roll
+		data.harbor.boats[1] = {}
+		Harbor.send(data, 1, "BlossomCay", nil, now)
+		eq(data.harbor.boats[1].returnAt - now, 2 * HOUR, "an upgraded trip is shorter")
+		local hitsBase, hitsUp = 0, 0
+		local seed = 12345
+		for _ = 1, 400 do
+			local a, _, next1 = Harbor.roll("BlossomCay", nil, seed)
+			local b = Harbor.roll("BlossomCay", nil, seed, levels)
+			hitsBase += #a
+			hitsUp += #b
+			seed = next1
+		end
+		ok(hitsUp >= hitsBase, "upgrades never bring back less on the same seed")
+		ok(hitsUp > hitsBase, "and sometimes more")
+	end)
+
+	test("harbor: old saves get the upgrades block", function()
+		local data = farm(29)
+		data.harbor.upgrades = nil
+		Profile.reconcile(data, Profile.template())
+		eq(type(data.harbor.upgrades), "table", "reconcile fills harbor.upgrades")
+	end)
 end

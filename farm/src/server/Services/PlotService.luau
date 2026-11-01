@@ -1187,7 +1187,7 @@ local function refreshFields(player: Player, model: Model, data: { [string]: any
 		else
 			local def = Crops[field.crop]
 			local top = bed.CFrame * CFrame.new(0, bed.Size.Y / 2, 0)
-			local crop = ArtCrops.build(field.crop, stage, top, def and def.color)
+			local crop = ArtCrops.placed(field.crop, stage, top, def and def.color)
 			if prize then
 				ArtCrops.prizeShimmer(crop, prize, top, bed.Size.X)
 			elseif stage == 4 then
@@ -2210,6 +2210,8 @@ function PlotService.init()
 	end
 	table.sort(kinds)
 	task.spawn(ArtAnimals.mergeLooks, kinds, game:GetService("ServerStorage"))
+	-- Crops merge per look (crop and stage) the first time one is planted (Art/Merge cache)
+	ArtCrops.useTemplates(game:GetService("ServerStorage"))
 	buildWorld()
 
 	-- Visuals that change with time alone (crops ripening, factories finishing goods,

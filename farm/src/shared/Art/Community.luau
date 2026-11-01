@@ -1994,6 +1994,156 @@ TYPES.OrganHall = function(b, s)
 	return body
 end
 
+-- Donut Café (content bank, level 56): a pink-and-cream café with a striped awning, a giant
+-- frosted donut standing on the roof, and two little tables out front.
+TYPES.DonutCafe = function(b, s)
+	local body = hall(b, s * 0.6, s * 0.4, 4.4, Palette.flowerPink:Lerp(Palette.cream, 0.55))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.64, 0.4, s * 0.44), Vector3.new(0, PLINTH + 4.6, 0), Palette.cream)
+	-- The donut on the roof: the dough ring, its pink icing and a hole in the middle
+	local at = CFrame.new(0, PLINTH + 7, 0) * Kit.yaw(90)
+	t.cyl("Donut", 1, 4, at, Palette.wheat)
+	t.cyl("Icing", 1.05, 3.4, at, Palette.flowerPink)
+	t.cyl("Hole", 1.1, 1.3, at, Palette.sky)
+	t.block(
+		"Awning",
+		Vector3.new(s * 0.6, 0.25, 1.4),
+		CFrame.new(0, PLINTH + 3.6, face - 0.7) * CFrame.Angles(math.rad(-15), 0, 0),
+		Palette.flowerPink
+	)
+	t.block("Window", Vector3.new(s * 0.3, 2, 0.2), Vector3.new(-s * 0.12, PLINTH + 2, face - 0.05), Palette.glass)
+	Kit.door(t, "Door", CFrame.new(s * 0.18, PLINTH, face), 1.4, 2.8, Palette.flowerPink, Palette.cream)
+	for _, x in { -s * 0.22, s * 0.05 } do
+		t.post("TableLeg", 1.2, 0.2, Vector3.new(x, PLINTH + 0.6, face - 2.4), Palette.metal)
+		t.cyl(
+			"TableTop",
+			0.2,
+			1.4,
+			CFrame.new(x, PLINTH + 1.25, face - 2.4) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.cream
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.24, PLINTH + 5.2, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Speedway (content bank, level 57): a banked oval of dark track round a green infield with
+-- a race car on the straight, a covered grandstand and a tall chequered starter's tower.
+TYPES.Speedway = function(b, s)
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	b.cyl("Track", 0.4, s * 0.95, CFrame.new(0, 0.2, 0) * up, Palette.stoneDark)
+	b.cyl("Infield", 0.45, s * 0.6, CFrame.new(0, 0.22, 0) * up, Palette.grassLight)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.5, 2.8, 2.2),
+		Vector3.new(0, 1.4, s * 0.36),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	t.block(
+		"Seats",
+		Vector3.new(s * 0.5, 0.6, 2),
+		CFrame.new(0, 2.8, s * 0.35) * CFrame.Angles(math.rad(-20), 0, 0),
+		Palette.roofRed
+	)
+	t.block("StandRoof", Vector3.new(s * 0.54, 0.3, 2.6), Vector3.new(0, 4.6, s * 0.37), Palette.cream)
+	for _, x in { -s * 0.25, s * 0.25 } do
+		t.post("StandPost", 1.8, 0.25, Vector3.new(x, 3.6, s * 0.45), Palette.metal)
+	end
+	-- The race car on the front straight
+	local cz = -s * 0.38
+	t.block("Car", Vector3.new(2.6, 0.6, 1.2), Vector3.new(0, 0.75, cz), Palette.flowerYellow)
+	t.wedge("Nose", Vector3.new(1.2, 0.5, 1.2), CFrame.new(-1.8, 0.7, cz) * Kit.yaw(90), Palette.flowerYellow)
+	t.block("Wing", Vector3.new(0.3, 0.6, 1.6), Vector3.new(1.2, 1.3, cz), Palette.stoneDark)
+	-- The starter's tower with its chequered cap
+	t.post("Tower", 5, 0.8, Vector3.new(s * 0.36, 2.5, -s * 0.2), Palette.cream)
+	t.block("TowerTop", Vector3.new(1.6, 1, 1.6), Vector3.new(s * 0.36, 5.5, -s * 0.2), Palette.stoneDark)
+	t.block("Check", Vector3.new(0.82, 0.52, 1.62), Vector3.new(s * 0.36 - 0.4, 5.75, -s * 0.2), Palette.cream)
+	t.block("Check", Vector3.new(0.82, 0.52, 1.62), Vector3.new(s * 0.36 + 0.4, 5.25, -s * 0.2), Palette.cream)
+	Kit.sproutTag(t, Vector3.new(-s * 0.2, 5.4, s * 0.37), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Climbing Wall (content bank, level 58): a tall grey wall dotted with bright holds, a rope
+-- hanging from the top, crash mats at the foot and a little ticket hut beside it.
+TYPES.ClimbingWall = function(b, s)
+	b.block("Plinth", Vector3.new(s * 0.8, PLINTH, s * 0.5), Vector3.new(0, PLINTH / 2, s * 0.1), Palette.stone)
+	local body = b.block(
+		"Body",
+		Vector3.new(s * 0.5, 9, 1.6),
+		Vector3.new(-s * 0.08, PLINTH + 4.5, s * 0.22),
+		Palette.stoneLight,
+		{ collide = true }
+	)
+	local t = b.into(body, true)
+	local face = s * 0.22 - 0.8
+	local holds =
+		{ Palette.roofRed, Palette.flowerYellow, Palette.sky, Palette.lime, Palette.flowerPink, Palette.carrot }
+	for i, color in holds do
+		local x = -s * 0.08 + ((i % 3) - 1) * 1.6
+		t.ball("Hold", 0.6, Vector3.new(x, PLINTH + 1.4 * i, face - 0.2), color)
+	end
+	t.block("TopBar", Vector3.new(s * 0.54, 0.4, 2), Vector3.new(-s * 0.08, PLINTH + 9.2, s * 0.22), Palette.carrot)
+	t.block(
+		"Rope",
+		Vector3.new(0.15, 8, 0.15),
+		Vector3.new(-s * 0.08 + 1, PLINTH + 5, face - 0.6),
+		Palette.flowerYellow
+	)
+	t.block("Mat", Vector3.new(s * 0.5, 0.5, 2), Vector3.new(-s * 0.08, PLINTH + 0.25, face - 1.2), Palette.sky)
+	-- The ticket hut
+	t.block("Hut", Vector3.new(2.4, 2.6, 2.4), Vector3.new(s * 0.28, PLINTH + 1.3, s * 0.05), Palette.cream)
+	t.wedge("HutRoof", Vector3.new(2.8, 0.8, 2.8), CFrame.new(s * 0.28, PLINTH + 3, s * 0.05), Palette.carrot)
+	Kit.door(t, "Door", CFrame.new(s * 0.28, PLINTH, s * 0.05 - 1.2), 1.2, 2.2, Palette.carrot, Palette.cream)
+	Kit.sproutTag(t, Vector3.new(-s * 0.3, PLINTH + 9.8, s * 0.25), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
+-- Auto Workshop (content bank, level 59): a blue-grey garage with a roll-up door, a car on a
+-- lift inside the open bay, a stack of tyres and a big spanner sign.
+TYPES.AutoWorkshop = function(b, s)
+	local body = hall(b, s * 0.7, s * 0.44, 4.6, Palette.sky:Lerp(Palette.stoneLight, 0.6))
+	local t = b.into(body, true)
+	local face = -s * 0.22
+	t.block("Roof", Vector3.new(s * 0.74, 0.4, s * 0.48), Vector3.new(0, PLINTH + 4.8, 0), Palette.stoneDark)
+	t.block(
+		"Bay",
+		Vector3.new(s * 0.36, 3.6, 0.2),
+		Vector3.new(-s * 0.12, PLINTH + 1.8, face - 0.05),
+		Palette.stoneDark
+	)
+	t.block("Shutter", Vector3.new(s * 0.36, 1, 0.25), Vector3.new(-s * 0.12, PLINTH + 3.1, face - 0.1), Palette.metal)
+	t.block("Car", Vector3.new(3, 0.9, 1.6), Vector3.new(-s * 0.12, PLINTH + 1.6, face - 0.5), Palette.roofRed)
+	t.block("Lift", Vector3.new(2.4, 0.2, 1.2), Vector3.new(-s * 0.12, PLINTH + 1, face - 0.5), Palette.flowerYellow)
+	Kit.door(t, "Door", CFrame.new(s * 0.22, PLINTH, face), 1.4, 2.8, Palette.stoneDark, Palette.cream)
+	for i = 0, 2 do
+		t.cyl(
+			"Tyre",
+			0.5,
+			1.4,
+			CFrame.new(s * 0.3, PLINTH + 0.25 + i * 0.5, face - 1.6) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.stoneDark
+		)
+	end
+	-- The spanner sign on the roof
+	t.block(
+		"Spanner",
+		Vector3.new(4, 0.6, 0.3),
+		CFrame.new(0, PLINTH + 6, face + 1) * CFrame.Angles(0, 0, math.rad(20)),
+		Palette.stoneLight
+	)
+	t.block(
+		"SpannerJaw",
+		Vector3.new(1, 1.2, 0.3),
+		CFrame.new(1.9, PLINTH + 6.7, face + 1) * CFrame.Angles(0, 0, math.rad(20)),
+		Palette.stoneLight
+	)
+	Kit.sproutTag(t, Vector3.new(-s * 0.28, PLINTH + 5.4, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 function ArtCommunity.has(id: string): boolean
 	return TYPES[id] ~= nil
 end

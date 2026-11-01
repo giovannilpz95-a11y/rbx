@@ -14,6 +14,8 @@ Enum = roblox.Enum
 ColorSequence = roblox.ColorSequence
 NumberSequence = roblox.NumberSequence
 NumberRange = roblox.NumberRange
+-- Art/Merge makes cached templates in the background (task.spawn); Lune keeps it in @lune/task
+task = require("@lune/task")
 Vector2 = roblox.Vector2
 
 local ArtAnimals = require("../src/shared/Art/Animals")
@@ -33,6 +35,8 @@ local MERGE_AT_LOAD = {
 	ArtMerge.template,
 	ArtMerge.place,
 	ArtMerge.countTemplate,
+	ArtMerge.cache,
+	ArtMerge.fromCache,
 }
 local ArtRail = require("../src/shared/Art/Rail")
 local Decor = require("../src/shared/Config/Decor")
@@ -50,6 +54,7 @@ local ArtQuarry = require("../src/shared/Art/Quarry")
 local ArtBlimp = require("../src/shared/Art/Blimp")
 local ArtHarbor = require("../src/shared/Art/Harbor")
 local ArtDuckPond = require("../src/shared/Art/DuckPond")
+local ArtOtterPond = require("../src/shared/Art/OtterPond")
 local ArtTown = require("../src/shared/Art/Town")
 local Land = require("../src/shared/Config/Land")
 local ArtTownSquare = require("../src/shared/Art/TownSquare")
@@ -507,7 +512,7 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ok(ArtMerge.count(m, body) <= 8, id .. " merges down to 8 parts or fewer")
 		end
 
-		for i = 1, 4 do
+		for i = 1, 9 do -- every entry of MERGE_AT_LOAD (a missing one is nil, so # would stop short)
 			eq(type(MERGE_AT_LOAD[i]), "function", "every Merge function is there as soon as the module loads")
 		end
 
@@ -616,6 +621,35 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		eq(#mix, max, "a mixed tray shows the cap")
 		eq(mix[1], "Bread", "one of each kind first")
 		eq(mix[2], "Cookie", "one of each kind first")
+	end)
+
+	test("art: crops merge once per look and every field gets a copy", function()
+		local stub = {
+			UnionAsync = function(_self, primary: BasePart, _parts: { BasePart }, _options)
+				local u = Instance.new("Part")
+				u.CFrame = primary.CFrame
+				u.Size = primary.Size
+				return { u }
+			end,
+		}
+		local store = Instance.new("Folder")
+		ArtCrops.useTemplates(store, stub)
+		local top = CFrame.new(20, 1, -8)
+		for stage = 1, 4 do
+			local built = ArtCrops.build("Corn", stage, CFrame.new(), nil)
+			local expected = ArtMerge.countTemplate(built)
+			local copy = ArtCrops.placed("Corn", stage, top, nil)
+			eq(copy.Name, "Crop", "stage " .. stage .. " copy is a Crop for CropMotion")
+			eq(copy:GetAttribute("CropId"), "Corn", "stage " .. stage .. " keeps its CropId")
+			eq(copy:GetAttribute("Stage"), stage, "stage " .. stage .. " keeps its Stage")
+			eq(Kit.countParts(copy), expected, "stage " .. stage .. " copy matches the estimate")
+			Kit.eachPart(copy, function(p)
+				ok(p.CanQuery, "stage " .. stage .. " " .. p.Name .. " can still be tapped")
+				ok((p.CFrame.Position - top.Position).Magnitude < 4, "stage " .. stage .. " stands on its bed")
+			end)
+		end
+		ok(Kit.countParts(ArtCrops.build("Corn", 4, CFrame.new(), nil)) > 6, "a ready Corn is many parts unmerged")
+		eq(Kit.countParts(ArtCrops.placed("Corn", 4, top, nil)), 1, "and one union merged")
 	end)
 
 	test("art: pen animals merge once per kind and every copy is a union", function()
@@ -1124,7 +1158,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		local b = bed()
 		ArtCrops.dressBed(b)
 		add(b, 22)
-		add(ArtCrops.build("Corn", 4, CFrame.new(), nil), 22)
+		-- each a copy of its look merged once (ArtCrops.placed)
+		total += ArtMerge.countTemplate(ArtCrops.build("Corn", 4, CFrame.new(), nil)) * 22
 		-- Every pen up to the highest built level, copies (Cow Barns 2 and 3) looking like their
 		-- original
 		local pensMerged, pensBuilt = 0, 0
@@ -1175,6 +1210,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtHarbor.PARTS_MAX
 		-- The Duck Pond with four ducks on the water
 		total += ArtDuckPond.PARTS_MAX
+		-- The Otter Pond with three otters home
+		total += ArtOtterPond.PARTS_MAX
 		-- The Tinker's Guild, merged like a town building once it's built
 		local guild = Instance.new("Model")
 		total += ArtMerge.count(guild, ArtGuild.build(guild, CFrame.new()))
