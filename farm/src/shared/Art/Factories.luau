@@ -1255,6 +1255,46 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Music Workshop (level 82, placed by the player): a warm wooden luthier's shop with a giant
+-- ukulele leaning on the roof, a music note that glows while it works, a drum by the door and
+-- a guitar sign.
+local function musicWorkshop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.wood:Lerp(Palette.cream, 0.35), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.woodDark)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.brick)
+	-- The ukulele on the roof: body, sound hole and neck
+	local uke = Vector3.new(-1.6, TOP + 0.6, 0.4)
+	d.ball("UkeBody", 3, uke + Vector3.new(0, 1.4, 0), Palette.wood)
+	d.cyl("SoundHole", 0.2, 0.9, CFrame.new(uke + Vector3.new(0, 1.4, -1.45)) * Kit.yaw(90), Palette.woodDark)
+	d.block("UkeNeck", Vector3.new(0.6, 3.6, 0.4), uke + Vector3.new(0, 4.4, 0), Palette.woodDark)
+	-- The glowing music note
+	d.ball("NeonSign", 0.9, Vector3.new(2.6, TOP + 1.6, -1.4), Palette.plum, { shadow = false })
+	d.block("NoteStem", Vector3.new(0.2, 1.4, 0.2), Vector3.new(2.95, TOP + 2.3, -1.4), Palette.plum)
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.woodDark, Palette.cream)
+	d.cyl(
+		"Drum",
+		1,
+		1.4,
+		CFrame.new(4.4, PLINTH + 0.5, FRONT - 1.2) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.roofRed
+	)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("GuitarIcon", 0.8, at + Vector3.new(0, -0.2, 0), Palette.wood, { shadow = false })
+		s.block(
+			"NeckIcon",
+			Vector3.new(0.15, 0.7, 0.2),
+			at + Vector3.new(0, 0.45, -0.02),
+			Palette.woodDark,
+			{ shadow = false }
+		)
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Cookware Shop (level 78, placed by the player): a terracotta workshop with a kiln chimney,
 -- a giant frying pan on the roof whose burner ring glows while it works, a shelf of cups and
 -- pots in the window and a teapot sign.
@@ -1652,6 +1692,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	QuiltShop = quiltShop,
 	DollMaker = dollMaker,
 	CookwareShop = cookwareShop,
+	MusicWorkshop = musicWorkshop,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts

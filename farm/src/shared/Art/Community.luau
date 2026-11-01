@@ -2238,6 +2238,26 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Savings Bank (content bank, level 82): a stately cream bank with four columns across the
+-- front, a triangular pediment, a gold coin emblem, wide steps and a clock above the door.
+TYPES.SavingsBank = function(b, s)
+	local body = hall(b, s * 0.56, s * 0.44, 5.5, Palette.cream)
+	local t = b.into(body, true)
+	local face = -s * 0.22
+	t.block("Steps", Vector3.new(s * 0.5, 0.6, 1.6), Vector3.new(0, PLINTH + 0.3, face - 1), Palette.stoneLight)
+	for i = 0, 3 do
+		t.post("Column", 5, 0.9, Vector3.new(-s * 0.21 + i * s * 0.14, PLINTH + 2.9, face - 1.4), Palette.flowerWhite)
+	end
+	t.block("Beam", Vector3.new(s * 0.56, 0.6, 2), Vector3.new(0, PLINTH + 5.7, face - 0.8), Palette.flowerWhite)
+	t.wedge("Pediment", Vector3.new(s * 0.56, 1.8, 2), CFrame.new(0, PLINTH + 6.9, face - 0.8), Palette.cream)
+	t.cyl("Coin", 0.3, 1.4, CFrame.new(0, PLINTH + 6.7, face - 1.85) * Kit.yaw(90), Palette.coins)
+	t.block("Roof", Vector3.new(s * 0.58, 0.5, s * 0.46), Vector3.new(0, PLINTH + 5.75, 0), Palette.stone)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 2, 3.4, Palette.woodDark, Palette.coins)
+	t.cyl("Clock", 0.2, 1.2, CFrame.new(0, PLINTH + 4.4, face - 0.1) * Kit.yaw(90), Palette.flowerWhite)
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 6.5, s * 0.15), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Dog Park (content bank, level 80): a fenced green run with a striped agility hurdle, a
 -- tunnel, a dog house with a bone sign and a water bowl, and a little bench.
 TYPES.DogPark = function(b, s)
