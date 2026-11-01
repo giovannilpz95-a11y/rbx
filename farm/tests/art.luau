@@ -1140,6 +1140,26 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		within(g, 25, "gate")
 	end)
 
+	-- Width and depth of everything visible in `m` (rotated corners included)
+	local function spread(m: Instance): (number, number)
+		local lo, hi = Vector3.new(1e9, 0, 1e9), Vector3.new(-1e9, 0, -1e9)
+		for _, p in m:GetDescendants() do
+			if p:IsA("BasePart") and p.Transparency < 1 then
+				local h = p.Size / 2
+				for _, c in
+					{ Vector3.new(1, 1, 1), Vector3.new(1, 1, -1), Vector3.new(1, -1, 1), Vector3.new(-1, 1, 1) }
+				do
+					for _, sign in { 1, -1 } do
+						local w = p.CFrame * (h * c * sign)
+						lo = Vector3.new(math.min(lo.X, w.X), 0, math.min(lo.Z, w.Z))
+						hi = Vector3.new(math.max(hi.X, w.X), 0, math.max(hi.Z, w.Z))
+					end
+				end
+			end
+		end
+		return hi.X - lo.X, hi.Z - lo.Z
+	end
+
 	test("art: every House and Community Building builds within budget", function()
 		for id in Town.houses do
 			ok(ArtHouses.has(id), "house model for " .. id)
@@ -1149,6 +1169,9 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 				ok(body:IsDescendantOf(m), id .. " body")
 				within(m, ArtHouses.PARTS_MAX, id .. " at " .. size)
 				paletteRules(m, id)
+				-- A lot is `size` studs; trees and awnings may overhang a little, never a street
+				local w, d = spread(m)
+				ok(w <= size + 4 and d <= size + 4, string.format("%s at %d is %.1f x %.1f", id, size, w, d))
 			end
 		end
 		for id, def in Town.community do
@@ -1160,6 +1183,8 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			ArtCommunity.build(id, m, CFrame.new(), 12)
 			within(m, ArtCommunity.PARTS_MAX, id)
 			paletteRules(m, id)
+			local w, d = spread(m)
+			ok(w <= 16 and d <= 16, string.format("%s is %.1f x %.1f", id, w, d))
 		end
 	end)
 
@@ -1252,8 +1277,11 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtBlimp.PARTS_MAX
 		-- The Harbor with all four Sailboats home and the Driftwood Crate (Features/F02)
 		total += ArtHarbor.PARTS_MAX
-		-- The Duck Pond with four ducks on the water
-		total += ArtDuckPond.PARTS_MAX
+		-- Both Duck Ponds (the Willow Pond from 73) with four ducks on each
+		local DuckPondConfig = require("../src/shared/Config/DuckPond")
+		for _ in DuckPondConfig.ponds do
+			total += ArtDuckPond.PARTS_MAX
+		end
 		-- The Otter Pond with three otters home
 		total += ArtOtterPond.PARTS_MAX
 		-- The Tool Trader with all three offer crates

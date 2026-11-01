@@ -223,13 +223,20 @@ local function act(part: BasePart)
 	elseif kind == "Harbor" then
 		Panels.open("Harbor")
 	elseif kind == "DuckPond" then
-		-- Waiting feathers are collected straight away; otherwise the panel
-		local pond = ClientStore.state and ClientStore.state.duckPond
+		-- Which pond (the second one is the Willow Pond): the model says. Waiting feathers are
+		-- collected straight away; otherwise the panel
+		local holder = part:FindFirstAncestorWhichIsA("Model")
+		while holder and holder:GetAttribute("PondId") == nil do
+			holder = holder:FindFirstAncestorWhichIsA("Model")
+		end
+		local id = if holder then tostring(holder:GetAttribute("PondId")) else "DuckPond"
+		local save = if id == "DuckPond2" then "duckPond2" else "duckPond"
+		local pond = ClientStore.state and ClientStore.state[save]
 		local visit = pond and pond.visit
 		if visit and ClientStore.now() >= visit.readyAt then
-			Remotes.fire("Pond_Collect")
+			Remotes.fire("Pond_Collect", id)
 		else
-			Panels.open("DuckPond")
+			Panels.open("DuckPond", id)
 		end
 	elseif kind == "OtterPond" then
 		-- An otter back with its catch is unloaded straight away; otherwise the panel

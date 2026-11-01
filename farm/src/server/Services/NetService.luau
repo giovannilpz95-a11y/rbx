@@ -110,6 +110,7 @@ local function snapshot(data: { [string]: any })
 		layout = data.layout, -- buildings the player moved (shared/Layout), for the move ghost
 		harbor = data.harbor, -- Harbor & Far Isles: boats, isles and trips (shared/Harbor)
 		duckPond = data.duckPond, -- the Duck Pond: dig timer and the current visit (shared/DuckPond)
+		duckPond2 = data.duckPond2, -- the second one, the Willow Pond (level 73)
 		otterPond = data.otterPond, -- the Otter Pond: build timer, otters and their trips (shared/OtterPond)
 		toolTrader = data.toolTrader, -- the Tool Trader: build timer, slots and offers (shared/ToolTrader)
 		tonics = data.tonics, -- the Tonic Shed: build timer, running tonics and earned ones (shared/Tonics)

@@ -1783,7 +1783,7 @@ end
 -- old model is destroyed and the next refresh builds it at its new spot.
 export type Feature = {
 	refresh: (player: Player, model: Model, data: { [string]: any }, now: number) -> (),
-	model: (plot: Model) -> Instance?,
+	model: (plot: Model, id: string) -> Instance?, -- the feature building with that layout id
 }
 local features: { [string]: Feature } = {}
 
@@ -1938,7 +1938,7 @@ function PlotService.layoutModel(player: Player, key: string): Instance?
 		return nil
 	end
 	if features[kind] then
-		return features[kind].model(model)
+		return features[kind].model(model, id)
 	elseif kind == "factory" or kind == "pen" then
 		return model:FindFirstChild(id)
 	elseif kind == "field" then
