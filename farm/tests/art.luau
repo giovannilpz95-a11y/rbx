@@ -1294,11 +1294,18 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 			local holder = Instance.new("Model")
 			holder.Parent = station
 			local engine, cars = ArtRail.farmTrain(holder, CFrame.new(), lane, 5)
-			for _, car in cars do
-				ArtRail.setCarCrates(car, ArtRail.CAR_CRATES)
+			for i, car in cars do
+				ArtRail.setCarCrates(car, if i < #cars then ArtRail.CAR_CRATES else 0)
 			end
-			-- each car's item sign carries a SurfaceGui on the server, so it stays apart
-			trainParts += ArtMerge.count(holder, engine:FindFirstChild("Chassis") :: BasePart) + #cars
+			-- four cars loaded and the last one flagged for help, which stays out of the union;
+			-- each other car's item sign carries a SurfaceGui on the server, so it stays apart
+			local flagged = cars[#cars]
+			trainParts += ArtMerge.count(
+				holder,
+				engine:FindFirstChild("Chassis") :: BasePart,
+				{ [flagged.Name] = true }
+			)
+			trainParts += #cars - 1 -- (the count already includes the flagged car's own parts)
 		end
 		total += trainParts
 		print(string.format("      Train Station with three full trains: %d parts", trainParts))

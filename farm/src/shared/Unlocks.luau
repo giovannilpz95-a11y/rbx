@@ -93,6 +93,9 @@ function Unlocks.at(level: number): { Unlock }
 			)
 		end
 	end
+	if level == TrainConfig.helpFromLevel then
+		table.insert(out, { kind = "Feature", id = "TrainHelp", name = "Help with trains" })
+	end
 	if level == TonicsConfig.unlockLevel then
 		table.insert(out, { kind = "Feature", id = "TonicShed", name = "Tonic Shed" })
 	end

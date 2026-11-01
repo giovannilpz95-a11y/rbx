@@ -18,7 +18,9 @@ local Rng = require("./Rng")
 local Train = {}
 
 export type Reward = { item: string, qty: number }
-export type Car = { item: string, qty: number, reward: Reward, loaded: boolean? }
+-- flagged: the owner asked neighbors for help with it; helpedBy: the user id of the neighbor
+-- who loaded it
+export type Car = { item: string, qty: number, reward: Reward, loaded: boolean?, flagged: boolean?, helpedBy: number? }
 export type Line = { cars: { Car }, bonus: Reward, returnAt: number? }
 
 -- Seconds a new timer runs for under the Studio time scale (as the server's Clock.duration)
@@ -251,8 +253,51 @@ function Train.canLoad(data: { [string]: any }, index: any, carIndex: any, now: 
 	return car
 end
 
-function Train.load(car: Car)
+-- Loads a car; `helper` is the user id of a neighbor who loaded it for the owner
+function Train.load(car: Car, helper: number?)
 	car.loaded = true
+	car.flagged = nil
+	car.helpedBy = helper
+end
+
+-- Flag a car for help, one a train; flagging another car moves the flag, and flagging the
+-- flagged car takes it off
+function Train.flag(data: { [string]: any }, index: any, carIndex: any, now: number): (boolean, string?)
+	local car, reason = Train.canLoad(data, index, carIndex, now)
+	if car == nil then
+		return false, reason
+	elseif data.level < Config.helpFromLevel then
+		return false, string.format("Neighbors can help with your trains from level %d", Config.helpFromLevel)
+	end
+	local on = not car.flagged
+	for _, other in (Train.line(data, index) :: Line).cars do
+		other.flagged = nil
+	end
+	car.flagged = if on then true else nil
+	return true
+end
+
+-- What a neighbor earns for loading a flagged car: Coins and XP
+function Train.helperRewards(car: Car): (number, number)
+	local def = Items[car.item]
+	local value = (def and def.sellPrice or 1) * car.qty
+	return math.max(1, math.floor(value * Config.helperCoinMult + 0.5)), Train.carXp(car)
+end
+
+-- The flagged cars still waiting, for the Help Board: "12 Wheat, 3 Milk" ("" when none)
+function Train.helpText(data: { [string]: any }): string
+	local asks = {}
+	for _, line in data.trains.lines do
+		if line.returnAt == nil then
+			for _, car in line.cars do
+				if car.flagged and not car.loaded then
+					local def = Items[car.item]
+					table.insert(asks, string.format("%d %s", car.qty, if def then def.displayName else car.item))
+				end
+			end
+		end
+	end
+	return table.concat(asks, ", ")
 end
 
 -- XP a loaded car pays at once

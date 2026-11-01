@@ -22,6 +22,11 @@ end
 
 return table.freeze({
 	unlockLevel = 5,
+	-- From this level one car a train can carry a help flag: neighbors on the server can load it
+	-- from their own Barns (05 Train Station: the Help Crate). The helper earns the car's goods
+	-- value in Coins times helperCoinMult and its XP; the owner still gets the car's reward.
+	helpFromLevel = 7,
+	helperCoinMult = 1,
 	-- The trains: the level each can be had from and its Coin price (Township: free, 1,000, 14,000)
 	trains = table.freeze({
 		table.freeze({ level = 5, coins = 0 }),

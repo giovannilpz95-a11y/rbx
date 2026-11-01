@@ -217,6 +217,23 @@ local function helpBlimp(part: BasePart, owner: number)
 	Remotes.fire("Help_Blimp", owner, part:GetAttribute("Row"), part:GetAttribute("Slot"))
 end
 
+-- A tap on a neighbor's train car: load it from our Barn if they asked for help with it
+-- (Help Crates, shared/Train)
+local function helpTrain(part: BasePart, owner: number)
+	local item, qty = part:GetAttribute("Item"), part:GetAttribute("Qty")
+	if type(item) ~= "string" or type(qty) ~= "number" then
+		Hud.toast("Only cars with a help flag can be loaded by neighbors")
+		return
+	end
+	local have = ClientStore.itemCount(item)
+	local name = if Items[item] then Items[item].displayName else item
+	if have < qty then
+		Hud.toast(string.format("That car needs %d %s. You have %d.", qty, name, have))
+		return
+	end
+	Remotes.fire("Help_Train", owner, part:GetAttribute("Train"), part:GetAttribute("Car"))
+end
+
 -- Status bubbles over the fields of the farm we're visiting, so a helper can see what's ripe
 -- and what still wants water (our own farm's bubbles come from WorldLabels).
 local helpBubbles: { [BasePart]: TextLabel } = {}
@@ -499,39 +516,46 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		whereLabel.Size = UDim2.new(1, right - 16, 0, 20)
 	end
 
-	-- The Help Board for Cargo Blimps (Features/F04): neighbors' flagged crates, to walk over
-	-- and load from our own Barn
-	local asks = {}
-	for _, other in others do
-		local help = other:GetAttribute("BlimpHelp")
-		if type(help) == "string" and help ~= "" then
-			table.insert(asks, { player = other, help = help })
+	-- The Help Board (Features/F04 Cargo Blimps, and Help Crates on trains): neighbors' flagged
+	-- crates and cars, to walk over and load from our own Barn
+	for _, board in
+		{
+			{ attribute = "BlimpHelp", title = "Cargo Blimps asking for help" },
+			{ attribute = "TrainHelp", title = "Trains asking for help" },
+		}
+	do
+		local asks = {}
+		for _, other in others do
+			local help = other:GetAttribute(board.attribute)
+			if type(help) == "string" and help ~= "" then
+				table.insert(asks, { player = other, help = help })
+			end
 		end
-	end
-	if #asks > 0 then
-		heading(body, "Cargo Blimps asking for help", nextOrder())
-		for _, ask in asks do
-			local line = card(body, 52, nextOrder())
-			Ui.label(ask.player.DisplayName, {
-				Font = Enum.Font.GothamBold,
-				Position = UDim2.fromOffset(10, 4),
-				Size = UDim2.new(1, -120, 0, 22),
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				Parent = line,
-			})
-			Ui.label("Needs " .. ask.help, {
-				TextColor3 = Ui.colors.muted,
-				TextSize = Type.size.small,
-				Position = UDim2.fromOffset(10, 26),
-				Size = UDim2.new(1, -120, 0, 20),
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				Parent = line,
-			})
-			smallButton("Visit", function()
-				Panels.close()
-				Remotes.fire("Visit_Go", ask.player.UserId)
-			end).Parent =
-				line
+		if #asks > 0 then
+			heading(body, board.title, nextOrder())
+			for _, ask in asks do
+				local line = card(body, 52, nextOrder())
+				Ui.label(ask.player.DisplayName, {
+					Font = Enum.Font.GothamBold,
+					Position = UDim2.fromOffset(10, 4),
+					Size = UDim2.new(1, -120, 0, 22),
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					Parent = line,
+				})
+				Ui.label("Needs " .. ask.help, {
+					TextColor3 = Ui.colors.muted,
+					TextSize = Type.size.small,
+					Position = UDim2.fromOffset(10, 26),
+					Size = UDim2.new(1, -120, 0, 20),
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					Parent = line,
+				})
+				smallButton("Visit", function()
+					Panels.close()
+					Remotes.fire("Visit_Go", ask.player.UserId)
+				end).Parent =
+					line
+			end
 		end
 	end
 
@@ -765,6 +789,13 @@ function SocialUi.init()
 			if owner and owner ~= player.UserId then
 				return function()
 					helpBlimp(part, owner)
+				end, true
+			end
+		elseif kind == "TrainCar" then
+			local owner = plotOwner(part)
+			if owner and owner ~= player.UserId then
+				return function()
+					helpTrain(part, owner)
 				end, true
 			end
 		elseif kind == "PuzzlePorch" then

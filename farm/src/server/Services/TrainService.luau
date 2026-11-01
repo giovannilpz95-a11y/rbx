@@ -7,7 +7,11 @@
 -- "station"); each train has its own track in front of it.
 --
 --   Train_Load(train, car) | Train_Send(train) | Train_SpeedUp(train) | Train_Unload(train)
---   | Train_Buy()
+--   | Train_Buy() | Train_Flag(train, car)
+--
+-- Help Crates (level 7): one car a train can carry a help flag, and neighbors on the server
+-- load it from their own Barns (Services/HelpService Help_Train). A flagged car is left out of
+-- the train's union so its parts can carry what it asks for.
 
 local Players = game:GetService("Players")
 
@@ -56,6 +60,7 @@ local function changed(player: Player)
 	PlotService.refresh(player)
 	NetService.pushState(player)
 end
+TrainService.changed = changed
 
 -- A reward's name with its count ("2 Pickaxes", "1 Bricks")
 function TrainService.rewardName(item: string, qty: number): string
@@ -171,6 +176,31 @@ function TrainService.unload(player: Player, index: any): (boolean, string?)
 	return true
 end
 
+function TrainService.flag(player: Player, index: any, carIndex: any): (boolean, string?)
+	local data = DataService.get(player)
+	if data == nil then
+		return false
+	end
+	local ok, reason = Train.flag(data, index, carIndex, Clock.now())
+	if not ok then
+		return false, reason
+	end
+	changed(player)
+	return true
+end
+
+-- Where car `carIndex` of an owner's train stands in the world (for a helper's reach check)
+function TrainService.carPosition(owner: Player, index: number, carIndex: number): Vector3?
+	local plot = PlotService.getPlot(owner)
+	local station = plot and plot:FindFirstChild(ID)
+	local train = station and station:FindFirstChild("Train" .. index)
+	local car = train and train:FindFirstChild("Car" .. carIndex)
+	if car and car:IsA("Model") then
+		return car:GetPivot().Position
+	end
+	return nil
+end
+
 function TrainService.buy(player: Player): (boolean, string?)
 	local data = DataService.get(player)
 	if data == nil then
@@ -282,10 +312,34 @@ local function buildTrain(model: Model, index: number, line: Train.Line)
 			d:SetAttribute("Train", index)
 		end
 	end
+	-- A car flagged for help stays out of the union, and says what it wants, so a visiting
+	-- neighbor can tap it
+	local skip = {}
+	for i, car in line.cars do
+		if car.flagged and not car.loaded then
+			skip[cars[i].Name] = true
+			for _, d in cars[i]:GetDescendants() do
+				if d:IsA("BasePart") then
+					d:SetAttribute("Interact", "TrainCar")
+					d:SetAttribute("Car", i)
+					d:SetAttribute("Item", car.item)
+					d:SetAttribute("Qty", car.qty)
+					d.CanQuery = true
+				end
+			end
+			PlotService.label(
+				signs[i],
+				string.format("Help: %d %s", car.qty, Items[car.item].displayName),
+				2.5,
+				UDim2.fromOffset(150, 26),
+				120
+			)
+		end
+	end
 	holder.Parent = model
 	local chassis = engine:FindFirstChild("Chassis") :: BasePart?
 	if chassis then
-		task.spawn(ArtMerge.merge, holder, chassis)
+		task.spawn(ArtMerge.merge, holder, chassis, { skip = skip })
 	end
 end
 
@@ -318,7 +372,7 @@ local function trainKey(line: Train.Line, now: number): string
 	end
 	local parts = { if Train.isBack(line, now) then "back" else "here" }
 	for _, car in line.cars do
-		table.insert(parts, car.item .. (if car.loaded then "+" else "-"))
+		table.insert(parts, car.item .. (if car.loaded then "+" elseif car.flagged then "?" else "-"))
 	end
 	return table.concat(parts, ",")
 end
@@ -362,6 +416,10 @@ local function refresh(player: Player, plot: Model, data: { [string]: any }, now
 			table.insert(board, boardLine(index, line, now))
 		end
 	end
+	-- The Help Board in the Neighbors panel reads this
+	if typeof(player) == "Instance" then
+		player:SetAttribute("TrainHelp", Train.helpText(data))
+	end
 	local gui = station:FindFirstChild("TimerGui", true)
 	local text = gui and gui:FindFirstChild("Text") :: TextLabel?
 	if text then
@@ -400,6 +458,7 @@ function TrainService.init()
 	NetService.on(Net.Train_SpeedUp, 1, 2, TrainService.speedUp)
 	NetService.on(Net.Train_Unload, 1, 3, TrainService.unload)
 	NetService.on(Net.Train_Buy, 1, 2, TrainService.buy)
+	NetService.on(Net.Train_Flag, 2, 4, TrainService.flag)
 
 	Players.PlayerRemoving:Connect(function(player)
 		visual[player] = nil
