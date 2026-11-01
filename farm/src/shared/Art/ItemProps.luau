@@ -1685,6 +1685,39 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Bag", Vector3.new(0.9, 1.1, 0.5), at(0, 0.55, 0), Palette.leafLight:Lerp(Palette.cream, 0.4), QUIET)
 		b.ball("CatFace", 0.4, at(0, 0.65, -0.27), Palette.carrot, QUIET)
 	end,
+	Pinata = function(b)
+		-- A striped paper donkey
+		b.block("Body", Vector3.new(1.1, 0.6, 0.5), at(0, 0.7, 0), Palette.flowerPink, QUIET)
+		b.block("Stripe", Vector3.new(0.2, 0.62, 0.52), at(0, 0.7, 0), Palette.flowerYellow, QUIET)
+		b.block("Neck", Vector3.new(0.35, 0.6, 0.4), at(0.45, 1.1, 0), Palette.sky, QUIET)
+		for _, x in { -0.4, 0.4 } do
+			b.block("Leg", Vector3.new(0.18, 0.4, 0.18), at(x, 0.2, 0), Palette.lime, QUIET)
+		end
+	end,
+	Falafel = function(b)
+		-- Three crispy falafel balls on a leaf
+		b.block("Leaf", Vector3.new(1.4, 0.06, 0.9), at(0, 0.03, 0), Palette.leafLight, QUIET)
+		for _, p in { { -0.3, -0.1 }, { 0.3, -0.1 }, { 0, 0.25 } } do
+			b.ball("Falafel", 0.5, at(p[1], 0.28, p[2]), Palette.wood:Lerp(Palette.leaf, 0.2), QUIET)
+		end
+	end,
+	WaterBowl = function(b)
+		-- A clay pet bowl full of water
+		b.cyl("Bowl", 0.4, 1.2, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.brick, QUIET)
+		b.cyl("Water", 0.05, 1, at(0, 0.41, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.water, QUIET)
+	end,
+	ChocolateCustard = function(b)
+		-- A glass cup of chocolate custard with cream on top
+		b.post("Cup", 0.8, 0.7, at(0, 0.4, 0), Palette.cocoa:Lerp(Palette.glass, 0.3), QUIET)
+		b.ball("Cream", 0.5, at(0, 0.9, 0), Palette.cream, QUIET)
+	end,
+	MisoSoup = function(b)
+		-- A dark bowl of miso soup with tofu cubes and seaweed
+		b.cyl("Bowl", 0.5, 1.3, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark, QUIET)
+		b.cyl("Soup", 0.05, 1.1, at(0, 0.51, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.block("Tofu", Vector3.new(0.2, 0.15, 0.2), at(-0.2, 0.56, 0), Palette.cream, QUIET)
+		b.block("Seaweed", Vector3.new(0.35, 0.08, 0.15), at(0.2, 0.55, 0.1), Palette.leaf, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

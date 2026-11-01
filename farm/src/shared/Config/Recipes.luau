@@ -302,6 +302,12 @@ local Recipes: { [string]: RecipeDef } = {
 	Lasagna = { id = "Lasagna", displayName = "Lasagna", factory = "Trattoria", unlockLevel = 102, inputs = { Wheat = 4, Mushroom = 2, Cheese = 1, Bacon = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 260, xp = 111 },
 	Planter = { id = "Planter", displayName = "Planter", factory = "GardenCenter", unlockLevel = 102, inputs = { PineTrees = 3 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 55, xp = 24 },
 	CatLitter = { id = "CatLitter", displayName = "Cat Litter", factory = "PetShop", unlockLevel = 102, inputs = { Soybeans = 3, Paper = 1 }, outputQty = 1, seconds = 1 * HOUR + 20 * MIN, sellPrice = 79, xp = 34 },
+	-- Level 103-104 goods
+	Pinata = { id = "Pinata", displayName = "Piñata", factory = "PartyShop", unlockLevel = 103, inputs = { Glue = 1, Paper = 2, JellyBeans = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 291, xp = 125 },
+	Falafel = { id = "Falafel", displayName = "Falafel", factory = "GreenCafe", unlockLevel = 103, inputs = { Soybeans = 4, Peppers = 1, Potatoes = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 109, xp = 51 },
+	WaterBowl = { id = "WaterBowl", displayName = "Water Bowl", factory = "PetShop", unlockLevel = 103, inputs = { Clay = 2, PineTrees = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 135, xp = 58 },
+	ChocolateCustard = { id = "ChocolateCustard", displayName = "Chocolate Custard", factory = "TeaHouse", unlockLevel = 104, inputs = { Tea = 2, Chocolate = 1, Eggs = 2 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 333, xp = 141 },
+	MisoSoup = { id = "MisoSoup", displayName = "Miso Soup", factory = "GreenCafe", unlockLevel = 104, inputs = { Soybeans = 4, Seaweed = 2, Tofu = 1, Mushroom = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 425, xp = 182 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },
