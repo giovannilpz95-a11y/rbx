@@ -29,6 +29,9 @@ local active: string? = nil -- the key of the building being moved
 local moving: Instance? = nil -- its model, faded while it's picked up
 local turns = 0
 local offered = false -- Move mode came on to place a building the player just started
+-- Offers that came while another building was picked up (a fast level-up starts several):
+-- each is offered in turn once the one before is placed or cancelled
+local queued: { string } = {}
 local hint: TextLabel
 local spot: { x: number, z: number, ok: boolean, reason: string? } = { x = 0, z = 0, ok = false, reason = nil }
 
@@ -109,6 +112,8 @@ local function update()
 	ghost.Parent = Workspace
 end
 
+local offerNext: () -> ()
+
 local function stopMoving()
 	fade(moving, 0)
 	active = nil
@@ -121,6 +126,9 @@ local function stopMoving()
 		editing = false -- it came on just for this building
 	end
 	banner.Visible = editing
+	if #queued > 0 then
+		task.defer(offerNext)
+	end
 end
 
 function MovePlacer.isMoving(): boolean
@@ -196,12 +204,23 @@ function MovePlacer.offer(payload: { [string]: any })
 	if type(key) ~= "string" then
 		return
 	elseif active ~= nil then
-		trace("not offered:", key, "(already moving", active, ")")
+		if active ~= key and not table.find(queued, key) then
+			table.insert(queued, key)
+		end
+		trace("queued:", key, "(already moving", active, ")")
 		return
 	end
 	trace("offered:", key)
 	task.spawn(function()
 		for _ = 1, 100 do
+			if active ~= nil then
+				-- Another offer picked its building up first: wait in line behind it
+				if active ~= key and not table.find(queued, key) then
+					table.insert(queued, key)
+					trace("queued:", key, "(already moving", active, ")")
+				end
+				return
+			end
 			local found: Instance? = nil
 			local mine = ownPlot()
 			if mine then
@@ -230,6 +249,12 @@ function MovePlacer.offer(payload: { [string]: any })
 		end
 		trace("gave up:", key, "never appeared on the plot", plot and plot:GetFullName() or "(no plot)")
 	end)
+end
+
+offerNext = function()
+	if active == nil and #queued > 0 then
+		MovePlacer.offer({ key = table.remove(queued, 1) })
+	end
 end
 
 function MovePlacer.setPlot(model: Model)
