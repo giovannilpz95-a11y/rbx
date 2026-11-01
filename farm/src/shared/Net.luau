@@ -80,11 +80,11 @@ return table.freeze({
 	Harbor_Skip = "Harbor_Skip", -- boat: bring it home now (Gems)
 	Harbor_Drift = "Harbor_Drift", -- (open today's Driftwood Crate)
 	Harbor_Upgrade = "Harbor_Upgrade", -- isleId, stat: a Tinker's Guild upgrade for an isle (Bars)
-	Pond_Dig = "Pond_Dig", -- (start digging out the Duck Pond, Coins; shared/DuckPond)
-	Pond_SpeedUp = "Pond_SpeedUp", -- (finish digging now, Gems)
-	Pond_Feed = "Pond_Feed", -- food: put a Bread, Bagel or Banana Bread out for the ducks
-	Pond_Collect = "Pond_Collect", -- (take the feathers the ducks left)
-	Pond_Skip = "Pond_Skip", -- (the ducks leave now, Gems)
+	Pond_Dig = "Pond_Dig", -- pondId?: start digging out a Duck Pond, Coins (shared/DuckPond; "DuckPond" or "DuckPond2")
+	Pond_SpeedUp = "Pond_SpeedUp", -- pondId?: finish digging now, Gems
+	Pond_Feed = "Pond_Feed", -- food, pondId?: put a Bread, Bagel or Banana Bread out for the ducks
+	Pond_Collect = "Pond_Collect", -- pondId?: take the feathers the ducks left
+	Pond_Skip = "Pond_Skip", -- pondId?: the ducks leave now, Gems
 	Otter_Build = "Otter_Build", -- (start building the Otter Pond, Coins; shared/OtterPond)
 	Otter_SpeedUp = "Otter_SpeedUp", -- (finish building now, Gems)
 	Otter_Buy = "Otter_Buy", -- (another otter, Coins)

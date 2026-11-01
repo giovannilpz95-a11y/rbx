@@ -120,6 +120,48 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		eq(k, 0.5, "Bagel averages half a drake")
 	end)
 
+	test("duck pond: the second pond (Township's Duck Feeder 2)", function()
+		local second = Config.ponds.DuckPond2
+		eq(second.unlockLevel, 73, "at level 73")
+		eq(second.digCoins, 140000, "140,000 Coins")
+		eq(second.digSeconds, 77 * HOUR, "3 days 5 h")
+		eq(second.digXp, 5780, "5,780 XP")
+		eq(Config.ponds.DuckPond.digCoins, Config.digCoins, "the first pond keeps its numbers")
+		local data = farm(72)
+		eq(data.duckPond2.visits, 0, "a new save has the second pond's block")
+		ok(not Layout.exists(data, "pond", "DuckPond2"), "not on the farm before 73")
+		local okDig, why = DuckPond.canDig(data, "DuckPond2")
+		ok(not okDig and string.find(why or "", "73", 1, true) ~= nil, "locked until 73: " .. tostring(why))
+		data.level = 73
+		ok(Layout.exists(data, "pond", "DuckPond2"), "turns up at 73")
+		ok(DuckPond.canDig(data, "DuckPond2"), "can dig at 73")
+		DuckPond.dig(data, 0, 777, nil, "DuckPond2")
+		eq(data.duckPond2.readyAt, second.digSeconds, "its own digging timer")
+		eq(data.duckPond.readyAt, nil, "the first pond is untouched")
+		ok(DuckPond.canDig(data), "the first can still be dug")
+		DuckPond.dig(data, 0, 1, nil)
+		DuckPond.finishDig(data, 10)
+		DuckPond.finishDig(data, 10, "DuckPond2")
+		DuckPond.feed(data, "Bread", 10)
+		ok(DuckPond.canFeed(data, "Bagel", 10, "DuckPond2"), "both ponds can have ducks at once")
+		local visit = DuckPond.feed(data, "Bagel", 10, nil, "DuckPond2")
+		eq(data.duckPond2.visit, visit, "the visit lands on the second pond")
+		eq(data.duckPond2.visits, 1, "its own visit count")
+		eq(data.duckPond.visits, 1, "the first keeps its own count")
+		ok(DuckPond.skip(data, 20, "DuckPond2"), "skip the second")
+		ok(DuckPond.collect(data, 20, "DuckPond2") ~= nil, "collect from the second")
+		eq(data.duckPond2.visit, nil, "second pond empty")
+		ok(data.duckPond.visit ~= nil, "first pond's ducks still there")
+		local Unlocks = require("../src/shared/Unlocks")
+		local listed = false
+		for _, unlock in Unlocks.at(73) do
+			listed = listed or unlock.id == "DuckPond2"
+		end
+		ok(listed, "level 73's New! row names the second pond")
+		local service = fs.readFile("src/server/Services/DuckPondService.luau")
+		ok(string.find(service, "data.duckPond", 1, true) == nil, "the service reads ponds by id")
+	end)
+
 	test("duck pond: feathers join the Order Board pool once it's dug", function()
 		local data = farm(49)
 		for _, id in

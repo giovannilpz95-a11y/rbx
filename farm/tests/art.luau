@@ -1252,8 +1252,11 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		total += ArtBlimp.PARTS_MAX
 		-- The Harbor with all four Sailboats home and the Driftwood Crate (Features/F02)
 		total += ArtHarbor.PARTS_MAX
-		-- The Duck Pond with four ducks on the water
-		total += ArtDuckPond.PARTS_MAX
+		-- Both Duck Ponds (the Willow Pond from 73) with four ducks on each
+		local DuckPondConfig = require("../src/shared/Config/DuckPond")
+		for _ in DuckPondConfig.ponds do
+			total += ArtDuckPond.PARTS_MAX
+		end
 		-- The Otter Pond with three otters home
 		total += ArtOtterPond.PARTS_MAX
 		-- The Tool Trader with all three offer crates
