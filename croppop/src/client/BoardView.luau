@@ -256,6 +256,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.sack then
 		label.BackgroundColor3 = TileStyle.Board.sack
 		label.Text = TileStyle.SackGlyph
+	elseif kind.mailbox then
+		local box = kind.mailbox
+		label.BackgroundColor3 = TileStyle.Board.mailbox
+		label.Text = if not box.open then TileStyle.MailGlyphs.closed elseif box.mail then TileStyle.MailGlyphs.full else TileStyle.MailGlyphs.empty
 	elseif tarp then
 		label.BackgroundColor3 = TileStyle.Board.tarp
 		label.Text = "≋" -- canvas stripes
@@ -754,6 +758,24 @@ function BoardView._effect(self, effect): number
 			patch:Destroy()
 		end)
 		return BEE_TIME
+	elseif effect.type == "Mailbox" then
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.mailbox, true)
+		return FX_TIME
+	elseif effect.type == "Letter" then
+		local letter = Instance.new("TextLabel")
+		letter.Name = "Letter"
+		letter.AnchorPoint = Vector2.new(0.5, 0.5)
+		letter.BackgroundTransparency = 1
+		letter.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		letter.Position = self:_centerOf(effect.x, effect.y)
+		letter.Text = TileStyle.GoalGlyphs.Letters
+		letter.TextScaled = true
+		letter.Parent = self.fxLayer
+		tween(letter, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			letter:Destroy()
+		end)
+		return FX_TIME
 	elseif effect.type == "Sow" then
 		local guis = self.cellGuis[effect.fromY] and self.cellGuis[effect.fromY][effect.fromX]
 		if guis then

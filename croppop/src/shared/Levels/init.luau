@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  l  mailbox with a letter     L  empty mailbox: either blocks like a
+	     2-layer bale; the first hit opens it, the next takes it away (and
+	     the letter, for the Letters goal)
 	  i  snowball: a tile with a timer; it bursts after 8 swaps, frosting the
 	     tiles around it, then starts again. Clearing it counts for the
 	     Snowballs goal
@@ -67,7 +70,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -114,6 +117,8 @@ local VALID_CHARS = {
 	i = true,
 	a = true,
 	A = true,
+	l = true,
+	L = true,
 	m = true,
 	M = true,
 	f = true,
@@ -261,7 +266,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -314,6 +319,8 @@ function Levels.validate(level): string?
 				snowballs += 1
 			elseif ch == "a" or ch == "A" then
 				clay += 1
+			elseif ch == "l" then
+				letters += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -407,6 +414,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Webs" then
 			if webs == 0 then
 				return "webs goal but no webs in the layout"
+			end
+		elseif goal.kind == "Letters" then
+			if letters == 0 then
+				return "letters goal but no mailbox with a letter in the layout"
 			end
 		elseif goal.kind == "Clay" then
 			if clay == 0 then
