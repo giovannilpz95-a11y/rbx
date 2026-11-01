@@ -20,7 +20,15 @@ local NEAR = 160 -- studs from the camera
 local GATE_REACH = 8 -- studs from a gate that swings it open
 local GATE_SPEED = 2.5 -- of the full swing per second
 
-type Entry = { rig: ArtMotion.AnimalRig, model: Model, moving: boolean, mood: string?, wool: number }
+type Entry = {
+	rig: ArtMotion.AnimalRig,
+	model: Model,
+	moving: boolean,
+	mood: string?,
+	wool: number,
+	phase: number,
+	stale: boolean, -- parts arrived after binding: bind again before the next pose
+}
 type Gate = { part: BasePart, open: number }
 
 local entries: { [Model]: Entry } = {}
@@ -54,7 +62,16 @@ local function track(d: Instance)
 	if rig == nil then
 		return
 	end
-	entries[model] = { rig = rig, model = model, moving = false, mood = nil, wool = 1 }
+	local entry: Entry =
+		{ rig = rig, model = model, moving = false, mood = nil, wool = 1, phase = count * 0.73, stale = false }
+	entries[model] = entry
+	-- The model can reach this client before its parts do (a merged look's union streams in
+	-- after the model): bind again once they turn up, or the animal never moves
+	model.DescendantAdded:Connect(function(d)
+		if d:IsA("BasePart") then
+			entry.stale = true
+		end
+	end)
 	forget(model, function()
 		entries[model] = nil
 	end)
@@ -155,6 +172,18 @@ local function step(dt: number)
 	local eye = if camera then camera.CFrame.Position else Vector3.zero
 	local now = os.clock()
 	for model, e in entries do
+		if e.stale then
+			e.stale = false
+			if e.moving then
+				ArtMotion.resetAnimal(e.rig)
+				e.moving = false
+			end
+			if e.wool ~= 1 then
+				ArtMotion.setWool(e.rig, 1) -- so the new rig records the wool's full size
+				e.wool = 1
+			end
+			e.rig = ArtMotion.bindAnimal(model, e.phase) or e.rig
+		end
 		local mood = model:GetAttribute("Mood") :: string?
 		stepWool(e, mood)
 		e.mood = mood
