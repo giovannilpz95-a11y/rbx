@@ -2238,6 +2238,51 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Skate Bowl (content bank, level 104): a concrete skate park with a curved bowl, a quarter
+-- pipe, a grind rail, a small hut with a graffiti stripe and a skateboard sign.
+TYPES.SkateBowl = function(b, s)
+	local body = hall(b, s * 0.26, s * 0.24, 3, Palette.stoneLight)
+	local t = b.into(body, true)
+	local face = -s * 0.12
+	t.block("HutRoof", Vector3.new(s * 0.28, 0.3, s * 0.26), Vector3.new(0, PLINTH + 3.15, 0), Palette.stoneDark)
+	t.block("Graffiti", Vector3.new(s * 0.26, 0.6, 0.1), Vector3.new(0, PLINTH + 2.2, face - 0.06), Palette.flowerPink)
+	Kit.door(t, "Door", CFrame.new(0, PLINTH, face - 0.1), 1.4, 2.4, Palette.metal, Palette.stoneDark)
+	-- The bowl, the quarter pipe and the rail beside the hut
+	t.cyl(
+		"Bowl",
+		1,
+		s * 0.3,
+		CFrame.new(-s * 0.26, PLINTH + 0.4, -s * 0.06) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stone
+	)
+	t.cyl(
+		"BowlDip",
+		0.5,
+		s * 0.24,
+		CFrame.new(-s * 0.26, PLINTH + 0.7, -s * 0.06) * CFrame.Angles(0, 0, math.rad(90)),
+		Palette.stoneDark
+	)
+	t.wedge(
+		"QuarterPipe",
+		Vector3.new(s * 0.2, 2, 2.4),
+		CFrame.new(s * 0.28, PLINTH + 1, -s * 0.06) * Kit.yaw(90),
+		Palette.stone
+	)
+	t.block("Rail", Vector3.new(s * 0.2, 0.15, 0.15), Vector3.new(0, PLINTH + 0.9, face - 2.4), Palette.metal)
+	for _, x in { -s * 0.08, s * 0.08 } do
+		t.post("RailLeg", 0.8, 0.15, Vector3.new(x, PLINTH + 0.4, face - 2.4), Palette.metal)
+	end
+	-- The skateboard sign on the hut
+	t.block(
+		"Deck",
+		Vector3.new(2.6, 0.2, 0.8),
+		CFrame.new(0, PLINTH + 4, 0) * CFrame.Angles(0, 0, math.rad(20)),
+		Palette.carrot
+	)
+	Kit.sproutTag(t, Vector3.new(s * 0.1, PLINTH + 3.8, s * 0.08), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Souvenir Shop (content bank, level 102): a pink corner shop with a big gift box on the roof,
 -- a postcard rack and a teddy in the window under a striped awning.
 TYPES.SouvenirShop = function(b, s)
