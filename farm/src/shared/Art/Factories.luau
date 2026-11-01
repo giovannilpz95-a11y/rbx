@@ -1255,6 +1255,45 @@ local function cakeShop(model: Model, b: Kit.Builder): Parts
 	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
 end
 
+-- Pet Shop (level 100, placed by the player): a sky-blue shop with a dog kennel by the door,
+-- a giant bone on the roof, a round paw-print lamp that glows while it works, a striped
+-- awning and a fish-bowl sign.
+local function petShop(model: Model, b: Kit.Builder): Parts
+	local body = shell(b, Palette.sky:Lerp(Palette.cream, 0.5), Palette.cream)
+	local d = b.into(body, true)
+	d.block("RoofSlab", Vector3.new(11.6, 0.6, 9.6), Vector3.new(0, TOP + 0.3, 0), Palette.roofTeal)
+	local chimney = d.post("Chimney", 2, 0.9, Vector3.new(4.2, TOP + 1.6, 3), Palette.stoneLight)
+	-- The bone on the roof, and the paw lamp
+	local bone = Vector3.new(-1.4, TOP + 1.6, 0.4)
+	d.block("Bone", Vector3.new(3.6, 0.8, 0.8), bone, Palette.flowerWhite)
+	for _, x in { -1.9, 1.9 } do
+		for _, z in { -0.35, 0.35 } do
+			d.ball("Knob", 0.8, bone + Vector3.new(x, 0, z), Palette.flowerWhite)
+		end
+	end
+	d.ball("NeonSign", 1.2, bone + Vector3.new(0, 1.4, 0), Palette.carrot, { shadow = false })
+	for i = 0, 4 do
+		d.wedge(
+			"Awning",
+			Vector3.new(1, 0.5, 1.4),
+			CFrame.new(-4.1 + i, PLINTH + 5.2, FRONT - 0.7) * Kit.yaw(180),
+			if i % 2 == 0 then Palette.roofTeal else Palette.cream
+		)
+	end
+	Kit.window(d, "Window", CFrame.new(-2.6, PLINTH + 3.2, FRONT), 3.4, 2.2, Palette.cream, Palette.glass)
+	Kit.door(d, "Door", CFrame.new(2.6, PLINTH, FRONT), 2.4, 4.2, Palette.roofTeal, Palette.cream)
+	-- The kennel by the door
+	d.block("Kennel", Vector3.new(1.8, 1.4, 1.6), Vector3.new(-4.4, PLINTH + 0.7, FRONT - 1.4), Palette.woodLight)
+	d.wedge("KennelRoof", Vector3.new(2, 0.8, 1.8), CFrame.new(-4.4, PLINTH + 1.8, FRONT - 1.4), Palette.roofRed)
+	sign(d, Vector3.new(2.6, PLINTH + 6.2, FRONT - 0.2), function(s, at)
+		s.ball("BowlIcon", 0.8, at + Vector3.new(0, 0, -0.02), Palette.glass, { shadow = false })
+		s.ball("FishIcon", 0.3, at + Vector3.new(0.1, 0, -0.1), Palette.carrot, { shadow = false })
+	end)
+	Kit.sproutTag(d, Vector3.new(4.4, TOP + 1.6, -3.4), 2.5, Palette.wood, Palette.lime)
+	local window = model:FindFirstChild("Window", true) :: BasePart
+	return { body = body, chimney = chimney, outputTable = outputTable(b), window = window, anim = animFolder(model) }
+end
+
 -- Garden Center (level 97, placed by the player): a green shop with a glass greenhouse wing,
 -- potted shrubs out front, a giant watering can on the roof whose sunflower lamp glows while
 -- it works, a striped awning and a spade sign.
@@ -1936,6 +1975,7 @@ local BUILDERS: { [string]: (Model, Kit.Builder) -> Parts } = {
 	Trattoria = trattoria,
 	PartyShop = partyShop,
 	GardenCenter = gardenCenter,
+	PetShop = petShop,
 	Bistro = bistro,
 	Smelter = smelter,
 	Smelter2 = function(model: Model, b: Kit.Builder): Parts

@@ -291,6 +291,10 @@ local Recipes: { [string]: RecipeDef } = {
 	GardenGnome = { id = "GardenGnome", displayName = "Garden Gnome", factory = "GardenCenter", unlockLevel = 98, inputs = { Clay = 3 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 160, xp = 69, fromOreShed = true },
 	SoapBubbles = { id = "SoapBubbles", displayName = "Soap Bubbles", factory = "PartyShop", unlockLevel = 99, inputs = { ScentedSoap = 1, Plastic = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 424, xp = 182 },
 	TeaCoffeeBouquet = { id = "TeaCoffeeBouquet", displayName = "Tea and Coffee Bouquet", factory = "FlowerShop", unlockLevel = 99, inputs = { TeaBags = 3, Cocoa = 1, Coffee = 1, Paper = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 486, xp = 208 },
+	-- Level 100 goods
+	Tiramisu = { id = "Tiramisu", displayName = "Tiramisu", factory = "Trattoria", unlockLevel = 100, inputs = { Espresso = 1, Eggs = 2, Cookies = 2, Chocolate = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 493, xp = 211 },
+	LawnChair = { id = "LawnChair", displayName = "Lawn Chair", factory = "GardenCenter", unlockLevel = 100, inputs = { PineTrees = 2, CottonFabric = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 84, xp = 36 },
+	RubberBone = { id = "RubberBone", displayName = "Rubber Bone", factory = "PetShop", unlockLevel = 100, inputs = { Rubber = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 88, xp = 38 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

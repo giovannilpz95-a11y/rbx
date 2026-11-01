@@ -2238,6 +2238,41 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Recycling Center (content bank, level 100): a green sorting shed with a conveyor running out
+-- of it, three coloured bins, a bale of crushed cans and the recycling-arrows sign on the roof.
+TYPES.RecyclingCenter = function(b, s)
+	local body = hall(b, s * 0.5, s * 0.4, 4.4, Palette.leaf:Lerp(Palette.stoneLight, 0.4))
+	local t = b.into(body, true)
+	local face = -s * 0.2
+	t.block("Roof", Vector3.new(s * 0.52, 0.4, s * 0.42), Vector3.new(0, PLINTH + 4.6, 0), Palette.stoneDark)
+	Kit.door(t, "Door", CFrame.new(-s * 0.1, PLINTH, face - 0.15), 2.6, 3.2, Palette.metal, Palette.stoneDark)
+	-- The conveyor out of the side
+	t.block(
+		"Conveyor",
+		Vector3.new(s * 0.3, 0.3, 1.2),
+		CFrame.new(s * 0.32, PLINTH + 1.6, 0) * CFrame.Angles(0, 0, math.rad(-12)),
+		Palette.stoneDark
+	)
+	t.post("ConveyorLeg", 1.2, 0.3, Vector3.new(s * 0.38, PLINTH + 0.6, 0), Palette.metal)
+	-- The bins
+	for i, color in { Palette.sky, Palette.flowerYellow, Palette.leafLight } do
+		t.block("Bin", Vector3.new(1.2, 1.4, 1.2), Vector3.new(-s * 0.08 + i * 1.5, PLINTH + 0.7, face - 1.4), color)
+	end
+	t.block("Bale", Vector3.new(1.4, 1.2, 1.4), Vector3.new(-s * 0.3, PLINTH + 0.6, face - 1.4), Palette.metal)
+	-- The arrows sign: three green wedges in a ring
+	for i = 0, 2 do
+		local a = math.rad(i * 120)
+		t.wedge(
+			"Arrow",
+			Vector3.new(0.3, 1, 1.2),
+			CFrame.new(math.cos(a) * 1, PLINTH + 6.2 + math.sin(a) * 1, 0) * CFrame.Angles(0, math.rad(90), a),
+			Palette.lime
+		)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.2, PLINTH + 5.4, s * 0.14), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Trail Camp (content bank, level 98): a log lodge with a green roof, two canvas tents, a
 -- campfire ring, a flagpole and a wooden trail sign.
 TYPES.TrailCamp = function(b, s)

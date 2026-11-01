@@ -95,6 +95,9 @@ local Factories: { [string]: FactoryDef } = {
 	PartyShop = { id = "PartyShop", displayName = "Party Shop", unlockLevel = 95, population = 18500, buildCost = 470000, buildSeconds = 72 * HOUR, xp = 19392, queueSlots = 2, trayCapacity = 6, order = 43, color = { 250, 200, 80 } },
 	-- Township's Gardening Supplies Factory (level 97): placed by the player
 	GardenCenter = { id = "GardenCenter", displayName = "Garden Center", unlockLevel = 97, population = 20050, buildCost = 500000, buildSeconds = 72 * HOUR, xp = 20630, queueSlots = 2, trayCapacity = 6, order = 44, color = { 110, 170, 80 } },
+	-- Township's Pet Supply Factory (level 100): placed by the player. The wiki has no build XP
+	-- for it, so it follows the line through the factories before it.
+	PetShop = { id = "PetShop", displayName = "Pet Shop", unlockLevel = 100, population = 23500, buildCost = 535000, buildSeconds = 72 * HOUR, xp = 22074, queueSlots = 2, trayCapacity = 6, order = 45, color = { 90, 170, 220 } },
 	JamKitchen = { id = "JamKitchen", displayName = "Jam Kitchen", unlockLevel = 27, population = 1480, buildCost = 7100, buildSeconds = 26 * HOUR, xp = 297, queueSlots = 2, trayCapacity = 6, order = 13, color = { 200, 60, 90 }, land = 2 },
 }
 
