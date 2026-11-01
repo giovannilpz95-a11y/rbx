@@ -68,6 +68,12 @@
 	quilt lifts off and frees its cells (a "Quilt" effect with its cells), for
 	the Quilts goal.
 
+	Scarecrows: block a cell and never break. Each hit (a match next to one,
+	once per wave, or a blast on it) adds a charge; the SCARECROW_CHARGES-th
+	sets it off like a Sunflower on the board's most common colour, and it
+	starts charging again. Pop phases list { x, y, hp = 1, scarecrow = charges }
+	in bales.
+
 	Mailboxes: block a cell like a 2-layer bale. The first hit (a match next
 	to it, or a blast) opens it (a "Mailbox" effect saying whether it holds a
 	letter); the next takes it away, and a letter inside counts for the
@@ -116,6 +122,7 @@ local BOMB_RADIUS = 2 -- Hay Bomb clears every cell within this many steps (diam
 local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
+local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
@@ -383,6 +390,16 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	if cell.sack then
 		self:_sow(wave, cell)
 		return -- nothing breaks a seed sack
+	end
+	if cell.scarecrow then
+		cell.scarecrow += 1
+		if cell.scarecrow >= SCARECROW_CHARGES then
+			cell.scarecrow = 0
+			table.insert(wave.effects, { type = "Scarecrow", x = cell.x, y = cell.y })
+			table.insert(wave.queue, { power = Power.Sunflower, x = cell.x, y = cell.y, color = 0 })
+		end
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, scarecrow = cell.scarecrow })
+		return -- nothing breaks a scarecrow
 	end
 	if cell.mailbox then
 		local box = cell.mailbox

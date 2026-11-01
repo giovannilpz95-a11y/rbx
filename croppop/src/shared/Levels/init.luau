@@ -11,6 +11,8 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  y  scarecrow: blocks a cell and never breaks; every third hit (a match
+	     next to it or a blast) clears the most common tile colour
 	  l  mailbox with a letter     L  empty mailbox: either blocks like a
 	     2-layer bale; the first hit opens it, the next takes it away (and
 	     the letter, for the Letters goal)
@@ -70,7 +72,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -119,6 +121,7 @@ local VALID_CHARS = {
 	A = true,
 	l = true,
 	L = true,
+	y = true,
 	m = true,
 	M = true,
 	f = true,

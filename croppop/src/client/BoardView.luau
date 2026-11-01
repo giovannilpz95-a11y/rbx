@@ -256,6 +256,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.sack then
 		label.BackgroundColor3 = TileStyle.Board.sack
 		label.Text = TileStyle.SackGlyph
+	elseif kind.scarecrow then
+		label.BackgroundColor3 = TileStyle.Board.scarecrow
+		label.Text = TileStyle.ScarecrowGlyph .. string.rep("•", kind.scarecrow)
 	elseif kind.mailbox then
 		local box = kind.mailbox
 		label.BackgroundColor3 = TileStyle.Board.mailbox
@@ -758,6 +761,14 @@ function BoardView._effect(self, effect): number
 			patch:Destroy()
 		end)
 		return BEE_TIME
+	elseif effect.type == "Scarecrow" then
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = 15
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
 	elseif effect.type == "Mailbox" then
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.mailbox, true)
 		return FX_TIME
