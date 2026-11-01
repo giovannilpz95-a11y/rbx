@@ -572,6 +572,20 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.cyl("Hole", 0.32, 0.9, at(0, 0.75, 0) * Kit.yaw(90), Palette.cream, QUIET)
 		b.block("Stone", Vector3.new(0.5, 0.5, 0.5), tilt(0, 1.55, 0, 45, 0, 45), Palette.sky, QUIET)
 	end,
+	Boots = function(b)
+		-- A tall brown boot
+		b.block("Leg", Vector3.new(0.8, 1.6, 0.9), at(0, 1, 0.3), Palette.trunk, QUIET)
+		b.block("Foot", Vector3.new(0.8, 0.6, 1.6), at(0, 0.3, -0.1), Palette.trunk, QUIET)
+		b.block("Sole", Vector3.new(0.85, 0.15, 1.7), at(0, 0.07, -0.1), Palette.stoneDark, QUIET)
+		b.block("Cuff", Vector3.new(0.85, 0.25, 0.95), at(0, 1.75, 0.3), Palette.wood, QUIET)
+	end,
+	Quiche = function(b)
+		-- A golden tart with bacon bits
+		b.cyl("Crust", 0.5, 1.9, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.cyl("Filling", 0.52, 1.6, at(0, 0.27, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.corn, QUIET)
+		b.block("Bacon", Vector3.new(0.4, 0.1, 0.25), at(-0.3, 0.55, 0.2), Palette.cowMuzzle, QUIET)
+		b.block("Bacon", Vector3.new(0.4, 0.1, 0.25), at(0.35, 0.55, -0.25), Palette.cowMuzzle, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
