@@ -7,6 +7,7 @@
 -- bed ≤ 4 parts, any crop stage ≤ 12 parts.
 
 local Kit = require("./Kit")
+local Merge = require("./Merge")
 local Palette = require("./Palette")
 
 local ArtCrops = {}
@@ -451,6 +452,29 @@ function ArtCrops.build(cropId: string, stage: number, top: CFrame, color: { num
 		(READY[cropId] or genericReady)(b, tint)
 	end
 	return model
+end
+
+-- The part-cut pass: a crop only ever sways as a whole (Art/Motion cropSway), so each crop's
+-- look at each stage is merged once into a template (Art/Merge cache, made on first use) and
+-- every field gets a copy, one union instead of up to a dozen parts. Server only.
+local cache: Merge.Cache? = nil
+
+function ArtCrops.useTemplates(store: Instance, geometry: any?)
+	cache = Merge.cache(store, "CropLooks", geometry)
+end
+
+-- A crop at `stage` on the bed top `top`: a copy of its merged look when one is ready, else
+-- built from parts (and its look starts merging for next time).
+function ArtCrops.placed(cropId: string, stage: number, top: CFrame, color: { number }?): Model
+	if cache then
+		local look = Merge.fromCache(cache, cropId .. "/" .. stage, function()
+			return ArtCrops.build(cropId, stage, CFrame.new(), color)
+		end, nil, true)
+		if look then
+			return Merge.place(look, top, "Crop")
+		end
+	end
+	return ArtCrops.build(cropId, stage, top, color)
 end
 
 -- Crops that have their own growing and ready looks (the rest use the generic rows).

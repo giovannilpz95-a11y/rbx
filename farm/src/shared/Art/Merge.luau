@@ -273,13 +273,56 @@ end
 -- one transform) can be merged once per kind into a template and cloned. `look` is built at
 -- the origin; every mergeable part but `skip` joins the biggest one, and the union lets taps
 -- and avatars through like the parts did. Yields; returns the union (or nil, nothing merged).
-function Merge.template(look: Model, skip: { [string]: boolean }?, geometry: Geometry?): BasePart?
+function Merge.template(look: Model, skip: { [string]: boolean }?, geometry: Geometry?, query: boolean?): BasePart?
 	local primary = Merge.leader(look, skip, true)
 	if primary == nil then
 		return nil
 	end
-	local union = Merge.merge(look, primary, { collide = false, query = false, skip = skip }, geometry)
+	local union = Merge.merge(look, primary, { collide = false, query = query == true, skip = skip }, geometry)
 	return if union ~= primary then union else nil
+end
+
+-- Merged templates made on first use, in the background, and kept in a folder under `store`
+-- (ServerStorage): a crop's look at each stage, say. Until a key's template is ready the
+-- caller builds plain parts as before.
+export type Cache = {
+	folder: Instance,
+	looks: { [string]: Model },
+	asked: { [string]: boolean },
+	geometry: Geometry?,
+}
+
+function Merge.cache(store: Instance, name: string, geometry: Geometry?): Cache
+	local folder = Instance.new("Folder")
+	folder.Name = name
+	folder.Parent = store
+	return { folder = folder, looks = {}, asked = {}, geometry = geometry }
+end
+
+-- The template for `key` if it's ready; otherwise starts making it (once) from `build`, a
+-- look at the origin, and returns nil (or the template, if it was made without yielding).
+function Merge.fromCache(
+	cache: Cache,
+	key: string,
+	build: () -> Model,
+	skip: { [string]: boolean }?,
+	query: boolean?
+): Model?
+	local look = cache.looks[key]
+	if look or cache.asked[key] then
+		return look
+	end
+	cache.asked[key] = true
+	task.spawn(function()
+		local m = build()
+		m.Parent = cache.folder
+		if Merge.template(m, skip, cache.geometry, query) then
+			cache.looks[key] = m
+		else
+			m:Destroy()
+		end
+	end)
+	return cache.looks[key]
 end
 
 -- A copy of `template` (built at the origin) standing at `cf`, named `name`. Its BaseCFrame
