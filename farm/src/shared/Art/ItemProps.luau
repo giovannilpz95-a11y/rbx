@@ -1582,6 +1582,45 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Handle", Vector3.new(0.18, 0.18, 0.7), at(0.3, 0.09, 0.4), Palette.leaf, QUIET)
 		b.block("Fork", Vector3.new(0.4, 0.06, 0.7), at(0.3, 0.05, -0.3), Palette.metal, QUIET)
 	end,
+	Ravioli = function(b)
+		-- A plate of square pasta pillows
+		b.cyl("Plate", 0.15, 1.8, at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		for _, p in { { -0.35, -0.3 }, { 0.35, -0.3 }, { 0, 0.35 } } do
+			b.block("Pillow", Vector3.new(0.55, 0.2, 0.55), at(p[1], 0.25, p[2]), Palette.wheat, QUIET)
+		end
+	end,
+	GardenGnome = function(b)
+		-- A clay gnome with a red pointed hat and a white beard
+		b.post("Body", 0.8, 0.7, at(0, 0.4, 0), Palette.sky, QUIET)
+		b.ball("Head", 0.55, at(0, 1, 0), Palette.skinLight, QUIET)
+		b.wedge(
+			"Beard",
+			Vector3.new(0.5, 0.4, 0.2),
+			at(0, 0.8, -0.25) * CFrame.Angles(math.rad(180), 0, 0),
+			Palette.flowerWhite,
+			QUIET
+		)
+		b.wedge("Hat", Vector3.new(0.6, 0.7, 0.6), at(0, 1.55, 0), Palette.roofRed, QUIET)
+	end,
+	SoapBubbles = function(b)
+		-- A bottle of bubble mix, its wand and two floating bubbles
+		b.post("Bottle", 0.9, 0.5, at(-0.25, 0.45, 0), Palette.flowerPink, QUIET)
+		b.ball("Bubble", 0.5, at(0.35, 1.1, 0), Palette.glass, QUIET)
+		b.ball("Bubble", 0.35, at(0.1, 1.5, 0.1), Palette.glass, QUIET)
+	end,
+	TeaCoffeeBouquet = function(b)
+		-- Tea bags and coffee beans bunched in brown paper
+		b.wedge(
+			"Wrap",
+			Vector3.new(0.8, 1, 0.8),
+			at(0, 0.5, 0) * CFrame.Angles(math.rad(180), 0, 0),
+			Palette.wood,
+			QUIET
+		)
+		b.block("TeaBag", Vector3.new(0.3, 0.4, 0.08), at(-0.2, 1.2, 0), Palette.cream, QUIET)
+		b.block("TeaBag", Vector3.new(0.3, 0.4, 0.08), at(0.2, 1.25, 0.1), Palette.cream, QUIET)
+		b.ball("Beans", 0.4, at(0, 1.15, -0.2), Palette.cocoa, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)
