@@ -26,6 +26,7 @@ return table.freeze({
 		"Jasmine",
 		"Coffee",
 		"Peanuts",
+		"Apples",
 		"Silk",
 	}),
 	enabledFactories = table.freeze({
