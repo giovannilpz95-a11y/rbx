@@ -2238,6 +2238,42 @@ TYPES.PonyRacecourse = function(b, s)
 	return body
 end
 
+-- Wedding Boutique (content bank, level 108): a white boutique with a pale pink roof, a gown on
+-- a stand in the bay window, a heart sign, a rose arch at the door and a pair of bells.
+TYPES.WeddingBoutique = function(b, s)
+	local body = hall(b, s * 0.46, s * 0.36, 4.4, Palette.flowerWhite)
+	local t = b.into(body, true)
+	local face = -s * 0.18
+	t.wedge(
+		"Roof",
+		Vector3.new(s * 0.5, 1.6, s * 0.4),
+		CFrame.new(0, PLINTH + 5.2, 0),
+		Palette.flowerPink:Lerp(Palette.cream, 0.4)
+	)
+	t.block("BayWindow", Vector3.new(s * 0.2, 2.6, 0.8), Vector3.new(-s * 0.1, PLINTH + 2, face - 0.4), Palette.glass)
+	t.wedge("Gown", Vector3.new(1, 2, 0.8), CFrame.new(-s * 0.1, PLINTH + 1.8, face - 0.2), Palette.flowerWhite)
+	Kit.door(t, "Door", CFrame.new(s * 0.12, PLINTH, face - 0.15), 1.6, 3, Palette.flowerWhite, Palette.coins)
+	-- The rose arch over the door
+	for _, dx in { -1.2, 1.2 } do
+		t.post("ArchPost", 3.4, 0.2, Vector3.new(s * 0.12 + dx, PLINTH + 1.7, face - 0.9), Palette.flowerWhite)
+	end
+	t.block("ArchTop", Vector3.new(2.8, 0.5, 0.5), Vector3.new(s * 0.12, PLINTH + 3.6, face - 0.9), Palette.flowerPink)
+	-- The heart sign and the bells
+	t.ball("Heart", 1.2, Vector3.new(-0.4, PLINTH + 6.4, 0), Palette.roofRed)
+	t.ball("Heart", 1.2, Vector3.new(0.4, PLINTH + 6.4, 0), Palette.roofRed)
+	t.wedge(
+		"HeartTip",
+		Vector3.new(0.4, 1, 1.6),
+		CFrame.new(0, PLINTH + 5.7, 0) * CFrame.Angles(math.rad(180), 0, math.rad(90)),
+		Palette.roofRed
+	)
+	for _, x in { -s * 0.18, -s * 0.12 } do
+		t.ball("Bell", 0.6, Vector3.new(x, PLINTH + 4.2, face - 0.1), Palette.coins)
+	end
+	Kit.sproutTag(t, Vector3.new(s * 0.18, PLINTH + 5.4, s * 0.12), 2.5, Palette.wood, Palette.lime)
+	return body
+end
+
 -- Travel Bureau (content bank, level 106): a sky-blue office with a big globe on the roof, a
 -- little plane circling it on a wire, a suitcase by the door and a striped awning.
 TYPES.TravelBureau = function(b, s)
