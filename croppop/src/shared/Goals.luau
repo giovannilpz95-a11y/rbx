@@ -16,6 +16,7 @@
 	  { kind = "Webs" }                                  -- clear every web (blasts only)
 	  { kind = "Honey", count = 10 }                     -- collect N honey jars (each hit on a beehive sends one)
 	  { kind = "Boxes" }                                 -- take every produce box off the stacks
+	  { kind = "Blooms" }                                -- make every tulip bud bloom
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
 	  { kind = "Snowballs" }                             -- clear every snowball (they burst and come back if left)
@@ -39,7 +40,7 @@ export type Goal = {
 }
 
 function Goals.new(defs: { any }, board)
-	local clay, letters, buckets, boxes, trucks = 0, 0, 0, 0, 0
+	local clay, letters, buckets, boxes, trucks, buds = 0, 0, 0, 0, 0, 0
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.web then
@@ -58,6 +59,9 @@ function Goals.new(defs: { any }, board)
 		if cell.bucket then
 			buckets += 1
 		end
+		if cell.bud then
+			buds += 1
+		end
 		if cell.stack then
 			boxes += cell.bale
 		end
@@ -70,9 +74,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks, beehives, hay trucks and snails aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives, hay trucks, snails and tulip buds aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -109,6 +113,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
 		elseif def.kind == "Honey" then
 			table.insert(list, { kind = "Honey", target = def.count, progress = 0 })
+		elseif def.kind == "Blooms" then
+			table.insert(list, { kind = "Blooms", target = def.count or buds, progress = 0 })
 		elseif def.kind == "Boxes" then
 			table.insert(list, { kind = "Boxes", target = def.count or boxes, progress = 0 })
 		elseif def.kind == "Letters" then
@@ -200,6 +206,10 @@ end
 
 function Goals.onHoney(self)
 	bump(self, "Honey", nil)
+end
+
+function Goals.onBloom(self)
+	bump(self, "Blooms", nil)
 end
 
 function Goals.onBox(self)

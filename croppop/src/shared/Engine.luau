@@ -88,6 +88,13 @@
 	once. The truck goes with its last bale. The HayBale goal counts each
 	truck as its 3 bales.
 
+	Tulip buds: block a cell like a 1-layer bale. Each hit (a match next to
+	one, once per wave, or a blast on it) charges it by one, and the
+	BUD_CHARGES-th makes it bloom: it goes, for the Blooms goal (a "Bloom"
+	effect). A bud has to be hit on every swap: after a swap that didn't
+	touch it (boosters since the last swap count), a charged bud closes up
+	and loses its charge (a Pop phase with a "Wilt" effect).
+
 	Garden snails: block a cell and never break, and blasts and boosters
 	don't move them. A match next to one (once per snail per wave) shoves it
 	one cell straight away from the matched tile: the snail bites whatever
@@ -160,6 +167,7 @@ local BIG_BOMB_RADIUS = 4 -- Hay Bomb + Hay Bomb
 local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
+local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
@@ -201,6 +209,7 @@ function Engine.new(level, seed: number, options: Options?)
 		continues = 0, -- paid +5-move continues taken
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
 		gooCleared = 0, -- during the current action (stops goo spreading)
+		budsHit = {}, -- tulip buds hit since the last swap ended
 	}, Engine)
 
 	for _, cell in board.startSnowballs do
@@ -598,6 +607,19 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_dropBale(wave, cell)
 		return
 	end
+	if cell.bud then
+		self.budsHit[cell] = true
+		cell.bud += 1
+		if cell.bud >= BUD_CHARGES then
+			cell.bale, cell.bud = 0, nil
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+			table.insert(wave.effects, { type = "Bloom", x = cell.x, y = cell.y })
+			self.goals:onBloom()
+		else
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, bud = cell.bud })
+		end
+		return
+	end
 	if cell.hive then
 		table.insert(wave.effects, { type = "Honey", x = cell.x, y = cell.y })
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, hive = true })
@@ -872,6 +894,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Boxes") then tiers[1] else tiers[4], cell)
 		elseif cell.hive then
 			table.insert(if goals:wants("Honey") then tiers[1] else tiers[4], cell)
+		elseif cell.bud then
+			table.insert(if goals:wants("Blooms") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
@@ -1545,9 +1569,30 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	if wasSwap and #self.board.startSnowballs > 0 and not self.goals:isComplete() then
 		self:_tickSnowballs(phases)
 	end
+	if wasSwap then
+		self:_wiltBuds(phases)
+	end
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then
 		self:_bonusRound(phases)
+	end
+end
+
+-- After a swap, every charged tulip bud that wasn't hit since the last swap
+-- closes up and loses its charge.
+function Engine._wiltBuds(self, phases)
+	local wave
+	self.board:eachCell(function(cell)
+		if cell.bud and cell.bud > 0 and not self.budsHit[cell] then
+			cell.bud = 0
+			wave = wave or newWave()
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, bud = 0 })
+			table.insert(wave.effects, { type = "Wilt", x = cell.x, y = cell.y })
+		end
+	end)
+	self.budsHit = {}
+	if wave then
+		self:_finishWave(wave, phases)
 	end
 end
 

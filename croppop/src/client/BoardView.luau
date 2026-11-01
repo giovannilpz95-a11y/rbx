@@ -259,6 +259,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.bucket then
 		label.BackgroundColor3 = TileStyle.Board.bucket
 		label.Text = TileStyle.BucketGlyph
+	elseif kind.bud then
+		-- Pinker as it charges; the dots are its charges so far.
+		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
+		label.Text = TileStyle.GoalGlyphs.Blooms .. string.rep("•", kind.bud)
 	elseif kind.snail then
 		label.BackgroundColor3 = TileStyle.Board.snail
 		label.Text = TileStyle.SnailGlyph
@@ -817,6 +821,31 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			bale:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Bloom" then
+		-- The bud bursts open and a tulip floats up off it.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.budLit, true)
+		local flower = Instance.new("TextLabel")
+		flower.Name = "Bloom"
+		flower.AnchorPoint = Vector2.new(0.5, 0.5)
+		flower.BackgroundTransparency = 1
+		flower.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		flower.Position = self:_centerOf(effect.x, effect.y)
+		flower.Text = TileStyle.GoalGlyphs.Blooms
+		flower.TextScaled = true
+		flower.Parent = self.fxLayer
+		tween(flower, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			flower:Destroy()
+		end)
+		return FX_TIME
+	elseif effect.type == "Wilt" then
+		-- The bud closes up again: it droops and loses its charge.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = -15
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Bounce)
+		end
 		return FX_TIME
 	elseif effect.type == "Honey" then
 		-- The hive wobbles and a jar of honey floats up off it.

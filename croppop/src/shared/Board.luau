@@ -63,6 +63,7 @@ export type Cell = {
 	bucket: boolean?, -- the "bale" is a mud bucket: one hit tips it, spilling mud around it
 	truck: boolean?, -- the "bale" is a hay truck: each hit drops one of its bales nearby
 	snail: boolean?, -- the "bale" is a garden snail: matches shove it along, and it leaves goo
+	bud: number?, -- the "bale" is a tulip bud: charges so far (it blooms at 3, and closes if a swap misses it)
 	hive: boolean?, -- the "bale" is a beehive: it never breaks, and each hit sends a honey jar to the goal
 	stack: boolean?, -- the "bale" is a stack of produce boxes: each hit takes one, and the rest hop
 	mud: number, -- mud layers under the tile (0 = none)
@@ -244,6 +245,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "O" then
 					cell.bale = 1
 					cell.snail = true
+				elseif ch == "T" then
+					cell.bale = 1
+					cell.bud = 0
 				elseif ch == "j" then
 					cell.bale = 1
 					cell.hive = true
@@ -784,6 +788,8 @@ function Board.hash(self): string
 				table.insert(row, "J" .. clover)
 			elseif cell.truck then
 				table.insert(row, "N" .. cell.bale .. clover)
+			elseif cell.bud then
+				table.insert(row, "E" .. cell.bud .. clover)
 			elseif cell.snail then
 				table.insert(row, "O" .. cell.mud .. (if cell.goo then (if cell.thickGoo then "gg" else "g") else "") .. clover)
 			elseif cell.mailbox then
@@ -858,6 +864,7 @@ function Board.snapshot(self)
 			hive = cell.hive,
 			truck = cell.truck,
 			snail = cell.snail,
+			bud = cell.bud,
 			-- What's inside shows only once it's open.
 			mailbox = cell.mailbox and { open = cell.mailbox.open, mail = cell.mailbox.open and cell.mailbox.mail },
 			quilt = cell.quilt ~= nil,
