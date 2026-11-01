@@ -119,7 +119,8 @@ function Layout.exists(data: { [string]: any }, kind: string, id: string): boole
 		return id == "Harbor" and data.level >= Isles.unlockLevel
 	elseif kind == "pond" then
 		-- The overgrown pond is on the farm from its level, dug out or not
-		return id == "DuckPond" and data.level >= DuckPondConfig.unlockLevel
+		local pond = DuckPondConfig.ponds[id]
+		return pond ~= nil and data.level >= pond.unlockLevel
 	elseif kind == "otters" then
 		-- The empty otter pool is on the farm from its level, built or not
 		return id == "OtterPond" and data.level >= OtterPondConfig.unlockLevel

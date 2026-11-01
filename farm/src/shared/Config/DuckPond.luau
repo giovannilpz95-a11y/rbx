@@ -41,6 +41,29 @@ local feathers: { [string]: FeatherDef } = {
 	ColorfulFeather = { id = "ColorfulFeather", displayName = "Colorful Feather", sellPrice = 31, xp = 13 },
 }
 
+export type PondDef = {
+	id: string,
+	displayName: string,
+	unlockLevel: number,
+	digCoins: number,
+	digSeconds: number,
+	digXp: number,
+	save: string, -- the save block that holds this pond
+	order: number,
+}
+
+-- Township gives a second Duck Feeder at level 73 (140,000 Coins, 3 days 5 h, 5,780 XP; the
+-- wiki's Buildings table). It works exactly like the first, with its own visits.
+-- stylua: ignore
+local ponds: { [string]: PondDef } = {
+	DuckPond = { id = "DuckPond", displayName = "Duck Pond", unlockLevel = 48, digCoins = 14500, digSeconds = 45 * HOUR, digXp = 603, save = "duckPond", order = 1 },
+	DuckPond2 = { id = "DuckPond2", displayName = "Willow Pond", unlockLevel = 73, digCoins = 140000, digSeconds = 77 * HOUR, digXp = 5780, save = "duckPond2", order = 2 },
+}
+
+for _, pond in ponds do
+	table.freeze(pond)
+end
+
 for _, food in foods do
 	table.freeze(food.ducks)
 	table.freeze(food.drakes)
@@ -55,6 +78,7 @@ return table.freeze({
 	digCoins = 14500,
 	digSeconds = 45 * HOUR,
 	digXp = 603,
+	ponds = table.freeze(ponds),
 	foods = table.freeze(foods),
 	feathers = table.freeze(feathers),
 	down = "DownFeather", -- one per duck

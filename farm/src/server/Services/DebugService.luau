@@ -303,11 +303,16 @@ function DebugService.pond(player: Player): (boolean, string?)
 	if data.level < DuckPondConfig.unlockLevel then
 		return false, string.format("Reach level %d first (+1 level)", DuckPondConfig.unlockLevel)
 	end
-	if data.duckPond.readyAt == nil then
-		DuckPond.dig(data, now, Random.new():NextInteger(1, 2147483646))
+	-- Every pond the level allows (the Willow Pond from 73)
+	for id, def in DuckPondConfig.ponds do
+		if data.level >= def.unlockLevel then
+			if DuckPond.record(data, id).readyAt == nil then
+				DuckPond.dig(data, now, Random.new():NextInteger(1, 2147483646), nil, id)
+			end
+			DuckPond.finishDig(data, now, id)
+			DuckPond.skip(data, now, id)
+		end
 	end
-	DuckPond.finishDig(data, now)
-	DuckPond.skip(data, now)
 	for _, food in DuckPondConfig.foods do
 		data.inventory.items[food.item] = (data.inventory.items[food.item] or 0) + 1
 	end

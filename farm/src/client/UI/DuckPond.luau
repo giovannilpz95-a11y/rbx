@@ -42,20 +42,23 @@ local function range(r: { number }): string
 	return if r[1] == r[2] then tostring(r[1]) else string.format("%d-%d", r[1], r[2])
 end
 
-local function render(state: { [string]: any }, body: ScrollingFrame, title: TextLabel)
-	title.Text = "Duck Pond"
-	local pond = state.duckPond
+local function render(state: { [string]: any }, body: ScrollingFrame, title: TextLabel, arg: string?)
+	local id = if arg and Config.ponds[arg] then arg else "DuckPond"
+	local def = Config.ponds[id]
+	title.Text = def.displayName
+	local pond = state[def.save]
 	if pond == nil then
 		return
 	end
 	local now = ClientStore.now()
 	if pond.readyAt == nil then
-		if state.level < Config.unlockLevel then
-			line(string.format("The Duck Pond can be dug out at level %d.", Config.unlockLevel), 1, body)
+		if state.level < def.unlockLevel then
+			line(string.format("The %s can be dug out at level %d.", def.displayName, def.unlockLevel), 1, body)
 			return
 		end
 		line(
-			"Dig out the old pond and ducks will visit when there's food in the feeder. Every duck leaves "
+			(if id == "DuckPond" then "" else "A second pond means two flocks at once. ")
+				.. "Dig out the old pond and ducks will visit when there's food in the feeder. Every duck leaves "
 				.. "a Down Feather, and every drake (the green heads) a Colorful Feather too.",
 			1,
 			body,
@@ -64,21 +67,21 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		line(
 			string.format(
 				"Dig it out for %d Coins. Takes %s.  +%d XP",
-				Config.digCoins,
-				Timer.format(Config.digSeconds),
-				Config.digXp
+				def.digCoins,
+				Timer.format(def.digSeconds),
+				def.digXp
 			),
 			2,
 			body
 		)
 		local button = fullButton("Dig it out", 3, body, function()
-			Remotes.fire("Pond_Dig")
+			Remotes.fire("Pond_Dig", id)
 		end)
-		Ui.setEnabled(button, state.currencies.Coins >= Config.digCoins)
+		Ui.setEnabled(button, state.currencies.Coins >= def.digCoins)
 		-- The Place bar, the same one a new building offers (Main's Place handler closes this
 		-- panel and picks the building up)
 		Ui.button("Choose its spot", function()
-			Hud.popup({ kind = "Place", key = "pond:DuckPond" })
+			Hud.popup({ kind = "Place", key = "pond:" .. id })
 		end, { Size = UDim2.new(1, -8, 0, 36), LayoutOrder = 4, Parent = body })
 		line("Or press Move (M) any time to walk it somewhere else.", 5, body, 22, Ui.colors.muted)
 		return
@@ -87,7 +90,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		local left = pond.readyAt - now
 		line("Digging: " .. Timer.format(left) .. " left.", 1, body)
 		Panels.gemButton("PondSpeedUp", "Finish now", Speedup.building(left), function()
-			Remotes.fire("Pond_SpeedUp")
+			Remotes.fire("Pond_SpeedUp", id)
 		end, { Size = UDim2.new(1, -8, 0, 40), LayoutOrder = 2, Parent = body })
 		return
 	end
@@ -103,7 +106,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 		if now >= visit.readyAt then
 			line("The ducks have gone and left " .. table.concat(parts, " and ") .. ".", 1, body, 38)
 			fullButton("Collect the feathers", 2, body, function()
-				Remotes.fire("Pond_Collect")
+				Remotes.fire("Pond_Collect", id)
 			end)
 		else
 			local left = visit.readyAt - now
@@ -122,7 +125,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 				38
 			)
 			Panels.gemButton("PondSkip", "Collect now", Speedup.production(left), function()
-				Remotes.fire("Pond_Skip")
+				Remotes.fire("Pond_Skip", id)
 			end, { Size = UDim2.new(1, -8, 0, 40), LayoutOrder = 2, Parent = body })
 		end
 		return
@@ -160,7 +163,7 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			if have > 0 then Ui.colors.text else Ui.colors.muted
 		)
 		local button = fullButton("Feed " .. name(food.item), order + 1, body, function()
-			Remotes.fire("Pond_Feed", entry.id)
+			Remotes.fire("Pond_Feed", entry.id, id)
 		end)
 		Ui.setEnabled(button, have > 0)
 		order += 2

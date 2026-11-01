@@ -184,6 +184,10 @@ function Profile.template(): { [string]: any }
 			seed = 0,
 			visits = 0,
 		},
+		duckPond2 = { -- the second Duck Pond, the Willow Pond (level 73; Config/DuckPond ponds)
+			seed = 0,
+			visits = 0,
+		},
 		otterPond = { -- the Otter Pond (shared/OtterPond); readyAt is set when building starts
 			seed = 0,
 			otters = 1,

@@ -7,6 +7,7 @@ local Balance = require("./Config/Balance")
 local Crops = require("./Config/Crops")
 local Daily = require("./Config/Daily")
 local Decor = require("./Config/Decor")
+local DuckPondConfig = require("./Config/DuckPond")
 local Factories = require("./Config/Factories")
 local Isles = require("./Config/Isles")
 local Recipes = require("./Config/Recipes")
@@ -75,6 +76,11 @@ function Unlocks.at(level: number): { Unlock }
 	end
 	if level == Isles.unlockLevel then
 		table.insert(out, { kind = "Feature", id = "Harbor", name = "Harbor" })
+	end
+	for id, pond in DuckPondConfig.ponds do
+		if pond.unlockLevel == level then
+			table.insert(out, { kind = "Feature", id = id, name = pond.displayName })
+		end
 	end
 	if level == TonicsConfig.unlockLevel then
 		table.insert(out, { kind = "Feature", id = "TonicShed", name = "Tonic Shed" })
