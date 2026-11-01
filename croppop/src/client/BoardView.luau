@@ -250,6 +250,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.goo.Visible = cell.goo == true
 	guis.goo.BackgroundColor3 = if cell.thickGoo then TileStyle.Board.thickGoo else TileStyle.Board.goo
 	guis.buried.Visible = cell.buried == true
+	guis.rainbow.Visible = cell.rainbow == true
 	guis.statueMark.Visible = cell.buried == true
 	styleBale(guis.bale, cell.bale, cell.weed, cell.stone, cell.crate, cell.tarp ~= nil and cell.tarp ~= false)
 	styleFrost(guis, cell.frost or 0)
@@ -334,6 +335,19 @@ function BoardView.load(self, game)
 		local gooCorner = Instance.new("UICorner")
 		gooCorner.CornerRadius = UDim.new(0.35, 0)
 		gooCorner.Parent = goo
+
+		-- A rainbow patch: rainbow stripes round the tile (it changes colour every swap).
+		local rainbow = Instance.new("Frame")
+		rainbow.Name = "Rainbow"
+		rainbow.Size = UDim2.fromScale(1, 1)
+		rainbow.BorderSizePixel = 0
+		rainbow.BackgroundColor3 = Color3.new(1, 1, 1)
+		rainbow.BackgroundTransparency = 0.15
+		rainbow.Parent = bg
+		local stripes = Instance.new("UIGradient")
+		stripes.Color = ColorSequence.new(TileStyle.RainbowColors[1], TileStyle.RainbowColors[#TileStyle.RainbowColors])
+		stripes.Rotation = 45
+		stripes.Parent = rainbow
 
 		-- A buried statue: sandy soil over the cell, under the tile, and a
 		-- small statue on the cell's corner over the tile (in the bale layer,
@@ -420,7 +434,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clover = clover, goo = goo, rainbow = rainbow, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -816,6 +830,20 @@ function BoardView._shuffle(self, phase)
 	task.wait(SHUFFLE_TIME)
 end
 
+-- Rainbow patches: tiles turn to their new colour with a little spin.
+function BoardView._recolor(self, phase)
+	for _, c in phase.changes do
+		local tile = self.tiles[c.id]
+		if tile then
+			styleTile(tile, { color = c.color })
+			local face = tile:FindFirstChild("Face") :: TextLabel
+			face.Rotation = -90
+			tween(face, POP_TIME, { Rotation = 0 }, Enum.EasingStyle.Back)
+		end
+	end
+	task.wait(POP_TIME)
+end
+
 -- Plays the phases from Engine:trySwap in order. Yields.
 function BoardView.play(self, phases)
 	local pops = 0 -- cascades pop higher (Sfx)
@@ -832,6 +860,8 @@ function BoardView.play(self, phases)
 			self:_drop(phase)
 		elseif phase.kind == "Shuffle" then
 			self:_shuffle(phase)
+		elseif phase.kind == "Recolor" then
+			self:_recolor(phase)
 		end
 	end
 end

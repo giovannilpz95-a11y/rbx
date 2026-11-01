@@ -57,6 +57,7 @@ export type Cell = {
 	clover: boolean, -- clover grows here (it spreads from matches and blasts that start on it)
 	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
 	thickGoo: boolean?, -- the goo is thick: the first clear leaves plain goo
+	rainbow: boolean?, -- a rainbow patch: the plain tile here changes colour after every swap
 	buried: boolean?, -- part of a buried statue lies under this cell (only blasts dig it up)
 	statue: any?, -- the statue this cell is (or was) part of: { cells, left }
 	portalOut: Cell?, -- a portal entrance: pieces falling out of here land in this cell
@@ -182,6 +183,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.clover = true
 				elseif ch == "g" then
 					cell.goo = true
+				elseif ch == "r" then
+					cell.rainbow = true
+					self.hasRainbow = true
 				elseif ch == "e" then
 					cell.goo = true
 					cell.thickGoo = true
@@ -664,6 +668,9 @@ function Board.hash(self): string
 			if cell and cell.buried then
 				clover ..= "^"
 			end
+			if cell and cell.rainbow then
+				clover ..= "~"
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -730,6 +737,7 @@ function Board.snapshot(self)
 			clover = cell.clover,
 			goo = cell.goo,
 			thickGoo = cell.thickGoo,
+			rainbow = cell.rainbow,
 			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin },
 		})

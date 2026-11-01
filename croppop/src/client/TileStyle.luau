@@ -49,6 +49,16 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
+TileStyle.RainbowGlyph = "🌈" -- a rainbow patch (its tile changes colour every swap)
+-- The rainbow patch's stripes, left to right.
+TileStyle.RainbowColors = {
+	Color3.fromRGB(235, 90, 90),
+	Color3.fromRGB(245, 180, 70),
+	Color3.fromRGB(240, 230, 90),
+	Color3.fromRGB(110, 200, 110),
+	Color3.fromRGB(90, 150, 230),
+	Color3.fromRGB(170, 110, 220),
+}
 TileStyle.PortalColors = {
 	Color3.fromRGB(150, 110, 220),
 	Color3.fromRGB(70, 170, 200),
