@@ -1685,6 +1685,111 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.block("Bag", Vector3.new(0.9, 1.1, 0.5), at(0, 0.55, 0), Palette.leafLight:Lerp(Palette.cream, 0.4), QUIET)
 		b.ball("CatFace", 0.4, at(0, 0.65, -0.27), Palette.carrot, QUIET)
 	end,
+	Pinata = function(b)
+		-- A striped paper donkey
+		b.block("Body", Vector3.new(1.1, 0.6, 0.5), at(0, 0.7, 0), Palette.flowerPink, QUIET)
+		b.block("Stripe", Vector3.new(0.2, 0.62, 0.52), at(0, 0.7, 0), Palette.flowerYellow, QUIET)
+		b.block("Neck", Vector3.new(0.35, 0.6, 0.4), at(0.45, 1.1, 0), Palette.sky, QUIET)
+		for _, x in { -0.4, 0.4 } do
+			b.block("Leg", Vector3.new(0.18, 0.4, 0.18), at(x, 0.2, 0), Palette.lime, QUIET)
+		end
+	end,
+	Falafel = function(b)
+		-- Three crispy falafel balls on a leaf
+		b.block("Leaf", Vector3.new(1.4, 0.06, 0.9), at(0, 0.03, 0), Palette.leafLight, QUIET)
+		for _, p in { { -0.3, -0.1 }, { 0.3, -0.1 }, { 0, 0.25 } } do
+			b.ball("Falafel", 0.5, at(p[1], 0.28, p[2]), Palette.wood:Lerp(Palette.leaf, 0.2), QUIET)
+		end
+	end,
+	WaterBowl = function(b)
+		-- A clay pet bowl full of water
+		b.cyl("Bowl", 0.4, 1.2, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.brick, QUIET)
+		b.cyl("Water", 0.05, 1, at(0, 0.41, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.water, QUIET)
+	end,
+	ChocolateCustard = function(b)
+		-- A glass cup of chocolate custard with cream on top
+		b.post("Cup", 0.8, 0.7, at(0, 0.4, 0), Palette.cocoa:Lerp(Palette.glass, 0.3), QUIET)
+		b.ball("Cream", 0.5, at(0, 0.9, 0), Palette.cream, QUIET)
+	end,
+	MisoSoup = function(b)
+		-- A dark bowl of miso soup with tofu cubes and seaweed
+		b.cyl("Bowl", 0.5, 1.3, at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark, QUIET)
+		b.cyl("Soup", 0.05, 1.1, at(0, 0.51, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.wheat, QUIET)
+		b.block("Tofu", Vector3.new(0.2, 0.15, 0.2), at(-0.2, 0.56, 0), Palette.cream, QUIET)
+		b.block("Seaweed", Vector3.new(0.35, 0.08, 0.15), at(0.2, 0.55, 0.1), Palette.leaf, QUIET)
+	end,
+	GardenHose = function(b)
+		-- A coiled green hose with a nozzle
+		b.cyl("Coil", 0.4, 1.3, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.leafLight, QUIET)
+		b.cyl("Hole", 0.42, 0.6, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.leaf, QUIET)
+		b.block("Nozzle", Vector3.new(0.5, 0.2, 0.2), at(0.85, 0.15, 0), Palette.flowerYellow, QUIET)
+	end,
+	PetBed = function(b)
+		-- A round cushioned pet bed
+		b.cyl(
+			"Rim",
+			0.5,
+			1.6,
+			at(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.plum:Lerp(Palette.cream, 0.4),
+			QUIET
+		)
+		b.cyl("Cushion", 0.3, 1.2, at(0, 0.35, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.cream, QUIET)
+	end,
+	VeganCheesecake = function(b)
+		-- A slice of pale cheesecake topped with grapes and lime
+		b.wedge("Slice", Vector3.new(0.8, 0.6, 1.2), at(0, 0.3, 0), Palette.cream, QUIET)
+		b.block("Base", Vector3.new(0.8, 0.15, 1.2), at(0, 0.07, 0), Palette.wood, QUIET)
+		b.ball("Grape", 0.25, at(-0.15, 0.7, 0.35), Palette.plum, QUIET)
+		b.ball("Lime", 0.25, at(0.15, 0.7, 0.35), Palette.lime, QUIET)
+	end,
+	Backpack = function(b)
+		-- A blue canvas backpack with a front pocket
+		b.block("Pack", Vector3.new(0.9, 1.1, 0.5), at(0, 0.55, 0), Palette.sky, QUIET)
+		b.block("Pocket", Vector3.new(0.6, 0.45, 0.2), at(0, 0.4, -0.32), Palette.roofTeal, QUIET)
+		b.block("Strap", Vector3.new(0.6, 0.15, 0.3), at(0, 1.15, 0), Palette.stoneDark, QUIET)
+	end,
+	WovenBag = function(b)
+		-- A woven straw tote with two handles
+		b.block("Bag", Vector3.new(1, 0.8, 0.5), at(0, 0.4, 0), Palette.straw, QUIET)
+		for _, x in { -0.25, 0.25 } do
+			b.block("Handle", Vector3.new(0.1, 0.5, 0.1), at(x, 1, 0), Palette.wheat, QUIET)
+		end
+	end,
+	SoybeanHummus = function(b)
+		-- A bowl of hummus with carrot sticks and a lime wedge
+		b.cyl("Bowl", 0.4, 1.2, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.flowerWhite, QUIET)
+		b.ball("Hummus", 0.9, at(0, 0.45, 0), Palette.straw:Lerp(Palette.cream, 0.5), QUIET)
+		b.block("Carrot", Vector3.new(0.12, 0.6, 0.12), tilt(0.25, 0.8, 0, 0, 0, -20), Palette.carrot, QUIET)
+		b.ball("Lime", 0.3, at(-0.45, 0.25, 0.4), Palette.lime, QUIET)
+	end,
+	Guacamole = function(b)
+		-- A stone bowl of green guacamole with a lime wedge and chips
+		b.cyl("Bowl", 0.4, 1.2, at(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneDark, QUIET)
+		b.ball("Guac", 0.9, at(0, 0.45, 0), Palette.lime:Lerp(Palette.leaf, 0.3), QUIET)
+		b.wedge("Chip", Vector3.new(0.1, 0.4, 0.4), at(0.55, 0.3, 0.2), Palette.corn, QUIET)
+		b.ball("Lime", 0.3, at(-0.45, 0.25, 0.35), Palette.lime, QUIET)
+	end,
+	SmallHandbag = function(b)
+		-- A little silk handbag with a pearl clasp
+		b.block("Bag", Vector3.new(0.9, 0.6, 0.35), at(0, 0.3, 0), Palette.plum, QUIET)
+		b.block("Handle", Vector3.new(0.5, 0.1, 0.1), at(0, 0.85, 0), Palette.coins, QUIET)
+		b.ball("Pearl", 0.2, at(0, 0.5, -0.2), Palette.flowerWhite, QUIET)
+	end,
+	Suitcase = function(b)
+		-- A hard-shell suitcase standing on its wheels
+		b.block("Case", Vector3.new(0.9, 1.2, 0.45), at(0, 0.7, 0), Palette.roofTeal, QUIET)
+		b.block("Handle", Vector3.new(0.4, 0.1, 0.1), at(0, 1.35, 0), Palette.stoneDark, QUIET)
+		for _, x in { -0.3, 0.3 } do
+			b.ball("Wheel", 0.15, at(x, 0.07, 0), Palette.stoneDark, QUIET)
+		end
+	end,
+	KidsBag = function(b)
+		-- A small bright school bag with a feather tassel
+		b.block("Bag", Vector3.new(0.8, 0.9, 0.4), at(0, 0.45, 0), Palette.flowerYellow, QUIET)
+		b.block("Flap", Vector3.new(0.82, 0.4, 0.42), at(0, 0.75, 0), Palette.roofRed, QUIET)
+		b.block("Feather", Vector3.new(0.1, 0.5, 0.25), tilt(0.45, 0.5, -0.1, 0, 0, -20), Palette.sky, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

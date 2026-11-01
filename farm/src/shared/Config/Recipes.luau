@@ -302,6 +302,26 @@ local Recipes: { [string]: RecipeDef } = {
 	Lasagna = { id = "Lasagna", displayName = "Lasagna", factory = "Trattoria", unlockLevel = 102, inputs = { Wheat = 4, Mushroom = 2, Cheese = 1, Bacon = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 260, xp = 111 },
 	Planter = { id = "Planter", displayName = "Planter", factory = "GardenCenter", unlockLevel = 102, inputs = { PineTrees = 3 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 55, xp = 24 },
 	CatLitter = { id = "CatLitter", displayName = "Cat Litter", factory = "PetShop", unlockLevel = 102, inputs = { Soybeans = 3, Paper = 1 }, outputQty = 1, seconds = 1 * HOUR + 20 * MIN, sellPrice = 79, xp = 34 },
+	-- Level 103-104 goods
+	Pinata = { id = "Pinata", displayName = "Piñata", factory = "PartyShop", unlockLevel = 103, inputs = { Glue = 1, Paper = 2, JellyBeans = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 291, xp = 125 },
+	Falafel = { id = "Falafel", displayName = "Falafel", factory = "GreenCafe", unlockLevel = 103, inputs = { Soybeans = 4, Peppers = 1, Potatoes = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 109, xp = 51 },
+	WaterBowl = { id = "WaterBowl", displayName = "Water Bowl", factory = "PetShop", unlockLevel = 103, inputs = { Clay = 2, PineTrees = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 135, xp = 58 },
+	ChocolateCustard = { id = "ChocolateCustard", displayName = "Chocolate Custard", factory = "TeaHouse", unlockLevel = 104, inputs = { Tea = 2, Chocolate = 1, Eggs = 2 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 333, xp = 141 },
+	MisoSoup = { id = "MisoSoup", displayName = "Miso Soup", factory = "GreenCafe", unlockLevel = 104, inputs = { Soybeans = 4, Seaweed = 2, Tofu = 1, Mushroom = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 425, xp = 182 },
+	-- Level 105-106 goods
+	GardenHose = { id = "GardenHose", displayName = "Garden Hose", factory = "GardenCenter", unlockLevel = 105, inputs = { Plastic = 1, Rubber = 1, CottonFabric = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 185, xp = 79 },
+	PetBed = { id = "PetBed", displayName = "Pet Bed", factory = "PetShop", unlockLevel = 106, inputs = { DownFeather = 2, CottonFabric = 3 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 180, xp = 77 },
+	VeganCheesecake = { id = "VeganCheesecake", displayName = "Vegan Cheesecake", factory = "GreenCafe", unlockLevel = 106, inputs = { PlantMilk = 2, Wheat = 2, Grapes = 1, KeyLimes = 1 }, outputQty = 1, seconds = 4 * HOUR, sellPrice = 370, xp = 159 },
+	-- Level 107-108 goods
+	Backpack = { id = "Backpack", displayName = "Backpack", factory = "BagMaker", unlockLevel = 107, inputs = { CottonFabric = 3, Glue = 1, Rubber = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 328, xp = 141 },
+	WovenBag = { id = "WovenBag", displayName = "Woven Bag", factory = "BagMaker", unlockLevel = 108, inputs = { Wheat = 3, Sugarcane = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 21, xp = 9 },
+	SoybeanHummus = { id = "SoybeanHummus", displayName = "Soybean Hummus", factory = "GreenCafe", unlockLevel = 108, inputs = { Soybeans = 4, ChiliSauce = 1, KeyLimes = 1, Carrots = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 406, xp = 174 },
+	-- Level 109-112 goods
+	Guacamole = { id = "Guacamole", displayName = "Guacamole", factory = "GreenCafe", unlockLevel = 109, inputs = { Avocados = 3, Tomatoes = 1, KeyLimes = 1 }, outputQty = 1, seconds = 3 * HOUR + 20 * MIN, sellPrice = 444, xp = 190 },
+	SmallHandbag = { id = "SmallHandbag", displayName = "Small Handbag", factory = "BagMaker", unlockLevel = 110, inputs = { SilkFabric = 2, Pearls = 1, Sugarcane = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 477, xp = 204 },
+	Suitcase = { id = "Suitcase", displayName = "Suitcase", factory = "BagMaker", unlockLevel = 112, inputs = { Plastic = 3, Rubber = 2 }, outputQty = 1, seconds = 5 * HOUR, sellPrice = 416, xp = 178 },
+	-- Level 113-116 goods
+	KidsBag = { id = "KidsBag", displayName = "Kid's Bag", factory = "BagMaker", unlockLevel = 114, inputs = { CottonFabric = 1, ColorfulFeather = 2, DownFeather = 3 }, outputQty = 1, seconds = 1 * HOUR + 15 * MIN, sellPrice = 167, xp = 72 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

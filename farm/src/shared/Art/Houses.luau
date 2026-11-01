@@ -953,6 +953,121 @@ TYPES.PoolsideTower = {
 	end,
 }
 
+-- Green Roof Tower (level 112): an eco high-rise wrapped in planted terraces, solar panels on
+-- the roof, a small wind turbine and timber window frames.
+TYPES.GreenRoofTower = {
+	roof = Palette.stoneLight,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.56, s * 0.54, STORY * 3.2
+		local body = walls(b, w, d, h, Palette.cream:Lerp(Palette.stoneLight, 0.4), 0, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		for floor = 1, 3 do
+			local y = PLINTH + STORY * floor * 0.98
+			t.block("Terrace", Vector3.new(w + 0.4, 0.3, 1), Vector3.new(0, y, face - 0.5), Palette.woodLight)
+			t.block("Plants", Vector3.new(w + 0.2, 0.5, 0.6), Vector3.new(0, y + 0.4, face - 0.7), Palette.leaf)
+		end
+		t.block(
+			"Glass",
+			Vector3.new(w * 0.7, h * 0.7, 0.1),
+			Vector3.new(0, PLINTH + h * 0.5, face - 0.05),
+			Palette.glassDeep
+		)
+		t.block("Roof", Vector3.new(w + 0.4, 0.5, d + 0.4), Vector3.new(0, PLINTH + h + 0.25, 0.6), roof)
+		t.block(
+			"Solar",
+			Vector3.new(w * 0.6, 0.2, d * 0.4),
+			CFrame.new(-w * 0.1, PLINTH + h + 0.9, 0.6) * CFrame.Angles(math.rad(20), 0, 0),
+			Palette.stoneDark
+		)
+		t.post("TurbinePole", 2.4, 0.15, Vector3.new(w * 0.35, PLINTH + h + 1.7, 0.4), Palette.flowerWhite)
+		t.block(
+			"Blades",
+			Vector3.new(0.2, 1.8, 0.2),
+			Vector3.new(w * 0.35, PLINTH + h + 2.9, 0.25),
+			Palette.flowerWhite
+		)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, face), 1.6, 3, Palette.wood, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(-w / 3, PLINTH + h + 1.4, d / 3), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Wavy House (level 116): a playful tower whose two halves lean into each other, with a glass
+-- half pinched at the waist, wavy window bands and a little dome on top.
+TYPES.WavyHouse = {
+	roof = Palette.metal,
+	build = function(b, s, roof)
+		local w, d, h = s * 0.3, s * 0.52, STORY * 3.2
+		local body = walls(b, w, d, h, Palette.cream:Lerp(Palette.straw, 0.3), w * 0.5, 0.6)
+		local t = b.into(body, true)
+		local face = 0.6 + front(d)
+		-- The glass half, leaning in
+		t.block(
+			"GlassHalf",
+			Vector3.new(w, h, d * 0.9),
+			CFrame.new(-w * 0.55, PLINTH + h / 2, 0.6) * CFrame.Angles(0, 0, math.rad(-6)),
+			Palette.glass
+		)
+		t.block(
+			"Waist",
+			Vector3.new(w * 0.7, 0.4, d * 0.92),
+			CFrame.new(-w * 0.5, PLINTH + h * 0.5, 0.6),
+			Palette.stoneLight
+		)
+		for floor = 1, 3 do
+			t.block(
+				"Band",
+				Vector3.new(w + 0.1, 0.3, 0.1),
+				CFrame.new(w * 0.5, PLINTH + STORY * floor * 0.95, face - 0.05)
+					* CFrame.Angles(0, 0, math.rad(if floor % 2 == 0 then 6 else -6)),
+				Palette.stoneDark
+			)
+		end
+		t.ball("Dome", w * 0.8, Vector3.new(w * 0.5, PLINTH + h + 0.3, 0.6), roof)
+		Kit.door(t, "Door", CFrame.new(w * 0.5, PLINTH, face), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(w * 0.5, PLINTH + h + 1.8, -d / 4), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
+-- Spiral Tower (level 122): a round white tower with balconies stepping around it in a spiral,
+-- each one planted, and a glass crown.
+TYPES.SpiralTower = {
+	roof = Palette.glass,
+	build = function(b, s, roof)
+		local r, h = s * 0.26, STORY * 3.4
+		local body = b.cyl(
+			"Walls",
+			s * 0.52,
+			h,
+			CFrame.new(0, PLINTH + h / 2, 0.6) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.flowerWhite
+		)
+		local t = b.into(body, true)
+		for i = 0, 4 do
+			local a = math.rad(i * 72)
+			local y = PLINTH + 1.4 + i * (h - 2) / 4
+			t.block(
+				"Balcony",
+				Vector3.new(1.6, 0.25, 1.2),
+				CFrame.new(math.cos(a) * (r + 0.4), y, 0.6 + math.sin(a) * (r + 0.4)) * CFrame.Angles(0, -a, 0),
+				Palette.stoneLight
+			)
+			t.block(
+				"Planter",
+				Vector3.new(1.4, 0.4, 0.4),
+				CFrame.new(math.cos(a) * (r + 0.8), y + 0.3, 0.6 + math.sin(a) * (r + 0.8)) * CFrame.Angles(0, -a, 0),
+				Palette.leaf
+			)
+		end
+		t.cyl("Crown", s * 0.4, 1.2, CFrame.new(0, PLINTH + h + 0.6, 0.6) * CFrame.Angles(0, 0, math.rad(90)), roof)
+		Kit.door(t, "Door", CFrame.new(0, PLINTH, 0.6 - r), 1.6, 3, Palette.glass, Palette.metal)
+		Kit.sproutTag(t, Vector3.new(0, PLINTH + h + 2, 0.6), 2.5, Palette.wood, Palette.lime)
+		return body
+	end,
+}
+
 TYPES.CityApartments = {
 	roof = Palette.stoneDark,
 	build = function(b, s, roof)

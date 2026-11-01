@@ -49,7 +49,7 @@ TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
-TileStyle.BucketGlyph = "🪣" -- a mud bucket (Unicode 13)
+TileStyle.BucketGlyph = "🥫" -- a mud bucket: a tin (Unicode 10; Roblox has no 🪣, Unicode 13)
 TileStyle.ScarecrowGlyph = "🎩" -- a scarecrow's hat (no scarecrow emoji); dots show its charges
 -- Mailboxes: shut, open with a letter, open and empty.
 TileStyle.MailGlyphs = { closed = "📪", full = "📬", empty = "📭" }
