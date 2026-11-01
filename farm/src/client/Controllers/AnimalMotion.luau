@@ -35,7 +35,35 @@ local function forget(instance: Instance, drop: () -> ())
 	end)
 end
 
+-- An animal's parts can reach the client after its model does (a merged animal is one union,
+-- Art/Merge place, and unions may replicate a beat late), so re-bind its rig once they land.
+local pending: { [Model]: boolean } = {}
+
+local function rebind(model: Model)
+	pending[model] = nil
+	local e = entries[model]
+	if e == nil then
+		return
+	end
+	if e.moving then
+		ArtMotion.resetAnimal(e.rig)
+		e.moving = false
+	end
+	local rig = ArtMotion.bindAnimal(model, e.rig.phase)
+	if rig then
+		e.rig = rig
+		e.wool = 1
+	end
+end
+
 local function track(d: Instance)
+	if d:IsA("BasePart") then
+		local parent = d.Parent
+		if parent and parent:IsA("Model") and entries[parent] and not pending[parent] then
+			pending[parent] = true
+			task.defer(rebind, parent)
+		end
+	end
 	if d:IsA("BasePart") and d.Name == "Gate" and d:GetAttribute("HingeCFrame") ~= nil then
 		if gates[d] == nil then
 			gates[d] = { part = d, open = 0 }
@@ -57,6 +85,7 @@ local function track(d: Instance)
 	entries[model] = { rig = rig, model = model, moving = false, mood = nil, wool = 1 }
 	forget(model, function()
 		entries[model] = nil
+		pending[model] = nil
 	end)
 end
 
@@ -159,7 +188,15 @@ local function step(dt: number)
 		stepWool(e, mood)
 		e.mood = mood
 		local first = e.rig.parts[1]
-		local shown = first ~= nil and first.Transparency < 0.9
+		if first == nil or first.Parent == nil then
+			-- bound before its parts arrived, or its parts were swapped: look again
+			if not pending[model] then
+				pending[model] = true
+				task.defer(rebind, model)
+			end
+			continue
+		end
+		local shown = first.Transparency < 0.9
 		local near = (e.rig.feet.Position - eye).Magnitude < NEAR
 		if shown and near then
 			e.moving = true
