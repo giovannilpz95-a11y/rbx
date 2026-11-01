@@ -109,8 +109,8 @@ function ArtOtterPond.build(parent: Instance, cf: CFrame): Parts
 		roof:SetAttribute("Hut", i)
 		local catch = b.block(
 			"Catch" .. i,
-			Vector3.new(0.9, 0.5, 0.9),
-			hut + Vector3.new(1.7, 0.45, -1.2),
+			Vector3.new(1.6, 0.9, 1.6), -- a generous tap target: the shells on their rock
+			hut + Vector3.new(1.6, 0.6, -1.4),
 			Palette.treeTopDark,
 			{ shadow = false, query = true }
 		)

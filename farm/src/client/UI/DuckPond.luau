@@ -12,6 +12,7 @@ local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
+local Hud = require(script.Parent.Hud)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
 
@@ -74,7 +75,12 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			Remotes.fire("Pond_Dig")
 		end)
 		Ui.setEnabled(button, state.currencies.Coins >= Config.digCoins)
-		line("Tip: Move (M) lets you walk the pond to another spot on your land.", 4, body, 38, Ui.colors.muted)
+		-- The Place bar, the same one a new building offers (Main's Place handler closes this
+		-- panel and picks the building up)
+		Ui.button("Choose its spot", function()
+			Hud.popup({ kind = "Place", key = "pond:DuckPond" })
+		end, { Size = UDim2.new(1, -8, 0, 36), LayoutOrder = 4, Parent = body })
+		line("Or press Move (M) any time to walk it somewhere else.", 5, body, 22, Ui.colors.muted)
 		return
 	end
 	if now < pond.readyAt then

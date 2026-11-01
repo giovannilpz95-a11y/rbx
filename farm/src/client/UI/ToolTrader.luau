@@ -12,6 +12,7 @@ local ToolTrader = require(Shared.ToolTrader)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local Remotes = require(script.Parent.Parent.Remotes)
+local Hud = require(script.Parent.Hud)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
 
@@ -77,7 +78,12 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			Remotes.fire("Trader_Build")
 		end)
 		Ui.setEnabled(button, state.currencies.Coins >= Config.buildCoins)
-		line("Tip: Move (M) lets you walk it to another spot on your land.", 4, body, 38, Ui.colors.muted)
+		-- The Place bar, the same one a new building offers (Main's Place handler closes this
+		-- panel and picks the building up)
+		Ui.button("Choose its spot", function()
+			Hud.popup({ kind = "Place", key = "trader:ToolTrader" })
+		end, { Size = UDim2.new(1, -8, 0, 36), LayoutOrder = 4, Parent = body })
+		line("Or press Move (M) any time to walk it somewhere else.", 5, body, 22, Ui.colors.muted)
 		return
 	end
 	if now < trader.readyAt then
