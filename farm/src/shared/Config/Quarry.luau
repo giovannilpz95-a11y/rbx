@@ -26,6 +26,8 @@ local ores: { [string]: OreDef } = {
 	SilverOre = { id = "SilverOre", displayName = "Silver Ore", fromDepth = 25, chance = 0.06, sellPrice = 12, xp = 4, order = 2 },
 	GoldOre = { id = "GoldOre", displayName = "Gold Ore", fromDepth = 75, chance = 0.04, sellPrice = 17, xp = 5, order = 3 },
 	PlatinumOre = { id = "PlatinumOre", displayName = "Platinum Ore", fromDepth = 150, chance = 0.025, sellPrice = 25, xp = 6, order = 4 },
+	-- Township keeps Clay with the ore at its mine; depth, chance, price and XP are first-pass
+	Clay = { id = "Clay", displayName = "Clay", fromDepth = 10, chance = 0.05, sellPrice = 10, xp = 3, order = 5 },
 }
 for _, ore in ores do
 	table.freeze(ore)

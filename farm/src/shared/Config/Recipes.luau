@@ -14,7 +14,7 @@ export type RecipeDef = {
 	sellPrice: number, -- per unit
 	xp: number, -- XP per unit collected
 	isFeed: boolean?, -- animal feed never shows up on order cards
-	fromOreShed: boolean?, -- its inputs are Quarry ore, taken from the Ore Shed, not the Barn
+	fromOreShed: boolean?, -- every input is Quarry ore (or Clay) from the Ore Shed; mixed recipes take each input from where it lives
 }
 
 local MIN = 60
@@ -171,7 +171,7 @@ local Recipes: { [string]: RecipeDef } = {
 	AirFreshener = { id = "AirFreshener", displayName = "Air Freshener", factory = "Perfumery", unlockLevel = 67, inputs = { Jasmine = 2, Rose = 2 }, outputQty = 1, seconds = 40 * MIN, sellPrice = 157, xp = 67 },
 	GrapeFizz = { id = "GrapeFizz", displayName = "Grape Fizz", factory = "JuiceBar", unlockLevel = 67, inputs = { Grapes = 2, Eggs = 1, Sugar = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 147, xp = 63 },
 	FrozenFruit = { id = "FrozenFruit", displayName = "Frozen Fruit", factory = "PrepKitchen", unlockLevel = 67, inputs = { Mangoes = 1, Peaches = 2, Pineapples = 1 }, outputQty = 1, seconds = 2 * HOUR + 50 * MIN, sellPrice = 395, xp = 169 },
-	-- Level 68-69 goods (Township's Floor Lamp mixes Ore Shed ore with Plastic, so it's skipped)
+	-- Level 68-69 goods
 	ScentedSoap = { id = "ScentedSoap", displayName = "Scented Soap", factory = "Perfumery", unlockLevel = 68, inputs = { Honeycomb = 3, Olives = 2 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 266, xp = 114 },
 	HotDog = { id = "HotDog", displayName = "Hot Dog", factory = "HotDogStand", unlockLevel = 68, inputs = { Bread = 2, Bacon = 1, Tomatoes = 1 }, outputQty = 1, seconds = 25 * MIN, sellPrice = 111, xp = 48 },
 	CornDog = { id = "CornDog", displayName = "Corn Dog", factory = "HotDogStand", unlockLevel = 69, inputs = { Corn = 4, Bacon = 2, Olives = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 268, xp = 115 },
@@ -179,7 +179,7 @@ local Recipes: { [string]: RecipeDef } = {
 	FishAndChips = { id = "FishAndChips", displayName = "Fish and Chips", factory = "Diner", unlockLevel = 69, inputs = { Fish = 2, Potatoes = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 195, xp = 84 },
 	StrawberryCake = { id = "StrawberryCake", displayName = "Strawberry Cake", factory = "CakeShop", unlockLevel = 69, inputs = { Wheat = 3, Strawberries = 2, Sugar = 1, Cream = 1 }, outputQty = 1, seconds = 4 * HOUR + 30 * MIN, sellPrice = 72, xp = 31 },
 	Ratatouille = { id = "Ratatouille", displayName = "Ratatouille", factory = "Bistro", unlockLevel = 69, inputs = { Peppers = 1, Potatoes = 2, Tomatoes = 2 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 102, xp = 44 },
-	-- Level 70-71 goods (Township's Feather Earrings mix Ore Shed ore with Feathers, so they're skipped)
+	-- Level 70-71 goods
 	SeaSalad = { id = "SeaSalad", displayName = "Sea Salad", factory = "SushiBar", unlockLevel = 70, inputs = { Fish = 1, Shrimp = 1, Corn = 2, Cheese = 1 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 236, xp = 101 },
 	RiceCasserole = { id = "RiceCasserole", displayName = "Rice Casserole", factory = "GrillHouse", unlockLevel = 70, inputs = { Rice = 5, Bacon = 2, Eggs = 2, Cheese = 1 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 226, xp = 97 },
 	ChocolateSmoothie = { id = "ChocolateSmoothie", displayName = "Chocolate Smoothie", factory = "JuiceBar", unlockLevel = 70, inputs = { Milk = 2, Chocolate = 1, Bananas = 2 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 298, xp = 128 },
@@ -204,13 +204,20 @@ local Recipes: { [string]: RecipeDef } = {
 	CaramelizedMushrooms = { id = "CaramelizedMushrooms", displayName = "Caramelized Mushrooms", factory = "JamKitchen", unlockLevel = 75, inputs = { Mushroom = 3, Sugar = 2 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 297, xp = 127 },
 	IcedTea = { id = "IcedTea", displayName = "Iced Tea", factory = "JuiceBar", unlockLevel = 75, inputs = { Jasmine = 3, KeyLimes = 1 }, outputQty = 1, seconds = 1 * HOUR + 40 * MIN, sellPrice = 262, xp = 112 },
 	MintCake = { id = "MintCake", displayName = "Mint Cake", factory = "CakeShop", unlockLevel = 75, inputs = { Wheat = 3, Mint = 2, Eggs = 2, Sugar = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 132, xp = 57 },
-	-- Level 76-77 goods (Township's Porcelain Doll needs Clay, which we don't have, so it's skipped)
+	-- Level 76-77 goods
 	Puppet = { id = "Puppet", displayName = "Puppet", factory = "DollMaker", unlockLevel = 76, inputs = { PineTrees = 2, CottonFabric = 1, Yarn = 1 }, outputQty = 1, seconds = 1 * HOUR + 40 * MIN, sellPrice = 161, xp = 69 },
 	LobsterOmelet = { id = "LobsterOmelet", displayName = "Lobster Omelet", factory = "GrillHouse", unlockLevel = 76, inputs = { Lobsters = 1, Eggs = 2, Bread = 1 }, outputQty = 1, seconds = 2 * HOUR + 15 * MIN, sellPrice = 201, xp = 86 },
 	Parka = { id = "Parka", displayName = "Parka", factory = "QuiltShop", unlockLevel = 76, inputs = { DownFeather = 3, SilkFabric = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 225, xp = 96 },
 	SaltedPeanuts = { id = "SaltedPeanuts", displayName = "Salted Peanuts", factory = "SnackFactory", unlockLevel = 76, inputs = { Peanuts = 3 }, outputQty = 1, seconds = 1 * HOUR + 30 * MIN, sellPrice = 199, xp = 85 },
 	CaffeMocha = { id = "CaffeMocha", displayName = "Caffè Mocha", factory = "CoffeeHouse", unlockLevel = 77, inputs = { Coffee = 2, Cocoa = 2, Cream = 1 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 179, xp = 77 },
 	ChocolateCake = { id = "ChocolateCake", displayName = "Chocolate Cake", factory = "CakeShop", unlockLevel = 77, inputs = { Cocoa = 3, Sugar = 1, Butter = 1 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 146, xp = 63 },
+	-- Goods that mix Ore Shed ore or Clay with Barn goods (each input comes from where it lives)
+	Dumbbell = { id = "Dumbbell", displayName = "Dumbbell", factory = "RubberWorks", unlockLevel = 45, inputs = { Rubber = 2, CopperOre = 2 }, outputQty = 1, seconds = 3 * HOUR, sellPrice = 114, xp = 49 },
+	ModelingClay = { id = "ModelingClay", displayName = "Modeling Clay", factory = "MoldingWorks", unlockLevel = 58, inputs = { Clay = 2, RubberTrees = 2 }, outputQty = 1, seconds = 1 * HOUR, sellPrice = 169, xp = 72 },
+	PearlChoker = { id = "PearlChoker", displayName = "Pearl Choker", factory = "Jeweler", unlockLevel = 60, inputs = { SilverOre = 2, Pearls = 3 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 337, xp = 144 },
+	FloorLamp = { id = "FloorLamp", displayName = "Floor Lamp", factory = "FurnitureWorkshop", unlockLevel = 68, inputs = { CopperOre = 5, Plastic = 1 }, outputQty = 1, seconds = 3 * HOUR + 30 * MIN, sellPrice = 230, xp = 99 },
+	FeatherEarrings = { id = "FeatherEarrings", displayName = "Feather Earrings", factory = "Jeweler", unlockLevel = 71, inputs = { SilverOre = 4, ColorfulFeather = 2 }, outputQty = 1, seconds = 1 * HOUR + 45 * MIN, sellPrice = 260, xp = 111 },
+	PorcelainDoll = { id = "PorcelainDoll", displayName = "Porcelain Doll", factory = "DollMaker", unlockLevel = 77, inputs = { Clay = 3, SilkFabric = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 339, xp = 145 },
 	-- Otter Pond goods
 	SeafoodMix = { id = "SeafoodMix", displayName = "Seafood Mix", factory = "PrepKitchen", unlockLevel = 58, inputs = { Shrimp = 1, Scallop = 1, Fish = 1 }, outputQty = 1, seconds = 2 * HOUR + 30 * MIN, sellPrice = 277, xp = 119 },
 	SeaweedShrimpSalad = { id = "SeaweedShrimpSalad", displayName = "Seaweed Shrimp Salad", factory = "SushiBar", unlockLevel = 59, inputs = { Seaweed = 1, Shrimp = 1 }, outputQty = 1, seconds = 2 * HOUR, sellPrice = 179, xp = 77 },

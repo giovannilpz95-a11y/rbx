@@ -9,6 +9,7 @@ local Factories = require(Shared.Config.Factories)
 local Guild = require(Shared.Guild)
 local Net = require(Shared.Net)
 local Quarry = require(Shared.Quarry)
+local QuarryConfig = require(Shared.Config.Quarry)
 local Recipes = require(Shared.Config.Recipes)
 local Speedup = require(Shared.Speedup)
 local Timer = require(Shared.Timer)
@@ -117,14 +118,26 @@ function FactoryService.queue(player: Player, factoryId: any, recipeId: any): (b
 	if #factory.queue >= factory.slots then
 		return false, "The queue is full"
 	end
-	-- Inputs are taken right away, so a queued item can never stall. Bars smelt Quarry ore.
-	if recipe.fromOreShed then
-		if not Quarry.takeOre(data, recipe.inputs) then
-			return false, "Not enough ore in the Ore Shed. Dig for more in the Quarry."
+	-- Inputs are taken right away, so a queued item can never stall. Quarry ore and Clay come
+	-- from the Ore Shed, everything else from the Barn (a recipe can mix the two, as Township's
+	-- do); nothing is taken unless both have enough.
+	local ore, barn = {}, {}
+	for input, qty in recipe.inputs do
+		if QuarryConfig.ores[input] then
+			ore[input] = qty
+		else
+			barn[input] = qty
 		end
-		DataService.markDirty(player)
-	elseif not InventoryService.remove(player, recipe.inputs) then
+	end
+	if next(ore) ~= nil and not Quarry.hasOre(data, ore) then
+		return false, "Not enough ore in the Ore Shed. Dig for more in the Quarry."
+	end
+	if next(barn) ~= nil and not InventoryService.remove(player, barn) then
 		return false, "Not enough ingredients in the Barn"
+	end
+	if next(ore) ~= nil then
+		Quarry.takeOre(data, ore)
+		DataService.markDirty(player)
 	end
 	-- The Tinker's Guild's time upgrades, with Busy Bees Oil or Hot Smelter (tonics) on top
 	local mult = Tonics.factoryMult(data, factoryId, Guild.timeMult(data, factoryId), Clock.now())

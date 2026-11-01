@@ -1074,6 +1074,59 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 		b.post("Icing", 0.15, 1.55, at(0, 0.95, 0), Palette.cocoa:Lerp(Palette.stoneDark, 0.4), QUIET)
 		b.ball("Cherry", 0.35, at(0, 1.2, 0), Palette.roofRed, QUIET)
 	end,
+	Dumbbell = function(b)
+		-- A black hand weight
+		b.cyl("Bar", 1.4, 0.2, at(0, 0.35, 0), Palette.metal, QUIET)
+		b.cyl("Weight", 0.35, 0.8, at(-0.6, 0.4, 0), Palette.tire, QUIET)
+		b.cyl("Weight", 0.35, 0.8, at(0.6, 0.4, 0), Palette.tire, QUIET)
+	end,
+	ModelingClay = function(b)
+		-- Three bright blocks of modeling clay
+		b.block("Red", Vector3.new(0.5, 0.4, 0.9), at(-0.55, 0.2, 0), Palette.roofRed, QUIET)
+		b.block("Blue", Vector3.new(0.5, 0.4, 0.9), at(0, 0.2, 0), Palette.sky, QUIET)
+		b.block("Yellow", Vector3.new(0.5, 0.4, 0.9), at(0.55, 0.2, 0), Palette.flowerYellow, QUIET)
+		b.ball("Ball", 0.45, at(0, 0.6, 0), Palette.lime, QUIET)
+	end,
+	PearlChoker = function(b)
+		-- A ring of pearls on a silver clasp
+		b.cyl("Band", 0.2, 1.4, at(0, 0.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.stoneLight, QUIET)
+		for i = 0, 4 do
+			local a = math.rad(i * 72)
+			b.ball("Pearl", 0.35, at(math.cos(a) * 0.6, 0.28, math.sin(a) * 0.6), Palette.flowerWhite, QUIET)
+		end
+	end,
+	FloorLamp = function(b)
+		-- A tall copper lamp with a cream shade
+		b.cyl(
+			"Base",
+			0.15,
+			0.8,
+			at(0, 0.08, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Palette.carrot:Lerp(Palette.stoneDark, 0.3),
+			QUIET
+		)
+		b.post("Stand", 1.6, 0.15, at(0, 0.9, 0), Palette.carrot:Lerp(Palette.stoneDark, 0.3), QUIET)
+		b.post("Shade", 0.6, 0.9, at(0, 1.9, 0), Palette.cream, QUIET)
+	end,
+	FeatherEarrings = function(b)
+		-- Two silver hooks with bright feathers
+		for _, x in { -0.35, 0.35 } do
+			b.ball("Hook", 0.2, at(x, 1.2, 0), Palette.stoneLight, QUIET)
+			b.block(
+				"Feather",
+				Vector3.new(0.25, 0.8, 0.1),
+				at(x, 0.7, 0),
+				if x < 0 then Palette.leafLight else Palette.sky,
+				QUIET
+			)
+		end
+	end,
+	PorcelainDoll = function(b)
+		-- A white porcelain doll in a pink silk dress
+		b.wedge("Dress", Vector3.new(0.8, 0.9, 0.6), at(0, 0.45, 0), Palette.flowerPink, QUIET)
+		b.ball("Head", 0.5, at(0, 1.15, 0), Palette.flowerWhite, QUIET)
+		b.ball("Hair", 0.55, at(0, 1.3, 0.08), Palette.hairDark, QUIET)
+	end,
 	BulletinBoard = function(b)
 		-- A cork board in a wooden frame with two pinned notes
 		b.block("Frame", Vector3.new(1.6, 1.2, 0.15), at(0, 0.7, 0), Palette.woodDark, QUIET)

@@ -115,8 +115,10 @@ test("every recipe input and factory exists", function()
 		eq(recipe.id, id, "recipe id")
 		ok(Factories[recipe.factory] ~= nil, id .. " factory " .. recipe.factory)
 		for input in recipe.inputs do
-			-- Bars smelt Quarry ore, which lives in the Ore Shed rather than the Barn
-			local exists = if recipe.fromOreShed then QuarryConfig.ores[input] ~= nil else Items[input] ~= nil
+			-- Quarry ore and Clay live in the Ore Shed rather than the Barn; a recipe can mix both
+			local exists = if recipe.fromOreShed
+				then QuarryConfig.ores[input] ~= nil
+				else Items[input] ~= nil or QuarryConfig.ores[input] ~= nil
 			ok(exists, id .. " input " .. input)
 		end
 	end
@@ -886,6 +888,18 @@ test("the Smelters: Township's Foundry numbers, Bars from Ore Shed ore", functio
 	eq(data.oreShed.CopperOre, 2, "2 ore left")
 	ok(Quarry.takeOre(data, { CopperOre = 2 }), "the rest")
 	eq(data.oreShed.CopperOre, nil, "empty ore cleared")
+	-- Clay sits in the Ore Shed with the ore; mixed recipes take it from there and the rest
+	-- from the Barn
+	ok(QuarryConfig.ores.Clay ~= nil and QuarryConfig.ores.Clay.fromDepth > 1, "Clay turns up a little way down")
+	data.oreShed.Clay = 2
+	ok(not Quarry.hasOre(data, { Clay = 3 }), "3 Clay is more than the shed has")
+	ok(Quarry.hasOre(data, { Clay = 2 }) and data.oreShed.Clay == 2, "checking takes nothing")
+	eq(Recipes.PorcelainDoll.inputs.Clay, 3, "Porcelain Doll from Clay and Silk Fabric")
+	ok(
+		Recipes.FloorLamp.fromOreShed == nil and Recipes.FloorLamp.inputs.CopperOre == 5,
+		"Floor Lamp mixes ore and Plastic"
+	)
+	eq(table.find(OrderGen.makeablePool(data), "FloorLamp"), nil, "goods that need ore never show up on orders")
 	eq(table.find(OrderGen.makeablePool(data), "CopperBar"), nil, "Bars never show up on orders")
 end)
 
@@ -971,6 +985,8 @@ test("Airship Freight: Township's airport numbers and crate list", function()
 		Ring = true,
 		Earrings = true,
 		Diadem = true,
+		PearlChoker = true,
+		FeatherEarrings = true,
 	}
 	for id, range in BlimpConfig.crates do
 		local def = Items[id]
