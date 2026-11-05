@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  K  seed packet: blocks like a bale and holds 4 seeds of one tile colour
+	     (the level's colours in turn, in reading order); a match of that
+	     colour next to it, or a blast, takes a seed (the Packets goal)
 	  W  flood water under a tile: only a hand pump drains it (the Floods goal)
 	  H  hand pump: blocks a cell and never breaks; every hit drains the 2
 	     nearest flooded cells, and pumps go once all the water has
@@ -108,7 +111,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -170,6 +173,7 @@ local VALID_CHARS = {
 	R = true,
 	B = true,
 	W = true,
+	K = true,
 	H = true,
 	y = true,
 	m = true,
@@ -320,7 +324,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -401,6 +405,8 @@ function Levels.validate(level): string?
 				floods += 1
 			elseif ch == "H" then
 				pumps += 1
+			elseif ch == "K" then
+				packets += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -463,6 +469,15 @@ function Levels.validate(level): string?
 		end
 		if not wanted then
 			return "hay trucks in the layout but no hay bale goal"
+		end
+	end
+	if packets > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Packets"
+		end
+		if not wanted then
+			return "seed packets in the layout but no packets goal"
 		end
 	end
 	if floods > 0 or pumps > 0 then
@@ -597,6 +612,10 @@ function Levels.validate(level): string?
 			end
 			if type(goal.count) ~= "number" or goal.count < 1 then
 				return "honey goal needs a count"
+			end
+		elseif goal.kind == "Packets" then
+			if packets == 0 then
+				return "packets goal but no seed packets in the layout"
 			end
 		elseif goal.kind == "Floods" then
 			if floods == 0 then

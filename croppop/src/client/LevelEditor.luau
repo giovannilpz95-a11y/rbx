@@ -83,6 +83,7 @@ local BRUSH_ROWS = {
 		{ char = "B", label = TileStyle.GoalGlyphs.Bins },
 		{ char = "W", label = TileStyle.GoalGlyphs.Floods },
 		{ char = "H", label = TileStyle.PumpGlyph },
+		{ char = "K", label = TileStyle.PacketGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -96,7 +97,7 @@ local FENCE = "|" -- the fence brush
 local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies", "Trays", "Bins", "Floods" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies", "Trays", "Bins", "Floods", "Packets" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -123,6 +124,7 @@ local GOAL_BUTTONS = {
 	Trays = "+ 🌼",
 	Bins = "+ ♻",
 	Floods = "+ 💧",
+	Packets = "+ 🎫",
 }
 
 local ui = nil
@@ -410,6 +412,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.flood, TileStyle.GoalGlyphs.Floods
 	elseif char == "H" then
 		return TileStyle.Board.pump, TileStyle.PumpGlyph
+	elseif char == "K" then
+		return TileStyle.Board.packet, TileStyle.PacketGlyph
 	elseif char == "v" or char == "V" then
 		return TileStyle.Board.box, TileStyle.GoalGlyphs.Boxes .. (if char == "v" then "3" else "2")
 	elseif char == "u" then
@@ -600,6 +604,8 @@ local function goalLabel(goal): string
 		return "♻ all bins"
 	elseif goal.kind == "Floods" then
 		return "💧 all water"
+	elseif goal.kind == "Packets" then
+		return "🎫 all packets"
 	end
 	return "🌾 all bales"
 end
