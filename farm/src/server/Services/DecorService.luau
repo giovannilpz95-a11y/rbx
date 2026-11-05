@@ -51,7 +51,8 @@ function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (b
 	if trophy and (data.trophies[id] or 0) < 1 then
 		return false, "Win this record's Gold medal to get its trophy"
 	end
-	if data.level < def.unlockLevel then
+	-- A prepaid one (the Wandering Peddler sells some from a few levels ahead) can go down early
+	if data.level < def.unlockLevel and (data.decorCoupons[id] or 0) <= 0 then
 		return false, string.format("The %s unlocks at level %d", def.displayName, def.unlockLevel)
 	end
 	local room, why = DecorRules.hasRoom(data, id)

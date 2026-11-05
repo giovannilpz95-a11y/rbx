@@ -24,6 +24,8 @@ local Net = require(Shared.Net)
 local Prize = require(Shared.Config.Prize)
 local Sky = require(Shared.Sky)
 local Train = require(Shared.Train)
+local Decor = require(Shared.Config.Decor)
+local Peddler = require(Shared.Peddler)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
@@ -70,6 +72,11 @@ local publishedRainbow = ""
 local goose: Rainbow? = nil
 local publishedGoose = ""
 local gooseCheckAt = 0
+-- The Wandering Peddler's visit to the Town Square (each player's stock is their own)
+type PeddlerVisit = { id: number, pos: Vector3, endsAt: number }
+local peddler: PeddlerVisit? = nil
+local publishedPeddler = ""
+local peddlerCheckAt = 0
 local nextStarId = 0
 
 local function activeEvent(now: number): Sky.Event?
@@ -366,7 +373,7 @@ end
 
 -- The Golden Goose lands on one farm here (`owner`, else picked at random)
 function SkyService.startGoose(now: number, owner: Player?): boolean
-	local chosen = owner or randomFarm()
+	local chosen = if owner and eligible(DataService.get(owner)) then owner elseif owner then nil else randomFarm()
 	if chosen == nil then
 		return false
 	end
@@ -389,6 +396,94 @@ function SkyService.startGoose(now: number, owner: Player?): boolean
 			})
 		end
 	end
+	return true
+end
+
+---------------------------------------------------------------------------------------------
+-- The Wandering Peddler
+---------------------------------------------------------------------------------------------
+
+-- Spots on the Town Square plaza the cart can stand on (world x, z), tried in order: the
+-- first with open paving
+local PEDDLER_SPOTS = { { 24, 14 }, { -24, 14 }, { 24, -6 }, { -24, -6 }, { 0, 22 } }
+
+local function publishPeddler()
+	local text = if peddler
+		then HttpService:JSONEncode({
+			id = peddler.id,
+			x = peddler.pos.X,
+			y = peddler.pos.Y,
+			z = peddler.pos.Z,
+			endsAt = peddler.endsAt,
+		})
+		else ""
+	if text ~= publishedPeddler then
+		publishedPeddler = text
+		Workspace:SetAttribute("SkyPeddler", text)
+	end
+end
+
+local function peddlerSpot(): Vector3
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local skip = {}
+	for _, other in Players:GetPlayers() do
+		if other.Character then
+			table.insert(skip, other.Character)
+		end
+	end
+	params.FilterDescendantsInstances = skip
+	for _, spot in PEDDLER_SPOTS do
+		local hit = Workspace:Raycast(Vector3.new(spot[1], 60, spot[2]), Vector3.new(0, -120, 0), params)
+		if hit and hit.Position.Y < 2 and hit.Normal.Y > 0.9 then
+			return hit.Position
+		end
+	end
+	local first = PEDDLER_SPOTS[1]
+	return Vector3.new(first[1], 0.2, first[2])
+end
+
+function SkyService.startPeddler(now: number): boolean
+	peddler = { id = now, pos = peddlerSpot(), endsAt = now + Config.peddler.seconds }
+	publishPeddler()
+	NoticeService.post("The Wandering Peddler is in the Town Square")
+	for _, player in Players:GetPlayers() do
+		NetService.popup(player, {
+			kind = "Crier",
+			text = string.format(
+				"The Wandering Peddler is in the Town Square for %d minutes, with three offers just for you!",
+				Config.peddler.seconds // 60
+			),
+		})
+	end
+	return true
+end
+
+-- Buy one of your offers from the Peddler (standing at the cart)
+function SkyService.buyPeddler(player: Player, index: any): (boolean, string?)
+	local visit = peddler
+	local data = DataService.get(player)
+	if visit == nil or data == nil or not eligible(data) or Clock.now() > visit.endsAt + 2 then
+		return false, if visit == nil then "The Peddler has moved on" else nil
+	end
+	if not NetService.isNear(player, visit.pos, Config.peddler.reach) then
+		return false, "Walk up to the Peddler's cart first"
+	end
+	local ok, reason, slot = Peddler.canBuy(data, visit.id, player.UserId, index)
+	if not ok or slot == nil then
+		return false, reason
+	end
+	if not EconomyService.spend(player, "Coins", slot.price, "peddler_" .. (slot.id or slot.kind)) then
+		return false, "Not enough Coins"
+	end
+	Peddler.give(data, slot)
+	Peddler.markBought(data, index :: number)
+	local name = if slot.kind == "Seeds"
+		then string.format("%d Heirloom Seeds", slot.qty)
+		else (Decor.items[slot.id :: string].displayName .. " (prepaid, in Build > Decorations)")
+	NetService.popup(player, { kind = "Purchase", name = name })
+	TelemetryService.custom(player, "peddler_buy", slot.price, slot.id or slot.kind, true)
+	DataService.markDirty(player, true)
 	return true
 end
 
@@ -420,7 +515,7 @@ end
 
 -- A rainbow ends on one farm here, picked at random from the players past the guide
 function SkyService.startRainbow(now: number, owner: Player?): boolean
-	local chosen = owner or randomFarm()
+	local chosen = if owner and eligible(DataService.get(owner)) then owner elseif owner then nil else randomFarm()
 	if chosen == nil then
 		return false
 	end
@@ -559,6 +654,18 @@ local function tick()
 		end
 	end
 	publishGoose()
+	-- The Wandering Peddler: a roll every so often; the cart leaves at its end
+	if peddler and now > peddler.endsAt then
+		peddler = nil
+	end
+	if now >= peddlerCheckAt then
+		local first = peddlerCheckAt == 0
+		peddlerCheckAt = now + Config.peddler.checkSeconds
+		if not first and peddler == nil and rng:NextNumber() < Config.peddler.chance then
+			SkyService.startPeddler(now)
+		end
+	end
+	publishPeddler()
 	-- The Notice Board forecasts the next event
 	local upcoming = Sky.nextEvent(now)
 	if upcoming and upcoming.startsAt ~= forecastFor and upcoming.startsAt - now <= Config.forecastSeconds then
@@ -574,7 +681,11 @@ function SkyService.debugStart(player: Player, kind: any): (boolean, string?)
 		return false
 	end
 	local now = Clock.now()
-	if kind == "Goose" then
+	if kind == "Peddler" then
+		SkyService.startPeddler(now)
+		NetService.toast(player, "Dev: the Wandering Peddler is in the Town Square now")
+		return true
+	elseif kind == "Goose" then
 		if not SkyService.startGoose(now, player) then
 			return false, "Dev: no goose (finish the guide first)"
 		end
@@ -599,6 +710,7 @@ function SkyService.init()
 	NetService.on(Net.Sky_Collect, 4, 8, SkyService.collect)
 	NetService.on(Net.Sky_Rainbow, 1, 3, SkyService.openRainbow)
 	NetService.on(Net.Sky_Goose, 1, 3, SkyService.petGoose)
+	NetService.on(Net.Peddler_Buy, 2, 4, SkyService.buyPeddler)
 	NetService.on(Net.Debug_Sky, 1, 2, SkyService.debugStart)
 	task.spawn(function()
 		while true do

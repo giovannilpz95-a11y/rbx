@@ -211,7 +211,8 @@ function Profile.template(): { [string]: any }
 		},
 		buildingLevels = {}, -- factory id -> its Tinker's Guild upgrades { time, shelves, coins, xp }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
-		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart
+		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart or the Peddler
+		peddler = { visit = 0, bought = {} }, -- the Wandering Peddler's purchases this visit (shared/Peddler)
 		trophies = {}, -- Gold Town Record trophy id -> copies in storage, not placed (Config/Trophies)
 		social = { -- visiting, Helping Hands and boosts (shared/Social)
 			privacy = Social.defaultPrivacy, -- who may visit: Open / Friends / Closed
