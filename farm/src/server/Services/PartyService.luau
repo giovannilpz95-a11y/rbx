@@ -437,7 +437,9 @@ end
 
 function PartyService.kick(player: Player, userId: any): (boolean, string?)
 	local id = current[player]
-	if id == nil or not NetService.check.int(userId, 1, 2 ^ 53) then
+	-- Studio's test farmhands (PartyService.debug) have negative ids
+	local lowest = if RunService:IsStudio() then -2 ^ 53 else 1
+	if id == nil or not NetService.check.int(userId, lowest, 2 ^ 53) then
 		return false
 	end
 	local okKick = false
