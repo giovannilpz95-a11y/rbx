@@ -14,6 +14,7 @@ local Config = require(Shared.Config.Fair)
 local Fair = require(Shared.Fair)
 local Items = require(Shared.Items)
 local Net = require(Shared.Net)
+local PrizeRules = require(Shared.Prize)
 
 local BadgeService = require(script.Parent.BadgeService)
 local BadgeConfig = require(Shared.Config.Badges)
@@ -30,6 +31,8 @@ local FairService = {}
 local ready: { [Player]: boolean } = {}
 local tent: { model: Model, week: number }? = nil
 local announced = 0 -- the week whose opening the Notice Board has shown
+
+local DEBUG_CROP = "Wheat" -- every farm grows it
 
 local TENT_ANGLES = { -90, -60, -120, -30, -150, 200, -20, 160 }
 local TENT_RADII = { 27, 24, 30 }
@@ -118,8 +121,15 @@ function FairService.enter(player: Player, class: any, a: any, b: any): (boolean
 		step = "entered",
 		text = string.format(
 			"Your %s%s is entered in %s! The judges score it in %s.",
-			if entry.tier then entry.tier .. " " elseif entry.garnish then "" else "",
-			name,
+			if entry.tier then entry.tier .. " " else "",
+			if entry.garnish
+				then string.format(
+					"%s topped with %s %s",
+					name,
+					entry.garnish,
+					if Items[entry.garnishCrop] then Items[entry.garnishCrop].displayName else entry.garnishCrop
+				)
+				else name,
 			Config.classes[class].displayName,
 			(function()
 				local s = math.max(0, closes - now)
@@ -132,13 +142,29 @@ function FairService.enter(player: Player, class: any, a: any, b: any): (boolean
 	return true
 end
 
--- Studio: "open" starts a fair now, "judge" closes its entries now
+-- Studio: "open" starts a fair now, "judge" closes its entries now, "Starlit" / "Heirloom"
+-- puts a Prize Crop of that tier in the Prize Basket (to test a Blue Ribbon)
 function FairService.debug(player: Player, what: any): (boolean, string?)
 	if not RunService:IsStudio() then
 		return false
 	end
 	local now = Clock.now()
-	if what == "open" then
+	if what == "Starlit" or what == "Heirloom" then
+		local data = DataService.get(player)
+		if data == nil then
+			return false
+		end
+		if not PrizeRules.hasRoom(data) then
+			return false, "Dev: your Prize Basket is full"
+		end
+		table.insert(data.prizes, { crop = DEBUG_CROP, tier = what })
+		DataService.markDirty(player, true)
+		NetService.toast(
+			player,
+			string.format("Dev: a %s %s is in your Prize Basket", what, Items[DEBUG_CROP].displayName)
+		)
+		return true
+	elseif what == "open" then
 		preview(now - 60)
 	elseif what == "judge" then
 		local opens = Fair.window(now)
