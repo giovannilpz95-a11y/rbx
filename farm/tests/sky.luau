@@ -154,6 +154,14 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(lastRainEnd + Config.rainbow.seconds < Config.slots[2].from * 60, "clear of the second slot")
 	end)
 
+	test("sky: the Golden Goose", function()
+		eq(Sky.eggCoins(10), 75, "a Golden Egg: 25 + 5 a level")
+		ok(Sky.eggCoins(1) > Sky.chestCoins(1), "worth more than a rainbow chest")
+		ok(Config.goose.reach > 7, "the server allows more than the client's petting distance")
+		ok(Config.goose.side ~= 0 or Config.goose.ahead ~= Config.rainbow.ahead, "it stands clear of a rainbow chest")
+		ok(Config.goose.chance * 3600 / Config.goose.checkSeconds < 1, "rare: under one visit an hour")
+	end)
+
 	test("sky: stars", function()
 		eq(Sky.starsPerShower("Starfall"), 12, "12 stars in a Starfall")
 		eq(Sky.starCoins(10), 14, "4 + 1 a level")

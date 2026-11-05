@@ -433,6 +433,8 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 		return { { sound = if payload.lucky then "PrizeFind" else "Notify" } } -- a star falling during Starfall
 	elseif kind == "StarCaught" then
 		return { { sound = "Xp" }, { sound = "Coin", delay = 0.3 } } -- caught a falling star: Coins (and maybe more)
+	elseif kind == "GooseEgg" then
+		return { { sound = "PrizeFind" }, { sound = "CoinBig", delay = 0.35 } } -- petted the Golden Goose: a Golden Egg sold
 	elseif kind == "RainbowOpened" then
 		return { { sound = "Unlock" }, { sound = "Coin", delay = 0.35 } } -- the chest at the Rainbow's end
 	end

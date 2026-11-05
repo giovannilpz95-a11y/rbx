@@ -155,6 +155,11 @@ function Sky.chestCoins(level: number): number
 	return Config.rainbow.coins + Config.rainbow.coinsPerLevel * level
 end
 
+-- Coins a Golden Egg sells for at `level`
+function Sky.eggCoins(level: number): number
+	return Config.goose.eggCoins + Config.goose.eggCoinsPerLevel * level
+end
+
 function Sky.thanksCoins(level: number): number
 	return Config.rainbow.thanksCoins + Config.rainbow.thanksPerLevel * level
 end
