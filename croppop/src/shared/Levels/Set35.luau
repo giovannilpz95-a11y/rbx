@@ -597,12 +597,12 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 58% (target 32%).
+	-- Bot wins 35% (target 32%; retuned from 26 moves after a Studio check).
 	{
 		id = 875,
 		name = "Grand Glasshouse Gala",
 		difficulty = "Tough",
-		moves = 26,
+		moves = 22,
 		colors = { "Tomato", "Egg", "Carrot", "Corn", "Milk" },
 		layout = {
 			".........",

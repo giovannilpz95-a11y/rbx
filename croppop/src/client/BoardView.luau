@@ -266,6 +266,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- Pinker as it charges; the dots are its charges so far.
 		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
 		label.Text = TileStyle.GoalGlyphs.Blooms .. string.rep("•", kind.bud)
+	elseif kind.bin then
+		label.BackgroundColor3 = TileStyle.Board.bin
+		label.Text = TileStyle.GoalGlyphs.Bins .. kind.bin -- tiles still to take
 	elseif kind.snail then
 		label.BackgroundColor3 = TileStyle.Board.snail
 		label.Text = TileStyle.SnailGlyph
@@ -961,6 +964,10 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			bale:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Compost" then
+		-- The bin bursts open: a green flash, and the blast around it follows.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.6 / w, 1.6 / h), TileStyle.Board.bin, true)
 		return FX_TIME
 	elseif effect.type == "Sprout" then
 		-- The seed under the cleared tile sprouts: the soil turns green.

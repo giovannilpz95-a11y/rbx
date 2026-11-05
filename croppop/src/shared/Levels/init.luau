@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  B  compost bin: blocks like a 1-layer bale and counts down from 9; a
+	     match next to it takes all its tiles off, a blast takes 1, and at 0
+	     it bursts, blasting the cells around it (the Bins goal)
 	  R  seed tray cell: touching R cells make one tray, under the tiles;
 	     clearing the tile on a tray cell sprouts it, and a tray with every
 	     cell sprouted is done (the Trays goal)
@@ -102,7 +105,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -162,6 +165,7 @@ local VALID_CHARS = {
 	P = true,
 	N = true,
 	R = true,
+	B = true,
 	y = true,
 	m = true,
 	M = true,
@@ -311,7 +315,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -386,6 +390,8 @@ function Levels.validate(level): string?
 				spots += 1
 			elseif ch == "R" then
 				trays += 1
+			elseif ch == "B" then
+				bins += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -448,6 +454,15 @@ function Levels.validate(level): string?
 		end
 		if not wanted then
 			return "hay trucks in the layout but no hay bale goal"
+		end
+	end
+	if bins > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Bins"
+		end
+		if not wanted then
+			return "compost bins in the layout but no bins goal"
 		end
 	end
 	if trays > 0 then
@@ -561,6 +576,10 @@ function Levels.validate(level): string?
 			end
 			if type(goal.count) ~= "number" or goal.count < 1 then
 				return "honey goal needs a count"
+			end
+		elseif goal.kind == "Bins" then
+			if bins == 0 then
+				return "bins goal but no compost bins in the layout"
 			end
 		elseif goal.kind == "Trays" then
 			if trays == 0 then
