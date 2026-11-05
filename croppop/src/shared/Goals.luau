@@ -21,6 +21,7 @@
 	  { kind = "Fireflies", count = 10 }                 -- catch N fireflies (clear tiles on lit spots)
 	  { kind = "Trays" }                                 -- sprout every cell of every seed tray
 	  { kind = "Bins" }                                  -- burst every compost bin
+	  { kind = "Floods" }                                -- pump every flooded cell dry
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
 	  { kind = "Snowballs" }                             -- clear every snowball (they burst and come back if left)
@@ -47,6 +48,7 @@ function Goals.new(defs: { any }, board)
 	local clay, letters, buckets, boxes, trucks, buds, lambs = 0, 0, 0, 0, 0, 0, 0
 	local trays = #board.trays
 	local bins = 0
+	local floods = board.floodsLeft or 0
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.web then
@@ -86,9 +88,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs and compost bins aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins and pumps aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -125,6 +127,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
 		elseif def.kind == "Honey" then
 			table.insert(list, { kind = "Honey", target = def.count, progress = 0 })
+		elseif def.kind == "Floods" then
+			table.insert(list, { kind = "Floods", target = def.count or floods, progress = 0 })
 		elseif def.kind == "Bins" then
 			table.insert(list, { kind = "Bins", target = def.count or bins, progress = 0 })
 		elseif def.kind == "Trays" then
@@ -226,6 +230,10 @@ end
 
 function Goals.onHoney(self)
 	bump(self, "Honey", nil)
+end
+
+function Goals.onFlood(self)
+	bump(self, "Floods", nil)
 end
 
 function Goals.onBin(self)

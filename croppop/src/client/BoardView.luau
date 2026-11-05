@@ -266,6 +266,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- Pinker as it charges; the dots are its charges so far.
 		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
 		label.Text = TileStyle.GoalGlyphs.Blooms .. string.rep("•", kind.bud)
+	elseif kind.pump then
+		label.BackgroundColor3 = TileStyle.Board.pump
+		label.Text = TileStyle.PumpGlyph
 	elseif kind.bin then
 		label.BackgroundColor3 = TileStyle.Board.bin
 		label.Text = TileStyle.GoalGlyphs.Bins .. kind.bin -- tiles still to take
@@ -349,6 +352,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	styleClay(guis, cell.clay)
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
+	guis.flood.Visible = cell.flood == true
 	guis.goo.BackgroundColor3 = if cell.thickGoo then TileStyle.Board.thickGoo else TileStyle.Board.goo
 	guis.buried.Visible = cell.buried == true
 	guis.rainbow.Visible = cell.rainbow == true
@@ -444,6 +448,15 @@ function BoardView.load(self, game)
 		leaf.Text = TileStyle.GoalGlyphs.Clover
 		leaf.TextScaled = true
 		leaf.Parent = clover
+
+		-- Flood water: a blue pool over the cell, under the tile.
+		local flood = Instance.new("Frame")
+		flood.Name = "Flood"
+		flood.Size = UDim2.fromScale(1, 1)
+		flood.BorderSizePixel = 0
+		flood.BackgroundColor3 = TileStyle.Board.flood
+		flood.BackgroundTransparency = 0.25
+		flood.Parent = bg
 
 		-- Goo: a green film over the cell, under the tile, with rounded blobs.
 		local goo = Instance.new("Frame")
@@ -623,7 +636,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, tray = tray, trayMark = trayMark, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, flood = flood, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, tray = tray, trayMark = trayMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -964,6 +977,29 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			bale:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Pump" then
+		-- The pump handle bobs, and the water drains off the nearest cells.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = 12
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Bounce)
+		end
+		for _, c in effect.cells do
+			local cg = self.cellGuis[c.y] and self.cellGuis[c.y][c.x]
+			if cg then
+				tween(cg.flood, FX_TIME, { BackgroundTransparency = 1 })
+				task.delay(FX_TIME, function()
+					cg.flood.Visible = false
+					cg.flood.BackgroundTransparency = 0.25
+				end)
+			end
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.flood, true)
+		end
+		return FX_TIME
+	elseif effect.type == "PumpGone" then
+		-- The water's all gone, so the pump goes too.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.pump, true)
 		return FX_TIME
 	elseif effect.type == "Compost" then
 		-- The bin bursts open: a green flash, and the blast around it follows.

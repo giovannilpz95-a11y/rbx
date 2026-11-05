@@ -95,6 +95,13 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Flood water and hand pumps: water lies under the tiles on some cells and
+	nothing clears it but a pump. A pump blocks a cell and never breaks:
+	every hit (a match next to it, once per wave, or a blast on it) drains
+	the PUMP_DRAIN nearest flooded cells (a "Pump" effect with their cells),
+	for the Floods goal. Once the last water is gone every pump goes too
+	(a "PumpGone" effect each), freeing its cell.
+
 	Compost bins: block a cell like a 1-layer bale and count down from
 	BIN_COUNT. Every match next to a bin feeds it all of its tiles (a match
 	of 4 takes 4 off), and each blast on it takes 1. At 0 the bin bursts (a
@@ -198,6 +205,7 @@ local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
+local PUMP_DRAIN = 2 -- flooded cells a hand pump drains each time it's hit
 local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
 local BIN_RADIUS = 1 -- a bursting bin blasts the cells this close (a small diamond)
 local LIGHT_EVERY = 2 -- swaps between the fireflies moving to other spots
@@ -540,7 +548,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -705,6 +713,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_feedBin(wave, cell, 1)
 		return
 	end
+	if cell.pump then
+		self:_pump(wave, cell)
+		return -- nothing breaks a pump; it goes when the water does
+	end
 	if cell.scarecrow then
 		cell.scarecrow += 1
 		if cell.scarecrow >= SCARECROW_CHARGES then
@@ -823,6 +835,44 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale })
 	if cell.bale == 0 then
 		self.goals:onBale()
+	end
+end
+
+-- A hand pump drains the nearest flooded cells (breadth first, in NEIGHBORS
+-- order, so it's the same every time). When the last water goes, so do the
+-- pumps.
+function Engine._pump(self, wave, pump)
+	local board = self.board
+	local seen = { [pump] = true }
+	local queue, head = { pump }, 1
+	local drained = {}
+	while head <= #queue and #drained < PUMP_DRAIN do
+		local cell = queue[head]
+		head += 1
+		for _, d in NEIGHBORS do
+			local n = board:get(cell.x + d[1], cell.y + d[2])
+			if n and not seen[n] then
+				seen[n] = true
+				table.insert(queue, n)
+				if n.flood and #drained < PUMP_DRAIN then
+					n.flood = false
+					board.floodsLeft -= 1
+					self.goals:onFlood()
+					table.insert(drained, { x = n.x, y = n.y })
+				end
+			end
+		end
+	end
+	table.insert(wave.effects, { type = "Pump", x = pump.x, y = pump.y, cells = drained })
+	table.insert(wave.bales, { x = pump.x, y = pump.y, hp = 1, pump = true })
+	if board.floodsLeft == 0 then
+		board:eachCell(function(cell)
+			if cell.pump then
+				cell.pump, cell.bale = nil, 0
+				table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+				table.insert(wave.effects, { type = "PumpGone", x = cell.x, y = cell.y })
+			end
+		end)
 	end
 end
 
@@ -1079,6 +1129,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Blooms") then tiers[1] else tiers[4], cell)
 		elseif cell.bin then
 			table.insert(if goals:wants("Bins") then tiers[1] else tiers[4], cell)
+		elseif cell.pump then
+			table.insert(if goals:wants("Floods") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
