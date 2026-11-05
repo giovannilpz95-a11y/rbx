@@ -461,6 +461,12 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 			return { { sound = "PrizeFind" }, { sound = "Unlock", delay = 0.4 } }
 		end
 		return { { sound = "UiOpen" } }
+	elseif kind == "Party" then
+		-- The Farmhand Party: an invite, joining, a Gather
+		if payload.step == "joined" then
+			return { { sound = "Unlock" } }
+		end
+		return { { sound = "Notify" } }
 	elseif kind == "Wardrobe" then
 		-- The Wardrobe: a piece bought, or earned at the Fair, the Showcase or an event
 		if payload.step == "bought" then
@@ -484,7 +490,7 @@ end
 
 -- Popups that are news rather than a reward: nothing on our farm paid out, so the Coins
 -- and Gems of the snapshot that follows still get their own sounds.
-local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true, Star = true, SkyNote = true, GroupPose = true })
+local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true, Star = true, SkyNote = true, GroupPose = true, Party = true })
 
 function FarmCues.isReward(payload: { [string]: any }?): boolean
 	if type(payload) == "table" and payload.kind == "Showcase" then
