@@ -79,6 +79,7 @@ export type Cell = {
 	jarColor: number?, -- the tile colour whose matches fill the jar
 	chest: number?, -- the "bale" is a tool chest: tools still inside
 	chestOpen: boolean?, -- the chest is unlocked (a blast opens it; then matches take its tools)
+	vane: any?, -- the "bale" is a weathervane: the side its arrow points at, 1-4 = up, right, down, left (true until Engine.new sets it)
 	pump: boolean?, -- the "bale" is a hand pump: it never breaks, hits drain flood water near it
 	flood: boolean?, -- flood water under the tile (only a pump drains it)
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
@@ -289,6 +290,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "X" then
 					cell.bale = 1
 					cell.chest = 3 -- Engine's CHEST_TOOLS
+				elseif ch == "Z" then
+					cell.bale = 2
+					cell.vane = true
 				elseif ch == "U" then
 					cell.bale = 1
 					cell.mower = true
@@ -890,6 +894,8 @@ function Board.hash(self): string
 				table.insert(row, "C" .. tostring(cell.jar) .. "c" .. tostring(cell.jarColor) .. clover)
 			elseif cell.chest then
 				table.insert(row, "S" .. cell.chest .. (if cell.chestOpen then "o" else "") .. clover)
+			elseif cell.vane then
+				table.insert(row, "d" .. cell.bale .. "v" .. tostring(cell.vane) .. clover)
 			elseif cell.lamb then
 				table.insert(row, "I" .. clover)
 			elseif cell.snail then
@@ -978,6 +984,7 @@ function Board.snapshot(self)
 			jarColor = cell.jarColor,
 			chest = cell.chest,
 			chestOpen = cell.chestOpen,
+			vane = cell.vane,
 			pump = cell.pump,
 			flood = cell.flood,
 			lamb = cell.lamb,

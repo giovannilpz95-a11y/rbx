@@ -115,6 +115,13 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Weathervanes: block a cell like a 2-layer bale, with an arrow pointing
+	at one side (up, right, down, left in turn, in reading order). After
+	every swap each vane turns a quarter clockwise (a "Turn" effect). A
+	match only knocks a layer off from the side the arrow points at (once
+	per vane per wave); blasts hit it from anywhere. The last layer brings
+	it down (a "Vane" effect), for the Vanes goal.
+
 	Tool chests: block a cell like a bale and start locked. Only a blast (a
 	power-up, a booster or a bee) unlocks one (a "ChestOpen" effect);
 	matches next to a locked chest do nothing. An open chest holds
@@ -243,6 +250,7 @@ local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
 local JAR_FILL = 3 -- colour matches (or blasts) that fill a jam jar
 local CHEST_TOOLS = 3 -- tools in a tool chest (Board sets it from the layout)
+local VANE_SIDES = { { 0, -1 }, { 1, 0 }, { 0, 1 }, { -1, 0 } } -- where a weathervane's arrow points: up, right, down, left
 local MOWER_CHARGES = 3 -- colour matches before a lawn mower mows its row
 local PUMP_DRAIN = 2 -- flooded cells a hand pump drains each time it's hit
 local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
@@ -300,10 +308,16 @@ function Engine.new(level, seed: number, options: Options?)
 	end
 
 	-- Seed packets, jam jars and lawn mowers take the level's colours in turn, in reading order.
-	local packets, jars, mowers = 0, 0, 0
+	local packets, jars, mowers, vanes = 0, 0, 0, 0
 	self.mowers = {}
+	self.vanes = {}
 	board:eachCell(function(cell)
-		if cell.packet then
+		if cell.vane then
+			-- Weathervanes point up, right, down and left in turn.
+			vanes += 1
+			cell.vane = (vanes - 1) % #VANE_SIDES + 1
+			table.insert(self.vanes, cell)
+		elseif cell.packet then
 			packets += 1
 			cell.packet = PACKET_SEEDS
 			cell.packetColor = colors[(packets - 1) % #colors + 1]
@@ -617,7 +631,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "mower" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -792,6 +806,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	end
 	if cell.chest then
 		self:_openChest(wave, cell)
+		return
+	end
+	if cell.vane then
+		self:_hitVane(wave, cell)
 		return
 	end
 	if cell.mower then
@@ -970,6 +988,36 @@ function Engine._fillJar(self, wave, cell)
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
 	table.insert(wave.effects, { type = "Jar", x = cell.x, y = cell.y })
 	self.goals:onJar()
+end
+
+-- A weathervane loses a layer; the last one brings it down.
+function Engine._hitVane(self, wave, cell)
+	cell.bale -= 1
+	if cell.bale > 0 then
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, vane = cell.vane })
+		return
+	end
+	cell.bale, cell.vane = 0, nil
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+	table.insert(wave.effects, { type = "Vane", x = cell.x, y = cell.y })
+	self.goals:onVane()
+end
+
+-- After a swap every weathervane turns a quarter clockwise.
+function Engine._turnVanes(self, phases)
+	local wave = newWave()
+	local cells = {}
+	for _, cell in self.vanes do
+		if cell.vane then
+			cell.vane = cell.vane % #VANE_SIDES + 1
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, vane = cell.vane })
+			table.insert(cells, { x = cell.x, y = cell.y })
+		end
+	end
+	if #cells > 0 then
+		table.insert(wave.effects, { type = "Turn", cells = cells })
+		self:_finishWave(wave, phases)
+	end
 end
 
 -- A blast unlocks a locked tool chest; an open one hands a tool to the
@@ -1209,6 +1257,13 @@ function Engine._popGroups(self, wave, groups)
 						wave.balesTouched[n] = true
 						self:_takeSeed(wave, n)
 					end
+				elseif n and n.vane then
+					-- Only a match on the side the arrow points at knocks a vane.
+					local side = VANE_SIDES[n.vane]
+					if side[1] == -d[1] and side[2] == -d[2] and not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_hitVane(wave, n)
+					end
 				elseif n and n.chest then
 					-- Matches only take tools from an open chest; a locked one needs a blast.
 					if n.chestOpen and not wave.balesTouched[n] then
@@ -1312,6 +1367,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Jars") then tiers[1] else tiers[4], cell)
 		elseif cell.chest then
 			table.insert(if goals:wants("Tools") then tiers[1] else tiers[4], cell)
+		elseif cell.vane then
+			table.insert(if goals:wants("Vanes") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
@@ -1993,6 +2050,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	end
 	if wasSwap then
 		self:_wiltBuds(phases)
+	end
+	if wasSwap and #self.vanes > 0 and not self.goals:isComplete() then
+		self:_turnVanes(phases)
 	end
 	if #self.board.burrows > 0 and (wasSwap or not self.gopherCell) and not self.goals:isComplete() then
 		self:_moveGopher(phases)
