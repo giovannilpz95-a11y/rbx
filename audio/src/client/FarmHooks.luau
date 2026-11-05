@@ -4,7 +4,7 @@
 
 	  State_Snapshot  compare with the last one: planting, harvesting, building, selling...
 	  Reward_Popup    order delivered or level up: their jingle (and the Coins stay quiet)
-	  Toast           the farm's "can't do that" messages: a soft error blip
+	  Toast           the farm's "can't do that" messages (variant "error"): a soft error blip
 	  every 0.5 s     timers that ran out: a factory job or a building finishing
 ]]
 
@@ -42,8 +42,11 @@ function FarmHooks.start(GameAudio)
 		GameAudio.playCues(FarmCues.popup(payload))
 	end)
 
-	remotes:WaitForChild("Toast").OnClientEvent:Connect(function()
-		GameAudio.play("UiError")
+	remotes:WaitForChild("Toast").OnClientEvent:Connect(function(_message, variant)
+		-- Only a refusal blips; good news toasts ("Your first train pulled in") stay quiet
+		if variant == "error" then
+			GameAudio.play("UiError")
+		end
 	end)
 
 	local lastTick: number? = nil

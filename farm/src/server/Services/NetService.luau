@@ -150,11 +150,13 @@ local function isPlayer(player: any): boolean
 	return typeof(player) == "Instance"
 end
 
-function NetService.toast(player: Player, message: string)
+-- A short message. `variant` "error" is a refusal (the client plays a soft error blip);
+-- leave it out for good or neutral news.
+function NetService.toast(player: Player, message: string, variant: string?)
 	if not isPlayer(player) then
 		return
 	end
-	remotes[Net.Toast]:FireClient(player, message)
+	remotes[Net.Toast]:FireClient(player, message, variant)
 end
 
 function NetService.popup(player: Player, payload: { [string]: any })
@@ -195,7 +197,7 @@ function NetService.on(name: string, rate: number, burst: number, handler: Handl
 			DataService.markDirty(player)
 			NetService.pushState(player)
 		elseif message then
-			NetService.toast(player, message)
+			NetService.toast(player, message, "error") -- the handler refused: say why
 		end
 	end)
 end

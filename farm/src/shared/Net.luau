@@ -162,6 +162,6 @@ return table.freeze({
 
 	-- Server -> client
 	State_Snapshot = "State_Snapshot", -- full owner state
-	Toast = "Toast", -- message
+	Toast = "Toast", -- message, variant? ("error": a refusal)
 	Reward_Popup = "Reward_Popup", -- { kind, ... } cosmetic; numbers already applied
 })
