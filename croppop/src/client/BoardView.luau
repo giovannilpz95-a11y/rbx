@@ -240,6 +240,12 @@ end
 
 -- kind: the cell (or phase entry) saying what the "bale" is: weed, stone,
 -- crate, tarp, tin, quilt (+ patched, x, y).
+-- A web or a vine over a tile.
+local function styleWeb(web: TextLabel, vine: boolean?)
+	web.BackgroundColor3 = if vine then TileStyle.Board.vine else TileStyle.Board.web
+	web.Text = if vine then TileStyle.GoalGlyphs.Vines else TileStyle.GoalGlyphs.Webs
+end
+
 local function styleBale(label: TextLabel, hp: number, kind)
 	local weed, stone, crate = kind.weed, kind.stone, kind.crate
 	local tarp = kind.tarp ~= nil and kind.tarp ~= false
@@ -385,6 +391,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.buried.Visible = cell.buried == true
 	guis.rainbow.Visible = cell.rainbow == true
 	guis.web.Visible = cell.web == true
+	styleWeb(guis.web, cell.vine)
 	guis.statueMark.Visible = cell.buried == true
 	styleTray(guis, cell)
 	styleBale(guis.bale, cell.bale, cell)
@@ -572,7 +579,7 @@ function BoardView.load(self, game)
 		web.Name = "Web"
 		web.Size = self:_cellSize()
 		web.Position = self:_cellPosition(x, y)
-		web.BackgroundColor3 = Color3.fromRGB(240, 240, 250)
+		web.BackgroundColor3 = TileStyle.Board.web
 		web.BackgroundTransparency = 0.55
 		web.TextTransparency = 0.1
 		web.Text = TileStyle.GoalGlyphs.Webs
@@ -1399,7 +1406,14 @@ function BoardView._pop(self, phase)
 	end
 	for _, wb in phase.webs or {} do
 		local guis = self.cellGuis[wb.y] and self.cellGuis[wb.y][wb.x]
-		if guis then
+		if guis and wb.on then
+			-- A vine creeps over this tile.
+			styleWeb(guis.web, wb.vine)
+			guis.web.BackgroundTransparency = 1
+			guis.web.TextTransparency = 1
+			guis.web.Visible = true
+			tween(guis.web, POP_TIME, { BackgroundTransparency = 0.55, TextTransparency = 0.1 })
+		elseif guis then
 			tween(guis.web, POP_TIME, { BackgroundTransparency = 1, TextTransparency = 1 })
 			task.delay(POP_TIME, function()
 				guis.web.Visible = false

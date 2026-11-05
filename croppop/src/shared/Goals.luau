@@ -26,6 +26,7 @@
 	  { kind = "Jars" }                                  -- fill and crack open every jam jar
 	  { kind = "Tools" }                                 -- take every tool out of the tool chests
 	  { kind = "Vanes" }                                 -- bring down every weathervane
+	  { kind = "Vines" }                                 -- cut every vine (a creep adds one)
 	  { kind = "Gophers" }                               -- catch a gopher in every burrow
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
@@ -54,11 +55,13 @@ function Goals.new(defs: { any }, board)
 	local trays = #board.trays
 	local bins = 0
 	local floods = board.floodsLeft or 0
-	local packets, jars, tools, vanes = 0, 0, 0, 0
+	local packets, jars, tools, vanes, vines = 0, 0, 0, 0, 0
 	local burrows = #(board.burrows or {})
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
-		if cell.web then
+		if cell.vine then
+			vines += 1
+		elseif cell.web then
 			webs += 1
 		end
 		if cell.goo then
@@ -156,6 +159,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Tools", target = def.count or tools, progress = 0 })
 		elseif def.kind == "Vanes" then
 			table.insert(list, { kind = "Vanes", target = def.count or vanes, progress = 0 })
+		elseif def.kind == "Vines" then
+			table.insert(list, { kind = "Vines", target = def.count or vines, progress = 0 })
 		elseif def.kind == "Floods" then
 			table.insert(list, { kind = "Floods", target = def.count or floods, progress = 0 })
 		elseif def.kind == "Bins" then
@@ -279,6 +284,19 @@ end
 
 function Goals.onVane(self)
 	bump(self, "Vanes", nil)
+end
+
+function Goals.onVine(self)
+	bump(self, "Vines", nil)
+end
+
+-- A vine crept onto another tile: one more to cut.
+function Goals.onVineGrown(self)
+	for _, goal in self.list do
+		if goal.kind == "Vines" then
+			goal.target += 1
+		end
+	end
 end
 
 function Goals.onFlood(self)

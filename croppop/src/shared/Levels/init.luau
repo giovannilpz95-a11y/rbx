@@ -17,6 +17,10 @@
 	  U  lawn mower: blocks a cell and never breaks; it has a tile colour
 	     (the level's colours in turn, in reading order), every wave with a
 	     match of that colour charges it, and the third charge mows its row
+	  Y  vine over the tile: holds it in place and out of matches like a
+	     web, but a match next to it cuts it as well as a blast; after a
+	     swap that cuts none, the vines creep onto another tile next to
+	     them (the Vines goal)
 	  Z  weathervane: blocks like a 2-layer bale, with an arrow pointing up,
 	     right, down or left (in turn, in reading order) that turns a
 	     quarter clockwise after every swap; only a match on the side it
@@ -128,7 +132,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -194,6 +198,7 @@ local VALID_CHARS = {
 	J = true,
 	X = true,
 	Z = true,
+	Y = true,
 	U = true,
 	I = true,
 	H = true,
@@ -346,7 +351,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets, burrows, jars, chests, vanes = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets, burrows, jars, chests, vanes, vines = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for y, row in level.layout do
 		if #row ~= width then
@@ -436,6 +441,8 @@ function Levels.validate(level): string?
 				chests += 1
 			elseif ch == "Z" then
 				vanes += 1
+			elseif ch == "Y" then
+				vines += 1
 			elseif ch == "I" then
 				burrows += 1
 			elseif ch == "d" then
@@ -509,6 +516,15 @@ function Levels.validate(level): string?
 		end
 		if not wanted then
 			return "gopher burrows in the layout but no gophers goal"
+		end
+	end
+	if vines > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Vines"
+		end
+		if not wanted then
+			return "vines in the layout but no vines goal"
 		end
 	end
 	if vanes > 0 then
@@ -683,6 +699,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Gophers" then
 			if burrows < 2 then
 				return "gophers goal needs at least 2 burrows to hop between"
+			end
+		elseif goal.kind == "Vines" then
+			if vines == 0 then
+				return "vines goal but no vines in the layout"
 			end
 		elseif goal.kind == "Vanes" then
 			if vanes == 0 then
