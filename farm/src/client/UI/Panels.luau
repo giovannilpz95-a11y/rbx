@@ -318,6 +318,8 @@ local tickPanels: { [string]: boolean } = {
 	Away = true,
 	Buildings = true,
 	Pen = true,
+	Town = true,
+	Field = true,
 }
 
 local function live(update: () -> boolean)
@@ -1936,11 +1938,33 @@ local function renderTown(state: { [string]: any })
 			)
 		end
 	end
+	-- Anything finishing changes Population, the cap and what can be built: rebuild then
+	local function buildingCount(): number
+		local t, n = ClientStore.now(), 0
+		for _, item in building do
+			if t < item.readyAt then
+				n += 1
+			end
+		end
+		return n
+	end
+	liveSame(buildingCount, #building)
 	if #building > 0 then
 		heading("Building now")
 		for _, item in building do
 			local left = Timer.remaining(item.readyAt, now)
 			local card = line(item.name .. "   " .. Timer.format(left) .. " left")
+			local readyAt = item.readyAt
+			liveText(card:FindFirstChildOfClass("TextLabel") :: TextLabel, function()
+				local t = ClientStore.now()
+				return if t < readyAt
+					then item.name .. "   " .. Timer.format(Timer.remaining(readyAt, t)) .. " left"
+					else nil
+			end)
+			local function finishPrice(): number
+				return Speedup.building(Timer.remaining(readyAt, ClientStore.now()))
+			end
+			liveSame(finishPrice, finishPrice())
 			gemButton("town:" .. item.kind .. tostring(item.key), "Finish", Speedup.building(left), function()
 				Remotes.fire("Town_SpeedUp", item.kind, item.key)
 			end, {
@@ -2210,7 +2234,16 @@ local function renderField(state: { [string]: any }, fieldId: string)
 	titleLabel.Text = crop.displayName
 	local left = Timer.remaining(field.readyAt, now)
 	local line = row(42, 1)
-	Ui.label("Ready in " .. Timer.format(left), { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+	local readyAt = field.readyAt
+	local readyLabel = Ui.label("Ready in " .. Timer.format(left), { Size = UDim2.new(1, -170, 1, 0), Parent = line })
+	liveText(readyLabel, function()
+		local t = ClientStore.now()
+		return if t < readyAt then "Ready in " .. Timer.format(Timer.remaining(readyAt, t)) else nil
+	end)
+	local function finishPrice(): number
+		return Speedup.production(Timer.remaining(readyAt, ClientStore.now()))
+	end
+	liveSame(finishPrice, finishPrice())
 	gemButton("field:" .. fieldId, "Finish", Speedup.production(left), function()
 		Remotes.fire("Farm_SpeedUp", fieldId)
 	end, {
@@ -2221,6 +2254,11 @@ local function renderField(state: { [string]: any }, fieldId: string)
 	})
 	-- Speed Up All: every growing field of this crop
 	local total, count = Speedup.allFields(state.fields, field.crop, now)
+	local function allKey(): string
+		local t, c = Speedup.allFields(state.fields, field.crop, ClientStore.now())
+		return t .. ":" .. c
+	end
+	liveSame(allKey, allKey())
 	-- The short Field frame holds one row; grow it by one row for Finish all
 	frame.Size = UDim2.new(0.9, 0, 0, if count >= 2 then 124 + 48 else 124)
 	if count >= 2 then
@@ -2479,6 +2517,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Trains: all back now, goods for the first train's cars", "Debug_Train", 380, 24)
 	devButton("Sky: a Rain Shower now (3 minutes)", "Debug_Sky", 300, 25, "Rain")
 	devButton("Sky: a Starfall now (2 minutes)", "Debug_Sky", 300, 26, "Starfall")
+	devButton("Sky: a rainbow ends on your farm now", "Debug_Sky", 300, 27, "Rainbow")
 end
 
 ---------------------------------------------------------------------------------------------

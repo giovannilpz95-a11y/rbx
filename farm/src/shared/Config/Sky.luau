@@ -64,4 +64,22 @@ return table.freeze({
 	luckyChance = 0.1, -- per Starfall per player: one star is a Lucky Star with an Heirloom Seed
 	-- Catching every star of a whole Starfall adds one reward drawn from the train's reward
 	-- table (building materials and tools, Config/Train)
+
+	-- The Rainbow (14 H1 v1.1): after some Rain Showers a rainbow ends on one farm on the
+	-- server, picked at random, with a chest at its foot near the farm's gate. Everyone who
+	-- walks up to it within its time opens one chest (the owner too), and the owner gets a
+	-- thank-you in Coins for each neighbor who came.
+	rainbow = table.freeze({
+		chance = 0.5, -- per Rain Shower, as it ends
+		seconds = 3 * MIN,
+		reach = 14, -- flat studs from the chest (the client opens it at 7)
+		ahead = 14, -- studs up the spine path from where visitors arrive at the gate
+		coins = 10, -- a chest: coins + coinsPerLevel x level, XP, and maybe a material or tool
+		coinsPerLevel = 2,
+		xp = 5,
+		rewardChance = 0.5, -- one reward from the train's table
+		thanksCoins = 5, -- to the owner for each neighbor: thanksCoins + thanksPerLevel x level
+		thanksPerLevel = 1,
+		thanksMax = 5, -- neighbors a rainbow thanks the owner for
+	}),
 })

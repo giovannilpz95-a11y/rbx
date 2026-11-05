@@ -286,11 +286,163 @@ local function removeStar(id: number, caught: boolean)
 	end)
 end
 
+---------------------------------------------------------------------------------------------
+-- The Rainbow: an arc of bands ending at a chest on one farm, for everyone on the server
+---------------------------------------------------------------------------------------------
+
+local RAINBOW_COLORS = {
+	Color3.fromRGB(235, 87, 87),
+	Color3.fromRGB(242, 153, 74),
+	Color3.fromRGB(242, 201, 76),
+	Color3.fromRGB(111, 207, 151),
+	Color3.fromRGB(86, 156, 236),
+	Color3.fromRGB(155, 114, 230),
+}
+local BAND = 1.4 -- studs per band
+local SPAN = 70 -- studs from the far end of the arc to the chest
+local RISE = 64 -- the arc's control-point height
+
+type RainbowView = { key: string, model: Model, pos: Vector3, endsAt: number, opened: boolean, pending: number? }
+local rainbowView: RainbowView? = nil
+
+local function buildRainbow(pos: Vector3): Model
+	local model = Instance.new("Model")
+	model.Name = "Rainbow"
+	local function part(name: string, size: Vector3, cf: CFrame, color: Color3, material: Enum.Material?): Part
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Size = size
+		p.CFrame = cf
+		p.Color = color
+		p.Material = material or Enum.Material.SmoothPlastic
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Parent = model
+		return p
+	end
+	-- The chest: a wooden box with a gold band and a glow
+	local base = CFrame.new(pos)
+	local box = part("Chest", Vector3.new(2.6, 1.6, 1.8), base * CFrame.new(0, 0.8, 0), Palette.wood)
+	part("Lid", Vector3.new(2.7, 0.6, 1.9), base * CFrame.new(0, 1.9, 0), Palette.woodDark)
+	part("Band", Vector3.new(0.4, 2.3, 1.95), base * CFrame.new(0, 1.15, 0), Palette.coins, Enum.Material.Neon)
+	model.PrimaryPart = box
+	local light = Instance.new("PointLight")
+	light.Color = Palette.coins
+	light.Range = 12
+	light.Brightness = 1.2
+	light.Parent = box
+	local glints = Instance.new("ParticleEmitter")
+	glints.Color = ColorSequence.new(Palette.coins, Palette.cream)
+	glints.LightEmission = 1
+	glints.Size = NumberSequence.new(0.35, 0)
+	glints.Transparency = NumberSequence.new(0.1, 1)
+	glints.Lifetime = NumberRange.new(0.8, 1.2)
+	glints.Rate = if reduced() then 3 else 8
+	glints.Speed = NumberRange.new(1, 2)
+	glints.SpreadAngle = Vector2.new(60, 60)
+	glints.Parent = box
+	-- The arc: one beam per band, concentric, from the far end down to the chest
+	local anchor = part("Arc", Vector3.one * 0.2, base, Palette.cream)
+	anchor.Transparency = 1
+	local dir = Vector3.new(1, 0, 0.35).Unit
+	for i, color in RAINBOW_COLORS do
+		local k = (i - 1) * BAND
+		local a = Instance.new("Attachment")
+		a.Parent = anchor -- parented first: WorldPosition needs it
+		a.WorldPosition = pos - dir * (SPAN + k)
+		local b = Instance.new("Attachment")
+		b.Parent = anchor
+		b.WorldPosition = pos + dir * k
+		a.Axis, b.Axis = Vector3.yAxis, Vector3.yAxis
+		a.SecondaryAxis, b.SecondaryAxis = dir, dir
+		local beam = Instance.new("Beam")
+		beam.Attachment0, beam.Attachment1 = a, b
+		beam.CurveSize0 = RISE + k * 1.3
+		beam.CurveSize1 = -(RISE + k * 1.3)
+		beam.Width0, beam.Width1 = BAND, BAND
+		beam.Segments = 40
+		beam.FaceCamera = true
+		beam.LightEmission = 0.5
+		beam.Color = ColorSequence.new(color)
+		beam.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.25, 0.35),
+			NumberSequenceKeypoint.new(1, 0.25),
+		})
+		beam.Parent = anchor
+	end
+	return model
+end
+
+local function clearRainbow()
+	if rainbowView then
+		rainbowView.model:Destroy()
+		rainbowView = nil
+	end
+end
+
+local function applyRainbow(text: string)
+	if text == "" then
+		clearRainbow()
+		return
+	end
+	local ok, r = pcall(HttpService.JSONDecode, HttpService, text)
+	if not ok or type(r) ~= "table" or type(r.x) ~= "number" then
+		clearRainbow()
+		return
+	end
+	if rainbowView and rainbowView.key == text then
+		return
+	end
+	clearRainbow()
+	local pos = Vector3.new(r.x, r.y, r.z)
+	local model = buildRainbow(pos)
+	model.Parent = starFolder()
+	rainbowView = { key = text, model = model, pos = pos, endsAt = r.endsAt, opened = false }
+	local minutes = math.max(1, math.floor((r.endsAt - ClientStore.now()) / 60 + 0.5))
+	if r.owner == Players.LocalPlayer.UserId then
+		Hud.toast(
+			string.format(
+				"A rainbow ends on your farm, by the gate! Open its chest within %d minutes. Neighbors who visit get one too.",
+				minutes
+			),
+			"celebrate"
+		)
+	else
+		Hud.toast(
+			string.format(
+				"A rainbow ends on %s's farm! Visit within %d minutes for a chest (the Notice Board has a Visit button).",
+				tostring(r.name),
+				minutes
+			),
+			"celebrate"
+		)
+	end
+end
+
+local function stepRainbow(root: BasePart?, clock: number)
+	local view = rainbowView
+	if view == nil or view.opened or root == nil then
+		return
+	end
+	if view.pending and clock - view.pending < 2 then
+		return
+	end
+	local offset = root.Position - view.pos
+	if Vector3.new(offset.X, 0, offset.Z).Magnitude <= CATCH_STUDS then
+		view.pending = clock
+		Remotes.fire("Sky_Rainbow")
+	end
+end
+
 local function step()
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local clock = os.clock()
 	local now = ClientStore.now()
+	stepRainbow(root, clock)
 	for id, star in stars do
 		if now > star.goneAt then
 			removeStar(id, false)
@@ -334,6 +486,20 @@ function SkyController.init()
 		apply(Workspace:GetAttribute("SkyEvent") or "")
 	end)
 	apply(Workspace:GetAttribute("SkyEvent") or "")
+	Hud.handlers.RainbowOpened = function(payload)
+		if rainbowView then
+			rainbowView.opened = true
+			local lid = rainbowView.model:FindFirstChild("Lid") :: BasePart?
+			if lid then
+				lid.CFrame = lid.CFrame * CFrame.new(0, 0.3, 0.9) * CFrame.Angles(math.rad(-70), 0, 0)
+			end
+		end
+		Hud.toast("The rainbow's chest: " .. tostring(payload.text), "celebrate")
+	end
+	Workspace:GetAttributeChangedSignal("SkyRainbow"):Connect(function()
+		applyRainbow(Workspace:GetAttribute("SkyRainbow") or "")
+	end)
+	applyRainbow(Workspace:GetAttribute("SkyRainbow") or "")
 	RunService.RenderStepped:Connect(step)
 end
 

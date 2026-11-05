@@ -150,6 +150,15 @@ function Sky.starCoins(level: number): number
 	return Config.starCoins + Config.starCoinsPerLevel * level
 end
 
+-- Coins a Rainbow chest gives at `level`, and the owner's thank-you for one neighbor's visit
+function Sky.chestCoins(level: number): number
+	return Config.rainbow.coins + Config.rainbow.coinsPerLevel * level
+end
+
+function Sky.thanksCoins(level: number): number
+	return Config.rainbow.thanksCoins + Config.rainbow.thanksPerLevel * level
+end
+
 -- Stars a whole Starfall drops for one player
 function Sky.starsPerShower(kind: string): number
 	return math.floor(Config.kinds[kind].seconds / Config.starEvery)
