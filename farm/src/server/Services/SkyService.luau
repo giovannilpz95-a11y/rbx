@@ -403,9 +403,11 @@ end
 -- The Wandering Peddler
 ---------------------------------------------------------------------------------------------
 
--- Spots on the Town Square plaza the cart can stand on (world x, z), tried in order: the
--- first with open paving
+-- Spots on the Town Square plaza the cart can stand on (world x, z), tried in order, then a
+-- ring search: the first with open paving and nothing standing there (Studio: the first spot
+-- overlapped the Seed Cart)
 local PEDDLER_SPOTS = { { 24, 14 }, { -24, 14 }, { 24, -6 }, { -24, -6 }, { 0, 22 } }
+local CART_CLEARANCE = Vector3.new(11, 6.5, 8) -- the cart's footprint (6 x 3.4) and canopy, with room
 
 local function publishPeddler()
 	local text = if peddler
@@ -433,10 +435,31 @@ local function peddlerSpot(): Vector3
 		end
 	end
 	params.FilterDescendantsInstances = skip
-	for _, spot in PEDDLER_SPOTS do
+	local overlap = OverlapParams.new()
+	overlap.FilterType = Enum.RaycastFilterType.Exclude
+	overlap.FilterDescendantsInstances = skip
+	local candidates = table.clone(PEDDLER_SPOTS)
+	for _, radius in { 30, 38, 46 } do
+		for step = 0, 11 do
+			local a = step * math.pi / 6
+			table.insert(candidates, { math.cos(a) * radius, math.sin(a) * radius })
+		end
+	end
+	for _, spot in candidates do
 		local hit = Workspace:Raycast(Vector3.new(spot[1], 60, spot[2]), Vector3.new(0, -120, 0), params)
 		if hit and hit.Position.Y < 2 and hit.Normal.Y > 0.9 then
-			return hit.Position
+			-- Clear from just above the paving up past the canopy
+			local box = CFrame.new(hit.Position + Vector3.new(0, 0.5 + CART_CLEARANCE.Y / 2, 0))
+			local blocked = false
+			for _, p in Workspace:GetPartBoundsInBox(box, CART_CLEARANCE, overlap) do
+				if p.Transparency < 1 or p.CanCollide then -- not an invisible zone
+					blocked = true
+					break
+				end
+			end
+			if not blocked then
+				return hit.Position
+			end
 		end
 	end
 	local first = PEDDLER_SPOTS[1]
