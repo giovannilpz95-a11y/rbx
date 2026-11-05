@@ -75,6 +75,8 @@ export type Cell = {
 	mowerColor: number?, -- the tile colour whose matches charge the mower
 	packet: any?, -- the "bale" is a seed packet: seeds left (true until Engine.new fills it)
 	packetColor: number?, -- the tile colour whose matches take a seed from the packet
+	jar: any?, -- the "bale" is a jam jar: scoops still to fill it, 0 = full (true until Engine.new sets it)
+	jarColor: number?, -- the tile colour whose matches fill the jar
 	pump: boolean?, -- the "bale" is a hand pump: it never breaks, hits drain flood water near it
 	flood: boolean?, -- flood water under the tile (only a pump drains it)
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
@@ -279,6 +281,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "K" then
 					cell.bale = 1
 					cell.packet = true
+				elseif ch == "J" then
+					cell.bale = 1
+					cell.jar = true
 				elseif ch == "U" then
 					cell.bale = 1
 					cell.mower = true
@@ -876,6 +881,8 @@ function Board.hash(self): string
 				table.insert(row, "M" .. tostring(cell.mower) .. "c" .. tostring(cell.mowerColor) .. clover)
 			elseif cell.packet then
 				table.insert(row, "A" .. tostring(cell.packet) .. "c" .. tostring(cell.packetColor) .. clover)
+			elseif cell.jar then
+				table.insert(row, "C" .. tostring(cell.jar) .. "c" .. tostring(cell.jarColor) .. clover)
 			elseif cell.lamb then
 				table.insert(row, "I" .. clover)
 			elseif cell.snail then
@@ -960,6 +967,8 @@ function Board.snapshot(self)
 			gopher = cell.gopher,
 			mowerColor = cell.mowerColor,
 			packetColor = cell.packetColor,
+			jar = cell.jar,
+			jarColor = cell.jarColor,
 			pump = cell.pump,
 			flood = cell.flood,
 			lamb = cell.lamb,

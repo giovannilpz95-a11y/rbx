@@ -115,6 +115,14 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Jam jars: block a cell like a bale and have a tile colour (the level's
+	colours in turn, in reading order). A jar needs JAR_FILL scoops: a match
+	of its colour next to it (once per jar per wave) adds one, and so does
+	each blast on it; other colours' matches don't touch an empty jar. The
+	last scoop fills it (a "JarFull" effect), and then the next hit of any
+	kind, a match of any colour next to it or a blast, cracks it open (a
+	"Jar" effect) for the Jars goal.
+
 	Flood water and hand pumps: water lies under the tiles on some cells and
 	nothing clears it but a pump. A pump blocks a cell and never breaks:
 	every hit (a match next to it, once per wave, or a blast on it) drains
@@ -226,6 +234,7 @@ local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common co
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
+local JAR_FILL = 3 -- colour matches (or blasts) that fill a jam jar
 local MOWER_CHARGES = 3 -- colour matches before a lawn mower mows its row
 local PUMP_DRAIN = 2 -- flooded cells a hand pump drains each time it's hit
 local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
@@ -282,14 +291,18 @@ function Engine.new(level, seed: number, options: Options?)
 		self:_moveGopher(nil) -- the first gopher
 	end
 
-	-- Seed packets and lawn mowers take the level's colours in turn, in reading order.
-	local packets, mowers = 0, 0
+	-- Seed packets, jam jars and lawn mowers take the level's colours in turn, in reading order.
+	local packets, jars, mowers = 0, 0, 0
 	self.mowers = {}
 	board:eachCell(function(cell)
 		if cell.packet then
 			packets += 1
 			cell.packet = PACKET_SEEDS
 			cell.packetColor = colors[(packets - 1) % #colors + 1]
+		elseif cell.jar then
+			jars += 1
+			cell.jar = JAR_FILL
+			cell.jarColor = colors[(jars - 1) % #colors + 1]
 		elseif cell.mower then
 			mowers += 1
 			cell.mower = 0
@@ -596,7 +609,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "mower" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "mower" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -765,6 +778,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_takeSeed(wave, cell)
 		return
 	end
+	if cell.jar then
+		self:_fillJar(wave, cell)
+		return
+	end
 	if cell.mower then
 		return -- nothing breaks a mower, and only colour matches charge it
 	end
@@ -925,6 +942,22 @@ function Engine._takeSeed(self, wave, cell)
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
 	table.insert(wave.effects, { type = "Packet", x = cell.x, y = cell.y })
 	self.goals:onPacket()
+end
+
+-- A jam jar takes a scoop (the last one fills it), or a full jar cracks open.
+function Engine._fillJar(self, wave, cell)
+	if cell.jar > 0 then
+		cell.jar -= 1
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, jar = cell.jar, jarColor = cell.jarColor })
+		if cell.jar == 0 then
+			table.insert(wave.effects, { type = "JarFull", x = cell.x, y = cell.y })
+		end
+		return
+	end
+	cell.bale, cell.jar, cell.jarColor = 0, nil, nil
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+	table.insert(wave.effects, { type = "Jar", x = cell.x, y = cell.y })
+	self.goals:onJar()
 end
 
 -- A hand pump drains the nearest flooded cells (breadth first, in NEIGHBORS
@@ -1144,6 +1177,12 @@ function Engine._popGroups(self, wave, groups)
 						wave.balesTouched[n] = true
 						self:_takeSeed(wave, n)
 					end
+				elseif n and n.jar then
+					-- An empty jar fills only from its own colour; a full one cracks at any match.
+					if (n.jar == 0 or group.color == n.jarColor) and not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_fillJar(wave, n)
+					end
 				elseif n and n.snail and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					wave.shoves = wave.shoves or {}
@@ -1231,6 +1270,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Floods") then tiers[1] else tiers[4], cell)
 		elseif cell.packet then
 			table.insert(if goals:wants("Packets") then tiers[1] else tiers[4], cell)
+		elseif cell.jar then
+			table.insert(if goals:wants("Jars") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then

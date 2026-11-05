@@ -84,6 +84,7 @@ local BRUSH_ROWS = {
 		{ char = "W", label = TileStyle.GoalGlyphs.Floods },
 		{ char = "H", label = TileStyle.PumpGlyph },
 		{ char = "K", label = TileStyle.PacketGlyph },
+		{ char = "J", label = TileStyle.JarGlyph },
 		{ char = "U", label = TileStyle.MowerGlyph },
 		{ char = "I", label = TileStyle.BurrowGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
@@ -99,7 +100,7 @@ local FENCE = "|" -- the fence brush
 local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies", "Trays", "Bins", "Floods", "Packets", "Gophers" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies", "Trays", "Bins", "Floods", "Packets", "Gophers", "Jars" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -127,6 +128,7 @@ local GOAL_BUTTONS = {
 	Bins = "+ ♻",
 	Floods = "+ 💧",
 	Packets = "+ 🎫",
+	Jars = "+ 🏺",
 	Gophers = "+ 🐹",
 }
 
@@ -417,6 +419,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.pump, TileStyle.PumpGlyph
 	elseif char == "K" then
 		return TileStyle.Board.packet, TileStyle.PacketGlyph
+	elseif char == "J" then
+		return TileStyle.Board.jar, TileStyle.JarGlyph
 	elseif char == "U" then
 		return TileStyle.Board.mower, TileStyle.MowerGlyph
 	elseif char == "I" then
@@ -613,6 +617,8 @@ local function goalLabel(goal): string
 		return "💧 all water"
 	elseif goal.kind == "Packets" then
 		return "🎫 all packets"
+	elseif goal.kind == "Jars" then
+		return "🏺 all jars"
 	elseif goal.kind == "Gophers" then
 		return "🐹 all gophers"
 	end
