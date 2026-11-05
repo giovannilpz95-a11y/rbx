@@ -63,6 +63,8 @@ export type Cell = {
 	bucket: boolean?, -- the "bale" is a mud bucket: one hit tips it, spilling mud around it
 	truck: boolean?, -- the "bale" is a hay truck: each hit drops one of its bales nearby
 	snail: boolean?, -- the "bale" is a garden snail: matches shove it along, and it leaves goo
+	tray: any?, -- the seed tray this cell is part of: { cells, left } (touching "R" cells make one)
+	sprouted: boolean?, -- this tray cell's seed has sprouted (its tile was cleared)
 	spot: boolean?, -- a firefly spot: fireflies light up here now and then
 	lit: boolean?, -- the spot's firefly is lit: clearing the tile here catches it
 	lamb: boolean?, -- the "bale" is a lost lamb: matches next to it walk it towards a pen
@@ -120,6 +122,9 @@ function Board.new(width: number, height: number)
 		quilts = {},
 		pens = {}, -- lamb pens ("P" in the layout): cells in reading order
 		spots = {}, -- firefly spots ("N" in the layout): cells in reading order
+		-- Seed trays ("R" in the layout; touching R cells make one tray):
+		-- { cells = { Cell } in reading order, left = cells not sprouted yet }.
+		trays = {},
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -263,6 +268,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "N" then
 					cell.spot = true
 					table.insert(self.spots, cell)
+				elseif ch == "R" then
+					cell.tray = true -- replaced by its tray below
 				elseif ch == "j" then
 					cell.bale = 1
 					cell.hive = true
@@ -334,6 +341,18 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 	group(function(cell)
 		return cell.buried == true
 	end, "statue", self.statues)
+	local trayCells = {}
+	self:eachCell(function(cell)
+		if cell.tray == true then
+			cell.tray = nil
+			trayCells[cell] = true
+		end
+	end)
+	if next(trayCells) then
+		group(function(cell)
+			return trayCells[cell] == true
+		end, "tray", self.trays)
+	end
 	local quiltCells = {}
 	self:eachCell(function(cell)
 		if cell.quilt == true then
@@ -784,6 +803,9 @@ function Board.hash(self): string
 			if cell and cell.spot then
 				clover ..= if cell.lit then "$" else "%"
 			end
+			if cell and cell.tray then
+				clover ..= if cell.sprouted then ":" else ";"
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -891,6 +913,8 @@ function Board.snapshot(self)
 			lamb = cell.lamb,
 			pen = cell.pen,
 			spot = cell.spot,
+			tray = cell.tray ~= nil,
+			sprouted = cell.sprouted,
 			lit = cell.lit,
 			-- What's inside shows only once it's open.
 			mailbox = cell.mailbox and { open = cell.mailbox.open, mail = cell.mailbox.open and cell.mailbox.mail },

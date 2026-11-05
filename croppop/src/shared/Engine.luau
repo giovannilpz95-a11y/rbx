@@ -95,6 +95,11 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Seed trays: touching tray cells make one tray, under the tiles. Clearing
+	the tile on a tray cell (any clear: a match, a blast, a booster) sprouts
+	that cell (a "Sprout" effect); when every cell of a tray has sprouted,
+	the tray is done (a "Tray" effect with its cells), for the Trays goal.
+
 	Fireflies: some cells are firefly spots, and a few of them are lit at
 	a time (a third of them, at least one). Clearing the tile on a lit
 	spot, by a match or a blast, catches its firefly for the Fireflies
@@ -329,6 +334,9 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	cell.piece = nil
 	table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = cause })
 	self.goals:onCollect(piece.color)
+	if cell.tray and not cell.sprouted then
+		self:_sprout(wave, cell)
+	end
 	if cell.lit then
 		cell.lit = false -- caught: the spot goes dark until the lights move
 		table.insert(wave.effects, { type = "Catch", x = cell.x, y = cell.y })
@@ -1055,6 +1063,8 @@ function Engine._chooseBeeTarget(self)
 				table.insert(tiers[2], cell)
 			elseif cell.lit and goals:wants("Fireflies") then
 				table.insert(tiers[2], cell)
+			elseif cell.tray and not cell.sprouted and goals:wants("Trays") then
+				table.insert(tiers[2], cell)
 			elseif cell.buried and goals:wants("Statues") then
 				table.insert(tiers[2], cell)
 			elseif cell.web and goals:wants("Webs") then
@@ -1717,6 +1727,23 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then
 		self:_bonusRound(phases)
+	end
+end
+
+-- A tray cell's tile was cleared: it sprouts, and a tray with every cell
+-- sprouted is done.
+function Engine._sprout(self, wave, cell)
+	cell.sprouted = true
+	table.insert(wave.effects, { type = "Sprout", x = cell.x, y = cell.y })
+	local tray = cell.tray
+	tray.left -= 1
+	if tray.left == 0 then
+		local cells = {}
+		for _, c in tray.cells do
+			table.insert(cells, { x = c.x, y = c.y })
+		end
+		table.insert(wave.effects, { type = "Tray", cells = cells })
+		self.goals:onTray()
 	end
 end
 
