@@ -100,4 +100,20 @@ return table.freeze({
 		xp = 10,
 		thanksMax = 8, -- neighbors the owner is thanked for (Coins as the Rainbow's thanks)
 	}),
+
+	-- The Wandering Peddler (14 H2, a rare visitor): now and then a cart rolls into the Town
+	-- Square for a few minutes with three offers for each player, their own (nobody can buy
+	-- anyone else's out): a decoration from a few levels ahead (prepaid, so it can be placed
+	-- before its level), one at your level for less, and a pair of Heirloom Seeds. Coins only.
+	peddler = table.freeze({
+		checkSeconds = 20 * MIN,
+		chance = 0.15, -- per roll: about one visit every 2.2 hours
+		seconds = 8 * MIN,
+		reach = 24, -- flat studs from the cart to buy (the client opens the panel at 10)
+		earlyLevels = 4, -- the early decoration unlocks 1-4 levels above yours
+		earlyMult = 1.25, -- and costs this much more than its usual price
+		dealDiscount = 0.3, -- the decoration at your level: 30% off
+		seeds = 2, -- Heirloom Seeds in the bundle
+		seedPrice = 50, -- Coins each (the Seed Cart sells them for 60)
+	}),
 })

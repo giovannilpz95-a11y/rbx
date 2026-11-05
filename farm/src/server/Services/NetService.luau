@@ -118,6 +118,7 @@ local function snapshot(data: { [string]: any })
 		blimp = data.blimp, -- Airship Freight: the load, its timers and Sky Miles (shared/Blimp)
 		heirloomSeeds = data.heirloomSeeds,
 		decorCoupons = data.decorCoupons,
+		peddler = data.peddler, -- what you bought from the Wandering Peddler this visit
 		trophies = data.trophies,
 		quests = data.quests,
 		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)

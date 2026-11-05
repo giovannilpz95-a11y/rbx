@@ -2149,12 +2149,13 @@ local function renderTown(state: { [string]: any })
 	end
 	for _, id in sortedKeys(Decor.items) do
 		local def = Decor.items[id]
-		if def.unlockLevel > state.level + 2 then
+		local prepaid = (state.decorCoupons or {})[id] or 0
+		if def.unlockLevel > state.level + 2 and prepaid <= 0 then
 			continue
 		end
-		local unlocked = state.level >= def.unlockLevel
+		-- A prepaid one from the Wandering Peddler can go down before its level
+		local unlocked = state.level >= def.unlockLevel or prepaid > 0
 		local room, full = DecorRules.hasRoom(state, id)
-		local prepaid = (state.decorCoupons or {})[id] or 0
 		local card = line(
 			if prepaid > 0
 				then string.format("%s   Prepaid x%d   +%d XP", def.displayName, prepaid, def.xp)
@@ -2519,6 +2520,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Sky: a Starfall now (2 minutes)", "Debug_Sky", 300, 26, "Starfall")
 	devButton("Sky: a rainbow ends on your farm now", "Debug_Sky", 300, 27, "Rainbow")
 	devButton("Visitors: the Golden Goose lands on your farm now", "Debug_Sky", 360, 28, "Goose")
+	devButton("Visitors: the Wandering Peddler in the Town Square now", "Debug_Sky", 380, 29, "Peddler")
 end
 
 ---------------------------------------------------------------------------------------------
