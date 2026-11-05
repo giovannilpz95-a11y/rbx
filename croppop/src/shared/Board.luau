@@ -93,6 +93,7 @@ export type Cell = {
 	goo: boolean?, -- goo covers the tile here (a match or blast on it clears it; it spreads)
 	thickGoo: boolean?, -- the goo is thick: the first clear leaves plain goo
 	web: boolean?, -- a web over the tile: it can't move or match; only a blast clears the web
+	vine: boolean?, -- the "web" is a vine: a match next to it cuts it too, and vines creep
 	rainbow: boolean?, -- a rainbow patch: the plain tile here changes colour after every swap
 	buried: boolean?, -- part of a buried statue lies under this cell (only blasts dig it up)
 	statue: any?, -- the statue this cell is (or was) part of: { cells, left }
@@ -243,6 +244,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.goo = true
 				elseif ch == "n" then
 					cell.web = true
+				elseif ch == "Y" then
+					cell.web = true
+					cell.vine = true
 				elseif ch == "r" then
 					cell.rainbow = true
 					self.hasRainbow = true
@@ -838,7 +842,7 @@ function Board.hash(self): string
 				clover ..= "~"
 			end
 			if cell and cell.web then
-				clover ..= "*"
+				clover ..= if cell.vine then "'" else "*"
 			end
 			if cell and cell.pen then
 				clover ..= "&"
@@ -1006,6 +1010,7 @@ function Board.snapshot(self)
 			thickGoo = cell.thickGoo,
 			rainbow = cell.rainbow,
 			web = cell.web,
+			vine = cell.vine,
 			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin, timer = piece.timer },
 		})

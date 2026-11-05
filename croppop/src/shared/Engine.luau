@@ -115,6 +115,13 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Vines: a vine grows over a tile like a web: the tile is held in place
+	and kept out of matches. A match next to a vine (once per vine per
+	wave) or a blast on it cuts it (the tile stays), for the Vines goal.
+	After a swap that cuts no vine, the vines creep onto one more plain
+	tile next to them (a "Creep" effect), which adds one to the goal,
+	until they cover a quarter of the board.
+
 	Weathervanes: block a cell like a 2-layer bale, with an arrow pointing
 	at one side (up, right, down, left in turn, in reading order). After
 	every swap each vane turns a quarter clockwise (a "Turn" effect). A
@@ -258,6 +265,7 @@ local BIN_RADIUS = 1 -- a bursting bin blasts the cells this close (a small diam
 local LIGHT_EVERY = 2 -- swaps between the fireflies moving to other spots
 local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
+local VINE_COVER_LIMIT = 4 -- vines stop creeping once they cover 1/this of the cells
 
 local NEIGHBORS = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }
 -- What a surprise crate can hold.
@@ -296,6 +304,7 @@ function Engine.new(level, seed: number, options: Options?)
 		continues = 0, -- paid +5-move continues taken
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
 		gooCleared = 0, -- during the current action (stops goo spreading)
+		vinesCut = 0, -- during the current action (stops vines creeping)
 		budsHit = {}, -- tulip buds hit since the last swap ended
 		lightSwaps = 0, -- swaps since the fireflies last moved
 	}, Engine)
@@ -662,9 +671,7 @@ function Engine._trample(self, wave, to): boolean
 			return true
 		end
 		if to.web then
-			to.web = false
-			table.insert(wave.webs, { x = to.x, y = to.y })
-			self.goals:onWeb()
+			self:_clearWeb(wave, to)
 		elseif to.bale > 0 then
 			wave.balesTouched[to] = true
 			self:_damageBale(wave, to)
@@ -745,9 +752,7 @@ function Engine._shoveSnail(self, wave, snail, dx: number, dy: number)
 		return
 	end
 	if to.web then
-		to.web = false -- the snail eats the web; the tile stays
-		table.insert(wave.webs, { x = to.x, y = to.y })
-		self.goals:onWeb()
+		self:_clearWeb(wave, to) -- the snail eats the web or vine; the tile stays
 	elseif to.bale > 0 then
 		wave.balesTouched[to] = true
 		self:_damageBale(wave, to)
@@ -990,6 +995,64 @@ function Engine._fillJar(self, wave, cell)
 	self.goals:onJar()
 end
 
+-- A web or vine comes off its tile (the tile stays).
+function Engine._clearWeb(self, wave, cell)
+	cell.web = false
+	table.insert(wave.webs, { x = cell.x, y = cell.y })
+	if cell.vine then
+		cell.vine = nil
+		self.vinesCut += 1
+		self.goals:onVine()
+	else
+		self.goals:onWeb()
+	end
+end
+
+-- After a swap that cut no vine, the vines creep onto one more plain tile
+-- next to them (picked in reading order with the rng, so it's the same
+-- every time), until they cover 1/VINE_COVER_LIMIT of the board.
+function Engine._growVines(self, phases)
+	local board = self.board
+	local vines, cells = 0, 0
+	board:eachCell(function(cell)
+		cells += 1
+		if cell.vine then
+			vines += 1
+		end
+	end)
+	if vines == 0 or vines * VINE_COVER_LIMIT >= cells then
+		return
+	end
+	local candidates, seen = {}, {}
+	board:eachCell(function(cell)
+		if cell.vine then
+			for _, d in NEIGHBORS do
+				local n = board:get(cell.x + d[1], cell.y + d[2])
+				if n and not seen[n] and Board.isPlainTile(n) and not board:fenceBetween(cell.x, cell.y, n.x, n.y) then
+					seen[n] = true
+					table.insert(candidates, n)
+				end
+			end
+		end
+	end)
+	if #candidates == 0 then
+		return
+	end
+	table.sort(candidates, function(a, b)
+		if a.y ~= b.y then
+			return a.y < b.y
+		end
+		return a.x < b.x
+	end)
+	local cell = candidates[self.rng:int(1, #candidates)]
+	cell.web, cell.vine = true, true
+	self.goals:onVineGrown()
+	local wave = newWave()
+	table.insert(wave.webs, { x = cell.x, y = cell.y, on = true, vine = true })
+	table.insert(wave.effects, { type = "Creep", x = cell.x, y = cell.y })
+	self:_finishWave(wave, phases)
+end
+
 -- A weathervane loses a layer; the last one brings it down.
 function Engine._hitVane(self, wave, cell)
 	cell.bale -= 1
@@ -1200,9 +1263,7 @@ function Engine._hit(self, wave, x: number, y: number)
 		self:_digUp(wave, cell)
 	end
 	if cell.web then
-		cell.web = false -- the blast clears the web; the tile stays
-		table.insert(wave.webs, { x = cell.x, y = cell.y })
-		self.goals:onWeb()
+		self:_clearWeb(wave, cell) -- the blast clears the web or vine; the tile stays
 		return
 	end
 	if cell.bale > 0 then
@@ -1249,6 +1310,12 @@ function Engine._popGroups(self, wave, groups)
 				local n = board:get(cell.x + d[1], cell.y + d[2])
 				if n and fed[n] then
 					-- fed above
+				elseif n and n.vine then
+					-- A match next to a vine cuts it (the tile under it stays).
+					if not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_clearWeb(wave, n)
+					end
 				elseif n and n.mower then
 					-- mowers only charge from colour matches (above)
 				elseif n and n.packet then
@@ -1401,7 +1468,7 @@ function Engine._chooseBeeTarget(self)
 				table.insert(tiers[2], cell)
 			elseif cell.buried and goals:wants("Statues") then
 				table.insert(tiers[2], cell)
-			elseif cell.web and goals:wants("Webs") then
+			elseif cell.web and goals:wants(if cell.vine then "Vines" else "Webs") then
 				table.insert(tiers[2], cell)
 			elseif goals:wants("Collect", cell.piece.color) then
 				table.insert(tiers[3], cell)
@@ -1896,6 +1963,7 @@ function Engine.trySwap(self, x1: number, y1: number, x2: number, y2: number): (
 
 	self.weedsPulled = 0
 	self.gooCleared = 0
+	self.vinesCut = 0
 	local isCombo = (pa.power ~= nil and pb.power ~= nil)
 		or pa.power == Power.Sunflower
 		or pb.power == Power.Sunflower
@@ -2050,6 +2118,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	end
 	if wasSwap then
 		self:_wiltBuds(phases)
+	end
+	if wasSwap and self.vinesCut == 0 and self.goals:wants("Vines") and not self.goals:isComplete() then
+		self:_growVines(phases)
 	end
 	if wasSwap and #self.vanes > 0 and not self.goals:isComplete() then
 		self:_turnVanes(phases)
