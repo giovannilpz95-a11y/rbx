@@ -56,6 +56,16 @@ local published = ""
 local publishedNext = ""
 local forecastFor = -1 -- the event the Notice Board has forecast
 local visits: { [Player]: Visit } = {}
+-- The Rainbow on this server: whose farm, where its chest stands, who has opened it
+type Rainbow = {
+	owner: Player,
+	pos: Vector3,
+	endsAt: number,
+	opened: { [number]: boolean },
+	thanked: number,
+}
+local rainbow: Rainbow? = nil
+local publishedRainbow = ""
 local nextStarId = 0
 
 local function activeEvent(now: number): Sky.Event?
@@ -258,6 +268,111 @@ function SkyService.collect(player: Player, id: any): (boolean, string?)
 	return true
 end
 
+---------------------------------------------------------------------------------------------
+-- The Rainbow
+---------------------------------------------------------------------------------------------
+
+local function publishRainbow()
+	local text = ""
+	if rainbow then
+		local r = rainbow :: Rainbow
+		text = HttpService:JSONEncode({
+			owner = r.owner.UserId,
+			name = r.owner.DisplayName,
+			x = r.pos.X,
+			y = r.pos.Y,
+			z = r.pos.Z,
+			endsAt = r.endsAt,
+		})
+	end
+	if text ~= publishedRainbow then
+		publishedRainbow = text
+		Workspace:SetAttribute("SkyRainbow", text)
+	end
+end
+
+-- Where the chest stands: up the spine path from the gate, on the ground there
+local function chestSpot(owner: Player): Vector3?
+	local gate = PlotService.gateCFrame(owner)
+	if gate == nil then
+		return nil
+	end
+	local at = (gate * CFrame.new(0, 0, -Config.rainbow.ahead)).Position
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local skip = {}
+	for _, other in Players:GetPlayers() do
+		if other.Character then
+			table.insert(skip, other.Character)
+		end
+	end
+	params.FilterDescendantsInstances = skip
+	local hit = Workspace:Raycast(at + Vector3.new(0, 40, 0), Vector3.new(0, -80, 0), params)
+	return if hit then hit.Position else Vector3.new(at.X, 0.2, at.Z)
+end
+
+-- A rainbow ends on one farm here, picked at random from the players past the guide
+function SkyService.startRainbow(now: number, owner: Player?): boolean
+	local choices = {}
+	for _, player in Players:GetPlayers() do
+		if eligible(DataService.get(player)) and PlotService.gateCFrame(player) ~= nil then
+			table.insert(choices, player)
+		end
+	end
+	local chosen = owner or (if #choices > 0 then choices[rng:NextInteger(1, #choices)] else nil)
+	if chosen == nil then
+		return false
+	end
+	local pos = chestSpot(chosen)
+	if pos == nil then
+		return false
+	end
+	rainbow = { owner = chosen, pos = pos, endsAt = now + Config.rainbow.seconds, opened = {}, thanked = 0 }
+	publishRainbow()
+	NoticeService.post(string.format("A rainbow ends on %s's farm", chosen.DisplayName), chosen.UserId)
+	return true
+end
+
+-- Open the Rainbow's chest (the client sends it when the avatar walks up to it)
+function SkyService.openRainbow(player: Player): (boolean, string?)
+	local r = rainbow
+	local data = DataService.get(player)
+	if r == nil or data == nil or not eligible(data) or r.opened[player.UserId] then
+		return false
+	end
+	if Clock.now() > r.endsAt + 2 or not NetService.isNear(player, r.pos, Config.rainbow.reach) then
+		return false
+	end
+	r.opened[player.UserId] = true
+	local coins = Sky.chestCoins(data.level)
+	EconomyService.add(player, "Coins", coins, "sky_rainbow")
+	EconomyService.add(player, "XP", Config.rainbow.xp, "sky_rainbow")
+	local parts = { string.format("+%d Coins", coins), string.format("+%d XP", Config.rainbow.xp) }
+	if rng:NextNumber() < Config.rainbow.rewardChance then
+		local reward
+		reward, data.trains.seed = Train.drawReward(data.trains.seed, data.level)
+		TrainService.give(data, { [reward.item] = reward.qty })
+		table.insert(parts, "+" .. TrainService.rewardName(reward.item, reward.qty))
+	end
+	NetService.popup(player, { kind = "RainbowOpened", text = table.concat(parts, "  ") })
+	-- The owner's thank-you for each neighbor who came
+	local owner = r.owner
+	local ownerData = DataService.get(owner)
+	if owner ~= player and owner.Parent and ownerData and r.thanked < Config.rainbow.thanksMax then
+		r.thanked += 1
+		local thanks = Sky.thanksCoins(ownerData.level)
+		EconomyService.add(owner, "Coins", thanks, "sky_rainbow_thanks")
+		DataService.markDirty(owner)
+		NetService.pushState(owner)
+		NetService.toast(
+			owner,
+			string.format("%s opened the rainbow's chest on your farm: +%d Coins", player.DisplayName, thanks)
+		)
+	end
+	TelemetryService.custom(player, "sky_rainbow", 1, if owner == player then "own" else "visit", true)
+	return true
+end
+
 -- The end of an event: tell each player what it left them
 local function finish(event: Sky.Event)
 	local kind = Config.kinds[event.kind]
@@ -292,6 +407,10 @@ local function tick()
 		current = event
 		if was then
 			finish(was)
+			-- After some Rain Showers, a rainbow
+			if was.kind == "Rain" and event == nil and rng:NextNumber() < Config.rainbow.chance then
+				SkyService.startRainbow(now)
+			end
 		end
 		if event then
 			for _, player in Players:GetPlayers() do
@@ -321,6 +440,11 @@ local function tick()
 			visits[player] = nil
 		end
 	end
+	-- The Rainbow fades at its end, or when its farm's owner leaves
+	if rainbow and (now > rainbow.endsAt or rainbow.owner.Parent == nil) then
+		rainbow = nil
+	end
+	publishRainbow()
 	-- The Notice Board forecasts the next event
 	local upcoming = Sky.nextEvent(now)
 	if upcoming and upcoming.startsAt ~= forecastFor and upcoming.startsAt - now <= Config.forecastSeconds then
@@ -329,12 +453,22 @@ local function tick()
 	end
 end
 
--- Studio: a Rain Shower or Starfall starts now (`kind`), for its full length
+-- Studio: a Rain Shower or Starfall starts now (`kind`), for its full length; "Rainbow": a
+-- rainbow ends on your farm now
 function SkyService.debugStart(player: Player, kind: any): (boolean, string?)
-	if not RunService:IsStudio() or type(kind) ~= "string" or Config.kinds[kind] == nil then
+	if not RunService:IsStudio() or type(kind) ~= "string" then
 		return false
 	end
 	local now = Clock.now()
+	if kind == "Rainbow" then
+		if not SkyService.startRainbow(now, player) then
+			return false, "Dev: no rainbow (finish the guide first)"
+		end
+		NetService.toast(player, "Dev: a rainbow ends on your farm now")
+		return true
+	elseif Config.kinds[kind] == nil then
+		return false
+	end
 	override = { kind = kind, startsAt = now, endsAt = now + Config.kinds[kind].seconds }
 	tick()
 	NetService.toast(player, "Dev: a " .. Config.kinds[kind].displayName .. " starts now")
@@ -343,6 +477,7 @@ end
 
 function SkyService.init()
 	NetService.on(Net.Sky_Collect, 4, 8, SkyService.collect)
+	NetService.on(Net.Sky_Rainbow, 1, 3, SkyService.openRainbow)
 	NetService.on(Net.Debug_Sky, 1, 2, SkyService.debugStart)
 	task.spawn(function()
 		while true do

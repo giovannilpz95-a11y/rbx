@@ -145,6 +145,15 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		ok(Prize.tiers.Starlit.value < Prize.tiers.Heirloom.value, "Heirloom stays the rarest prize")
 	end)
 
+	test("sky: the Rainbow", function()
+		eq(Sky.chestCoins(10), 30, "10 + 2 a level")
+		eq(Sky.thanksCoins(10), 15, "the owner's thanks: 5 + 1 a level")
+		ok(Config.rainbow.reach > 7, "the server allows more than the client's open distance")
+		-- A rainbow after the latest rain still fades before the second slot can start
+		local lastRainEnd = Config.slots[1].to * 60 + Config.kinds.Rain.seconds
+		ok(lastRainEnd + Config.rainbow.seconds < Config.slots[2].from * 60, "clear of the second slot")
+	end)
+
 	test("sky: stars", function()
 		eq(Sky.starsPerShower("Starfall"), 12, "12 stars in a Starfall")
 		eq(Sky.starCoins(10), 14, "4 + 1 a level")
