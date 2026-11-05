@@ -69,6 +69,8 @@ export type Cell = {
 	lit: boolean?, -- the spot's firefly is lit: clearing the tile here catches it
 	lamb: boolean?, -- the "bale" is a lost lamb: matches next to it walk it towards a pen
 	pen: boolean?, -- a lamb's pen: a lamb that steps onto it is home (tiles sit here as usual)
+	burrow: boolean?, -- an open gopher burrow (filled in once its gopher is caught)
+	gopher: boolean?, -- the gopher is in this burrow now
 	mower: any?, -- the "bale" is a lawn mower: charges so far (true until Engine.new sets it up)
 	mowerColor: number?, -- the tile colour whose matches charge the mower
 	packet: any?, -- the "bale" is a seed packet: seeds left (true until Engine.new fills it)
@@ -133,6 +135,7 @@ function Board.new(width: number, height: number)
 		-- { cells = { Cell } in reading order, left = cells not sprouted yet }.
 		trays = {},
 		floodsLeft = 0, -- flooded cells ("W") still to drain
+		burrows = {}, -- gopher burrows ("I" in the layout): cells in reading order
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -279,6 +282,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "U" then
 					cell.bale = 1
 					cell.mower = true
+				elseif ch == "I" then
+					cell.burrow = true
+					table.insert(self.burrows, cell)
 				elseif ch == "W" then
 					cell.flood = true
 					self.floodsLeft += 1
@@ -832,6 +838,9 @@ function Board.hash(self): string
 			if cell and cell.flood then
 				clover ..= "="
 			end
+			if cell and cell.burrow then
+				clover ..= if cell.gopher then "?" else "!"
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -947,6 +956,8 @@ function Board.snapshot(self)
 			bin = cell.bin,
 			packet = cell.packet,
 			mower = cell.mower,
+			burrow = cell.burrow,
+			gopher = cell.gopher,
 			mowerColor = cell.mowerColor,
 			packetColor = cell.packetColor,
 			pump = cell.pump,

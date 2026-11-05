@@ -23,6 +23,7 @@
 	  { kind = "Bins" }                                  -- burst every compost bin
 	  { kind = "Floods" }                                -- pump every flooded cell dry
 	  { kind = "Packets" }                               -- empty every seed packet
+	  { kind = "Gophers" }                               -- catch a gopher in every burrow
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
 	  { kind = "Snowballs" }                             -- clear every snowball (they burst and come back if left)
@@ -51,6 +52,7 @@ function Goals.new(defs: { any }, board)
 	local bins = 0
 	local floods = board.floodsLeft or 0
 	local packets = 0
+	local burrows = #(board.burrows or {})
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
 		if cell.web then
@@ -132,6 +134,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
 		elseif def.kind == "Honey" then
 			table.insert(list, { kind = "Honey", target = def.count, progress = 0 })
+		elseif def.kind == "Gophers" then
+			table.insert(list, { kind = "Gophers", target = def.count or burrows, progress = 0 })
 		elseif def.kind == "Packets" then
 			table.insert(list, { kind = "Packets", target = def.count or packets, progress = 0 })
 		elseif def.kind == "Floods" then
@@ -237,6 +241,10 @@ end
 
 function Goals.onHoney(self)
 	bump(self, "Honey", nil)
+end
+
+function Goals.onGopher(self)
+	bump(self, "Gophers", nil)
 end
 
 function Goals.onPacket(self)
