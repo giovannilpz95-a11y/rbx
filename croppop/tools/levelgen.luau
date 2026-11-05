@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 900
+local LAST = tonumber(ARGS[2]) or 925
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -208,6 +208,11 @@ local NAMES = {
 	"Turning the Heap", "Garden Scraps", "Wormcast Walk", "Kitchen Peelings", "Mulch Mound",
 	"Black Gold Bank", "Humus Heights", "Loam Lea", "Heap Hollow", "Grand Mulch Show",
 	"Leaf Litter Lane", "Peat Free Plot", "Worm Farm Way", "Rotted Leaf Rise", "Grand Compost Gala",
+	"Flood Plain", "Pump House", "Water Lane", "Soggy Boots", "Drain Dale",
+	"Sluice Way", "Marsh Lane", "Splash Down", "Hand Pump Hill", "Grand Flood Fair",
+	"Downpour Drive", "Deluge Dell", "Overflow Yard", "Wetland Trail", "Brimming Banks",
+	"Pump Handle Row", "Water Wheel", "Flood Barrier", "Soggy Socks", "Grand Pump Show",
+	"Marshland Mile", "Splashy Lane", "Drainpipe Dash", "Water Works", "Grand Deluge Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -247,7 +252,8 @@ local LAMB_INTRO = 801 -- first level with lost lambs
 local FIREFLY_INTRO = 826 -- first level with firefly spots
 local TRAY_INTRO = 851 -- first level with seed trays
 local BIN_INTRO = 876 -- first level with compost bins
-local INTROS = { [BIN_INTRO] = true, [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local PUMP_INTRO = 901 -- first level with flood water and hand pumps
+local INTROS = { [PUMP_INTRO] = true, [BIN_INTRO] = true, [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -595,6 +601,7 @@ local function mechanics(id)
 		fireflies = id >= FIREFLY_INTRO, -- "N"
 		trays = id >= TRAY_INTRO, -- "R"
 		bins = id >= BIN_INTRO, -- "B"
+		pumps = id >= PUMP_INTRO, -- flood water "W" and hand pumps "H"
 	}
 end
 
@@ -602,6 +609,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_PUMPS = { "Floods", "Bins", "Trays", "Collect", "Floods", "Fireflies", "Lambs", "Blooms", "Floods", "Snails", "Trucks", "Mix" }
 local FOCUS_BINS = { "Bins", "Trays", "Fireflies", "Collect", "Bins", "Lambs", "Blooms", "Snails", "Bins", "Trucks", "Honey", "Mix" }
 local FOCUS_TRAYS = { "Trays", "Fireflies", "Lambs", "Collect", "Trays", "Blooms", "Snails", "Trucks", "Trays", "Honey", "Hedges", "Mix" }
 local FOCUS_FIREFLIES = { "Fireflies", "Lambs", "Blooms", "Collect", "Fireflies", "Snails", "Trucks", "Honey", "Fireflies", "Hedges", "Boxes", "Mix" }
@@ -645,6 +653,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Flood", "Pump", "Water", "Soggy", "Drain", "Sluice", "Marsh", "Splash", "Downpour", "Deluge", "Overflow", "Wetland", "Brimming" }, focus = "Floods", needs = "pumps" },
 	{ words = { "Compost", "Mulch", "Heap", "Worm", "Leaf Mould", "Peelings", "Scrap", "Humus", "Loam", "Black Gold", "Leaf Litter", "Peat Free", "Rotted" }, focus = "Bins", needs = "bins" },
 	{ words = { "Tray", "Glasshouse", "Hothouse", "Cloche", "Propagator", "Punnet", "Windowsill", "Shoot", "Dibber", "Germinat", "Cutting", "Plug Plant", "Pricking Out", "Hardening Off", "Leafing" }, focus = "Trays", needs = "trays" },
 	{ words = { "Firefly", "Glow", "Glimmer", "Lantern", "Twilight", "Dusk", "Night", "Moon", "Star", "Midsummer", "Evening" }, focus = "Fireflies", needs = "fireflies" },
@@ -742,6 +751,8 @@ local function focusOf(id, name)
 		return "Trays"
 	elseif id == BIN_INTRO then
 		return "Bins"
+	elseif id == PUMP_INTRO then
+		return "Floods"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -753,7 +764,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.bins then FOCUS_BINS elseif mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.pumps then FOCUS_PUMPS elseif mech.bins then FOCUS_BINS elseif mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -848,7 +859,7 @@ end
 -- Tarps: centred runs of plain cells in a row (so they stay mirrored), with
 -- tiles above them to fall in once they roll up, never stacked. The first
 -- tarp level has one run of four.
-local NOT_FALLING = "123wsSxtfF#dhGqkzlLyuvVjCOTEB" -- cells nothing falls out of
+local NOT_FALLING = "123wsSxtfF#dhGqkzlLyuvVjCOTEBH" -- cells nothing falls out of
 local function placeTarps(g, rng, id)
 	local want = if id == TARP_INTRO then 1 else rng:int(1, 2)
 	local placed = 0
@@ -1290,6 +1301,71 @@ local function placeBuds(g, rng, id)
 		end
 	end
 	return placed
+end
+
+-- Flood water and hand pumps: a mirrored pair of water patches (3x3 on the
+-- first pump level, up to 3x3 after, now and then a second pair later on),
+-- then a mirrored pair of pumps on plain cells 2 to 4 steps from the water
+-- (so it takes a few matches to reach them).
+-- Returns how many pumps were placed (0 if it didn't fit).
+local function placeFloods(g, rng, id)
+	local patches = if id >= PUMP_INTRO + 12 and rng:int(1, 3) == 1 then 2 else 1
+	local water = 0
+	for _ = 1, 60 do
+		if patches == 0 then
+			break
+		end
+		local pw = if id == PUMP_INTRO then 3 else rng:int(2, 3)
+		local ph = if id == PUMP_INTRO then 3 else rng:int(2, 3)
+		local x, y = rng:int(1, math.max(1, g.w // 2 - pw + 1)), rng:int(1, math.max(1, g.h - ph + 1))
+		local ok = x + pw - 1 <= g.w // 2
+		for dy = 0, ph - 1 do
+			for dx = 0, pw - 1 do
+				local row = g[y + dy]
+				if not row or row[x + dx] ~= "." or row[g.w - (x + dx) + 1] ~= "." then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			for dy = 0, ph - 1 do
+				for dx = 0, pw - 1 do
+					setSym(g, x + dx, y + dy, "W")
+				end
+			end
+			water += pw * ph * 2
+			patches -= 1
+		end
+	end
+	if water == 0 then
+		return 0
+	end
+	local spots = {}
+	for y = 1, g.h do
+		for x = 1, g.w // 2 do
+			local mx = g.w - x + 1
+			if mx ~= x and g[y][x] == "." and g[y][mx] == "." then
+				local nearest = math.huge
+				for dy = -4, 4 do
+					for dx = -4, 4 do
+						local row = g[y + dy]
+						if row and row[x + dx] == "W" then
+							nearest = math.min(nearest, math.abs(dx) + math.abs(dy))
+						end
+					end
+				end
+				if nearest >= 2 and nearest <= 4 then
+					table.insert(spots, { x, y })
+				end
+			end
+		end
+	end
+	if #spots == 0 then
+		return 0
+	end
+	local spot = rng:pick(spots)
+	setSym(g, spot[1], spot[2], "H")
+	return 2
 end
 
 -- Compost bins: one or two mirrored pairs on plain cells away from the
@@ -1801,6 +1877,11 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	if focus == "Floods" or (focus == "Mix" and mech.pumps and rng:int(1, 3) == 1) then
+		if placeFloods(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Bins" or (focus == "Mix" and mech.bins and rng:int(1, 3) == 1) then
 		if placeBins(g, rng, id) == 0 then
 			return nil
@@ -2005,6 +2086,9 @@ local function draft(id, variant)
 	end
 	if has(g, "B") > 0 then
 		table.insert(goals, { kind = "Bins" })
+	end
+	if has(g, "W") > 0 then
+		table.insert(goals, { kind = "Floods" })
 	end
 	if has(g, "N") > 0 then
 		-- About one firefly per lit spot every couple of swaps; a few more as levels go on.

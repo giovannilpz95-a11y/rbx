@@ -69,6 +69,8 @@ export type Cell = {
 	lit: boolean?, -- the spot's firefly is lit: clearing the tile here catches it
 	lamb: boolean?, -- the "bale" is a lost lamb: matches next to it walk it towards a pen
 	pen: boolean?, -- a lamb's pen: a lamb that steps onto it is home (tiles sit here as usual)
+	pump: boolean?, -- the "bale" is a hand pump: it never breaks, hits drain flood water near it
+	flood: boolean?, -- flood water under the tile (only a pump drains it)
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
 	bud: number?, -- the "bale" is a tulip bud: charges so far (it blooms at 3, and closes if a swap misses it)
 	hive: boolean?, -- the "bale" is a beehive: it never breaks, and each hit sends a honey jar to the goal
@@ -126,6 +128,7 @@ function Board.new(width: number, height: number)
 		-- Seed trays ("R" in the layout; touching R cells make one tray):
 		-- { cells = { Cell } in reading order, left = cells not sprouted yet }.
 		trays = {},
+		floodsLeft = 0, -- flooded cells ("W") still to drain
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -263,6 +266,12 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "B" then
 					cell.bale = 1
 					cell.bin = 9 -- Engine's BIN_COUNT
+				elseif ch == "H" then
+					cell.bale = 1
+					cell.pump = true
+				elseif ch == "W" then
+					cell.flood = true
+					self.floodsLeft += 1
 				elseif ch == "E" then
 					cell.bale = 1
 					cell.lamb = true
@@ -810,6 +819,9 @@ function Board.hash(self): string
 			if cell and cell.tray then
 				clover ..= if cell.sprouted then ":" else ";"
 			end
+			if cell and cell.flood then
+				clover ..= "="
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -839,6 +851,8 @@ function Board.hash(self): string
 				table.insert(row, "E" .. cell.bud .. clover)
 			elseif cell.bin then
 				table.insert(row, "Q" .. cell.bin .. clover)
+			elseif cell.pump then
+				table.insert(row, "P" .. clover)
 			elseif cell.lamb then
 				table.insert(row, "I" .. clover)
 			elseif cell.snail then
@@ -917,6 +931,8 @@ function Board.snapshot(self)
 			snail = cell.snail,
 			bud = cell.bud,
 			bin = cell.bin,
+			pump = cell.pump,
+			flood = cell.flood,
 			lamb = cell.lamb,
 			pen = cell.pen,
 			spot = cell.spot,
