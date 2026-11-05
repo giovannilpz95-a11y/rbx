@@ -14,6 +14,10 @@ return table.freeze({
 	Peddler_Buy = "Peddler_Buy", -- slot: buy one of your Wandering Peddler offers (standing at the cart)
 	Emote_Play = "Emote_Play", -- emoteId: show the emote's prop (the client plays the animation)
 	Emote_Pose = "Emote_Pose", -- spot: a group pose at a Town Square photo spot (standing in it)
+	Event_Deliver = "Event_Deliver", -- slot: deliver a Fair Stand crate of the running event
+	Event_Swap = "Event_Swap", -- slot: swap a Fair Stand crate (a new one after the wait)
+	Event_Claim = "Event_Claim", -- claim every event prize reached
+	Event_Buy = "Event_Buy", -- slot: buy from the Event Shop with event tokens
 	Factory_Build = "Factory_Build", -- factoryId
 	Factory_Queue = "Factory_Queue", -- factoryId, recipeId
 	Factory_Collect = "Factory_Collect", -- factoryId
@@ -144,6 +148,7 @@ return table.freeze({
 	Debug_FillLots = "Debug_FillLots", -- a finished Cottage on every open House lot (Studio only)
 	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
 	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow" | "Goose" | "Peddler": that sky event or visitor starts now (Studio only)
+	Debug_Event = "Debug_Event", -- "tokens" | "end" | "start": +100 event tokens, end or restart the preview (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client

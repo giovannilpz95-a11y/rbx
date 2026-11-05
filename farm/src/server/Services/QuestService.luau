@@ -15,6 +15,7 @@ local Tools = require(Shared.Config.Tools)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
+local EventService = require(script.Parent.EventService)
 local NetService = require(script.Parent.NetService)
 local TelemetryService = require(script.Parent.TelemetryService)
 local Clock = require(script.Parent.Parent.Util.Clock)
@@ -88,6 +89,7 @@ function QuestService.chest(player: Player): (boolean, string?)
 		EconomyService.add(player, "Gems", gems, "questchest")
 		NetService.popup(player, { kind = "QuestChest", gems = gems })
 	end
+	EventService.bonus(player, "questChest")
 	return true
 end
 

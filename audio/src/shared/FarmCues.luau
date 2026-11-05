@@ -441,6 +441,20 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 		return { { sound = "Unlock" }, { sound = "Coin", delay = 0.35 } } -- the chest at the Rainbow's end
 	elseif kind == "GroupPose" then
 		return { { sound = "UiOpen" } } -- a photo spot's group pose: everyone in the frame strikes it
+	elseif kind == "Event" then
+		-- The limited-time event: a Fair Stand crate, prizes claimed, an Event Shop buy, the end
+		-- (leftover tokens became Coins); its start and a prize ready are news
+		local step = payload.step
+		if step == "crate" then
+			return { { sound = "OrderComplete" } }
+		elseif step == "claim" then
+			return { { sound = "Unlock" }, { sound = "Coin", delay = 0.35 } }
+		elseif step == "bought" then
+			return { { sound = "Purchase" } }
+		elseif step == "ended" then
+			return { { sound = "CoinBig" } }
+		end
+		return { { sound = "Notify" } }
 	end
 	return {}
 end
@@ -450,6 +464,9 @@ end
 local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true, Star = true, SkyNote = true, GroupPose = true })
 
 function FarmCues.isReward(payload: { [string]: any }?): boolean
+	if type(payload) == "table" and payload.kind == "Event" then
+		return payload.step ~= "started" and payload.step ~= "prize"
+	end
 	return type(payload) == "table" and not NEWS[payload.kind]
 end
 
