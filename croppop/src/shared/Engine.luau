@@ -95,6 +95,14 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Fireflies: some cells are firefly spots, and a few of them are lit at
+	a time (a third of them, at least one). Clearing the tile on a lit
+	spot, by a match or a blast, catches its firefly for the Fireflies
+	goal (a "Catch" effect) and the spot goes dark. Every LIGHT_EVERY
+	swaps the lights move to other spots (a Pop phase with a "Lights"
+	effect listing { x, y, lit } changes); the first lights are picked
+	when the level starts.
+
 	Lost lambs: block a cell and never break; blasts and boosters don't
 	move them. A match next to one (once per lamb per wave) walks it one
 	cell towards the nearest pen (the longer way first, then the other):
@@ -179,6 +187,7 @@ local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
+local LIGHT_EVERY = 2 -- swaps between the fireflies moving to other spots
 local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
 
@@ -220,7 +229,12 @@ function Engine.new(level, seed: number, options: Options?)
 		weedsPulled = 0, -- during the current action (stops weeds spreading)
 		gooCleared = 0, -- during the current action (stops goo spreading)
 		budsHit = {}, -- tulip buds hit since the last swap ended
+		lightSwaps = 0, -- swaps since the fireflies last moved
 	}, Engine)
+
+	if #board.spots > 0 then
+		self:_moveLights(nil) -- the first lights
+	end
 
 	for _, cell in board.startSnowballs do
 		if cell.piece and not cell.piece.pumpkin then
@@ -315,6 +329,11 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	cell.piece = nil
 	table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = cause })
 	self.goals:onCollect(piece.color)
+	if cell.lit then
+		cell.lit = false -- caught: the spot goes dark until the lights move
+		table.insert(wave.effects, { type = "Catch", x = cell.x, y = cell.y })
+		self.goals:onFirefly()
+	end
 	if piece.timer then
 		self.goals:onSnowball()
 	end
@@ -1034,6 +1053,8 @@ function Engine._chooseBeeTarget(self)
 				table.insert(tiers[2], cell)
 			elseif cell.goo and goals:wants("Goo") then
 				table.insert(tiers[2], cell)
+			elseif cell.lit and goals:wants("Fireflies") then
+				table.insert(tiers[2], cell)
 			elseif cell.buried and goals:wants("Statues") then
 				table.insert(tiers[2], cell)
 			elseif cell.web and goals:wants("Webs") then
@@ -1686,9 +1707,53 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	if wasSwap then
 		self:_wiltBuds(phases)
 	end
+	if wasSwap and #self.board.spots > 0 and not self.goals:isComplete() then
+		self.lightSwaps += 1
+		if self.lightSwaps >= LIGHT_EVERY then
+			self.lightSwaps = 0
+			self:_moveLights(phases)
+		end
+	end
 	self:_updateStatus()
 	if self.status == "Won" and self.movesLeft > 0 then
 		self:_bonusRound(phases)
+	end
+end
+
+-- Lights a third of the firefly spots (at least one), other spots than the
+-- ones lit last time where there are enough. With phases, adds a Pop phase showing
+-- the change; without (the level's start), just sets them.
+function Engine._moveLights(self, phases)
+	local spots = self.board.spots
+	local want = math.max(1, #spots // 3)
+	local fresh, rest = {}, {}
+	local last = self.lastLit or {}
+	for _, cell in spots do
+		table.insert(if last[cell] then rest else fresh, cell) -- caught ones count as lit last time
+	end
+	local chosen = {}
+	for _, pool in { fresh, rest } do
+		while #chosen < want and #pool > 0 do
+			table.insert(chosen, table.remove(pool, self.rng:int(1, #pool)))
+		end
+	end
+	local on = {}
+	for _, cell in chosen do
+		on[cell] = true
+	end
+	self.lastLit = on
+	local changes = {}
+	for _, cell in spots do
+		local lit = on[cell] == true
+		if (cell.lit == true) ~= lit then
+			cell.lit = lit
+			table.insert(changes, { x = cell.x, y = cell.y, lit = lit })
+		end
+	end
+	if phases and #changes > 0 then
+		local wave = newWave()
+		table.insert(wave.effects, { type = "Lights", changes = changes })
+		self:_finishWave(wave, phases)
 	end
 end
 

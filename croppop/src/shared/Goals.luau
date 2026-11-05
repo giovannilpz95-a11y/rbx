@@ -18,6 +18,7 @@
 	  { kind = "Boxes" }                                 -- take every produce box off the stacks
 	  { kind = "Blooms" }                                -- make every tulip bud bloom
 	  { kind = "Lambs" }                                 -- walk every lost lamb home to a pen
+	  { kind = "Fireflies", count = 10 }                 -- catch N fireflies (clear tiles on lit spots)
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
 	  { kind = "Snowballs" }                             -- clear every snowball (they burst and come back if left)
@@ -117,6 +118,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Webs", target = def.count or webs, progress = 0 })
 		elseif def.kind == "Honey" then
 			table.insert(list, { kind = "Honey", target = def.count, progress = 0 })
+		elseif def.kind == "Fireflies" then
+			table.insert(list, { kind = "Fireflies", target = def.count, progress = 0 })
 		elseif def.kind == "Lambs" then
 			table.insert(list, { kind = "Lambs", target = def.count or lambs, progress = 0 })
 		elseif def.kind == "Blooms" then
@@ -212,6 +215,10 @@ end
 
 function Goals.onHoney(self)
 	bump(self, "Honey", nil)
+end
+
+function Goals.onFirefly(self)
+	bump(self, "Fireflies", nil)
 end
 
 function Goals.onLamb(self)

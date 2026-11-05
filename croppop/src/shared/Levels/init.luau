@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  N  firefly spot: a plain cell; a third of the spots are lit at a time
+	     and the lights move every 2 swaps. Clearing the tile on a lit spot
+	     catches a firefly (the Fireflies goal, which needs a count)
 	  E  lost lamb: blocks a cell and never breaks; a match next to it walks
 	     it a cell towards the nearest pen, trampling what's there, and one
 	     that reaches a pen is home (the Lambs goal)
@@ -96,7 +99,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -154,6 +157,7 @@ local VALID_CHARS = {
 	T = true,
 	E = true,
 	P = true,
+	N = true,
 	y = true,
 	m = true,
 	M = true,
@@ -303,7 +307,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	for y, row in level.layout do
 		if #row ~= width then
 			return "layout row " .. y .. " has the wrong width"
@@ -374,6 +378,8 @@ function Levels.validate(level): string?
 				lambs += 1
 			elseif ch == "P" then
 				pens += 1
+			elseif ch == "N" then
+				spots += 1
 			elseif ch == "d" then
 				baskets += 1
 				local below = false
@@ -436,6 +442,15 @@ function Levels.validate(level): string?
 		end
 		if not wanted then
 			return "hay trucks in the layout but no hay bale goal"
+		end
+	end
+	if spots > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Fireflies"
+		end
+		if not wanted then
+			return "firefly spots in the layout but no fireflies goal"
 		end
 	end
 	if lambs > 0 then
@@ -531,6 +546,13 @@ function Levels.validate(level): string?
 			end
 			if type(goal.count) ~= "number" or goal.count < 1 then
 				return "honey goal needs a count"
+			end
+		elseif goal.kind == "Fireflies" then
+			if spots == 0 then
+				return "fireflies goal but no firefly spots in the layout"
+			end
+			if type(goal.count) ~= "number" or goal.count < 1 then
+				return "fireflies goal needs a count"
 			end
 		elseif goal.kind == "Lambs" then
 			if lambs == 0 then

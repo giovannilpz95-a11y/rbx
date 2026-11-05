@@ -52,6 +52,7 @@ TileStyle.SpringGlyph = "⛲" -- a goo spring
 TileStyle.TruckGlyph = "🚚" -- a hay truck (the number is the bales it still carries)
 TileStyle.SnailGlyph = "🐌" -- a garden snail (Unicode 6)
 TileStyle.PenGlyph = "🏡" -- a lamb's pen (Unicode 6)
+TileStyle.SpotGlyph = "·" -- a firefly spot that's dark for now
 TileStyle.BucketGlyph = "🥫" -- a mud bucket: a tin (Unicode 10; Roblox has no 🪣, Unicode 13)
 TileStyle.ScarecrowGlyph = "🎩" -- a scarecrow's hat (no scarecrow emoji); dots show its charges
 -- Mailboxes: shut, open with a letter, open and empty.
@@ -102,6 +103,7 @@ TileStyle.GoalGlyphs = {
 	Honey = "🍯", -- a honey jar from a beehive
 	Blooms = "🌷", -- a tulip bud that has bloomed
 	Lambs = "🐑", -- a lost lamb walked home
+	Fireflies = "✨", -- a firefly caught on a lit spot (there's no firefly emoji before Unicode 13)
 	Snowballs = "☃", -- a snowball (the snowman: there's no snowball emoji)
 	Quilts = "🧶", -- a patchwork quilt (yarn: there's no quilt emoji)
 }
@@ -156,6 +158,8 @@ TileStyle.Board = {
 	bud = Color3.fromRGB(150, 196, 120), -- a leafy tulip bud
 	lamb = Color3.fromRGB(240, 236, 226), -- a woolly lamb
 	pen = Color3.fromRGB(214, 180, 120), -- the straw of a lamb's pen
+	glow = Color3.fromRGB(255, 232, 120), -- a lit firefly spot
+	spot = Color3.fromRGB(70, 80, 60), -- a dark firefly spot
 	budLit = Color3.fromRGB(246, 150, 190), -- a bud opening (charged)
 	glaze = Color3.fromRGB(255, 244, 220), -- the shine on glazed clay
 	text = Palette.text,
