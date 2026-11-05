@@ -274,6 +274,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- The packet shows the tile colour that takes its seeds, and how many are left.
 		label.BackgroundColor3 = TileStyle.Board.packet
 		label.Text = (TileStyle.Glyphs[kind.packetColor] or "?") .. (if type(kind.packet) == "number" then kind.packet else "")
+	elseif kind.vane then
+		-- The rooster with an arrow at the side matches must hit; dots are its layers.
+		label.BackgroundColor3 = TileStyle.Board.vane
+		label.Text = TileStyle.GoalGlyphs.Vanes .. (if type(kind.vane) == "number" then TileStyle.VaneArrows[kind.vane] else "") .. string.rep("•", hp)
 	elseif kind.chest then
 		-- A locked chest shows its padlock; an open one shows the tools left inside.
 		label.BackgroundColor3 = if kind.chestOpen then TileStyle.Board.chestOpen else TileStyle.Board.chest
@@ -1070,6 +1074,20 @@ function BoardView._effect(self, effect): number
 	elseif effect.type == "Packet" then
 		-- The last seed is out: the packet flashes and goes.
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.packet, true)
+		return FX_TIME
+	elseif effect.type == "Turn" then
+		-- Every weathervane swings round a quarter turn.
+		for _, cell in effect.cells do
+			local guis = self.cellGuis[cell.y] and self.cellGuis[cell.y][cell.x]
+			if guis then
+				guis.bale.Rotation = -90
+				tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Back)
+			end
+		end
+		return FX_TIME
+	elseif effect.type == "Vane" then
+		-- The vane topples and goes.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.vane, true)
 		return FX_TIME
 	elseif effect.type == "ChestOpen" then
 		-- The lock pops off and the lid swings up.
