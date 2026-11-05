@@ -66,6 +66,10 @@ type Rainbow = {
 }
 local rainbow: Rainbow? = nil
 local publishedRainbow = ""
+-- The Golden Goose's visit, the same shape (opened: who has petted it)
+local goose: Rainbow? = nil
+local publishedGoose = ""
+local gooseCheckAt = 0
 local nextStarId = 0
 
 local function activeEvent(now: number): Sky.Event?
@@ -272,6 +276,28 @@ end
 -- The Rainbow
 ---------------------------------------------------------------------------------------------
 
+local function encodeVisit(r: Rainbow?): string
+	if r == nil then
+		return ""
+	end
+	return HttpService:JSONEncode({
+		owner = r.owner.UserId,
+		name = r.owner.DisplayName,
+		x = r.pos.X,
+		y = r.pos.Y,
+		z = r.pos.Z,
+		endsAt = r.endsAt,
+	})
+end
+
+local function publishGoose()
+	local text = encodeVisit(goose)
+	if text ~= publishedGoose then
+		publishedGoose = text
+		Workspace:SetAttribute("SkyGoose", text)
+	end
+end
+
 local function publishRainbow()
 	local text = ""
 	if rainbow then
@@ -291,13 +317,14 @@ local function publishRainbow()
 	end
 end
 
--- Where the chest stands: up the spine path from the gate, on the ground there
-local function chestSpot(owner: Player): Vector3?
+-- Where the chest stands: up the spine path from the gate (and `side` studs to its right),
+-- on the ground there
+local function chestSpot(owner: Player, ahead: number?, side: number?): Vector3?
 	local gate = PlotService.gateCFrame(owner)
 	if gate == nil then
 		return nil
 	end
-	local at = (gate * CFrame.new(0, 0, -Config.rainbow.ahead)).Position
+	local at = (gate * CFrame.new(side or 0, 0, -(ahead or Config.rainbow.ahead))).Position
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	local skip = {}
@@ -311,15 +338,89 @@ local function chestSpot(owner: Player): Vector3?
 	return if hit then hit.Position else Vector3.new(at.X, 0.2, at.Z)
 end
 
--- A rainbow ends on one farm here, picked at random from the players past the guide
-function SkyService.startRainbow(now: number, owner: Player?): boolean
+-- A farm here picked at random from the players past the guide
+local function randomFarm(): Player?
 	local choices = {}
 	for _, player in Players:GetPlayers() do
 		if eligible(DataService.get(player)) and PlotService.gateCFrame(player) ~= nil then
 			table.insert(choices, player)
 		end
 	end
-	local chosen = owner or (if #choices > 0 then choices[rng:NextInteger(1, #choices)] else nil)
+	return if #choices > 0 then choices[rng:NextInteger(1, #choices)] else nil
+end
+
+-- The owner's thank-you for a neighbor's visit (the Rainbow's chest, the Golden Goose)
+local function thankOwner(r: Rainbow, visitor: Player, max: number, reason: string, text: string)
+	local owner = r.owner
+	local ownerData = DataService.get(owner)
+	if owner == visitor or owner.Parent == nil or ownerData == nil or r.thanked >= max then
+		return
+	end
+	r.thanked += 1
+	local thanks = Sky.thanksCoins(ownerData.level)
+	EconomyService.add(owner, "Coins", thanks, reason)
+	DataService.markDirty(owner)
+	NetService.pushState(owner)
+	NetService.toast(owner, string.format(text, visitor.DisplayName, thanks))
+end
+
+-- The Golden Goose lands on one farm here (`owner`, else picked at random)
+function SkyService.startGoose(now: number, owner: Player?): boolean
+	local chosen = owner or randomFarm()
+	if chosen == nil then
+		return false
+	end
+	local pos = chestSpot(chosen, Config.goose.ahead, Config.goose.side)
+	if pos == nil then
+		return false
+	end
+	goose = { owner = chosen, pos = pos, endsAt = now + Config.goose.seconds, opened = {}, thanked = 0 }
+	publishGoose()
+	NoticeService.post(string.format("The Golden Goose landed on %s's farm", chosen.DisplayName), chosen.UserId)
+	for _, other in Players:GetPlayers() do
+		if other ~= chosen then
+			NetService.popup(other, {
+				kind = "Crier",
+				text = string.format(
+					"The Golden Goose landed on %s's farm! Visit within %d minutes for a Golden Egg.",
+					chosen.DisplayName,
+					Config.goose.seconds // 60
+				),
+			})
+		end
+	end
+	return true
+end
+
+-- Pet the Golden Goose (the client sends it when the avatar walks up to it): a Golden Egg
+function SkyService.petGoose(player: Player): (boolean, string?)
+	local g = goose
+	local data = DataService.get(player)
+	if g == nil or data == nil or not eligible(data) or g.opened[player.UserId] then
+		return false
+	end
+	if Clock.now() > g.endsAt + 2 or not NetService.isNear(player, g.pos, Config.goose.reach) then
+		return false
+	end
+	g.opened[player.UserId] = true
+	local coins = Sky.eggCoins(data.level)
+	EconomyService.add(player, "Coins", coins, "sky_goose")
+	EconomyService.add(player, "XP", Config.goose.xp, "sky_goose")
+	NetService.popup(player, { kind = "GooseEgg", coins = coins, xp = Config.goose.xp })
+	thankOwner(
+		g,
+		player,
+		Config.goose.thanksMax,
+		"sky_goose_thanks",
+		"%s petted the Golden Goose on your farm: +%d Coins"
+	)
+	TelemetryService.custom(player, "sky_goose", 1, if g.owner == player then "own" else "visit", true)
+	return true
+end
+
+-- A rainbow ends on one farm here, picked at random from the players past the guide
+function SkyService.startRainbow(now: number, owner: Player?): boolean
+	local chosen = owner or randomFarm()
 	if chosen == nil then
 		return false
 	end
@@ -356,20 +457,14 @@ function SkyService.openRainbow(player: Player): (boolean, string?)
 	end
 	NetService.popup(player, { kind = "RainbowOpened", text = table.concat(parts, "  ") })
 	-- The owner's thank-you for each neighbor who came
-	local owner = r.owner
-	local ownerData = DataService.get(owner)
-	if owner ~= player and owner.Parent and ownerData and r.thanked < Config.rainbow.thanksMax then
-		r.thanked += 1
-		local thanks = Sky.thanksCoins(ownerData.level)
-		EconomyService.add(owner, "Coins", thanks, "sky_rainbow_thanks")
-		DataService.markDirty(owner)
-		NetService.pushState(owner)
-		NetService.toast(
-			owner,
-			string.format("%s opened the rainbow's chest on your farm: +%d Coins", player.DisplayName, thanks)
-		)
-	end
-	TelemetryService.custom(player, "sky_rainbow", 1, if owner == player then "own" else "visit", true)
+	thankOwner(
+		r,
+		player,
+		Config.rainbow.thanksMax,
+		"sky_rainbow_thanks",
+		"%s opened the rainbow's chest on your farm: +%d Coins"
+	)
+	TelemetryService.custom(player, "sky_rainbow", 1, if r.owner == player then "own" else "visit", true)
 	return true
 end
 
@@ -445,6 +540,25 @@ local function tick()
 		rainbow = nil
 	end
 	publishRainbow()
+	-- The Golden Goose: a roll every so often while the sky is clear; it flies off at its end
+	-- or when its farm's owner leaves
+	if goose and (now > goose.endsAt or goose.owner.Parent == nil) then
+		goose = nil
+	end
+	if now >= gooseCheckAt then
+		local first = gooseCheckAt == 0
+		gooseCheckAt = now + Config.goose.checkSeconds
+		if
+			not first
+			and goose == nil
+			and rainbow == nil
+			and current == nil
+			and rng:NextNumber() < Config.goose.chance
+		then
+			SkyService.startGoose(now)
+		end
+	end
+	publishGoose()
 	-- The Notice Board forecasts the next event
 	local upcoming = Sky.nextEvent(now)
 	if upcoming and upcoming.startsAt ~= forecastFor and upcoming.startsAt - now <= Config.forecastSeconds then
@@ -460,7 +574,13 @@ function SkyService.debugStart(player: Player, kind: any): (boolean, string?)
 		return false
 	end
 	local now = Clock.now()
-	if kind == "Rainbow" then
+	if kind == "Goose" then
+		if not SkyService.startGoose(now, player) then
+			return false, "Dev: no goose (finish the guide first)"
+		end
+		NetService.toast(player, "Dev: the Golden Goose lands on your farm now")
+		return true
+	elseif kind == "Rainbow" then
 		if not SkyService.startRainbow(now, player) then
 			return false, "Dev: no rainbow (finish the guide first)"
 		end
@@ -478,6 +598,7 @@ end
 function SkyService.init()
 	NetService.on(Net.Sky_Collect, 4, 8, SkyService.collect)
 	NetService.on(Net.Sky_Rainbow, 1, 3, SkyService.openRainbow)
+	NetService.on(Net.Sky_Goose, 1, 3, SkyService.petGoose)
 	NetService.on(Net.Debug_Sky, 1, 2, SkyService.debugStart)
 	task.spawn(function()
 		while true do

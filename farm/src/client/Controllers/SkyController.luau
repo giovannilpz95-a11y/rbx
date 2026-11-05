@@ -437,12 +437,142 @@ local function stepRainbow(root: BasePart?, clock: number)
 	end
 end
 
+---------------------------------------------------------------------------------------------
+-- The Golden Goose: a rare visitor on one farm, for everyone on the server
+---------------------------------------------------------------------------------------------
+
+local GOOSE_WHITE = Color3.fromRGB(250, 246, 236)
+local GOOSE_GOLD = Color3.fromRGB(255, 214, 102)
+local BEAK = Color3.fromRGB(242, 153, 74)
+
+type GooseView = { key: string, model: Model, pos: Vector3, petted: boolean, pending: number? }
+local gooseView: GooseView? = nil
+
+local function buildGoose(): Model
+	local model = Instance.new("Model")
+	model.Name = "GoldenGoose"
+	local function part(
+		name: string,
+		shape: Enum.PartType,
+		size: Vector3,
+		offset: CFrame,
+		color: Color3,
+		neon: boolean?
+	)
+		local p = Instance.new("Part")
+		p.Name = name
+		p.Shape = shape
+		p.Size = size
+		p.CFrame = offset
+		p.Color = color
+		p.Material = if neon then Enum.Material.Neon else Enum.Material.SmoothPlastic
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Parent = model
+		return p
+	end
+	local body = part("Body", Enum.PartType.Ball, Vector3.new(3, 2.2, 2.2), CFrame.new(0, 1.6, 0), GOOSE_WHITE)
+	part("WingL", Enum.PartType.Ball, Vector3.new(2.2, 1.1, 0.5), CFrame.new(0.1, 1.9, -1.05), GOOSE_GOLD, true)
+	part("WingR", Enum.PartType.Ball, Vector3.new(2.2, 1.1, 0.5), CFrame.new(0.1, 1.9, 1.05), GOOSE_GOLD, true)
+	part(
+		"Neck",
+		Enum.PartType.Cylinder,
+		Vector3.new(1.8, 0.6, 0.6),
+		CFrame.new(1.2, 2.9, 0) * CFrame.Angles(0, 0, math.rad(75)),
+		GOOSE_WHITE
+	)
+	part("Head", Enum.PartType.Ball, Vector3.new(1, 1, 1), CFrame.new(1.45, 3.8, 0), GOOSE_WHITE)
+	part("Beak", Enum.PartType.Block, Vector3.new(0.6, 0.25, 0.35), CFrame.new(2.05, 3.7, 0), BEAK)
+	part("Crown", Enum.PartType.Ball, Vector3.new(0.5, 0.3, 0.5), CFrame.new(1.45, 4.3, 0), GOOSE_GOLD, true)
+	part("FootL", Enum.PartType.Block, Vector3.new(0.7, 0.15, 0.4), CFrame.new(0.3, 0.1, -0.5), BEAK)
+	part("FootR", Enum.PartType.Block, Vector3.new(0.7, 0.15, 0.4), CFrame.new(0.3, 0.1, 0.5), BEAK)
+	model.WorldPivot = CFrame.new() -- at its feet, so PivotTo stands it on the ground
+	local light = Instance.new("PointLight")
+	light.Color = GOOSE_GOLD
+	light.Range = 12
+	light.Brightness = 1
+	light.Parent = body
+	local glints = Instance.new("ParticleEmitter")
+	glints.Color = ColorSequence.new(GOOSE_GOLD, Palette.cream)
+	glints.LightEmission = 1
+	glints.Size = NumberSequence.new(0.3, 0)
+	glints.Transparency = NumberSequence.new(0.1, 1)
+	glints.Lifetime = NumberRange.new(0.8, 1.2)
+	glints.Rate = if reduced() then 2 else 6
+	glints.Speed = NumberRange.new(0.5, 1.5)
+	glints.SpreadAngle = Vector2.new(90, 90)
+	glints.Parent = body
+	return model
+end
+
+local function clearGoose()
+	if gooseView then
+		gooseView.model:Destroy()
+		gooseView = nil
+	end
+end
+
+local function applyGoose(text: string)
+	if text == "" then
+		clearGoose()
+		return
+	end
+	local ok, g = pcall(HttpService.JSONDecode, HttpService, text)
+	if not ok or type(g) ~= "table" or type(g.x) ~= "number" then
+		clearGoose()
+		return
+	end
+	if gooseView and gooseView.key == text then
+		return
+	end
+	clearGoose()
+	local pos = Vector3.new(g.x, g.y, g.z)
+	local model = buildGoose()
+	model:PivotTo(CFrame.new(pos))
+	model.Parent = starFolder()
+	gooseView = { key = text, model = model, pos = pos, petted = false }
+	if g.owner == Players.LocalPlayer.UserId then
+		Hud.toast(
+			"The Golden Goose landed on your farm, up the path from the gate! Pet it for a Golden Egg. Neighbors who visit get one too.",
+			"celebrate"
+		)
+	end -- everyone else hears it from the Town Crier
+end
+
+local function stepGoose(root: BasePart?, clock: number)
+	local view = gooseView
+	if view == nil then
+		return
+	end
+	-- A slow waddle-bob, turning to the player who's nearest it (this one)
+	local face = CFrame.new(view.pos)
+	if root then
+		local look = Vector3.new(root.Position.X, view.pos.Y, root.Position.Z)
+		if (look - view.pos).Magnitude > 0.5 then
+			face = CFrame.lookAt(view.pos, look) * CFrame.Angles(0, math.rad(90), 0)
+		end
+	end
+	local bob = if reduced() then 0 else 0.12 * math.sin(clock * 3)
+	view.model:PivotTo(face * CFrame.new(0, bob, 0))
+	if view.petted or root == nil or (view.pending and clock - view.pending < 2) then
+		return
+	end
+	local offset = root.Position - view.pos
+	if Vector3.new(offset.X, 0, offset.Z).Magnitude <= CATCH_STUDS then
+		view.pending = clock
+		Remotes.fire("Sky_Goose")
+	end
+end
+
 local function step()
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	local clock = os.clock()
 	local now = ClientStore.now()
 	stepRainbow(root, clock)
+	stepGoose(root, clock)
 	for id, star in stars do
 		if now > star.goneAt then
 			removeStar(id, false)
@@ -496,6 +626,19 @@ function SkyController.init()
 		end
 		Hud.toast("The rainbow's chest: " .. tostring(payload.text), "celebrate")
 	end
+	Hud.handlers.GooseEgg = function(payload)
+		if gooseView then
+			gooseView.petted = true
+		end
+		Hud.toast(
+			string.format("A Golden Egg! It sold on the spot: +%d Coins  +%d XP", payload.coins or 0, payload.xp or 0),
+			"celebrate"
+		)
+	end
+	Workspace:GetAttributeChangedSignal("SkyGoose"):Connect(function()
+		applyGoose(Workspace:GetAttribute("SkyGoose") or "")
+	end)
+	applyGoose(Workspace:GetAttribute("SkyGoose") or "")
 	Workspace:GetAttributeChangedSignal("SkyRainbow"):Connect(function()
 		applyRainbow(Workspace:GetAttribute("SkyRainbow") or "")
 	end)

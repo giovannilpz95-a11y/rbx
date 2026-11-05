@@ -2518,6 +2518,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Sky: a Rain Shower now (3 minutes)", "Debug_Sky", 300, 25, "Rain")
 	devButton("Sky: a Starfall now (2 minutes)", "Debug_Sky", 300, 26, "Starfall")
 	devButton("Sky: a rainbow ends on your farm now", "Debug_Sky", 300, 27, "Rainbow")
+	devButton("Visitors: the Golden Goose lands on your farm now", "Debug_Sky", 360, 28, "Goose")
 end
 
 ---------------------------------------------------------------------------------------------

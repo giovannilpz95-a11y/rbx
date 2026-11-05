@@ -10,6 +10,7 @@ return table.freeze({
 	Farm_SpeedUpAll = "Farm_SpeedUpAll", -- cropId: every growing field of that crop
 	Sky_Collect = "Sky_Collect", -- starId: catch one of your Starfall stars
 	Sky_Rainbow = "Sky_Rainbow", -- open the Rainbow's chest (standing at it)
+	Sky_Goose = "Sky_Goose", -- pet the Golden Goose (standing at it)
 	Factory_Build = "Factory_Build", -- factoryId
 	Factory_Queue = "Factory_Queue", -- factoryId, recipeId
 	Factory_Collect = "Factory_Collect", -- factoryId
@@ -139,7 +140,7 @@ return table.freeze({
 	Debug_Records = "Debug_Records", -- raise Town Records to their next medal (Studio only)
 	Debug_FillLots = "Debug_FillLots", -- a finished Cottage on every open House lot (Studio only)
 	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
-	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow": that sky event starts now (Studio only)
+	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow" | "Goose": that sky event or visitor starts now (Studio only)
 	Client_Ready = "Client_Ready",
 
 	-- Server -> client
