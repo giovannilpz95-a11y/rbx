@@ -122,6 +122,7 @@ local function snapshot(data: { [string]: any })
 		trophies = data.trophies,
 		event = data.event, -- the limited-time event: tokens, prizes, Fair Stand crates
 		fair = data.fair, -- the County Fair: this week's entries and every ribbon won
+		wardrobe = data.wardrobe, -- farm fashion: pieces owned and worn
 		showcase = data.showcase, -- the Plot Showcase: opt-in, sunflowers, the winner's ribbon
 		quests = data.quests,
 		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)
@@ -149,11 +150,13 @@ local function isPlayer(player: any): boolean
 	return typeof(player) == "Instance"
 end
 
-function NetService.toast(player: Player, message: string)
+-- A short message. `variant` "error" is a refusal (the client plays a soft error blip);
+-- leave it out for good or neutral news.
+function NetService.toast(player: Player, message: string, variant: string?)
 	if not isPlayer(player) then
 		return
 	end
-	remotes[Net.Toast]:FireClient(player, message)
+	remotes[Net.Toast]:FireClient(player, message, variant)
 end
 
 function NetService.popup(player: Player, payload: { [string]: any })
@@ -194,7 +197,7 @@ function NetService.on(name: string, rate: number, burst: number, handler: Handl
 			DataService.markDirty(player)
 			NetService.pushState(player)
 		elseif message then
-			NetService.toast(player, message)
+			NetService.toast(player, message, "error") -- the handler refused: say why
 		end
 	end)
 end

@@ -527,7 +527,7 @@ local function presenceTick()
 			local ok, reason = SocialService.canVisit(player, owner)
 			if not ok then
 				moveTo(player, PlotService.squareCFrame())
-				NetService.toast(player, reason or "This farm is closed to visitors")
+				NetService.toast(player, reason or "This farm is closed to visitors", "error")
 				onPlot = 0
 			elseif lastPlot[player] ~= onPlot then
 				NetService.popup(owner, { kind = "Visitor", name = player.DisplayName })

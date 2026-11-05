@@ -10,6 +10,7 @@ local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local ArtEmoteProps = require(Shared.Art.EmoteProps)
 local Config = require(Shared.Config.Emotes)
 local Net = require(Shared.Net)
+local WardrobeConfig = require(Shared.Config.Wardrobe)
 
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
@@ -35,6 +36,21 @@ local function takeOff(player: Player)
 	end
 end
 
+-- A Wardrobe hat is on (WardrobeService's "FarmOutfit" model holds "Outfit_<piece id>")
+local function wearsFarmHat(character: Model): boolean
+	local outfit = character:FindFirstChild("FarmOutfit")
+	if outfit == nil then
+		return false
+	end
+	for _, child in outfit:GetChildren() do
+		local piece = WardrobeConfig.pieces[(string.gsub(child.Name, "^Outfit_", ""))]
+		if piece and piece.slot == "Hat" then
+			return true
+		end
+	end
+	return false
+end
+
 -- Weld the emote's prop to the avatar for Config.seconds (a newer emote replaces it)
 local function wear(player: Player, emoteId: string): boolean
 	local def = Config.emotes[emoteId]
@@ -42,6 +58,9 @@ local function wear(player: Player, emoteId: string): boolean
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 	if def == nil or character == nil or humanoid == nil or humanoid.Health <= 0 then
 		return false
+	end
+	if def.prop == "StrawHat" and wearsFarmHat(character) then
+		return false -- the farm hat stays on: the wave alone tips it
 	end
 	local prop = ArtEmoteProps.build(def.prop)
 	if prop == nil then
