@@ -69,6 +69,8 @@ export type Cell = {
 	lit: boolean?, -- the spot's firefly is lit: clearing the tile here catches it
 	lamb: boolean?, -- the "bale" is a lost lamb: matches next to it walk it towards a pen
 	pen: boolean?, -- a lamb's pen: a lamb that steps onto it is home (tiles sit here as usual)
+	packet: any?, -- the "bale" is a seed packet: seeds left (true until Engine.new fills it)
+	packetColor: number?, -- the tile colour whose matches take a seed from the packet
 	pump: boolean?, -- the "bale" is a hand pump: it never breaks, hits drain flood water near it
 	flood: boolean?, -- flood water under the tile (only a pump drains it)
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
@@ -269,6 +271,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "H" then
 					cell.bale = 1
 					cell.pump = true
+				elseif ch == "K" then
+					cell.bale = 1
+					cell.packet = true
 				elseif ch == "W" then
 					cell.flood = true
 					self.floodsLeft += 1
@@ -853,6 +858,8 @@ function Board.hash(self): string
 				table.insert(row, "Q" .. cell.bin .. clover)
 			elseif cell.pump then
 				table.insert(row, "P" .. clover)
+			elseif cell.packet then
+				table.insert(row, "A" .. tostring(cell.packet) .. "c" .. tostring(cell.packetColor) .. clover)
 			elseif cell.lamb then
 				table.insert(row, "I" .. clover)
 			elseif cell.snail then
@@ -931,6 +938,8 @@ function Board.snapshot(self)
 			snail = cell.snail,
 			bud = cell.bud,
 			bin = cell.bin,
+			packet = cell.packet,
+			packetColor = cell.packetColor,
 			pump = cell.pump,
 			flood = cell.flood,
 			lamb = cell.lamb,

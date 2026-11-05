@@ -95,6 +95,12 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Seed packets: block a cell like a bale and hold PACKET_SEEDS seeds of one
+	tile colour (the level's colours in turn, in reading order). A match of
+	that colour next to a packet (once per packet per wave) takes a seed, and
+	so does each blast on it; other colours' matches don't touch it. The
+	last seed empties it (a "Packet" effect), for the Packets goal.
+
 	Flood water and hand pumps: water lies under the tiles on some cells and
 	nothing clears it but a pump. A pump blocks a cell and never breaks:
 	every hit (a match next to it, once per wave, or a blast on it) drains
@@ -205,6 +211,7 @@ local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
+local PACKET_SEEDS = 4 -- seeds in a seed packet
 local PUMP_DRAIN = 2 -- flooded cells a hand pump drains each time it's hit
 local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
 local BIN_RADIUS = 1 -- a bursting bin blasts the cells this close (a small diamond)
@@ -256,6 +263,16 @@ function Engine.new(level, seed: number, options: Options?)
 	if #board.spots > 0 then
 		self:_moveLights(nil) -- the first lights
 	end
+
+	-- Seed packets take the level's colours in turn, in reading order.
+	local packets = 0
+	board:eachCell(function(cell)
+		if cell.packet then
+			packets += 1
+			cell.packet = PACKET_SEEDS
+			cell.packetColor = colors[(packets - 1) % #colors + 1]
+		end
+	end)
 
 	for _, cell in board.startSnowballs do
 		if cell.piece and not cell.piece.pumpkin then
@@ -548,7 +565,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -713,6 +730,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_feedBin(wave, cell, 1)
 		return
 	end
+	if cell.packet then
+		self:_takeSeed(wave, cell)
+		return
+	end
 	if cell.pump then
 		self:_pump(wave, cell)
 		return -- nothing breaks a pump; it goes when the water does
@@ -836,6 +857,19 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	if cell.bale == 0 then
 		self.goals:onBale()
 	end
+end
+
+-- A seed packet gives up one seed; the last one empties it.
+function Engine._takeSeed(self, wave, cell)
+	cell.packet -= 1
+	if cell.packet > 0 then
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, packet = cell.packet, packetColor = cell.packetColor })
+		return
+	end
+	cell.bale, cell.packet, cell.packetColor = 0, nil, nil
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+	table.insert(wave.effects, { type = "Packet", x = cell.x, y = cell.y })
+	self.goals:onPacket()
 end
 
 -- A hand pump drains the nearest flooded cells (breadth first, in NEIGHBORS
@@ -1046,6 +1080,12 @@ function Engine._popGroups(self, wave, groups)
 				local n = board:get(cell.x + d[1], cell.y + d[2])
 				if n and fed[n] then
 					-- fed above
+				elseif n and n.packet then
+					-- Only a match of the packet's own colour takes a seed.
+					if group.color == n.packetColor and not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_takeSeed(wave, n)
+					end
 				elseif n and n.snail and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					wave.shoves = wave.shoves or {}
@@ -1131,6 +1171,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Bins") then tiers[1] else tiers[4], cell)
 		elseif cell.pump then
 			table.insert(if goals:wants("Floods") then tiers[1] else tiers[4], cell)
+		elseif cell.packet then
+			table.insert(if goals:wants("Packets") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then

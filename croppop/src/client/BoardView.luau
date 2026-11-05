@@ -266,6 +266,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- Pinker as it charges; the dots are its charges so far.
 		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
 		label.Text = TileStyle.GoalGlyphs.Blooms .. string.rep("•", kind.bud)
+	elseif kind.packet then
+		-- The packet shows the tile colour that takes its seeds, and how many are left.
+		label.BackgroundColor3 = TileStyle.Board.packet
+		label.Text = (TileStyle.Glyphs[kind.packetColor] or "?") .. (if type(kind.packet) == "number" then kind.packet else "")
 	elseif kind.pump then
 		label.BackgroundColor3 = TileStyle.Board.pump
 		label.Text = TileStyle.PumpGlyph
@@ -977,6 +981,10 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			bale:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Packet" then
+		-- The last seed is out: the packet flashes and goes.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.packet, true)
 		return FX_TIME
 	elseif effect.type == "Pump" then
 		-- The pump handle bobs, and the water drains off the nearest cells.
