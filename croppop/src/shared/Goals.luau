@@ -27,6 +27,7 @@
 	  { kind = "Tools" }                                 -- take every tool out of the tool chests
 	  { kind = "Vanes" }                                 -- bring down every weathervane
 	  { kind = "Vines" }                                 -- cut every vine (a creep adds one)
+	  { kind = "Mist" }                                  -- lift all the mist (matches on it or next to it)
 	  { kind = "Gophers" }                               -- catch a gopher in every burrow
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
@@ -55,7 +56,7 @@ function Goals.new(defs: { any }, board)
 	local trays = #board.trays
 	local bins = 0
 	local floods = board.floodsLeft or 0
-	local packets, jars, tools, vanes, vines = 0, 0, 0, 0, 0
+	local packets, jars, tools, vanes, vines, mist = 0, 0, 0, 0, 0, 0
 	local burrows = #(board.burrows or {})
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
@@ -63,6 +64,9 @@ function Goals.new(defs: { any }, board)
 			vines += 1
 		elseif cell.web then
 			webs += 1
+		end
+		if cell.mist then
+			mist += 1
 		end
 		if cell.goo then
 			goo += if cell.thickGoo then 2 else 1
@@ -161,6 +165,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Vanes", target = def.count or vanes, progress = 0 })
 		elseif def.kind == "Vines" then
 			table.insert(list, { kind = "Vines", target = def.count or vines, progress = 0 })
+		elseif def.kind == "Mist" then
+			table.insert(list, { kind = "Mist", target = def.count or mist, progress = 0 })
 		elseif def.kind == "Floods" then
 			table.insert(list, { kind = "Floods", target = def.count or floods, progress = 0 })
 		elseif def.kind == "Bins" then
@@ -288,6 +294,10 @@ end
 
 function Goals.onVine(self)
 	bump(self, "Vines", nil)
+end
+
+function Goals.onMist(self)
+	bump(self, "Mist", nil)
 end
 
 -- A vine crept onto another tile: one more to cut.

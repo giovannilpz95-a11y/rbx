@@ -386,6 +386,9 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	styleClay(guis, cell.clay)
 	guis.clover.Visible = cell.clover == true
 	guis.goo.Visible = cell.goo == true
+	guis.mist.Visible = cell.mist == true
+	guis.mist.BackgroundTransparency = 0.05
+	guis.mist.TextTransparency = 0.4
 	guis.flood.Visible = cell.flood == true
 	guis.goo.BackgroundColor3 = if cell.thickGoo then TileStyle.Board.thickGoo else TileStyle.Board.goo
 	guis.buried.Visible = cell.buried == true
@@ -590,6 +593,23 @@ function BoardView.load(self, game)
 		webCorner.CornerRadius = UDim.new(0.2, 0)
 		webCorner.Parent = web
 
+		-- Mist hides the tile under it (in the bale layer, so it covers the tile).
+		local mist = Instance.new("TextLabel")
+		mist.Name = "Mist"
+		mist.Size = self:_cellSize()
+		mist.Position = self:_cellPosition(x, y)
+		mist.BackgroundColor3 = TileStyle.Board.mist
+		mist.BackgroundTransparency = 0.05
+		mist.TextTransparency = 0.4
+		mist.Text = TileStyle.GoalGlyphs.Mist
+		mist.TextScaled = true
+		mist.BorderSizePixel = 0
+		mist.Visible = false
+		mist.Parent = self.baleLayer
+		local mistCorner = Instance.new("UICorner")
+		mistCorner.CornerRadius = UDim.new(0.3, 0)
+		mistCorner.Parent = mist
+
 		-- Frost sits over the tile, in the same layer as bales.
 		local frost = Instance.new("Frame")
 		frost.Name = "Frost"
@@ -689,7 +709,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, flood = flood, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, tray = tray, trayMark = trayMark, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, flood = flood, rainbow = rainbow, web = web, mist = mist, buried = buried, statueMark = statueMark, tray = tray, trayMark = trayMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -1082,6 +1102,16 @@ function BoardView._effect(self, effect): number
 		-- The last seed is out: the packet flashes and goes.
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.packet, true)
 		return FX_TIME
+	elseif effect.type == "Mist" then
+		-- The mist thins away, showing the tile under it.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			tween(guis.mist, FX_TIME, { BackgroundTransparency = 1, TextTransparency = 1 })
+			task.delay(FX_TIME, function()
+				guis.mist.Visible = false
+			end)
+		end
+		return 0
 	elseif effect.type == "Turn" then
 		-- Every weathervane swings round a quarter turn.
 		for _, cell in effect.cells do

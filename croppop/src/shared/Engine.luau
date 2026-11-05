@@ -115,6 +115,11 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Mist: a patch of mist sits on a cell and hides whatever tile is there
+	(the tile still swaps and matches as usual; new tiles falling in are
+	hidden too). A match on the cell or next to it lifts the mist (a
+	"Mist" effect), for the Mist goal. Blasts don't touch it.
+
 	Vines: a vine grows over a tile like a web: the tile is held in place
 	and kept out of matches. A match next to a vine (once per vine per
 	wave) or a blast on it cuts it (the tile stays), for the Vines goal.
@@ -995,6 +1000,13 @@ function Engine._fillJar(self, wave, cell)
 	self.goals:onJar()
 end
 
+-- Mist lifts off a cell.
+function Engine._clearMist(self, wave, cell)
+	cell.mist = false
+	table.insert(wave.effects, { type = "Mist", x = cell.x, y = cell.y })
+	self.goals:onMist()
+end
+
 -- A web or vine comes off its tile (the tile stays).
 function Engine._clearWeb(self, wave, cell)
 	cell.web = false
@@ -1292,6 +1304,18 @@ function Engine._popGroups(self, wave, groups)
 			wave.reserved[group.at] = true
 		end
 		self:_chargeMowers(wave, group.color)
+		-- Mist lifts off the match's own cells and the cells next to it.
+		for _, cell in group.cells do
+			if cell.mist then
+				self:_clearMist(wave, cell)
+			end
+			for _, d in NEIGHBORS do
+				local n = board:get(cell.x + d[1], cell.y + d[2])
+				if n and n.mist then
+					self:_clearMist(wave, n)
+				end
+			end
+		end
 		-- A compost bin next to the match takes every tile of it.
 		local fed = {}
 		for _, cell in group.cells do
