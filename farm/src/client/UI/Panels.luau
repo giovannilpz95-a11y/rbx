@@ -2532,6 +2532,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("County Fair: +1 Starlit Wheat Prize Crop", "Debug_Fair", 320, 36, "Starlit")
 	devButton("County Fair: +1 Heirloom Wheat Prize Crop (a Blue Ribbon)", "Debug_Fair", 400, 37, "Heirloom")
 	devButton("Wardrobe: own every piece", "Debug_Wardrobe", 260, 38)
+	devButton("Farmhand Party: a test farmhand joins", "Debug_Party", 320, 39)
 end
 
 ---------------------------------------------------------------------------------------------

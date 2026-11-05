@@ -18,6 +18,11 @@ return table.freeze({
 	Event_Swap = "Event_Swap", -- slot: swap a Fair Stand crate (a new one after the wait)
 	Event_Claim = "Event_Claim", -- claim every event prize reached
 	Event_Buy = "Event_Buy", -- slot: buy from the Event Shop with event tokens
+	Party_Invite = "Party_Invite", -- friend's userId: invite them to your Farmhand Party (starts one if needed)
+	Party_Answer = "Party_Answer", -- partyId, "Yes" | "No": answer a party invite
+	Party_Leave = "Party_Leave", -- leave your Farmhand Party
+	Party_Kick = "Party_Kick", -- userId: the leader takes a member out of the party
+	Party_Gather = "Party_Gather", -- the leader brings the whole party onto one server
 	Wardrobe_Buy = "Wardrobe_Buy", -- pieceId: buy a Wardrobe piece (and put it on)
 	Wardrobe_Wear = "Wardrobe_Wear", -- slot, pieceId ("" takes the slot's piece off)
 	Wardrobe_Show = "Wardrobe_Show", -- "On" | "Off": show the farm outfit on the avatar
@@ -154,6 +159,7 @@ return table.freeze({
 	Debug_FillLots = "Debug_FillLots", -- a finished Cottage on every open House lot (Studio only)
 	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
 	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow" | "Goose" | "Peddler": that sky event or visitor starts now (Studio only)
+	Debug_Party = "Debug_Party", -- a test farmhand joins your party (Studio only)
 	Debug_Wardrobe = "Debug_Wardrobe", -- own every Wardrobe piece (Studio only)
 	Debug_Showcase = "Debug_Showcase", -- a Plot Showcase starts now, dwell waived (Studio only)
 	Debug_Fair = "Debug_Fair", -- "open" | "judge" | "Starlit" | "Heirloom": a County Fair opens now, its entries close now, or a Prize Crop for the basket (Studio only)

@@ -445,6 +445,14 @@ local function renderNeighbors(state: { [string]: any }, body: ScrollingFrame, t
 		return order
 	end
 
+	Ui.button("🎉  Farmhand Party: travel with friends", function()
+		Panels.open("Party")
+	end, {
+		Size = UDim2.new(1, -8, 0, 44),
+		BackgroundColor3 = Ui.colors.selected,
+		LayoutOrder = nextOrder(),
+		Parent = body,
+	})
 	heading(body, "On this server", nextOrder())
 	local others = otherPlayers()
 	if #others == 0 then
