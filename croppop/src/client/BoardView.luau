@@ -274,6 +274,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- The packet shows the tile colour that takes its seeds, and how many are left.
 		label.BackgroundColor3 = TileStyle.Board.packet
 		label.Text = (TileStyle.Glyphs[kind.packetColor] or "?") .. (if type(kind.packet) == "number" then kind.packet else "")
+	elseif kind.chest then
+		-- A locked chest shows its padlock; an open one shows the tools left inside.
+		label.BackgroundColor3 = if kind.chestOpen then TileStyle.Board.chestOpen else TileStyle.Board.chest
+		label.Text = if kind.chestOpen then TileStyle.ChestGlyph .. kind.chest else TileStyle.LockGlyph
 	elseif kind.jar then
 		-- An empty jar shows the tile colour that fills it and the scoops still to go; a full one is red with jam.
 		local full = kind.jar == 0
@@ -1066,6 +1070,31 @@ function BoardView._effect(self, effect): number
 	elseif effect.type == "Packet" then
 		-- The last seed is out: the packet flashes and goes.
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.packet, true)
+		return FX_TIME
+	elseif effect.type == "ChestOpen" then
+		-- The lock pops off and the lid swings up.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = -12
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.chestOpen, true)
+		return FX_TIME
+	elseif effect.type == "Tool" then
+		-- A tool hops out of the chest and floats off to the goal.
+		local tool = Instance.new("TextLabel")
+		tool.Name = "Tool"
+		tool.AnchorPoint = Vector2.new(0.5, 0.5)
+		tool.BackgroundTransparency = 1
+		tool.Size = UDim2.fromScale(0.7 / w, 0.7 / h)
+		tool.Position = self:_centerOf(effect.x, effect.y)
+		tool.Text = TileStyle.GoalGlyphs.Tools
+		tool.TextScaled = true
+		tool.Parent = self.fxLayer
+		tween(tool, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			tool:Destroy()
+		end)
 		return FX_TIME
 	elseif effect.type == "JarFull" then
 		-- The last scoop goes in: the jar wobbles, full of jam.
