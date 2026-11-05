@@ -187,6 +187,8 @@ function SkyService.onPlant(player: Player, field: { [string]: any })
 end
 
 -- Where a star lands near the avatar: on whatever ground is there, about level with them
+local STAR_CLEARANCE = Vector3.new(4, 6, 4) -- the room a star needs where it lands
+
 local function starSpot(player: Player): Vector3?
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -202,13 +204,37 @@ local function starSpot(player: Player): Vector3?
 		end
 	end
 	params.FilterDescendantsInstances = skip
+	local overlap = OverlapParams.new()
+	overlap.FilterType = Enum.RaycastFilterType.Exclude
+	overlap.FilterDescendantsInstances = skip
+	-- Open ground only: nothing over it (a roof, a tree) and nothing standing in it (walls)
+	-- (Studio: a star landed inside a House and couldn't be reached)
+	local function open(at: Vector3): boolean
+		local above = Workspace:Raycast(at + Vector3.new(0, 0.5, 0), Vector3.new(0, 60, 0), params)
+		if above and (above.Instance.Transparency < 1 or above.Instance.CanCollide) then
+			return false -- something over it (an invisible zone doesn't count)
+		end
+		local box = CFrame.new(at + Vector3.new(0, 0.4 + STAR_CLEARANCE.Y / 2, 0))
+		for _, p in Workspace:GetPartBoundsInBox(box, STAR_CLEARANCE, overlap) do
+			if p.Transparency < 1 or p.CanCollide then
+				return false
+			end
+		end
+		return true
+	end
 	local feet = root.Position.Y - 3
-	for _ = 1, 8 do
+	for _ = 1, 12 do
 		local angle = rng:NextNumber() * math.pi * 2
 		local radius = rng:NextNumber(Config.starRadius[1], Config.starRadius[2])
 		local x, z = root.Position.X + math.cos(angle) * radius, root.Position.Z + math.sin(angle) * radius
 		local hit = Workspace:Raycast(Vector3.new(x, feet + 40, z), Vector3.new(0, -80, 0), params)
-		if hit and hit.Instance.CanCollide and math.abs(hit.Position.Y - feet) <= 4 and hit.Normal.Y > 0.7 then
+		if
+			hit
+			and hit.Instance.CanCollide
+			and math.abs(hit.Position.Y - feet) <= 4
+			and hit.Normal.Y > 0.7
+			and open(hit.Position)
+		then
 			return hit.Position + Vector3.new(0, 1.2, 0)
 		end
 	end
@@ -368,7 +394,7 @@ local function thankOwner(r: Rainbow, visitor: Player, max: number, reason: stri
 	EconomyService.add(owner, "Coins", thanks, reason)
 	DataService.markDirty(owner)
 	NetService.pushState(owner)
-	NetService.toast(owner, string.format(text, visitor.DisplayName, thanks))
+	NetService.popup(owner, { kind = "SkyNote", text = string.format(text, visitor.DisplayName, thanks) })
 end
 
 -- The Golden Goose lands on one farm here (`owner`, else picked at random)
@@ -605,7 +631,10 @@ local function finish(event: Sky.Event)
 			)
 		end
 		if #parts > 0 then
-			NetService.toast(player, string.format("The %s is over: %s.", kind.displayName, table.concat(parts, ", ")))
+			NetService.popup(player, {
+				kind = "SkyNote",
+				text = string.format("The %s is over: %s.", kind.displayName, table.concat(parts, ", ")),
+			})
 		end
 	end
 end

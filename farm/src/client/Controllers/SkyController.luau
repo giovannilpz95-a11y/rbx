@@ -626,6 +626,12 @@ function SkyController.init()
 		end
 		Hud.toast("The rainbow's chest: " .. tostring(payload.text), "celebrate")
 	end
+	-- News from the sky (an event's summary, a thank-you), not an error, so not a toast
+	Hud.handlers.SkyNote = function(payload)
+		if type(payload.text) == "string" then
+			Hud.toast(payload.text)
+		end
+	end
 	Hud.handlers.GooseEgg = function(payload)
 		if gooseView then
 			gooseView.petted = true
