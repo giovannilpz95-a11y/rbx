@@ -109,7 +109,7 @@ test("starts are rate limited and bad levels refused", function()
 	truthy(store:start(5, 1))
 	falsy(store:start(5, 1))
 	tick(2)
-	falsy(store:start(5, 999))
+	falsy(store:start(5, 99999)) -- past the last level
 	falsy(store:start(5, "1"))
 end)
 

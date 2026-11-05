@@ -329,6 +329,13 @@ local function styleTray(guis, cell)
 	end
 end
 
+-- A gopher burrow's marker: the gopher when it's in, an empty hole when
+-- not, and nothing once the burrow is filled in.
+local function styleBurrow(label: TextLabel, open: boolean, gopher: boolean)
+	label.Visible = open
+	label.Text = if gopher then TileStyle.GoalGlyphs.Gophers else TileStyle.BurrowGlyph
+end
+
 -- A firefly spot's marker: a warm glow and a firefly when lit, a dim dot when not.
 local function styleSpot(label: TextLabel, lit: boolean)
 	label.Text = if lit then TileStyle.GoalGlyphs.Fireflies else TileStyle.SpotGlyph
@@ -392,6 +399,7 @@ function BoardView.load(self, game)
 	self.grid = {}
 	self.cellGuis = {}
 	self.spotGuis = {} -- y * 100 + x -> firefly spot marker
+	self.burrowGuis = {} -- y * 100 + x -> gopher burrow marker
 	for y = 1, board.height do
 		self.grid[y] = {}
 		self.cellGuis[y] = {}
@@ -591,6 +599,23 @@ function BoardView.load(self, game)
 			exit.Parent = self.baleLayer
 		end
 
+		-- Gopher burrows: a marker in the cell's top-right corner, over the tile.
+		if cell.burrow ~= nil then
+			local burrow = Instance.new("TextLabel")
+			burrow.Name = "Burrow"
+			burrow.AnchorPoint = Vector2.new(1, 0)
+			burrow.Position = UDim2.fromScale(x / board.width, (y - 1) / board.height)
+			burrow.Size = UDim2.fromScale(0.42 / board.width, 0.42 / board.height)
+			burrow.BackgroundColor3 = TileStyle.Board.burrow
+			burrow.BackgroundTransparency = 0.2
+			burrow.TextScaled = true
+			burrow.Parent = self.baleLayer
+			local burrowCorner = Instance.new("UICorner")
+			burrowCorner.CornerRadius = UDim.new(0.5, 0)
+			burrowCorner.Parent = burrow
+			styleBurrow(burrow, cell.burrow == true, cell.gopher == true)
+			self.burrowGuis[y * 100 + x] = burrow
+		end
 		-- Firefly spots: a marker in the cell's top-left corner, over the tile.
 		if cell.spot then
 			local spot = Instance.new("TextLabel")
@@ -984,6 +1009,42 @@ function BoardView._effect(self, effect): number
 		tween(bale, FX_TIME, { Position = self:_centerOf(effect.x, effect.y), Rotation = 180 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		task.delay(FX_TIME, function()
 			bale:Destroy()
+		end)
+		return FX_TIME
+	elseif effect.type == "Burrow" then
+		-- The gopher ducks down one hole and pops up out of another.
+		if effect.from then
+			local old = self.burrowGuis[effect.from.y * 100 + effect.from.x]
+			if old then
+				styleBurrow(old, true, false)
+			end
+		end
+		local new = self.burrowGuis[effect.to.y * 100 + effect.to.x]
+		if new then
+			styleBurrow(new, true, true)
+			new.Rotation = -15
+			tween(new, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Bounce)
+		end
+		return FX_TIME
+	elseif effect.type == "Gopher" then
+		-- Caught: the gopher floats off to the goal and the burrow is filled in.
+		local burrow = self.burrowGuis[effect.y * 100 + effect.x]
+		if burrow then
+			styleBurrow(burrow, false, false)
+		end
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.burrow, true)
+		local catch = Instance.new("TextLabel")
+		catch.Name = "Gopher"
+		catch.AnchorPoint = Vector2.new(0.5, 0.5)
+		catch.BackgroundTransparency = 1
+		catch.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		catch.Position = self:_centerOf(effect.x, effect.y)
+		catch.Text = TileStyle.GoalGlyphs.Gophers
+		catch.TextScaled = true
+		catch.Parent = self.fxLayer
+		tween(catch, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			catch:Destroy()
 		end)
 		return FX_TIME
 	elseif effect.type == "Mow" then

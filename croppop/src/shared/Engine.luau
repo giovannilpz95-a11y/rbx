@@ -95,6 +95,13 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Gopher burrows: plain cells with a hole under the tile, and one gopher
+	at a time sits in one of the open burrows. After every swap it pops
+	over to another open burrow (a "Burrow" effect with from and to).
+	Clearing the tile on the gopher's burrow (a match or a blast) catches
+	it (a "Gopher" effect) and fills that burrow in, for the Gophers goal;
+	the next gopher comes up in another open burrow once the move is done.
+
 	Lawn mowers: block a cell and never break, and each has a tile colour
 	(the level's colours in turn, in reading order, like seed packets).
 	Every wave with a match of that colour anywhere on the board charges
@@ -271,6 +278,9 @@ function Engine.new(level, seed: number, options: Options?)
 	if #board.spots > 0 then
 		self:_moveLights(nil) -- the first lights
 	end
+	if #board.burrows > 0 then
+		self:_moveGopher(nil) -- the first gopher
+	end
 
 	-- Seed packets and lawn mowers take the level's colours in turn, in reading order.
 	local packets, mowers = 0, 0
@@ -383,6 +393,13 @@ function Engine._removePiece(self, wave, cell, cause: string, noActivate: boolea
 	self.goals:onCollect(piece.color)
 	if cell.tray and not cell.sprouted then
 		self:_sprout(wave, cell)
+	end
+	if cell.gopher then
+		-- Caught: the burrow is filled in, and the next gopher comes up after the move.
+		cell.gopher, cell.burrow = false, false
+		self.gopherCell = nil
+		table.insert(wave.effects, { type = "Gopher", x = cell.x, y = cell.y })
+		self.goals:onGopher()
 	end
 	if cell.lit then
 		cell.lit = false -- caught: the spot goes dark until the lights move
@@ -1240,6 +1257,8 @@ function Engine._chooseBeeTarget(self)
 				table.insert(tiers[2], cell)
 			elseif cell.lit and goals:wants("Fireflies") then
 				table.insert(tiers[2], cell)
+			elseif cell.gopher and goals:wants("Gophers") then
+				table.insert(tiers[2], cell)
 			elseif cell.tray and not cell.sprouted and goals:wants("Trays") then
 				table.insert(tiers[2], cell)
 			elseif cell.buried and goals:wants("Statues") then
@@ -1894,6 +1913,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	if wasSwap then
 		self:_wiltBuds(phases)
 	end
+	if #self.board.burrows > 0 and (wasSwap or not self.gopherCell) and not self.goals:isComplete() then
+		self:_moveGopher(phases)
+	end
 	if wasSwap and #self.board.spots > 0 and not self.goals:isComplete() then
 		self.lightSwaps += 1
 		if self.lightSwaps >= LIGHT_EVERY then
@@ -1921,6 +1943,42 @@ function Engine._sprout(self, wave, cell)
 		end
 		table.insert(wave.effects, { type = "Tray", cells = cells })
 		self.goals:onTray()
+	end
+end
+
+-- The gopher pops over to another open burrow (or comes up, if there's
+-- none out). With one burrow left it stays put.
+function Engine._moveGopher(self, phases)
+	local from = self.gopherCell
+	local open, others = {}, {}
+	for _, cell in self.board.burrows do
+		if cell.burrow then
+			table.insert(open, cell)
+			if cell ~= from then
+				table.insert(others, cell)
+			end
+		end
+	end
+	if #open == 0 then
+		return
+	end
+	local to = if #others > 0 then self.rng:pick(others) else from
+	if to == from then
+		return
+	end
+	if from then
+		from.gopher = false
+	end
+	to.gopher = true
+	self.gopherCell = to
+	if phases then
+		local wave = newWave()
+		table.insert(wave.effects, {
+			type = "Burrow",
+			from = if from then { x = from.x, y = from.y } else nil,
+			to = { x = to.x, y = to.y },
+		})
+		self:_finishWave(wave, phases)
 	end
 end
 
