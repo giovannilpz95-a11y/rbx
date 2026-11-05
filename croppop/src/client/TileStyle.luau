@@ -43,6 +43,8 @@ TileStyle.PowerBadges = {
 
 TileStyle.Sunflower = { color = Color3.fromRGB(255, 196, 30), glyph = "🌻" }
 TileStyle.Pumpkin = { color = Color3.fromRGB(196, 120, 52), glyph = "🎃", exit = "⬇️" }
+-- A muddy pumpkin: the pumpkin dulled under brown mud, with a drop to say "wash me".
+TileStyle.MuddyPumpkin = { color = Color3.fromRGB(110, 80, 50), glyph = "🎃", badge = "💧", textTransparency = 0.45 }
 -- Portal ends: a swirl on a coloured disc, one colour per entrance/exit pair.
 TileStyle.PortalGlyph = "🌀"
 TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
@@ -187,6 +189,7 @@ TileStyle.Board = {
 	web = Color3.fromRGB(240, 240, 250), -- a spider web over a tile
 	vine = Color3.fromRGB(70, 150, 60), -- a green vine over a tile
 	mist = Color3.fromRGB(215, 222, 230), -- mist hiding a tile
+	wash = Color3.fromRGB(150, 210, 245), -- a splash washing a muddy pumpkin
 	mower = Color3.fromRGB(200, 60, 50), -- a red lawn mower
 	burrow = Color3.fromRGB(120, 86, 56), -- the earth round a gopher burrow
 	mowed = Color3.fromRGB(150, 220, 120), -- freshly cut grass along a mowed row

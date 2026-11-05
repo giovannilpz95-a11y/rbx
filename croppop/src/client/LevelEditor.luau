@@ -47,6 +47,7 @@ local BRUSH_ROWS = {
 		{ char = "F", label = "❄️2" },
 		{ char = "w", label = "🌿 Weed" },
 		{ char = "p", label = "🎃" },
+		{ char = "o", label = "🎃💧" },
 		{ char = "c", label = "🍀" },
 		{ char = "s", label = "🧱1" },
 		{ char = "S", label = "🧱2" },
@@ -369,6 +370,8 @@ local function cellLook(char: string): (Color3, string)
 		return Colors.weed, "🌿"
 	elseif char == "p" then
 		return TileStyle.Pumpkin.color, TileStyle.Pumpkin.glyph
+	elseif char == "o" then
+		return TileStyle.MuddyPumpkin.color, TileStyle.MuddyPumpkin.glyph
 	elseif char == "c" then
 		return TileStyle.Board.clover, TileStyle.GoalGlyphs.Clover
 	elseif char == "s" or char == "S" then

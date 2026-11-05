@@ -10,6 +10,8 @@
 	  f  frost, 1 layer      F  frost, 2 layers (the tile is frozen in place)
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
+	  o  muddy pumpkin: a pumpkin that a match next to it must wash before it
+	     can be collected (blasts don't); it may start on the bottom cell
 	  c  clover (matches on it spread it; a Clover goal covers the board)
 	  I  gopher burrow: a plain cell; one gopher at a time sits in an open
 	     burrow and hops to another after every swap; clearing the tile on
@@ -135,7 +137,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44", "Set45" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44", "Set45", "Set46" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -203,6 +205,7 @@ local VALID_CHARS = {
 	Z = true,
 	Y = true,
 	Q = true,
+	o = true,
 	U = true,
 	I = true,
 	H = true,
@@ -469,6 +472,8 @@ function Levels.validate(level): string?
 				if not below then
 					return string.format("pumpkin at %d,%d is already at the bottom", x, y)
 				end
+			elseif ch == "o" then
+				pumpkins += 1
 			end
 		end
 	end
