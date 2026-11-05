@@ -85,6 +85,9 @@ local function start(now: number)
 			shown += 1
 		end
 	end
+	if shown == 0 then
+		return -- nothing on show: no announcement
+	end
 	for _, p in Players:GetPlayers() do
 		NetService.popup(p, {
 			kind = "Showcase",
@@ -237,6 +240,9 @@ end
 function ShowcaseService.debug(player: Player): (boolean, string?)
 	if not RunService:IsStudio() then
 		return false
+	end
+	if not optedIn(player) then
+		return false, "Dev: opt in first (Settings > Show my farm in the Plot Showcase)"
 	end
 	local now = Clock.now()
 	Showcase.setPreview(now)

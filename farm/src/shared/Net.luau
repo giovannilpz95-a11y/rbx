@@ -152,7 +152,7 @@ return table.freeze({
 	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
 	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow" | "Goose" | "Peddler": that sky event or visitor starts now (Studio only)
 	Debug_Showcase = "Debug_Showcase", -- a Plot Showcase starts now, dwell waived (Studio only)
-	Debug_Fair = "Debug_Fair", -- "open" | "judge": a County Fair opens now, or its entries close now (Studio only)
+	Debug_Fair = "Debug_Fair", -- "open" | "judge" | "Starlit" | "Heirloom": a County Fair opens now, its entries close now, or a Prize Crop for the basket (Studio only)
 	Debug_Event = "Debug_Event", -- "tokens" | "end" | "start": +100 event tokens, end or restart the preview (Studio only)
 	Client_Ready = "Client_Ready",
 
