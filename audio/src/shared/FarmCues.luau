@@ -439,13 +439,15 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 		return { { sound = "PrizeFind" }, { sound = "CoinBig", delay = 0.35 } } -- petted the Golden Goose: a Golden Egg sold
 	elseif kind == "RainbowOpened" then
 		return { { sound = "Unlock" }, { sound = "Coin", delay = 0.35 } } -- the chest at the Rainbow's end
+	elseif kind == "GroupPose" then
+		return { { sound = "UiOpen" } } -- a photo spot's group pose: everyone in the frame strikes it
 	end
 	return {}
 end
 
 -- Popups that are news rather than a reward: nothing on our farm paid out, so the Coins
 -- and Gems of the snapshot that follows still get their own sounds.
-local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true, Star = true, SkyNote = true })
+local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true, Star = true, SkyNote = true, GroupPose = true })
 
 function FarmCues.isReward(payload: { [string]: any }?): boolean
 	return type(payload) == "table" and not NEWS[payload.kind]
