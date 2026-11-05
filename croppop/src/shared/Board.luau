@@ -69,6 +69,7 @@ export type Cell = {
 	lit: boolean?, -- the spot's firefly is lit: clearing the tile here catches it
 	lamb: boolean?, -- the "bale" is a lost lamb: matches next to it walk it towards a pen
 	pen: boolean?, -- a lamb's pen: a lamb that steps onto it is home (tiles sit here as usual)
+	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
 	bud: number?, -- the "bale" is a tulip bud: charges so far (it blooms at 3, and closes if a swap misses it)
 	hive: boolean?, -- the "bale" is a beehive: it never breaks, and each hit sends a honey jar to the goal
 	stack: boolean?, -- the "bale" is a stack of produce boxes: each hit takes one, and the rest hop
@@ -259,6 +260,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "T" then
 					cell.bale = 1
 					cell.bud = 0
+				elseif ch == "B" then
+					cell.bale = 1
+					cell.bin = 9 -- Engine's BIN_COUNT
 				elseif ch == "E" then
 					cell.bale = 1
 					cell.lamb = true
@@ -833,6 +837,8 @@ function Board.hash(self): string
 				table.insert(row, "N" .. cell.bale .. clover)
 			elseif cell.bud then
 				table.insert(row, "E" .. cell.bud .. clover)
+			elseif cell.bin then
+				table.insert(row, "Q" .. cell.bin .. clover)
 			elseif cell.lamb then
 				table.insert(row, "I" .. clover)
 			elseif cell.snail then
@@ -910,6 +916,7 @@ function Board.snapshot(self)
 			truck = cell.truck,
 			snail = cell.snail,
 			bud = cell.bud,
+			bin = cell.bin,
 			lamb = cell.lamb,
 			pen = cell.pen,
 			spot = cell.spot,

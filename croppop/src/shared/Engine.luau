@@ -95,6 +95,12 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Compost bins: block a cell like a 1-layer bale and count down from
+	BIN_COUNT. Every match next to a bin feeds it all of its tiles (a match
+	of 4 takes 4 off), and each blast on it takes 1. At 0 the bin bursts (a
+	"Compost" effect): it goes, blasting the cells around it like a small
+	Hay Bomb, for the Bins goal.
+
 	Seed trays: touching tray cells make one tray, under the tiles. Clearing
 	the tile on a tray cell (any clear: a match, a blast, a booster) sprouts
 	that cell (a "Sprout" effect); when every cell of a tray has sprouted,
@@ -192,6 +198,8 @@ local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
+local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
+local BIN_RADIUS = 1 -- a bursting bin blasts the cells this close (a small diamond)
 local LIGHT_EVERY = 2 -- swaps between the fireflies moving to other spots
 local SACK_SEEDS = 3 -- clover cells a seed sack sows each time it's hit
 local WEED_COVER_LIMIT = 3 -- weeds stop spreading once they cover 1/this of the cells
@@ -532,7 +540,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -693,6 +701,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_sow(wave, cell)
 		return -- nothing breaks a seed sack
 	end
+	if cell.bin then
+		self:_feedBin(wave, cell, 1)
+		return
+	end
 	if cell.scarecrow then
 		cell.scarecrow += 1
 		if cell.scarecrow >= SCARECROW_CHARGES then
@@ -812,6 +824,21 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	if cell.bale == 0 then
 		self.goals:onBale()
 	end
+end
+
+-- A compost bin takes `count` tiles off its countdown; at 0 it bursts,
+-- blasting the cells around it.
+function Engine._feedBin(self, wave, cell, count: number)
+	cell.bin = math.max(0, cell.bin - count)
+	if cell.bin > 0 then
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, bin = cell.bin })
+		return
+	end
+	cell.bale, cell.bin = 0, nil
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+	table.insert(wave.effects, { type = "Compost", x = cell.x, y = cell.y })
+	table.insert(wave.queue, { power = Power.HayBomb, x = cell.x, y = cell.y, radius = BIN_RADIUS })
+	self.goals:onBin()
 end
 
 function Engine._plantClover(self, wave, cell)
@@ -951,12 +978,25 @@ function Engine._popGroups(self, wave, groups)
 			wave.reserved = wave.reserved or {}
 			wave.reserved[group.at] = true
 		end
+		-- A compost bin next to the match takes every tile of it.
+		local fed = {}
+		for _, cell in group.cells do
+			for _, d in NEIGHBORS do
+				local n = board:get(cell.x + d[1], cell.y + d[2])
+				if n and n.bin and not fed[n] then
+					fed[n] = true
+					self:_feedBin(wave, n, #group.cells)
+				end
+			end
+		end
 		-- Matches next to a hay bale knock off one layer (once per bale per wave).
 		-- Stone walls shrug them off: only blasts break stone.
 		for _, cell in group.cells do
 			for _, d in NEIGHBORS do
 				local n = board:get(cell.x + d[1], cell.y + d[2])
-				if n and n.snail and not wave.balesTouched[n] then
+				if n and fed[n] then
+					-- fed above
+				elseif n and n.snail and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					wave.shoves = wave.shoves or {}
 					table.insert(wave.shoves, { snail = n, dx = d[1], dy = d[2] })
@@ -1037,6 +1077,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Honey") then tiers[1] else tiers[4], cell)
 		elseif cell.bud then
 			table.insert(if goals:wants("Blooms") then tiers[1] else tiers[4], cell)
+		elseif cell.bin then
+			table.insert(if goals:wants("Bins") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
