@@ -12,6 +12,8 @@ return table.freeze({
 	Sky_Rainbow = "Sky_Rainbow", -- open the Rainbow's chest (standing at it)
 	Sky_Goose = "Sky_Goose", -- pet the Golden Goose (standing at it)
 	Peddler_Buy = "Peddler_Buy", -- slot: buy one of your Wandering Peddler offers (standing at the cart)
+	Emote_Play = "Emote_Play", -- emoteId: show the emote's prop (the client plays the animation)
+	Emote_Pose = "Emote_Pose", -- spot: a group pose at a Town Square photo spot (standing in it)
 	Factory_Build = "Factory_Build", -- factoryId
 	Factory_Queue = "Factory_Queue", -- factoryId, recipeId
 	Factory_Collect = "Factory_Collect", -- factoryId

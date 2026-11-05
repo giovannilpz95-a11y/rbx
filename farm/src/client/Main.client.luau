@@ -27,6 +27,7 @@ local HarborMotion = require(script.Parent.Controllers.HarborMotion)
 local QuestsUi = require(script.Parent.UI.Quests)
 local SeedCartUi = require(script.Parent.UI.SeedCart)
 local PeddlerUi = require(script.Parent.UI.Peddler)
+local EmotesUi = require(script.Parent.UI.Emotes)
 local QuarryUi = require(script.Parent.UI.Quarry)
 local GuildUi = require(script.Parent.UI.Guild)
 local BlimpUi = require(script.Parent.UI.Blimp)
@@ -79,6 +80,7 @@ SocialUi.init()
 QuestsUi.init()
 SeedCartUi.init()
 PeddlerUi.init()
+EmotesUi.init()
 QuarryUi.init()
 GuildUi.init()
 BlimpUi.init()
@@ -109,6 +111,7 @@ local SHORTCUTS = {
 	[Enum.KeyCode.K] = "Settings",
 	[Enum.KeyCode.Y] = "DailyGift",
 	[Enum.KeyCode.P] = "FarmerCard",
+	[Enum.KeyCode.H] = "Emotes",
 	[Enum.KeyCode.Backquote] = "Debug",
 }
 -- Studio only: ] steps through every screen, for phone screenshots in the device emulator

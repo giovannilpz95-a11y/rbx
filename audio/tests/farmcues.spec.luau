@@ -290,10 +290,11 @@ test("newer popups: quests, records, the daily gift and news", function()
 	expect.eq(names(FarmCues.popup({ kind = "Visitor", name = "Pat" })), "Notify")
 	expect.eq(names(FarmCues.popup({ kind = "Helped", owner = "Pat" })), "Xp")
 	expect.eq(names(FarmCues.popup({ kind = "Place", key = "factory:Bakery" })), "UiOpen")
+	expect.eq(names(FarmCues.popup({ kind = "GroupPose", spot = "Pumpkin" })), "UiOpen")
 end)
 
 test("news popups leave the next snapshot's Coins their own sound", function()
-	for _, kind in { "Crier", "Quest", "Away", "HelpedYou", "Visitor", "Place" } do
+	for _, kind in { "Crier", "Quest", "Away", "HelpedYou", "Visitor", "Place", "GroupPose" } do
 		expect.falsy(FarmCues.isReward({ kind = kind }), kind)
 	end
 	for _, kind in { "Order", "LevelUp", "QuestClaim", "QuestChest", "RecordClaim", "Daily", "Purchase", "Helped" } do

@@ -361,6 +361,15 @@ function Hud.init(openPanel: (name: string) -> (), onAction: (pressed: boolean) 
 	end
 	showSprint(ClientStore.settings.sprinting == true)
 	Hud.sprintButton = sprint
+	-- Emotes (H): above Sprint, the same size
+	Ui.button("Emote", function()
+		openPanel("Emotes")
+	end, {
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.new(1, -34, 1, -264),
+		Size = UDim2.fromOffset(72, 44),
+		Parent = gui,
+	})
 	ClientStore.settingsChanged.Event:Connect(function(key, value)
 		if key == "sprinting" then
 			showSprint(value == true)
