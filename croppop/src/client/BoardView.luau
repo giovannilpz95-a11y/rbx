@@ -274,6 +274,11 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- The packet shows the tile colour that takes its seeds, and how many are left.
 		label.BackgroundColor3 = TileStyle.Board.packet
 		label.Text = (TileStyle.Glyphs[kind.packetColor] or "?") .. (if type(kind.packet) == "number" then kind.packet else "")
+	elseif kind.jar then
+		-- An empty jar shows the tile colour that fills it and the scoops still to go; a full one is red with jam.
+		local full = kind.jar == 0
+		label.BackgroundColor3 = if full then TileStyle.Board.jarFull else TileStyle.Board.jar
+		label.Text = if full then TileStyle.JarGlyph else (TileStyle.Glyphs[kind.jarColor] or "?") .. (if type(kind.jar) == "number" then kind.jar else "")
 	elseif kind.pump then
 		label.BackgroundColor3 = TileStyle.Board.pump
 		label.Text = TileStyle.PumpGlyph
@@ -1061,6 +1066,19 @@ function BoardView._effect(self, effect): number
 	elseif effect.type == "Packet" then
 		-- The last seed is out: the packet flashes and goes.
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.packet, true)
+		return FX_TIME
+	elseif effect.type == "JarFull" then
+		-- The last scoop goes in: the jar wobbles, full of jam.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = 10
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.jarFull, true)
+		return FX_TIME
+	elseif effect.type == "Jar" then
+		-- A full jar cracks open and goes.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.jarFull, true)
 		return FX_TIME
 	elseif effect.type == "Pump" then
 		-- The pump handle bobs, and the water drains off the nearest cells.
