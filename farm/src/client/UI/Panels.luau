@@ -2528,6 +2528,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Event: start the preview again", "Debug_Event", 300, 32, "start")
 	devButton("County Fair: open entries now", "Debug_Fair", 300, 33, "open")
 	devButton("County Fair: close entries and judge now", "Debug_Fair", 340, 34, "judge")
+	devButton("Plot Showcase now (rate without the 20-second wait)", "Debug_Showcase", 380, 35)
 end
 
 ---------------------------------------------------------------------------------------------

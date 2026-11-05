@@ -214,6 +214,12 @@ function Profile.template(): { [string]: any }
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart or the Peddler
 		peddler = { visit = 0, bought = {} }, -- the Wandering Peddler's purchases this visit (shared/Peddler)
 		trophies = {}, -- Gold Town Record trophy id -> copies in storage, not placed (Config/Trophies), and event keepsakes (Config/Events)
+		showcase = { -- the Plot Showcase (shared/Showcase, Config/Showcase)
+			optIn = false, -- show this farm in the Showcase (Settings)
+			sunflowers = 0, -- weighted sunflowers received in all
+			wins = 0,
+			ribbonUntil = 0, -- the winner's ribbon on the gate until then
+		},
 		fair = { -- the County Fair (shared/Fair, Config/Fair)
 			week = 0, -- the fair's window start
 			entries = {}, -- class -> { item, tier?, garnish?, marks }
