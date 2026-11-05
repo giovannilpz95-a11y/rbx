@@ -303,6 +303,18 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	end
 end
 
+-- A seed tray cell: dark soil under the tile and a seed in the corner,
+-- turning green with a seedling once its tile has been cleared.
+local function styleTray(guis, cell)
+	local on = cell.tray ~= nil and cell.tray ~= false
+	guis.tray.Visible = on
+	guis.trayMark.Visible = on
+	if on then
+		guis.tray.BackgroundColor3 = if cell.sprouted then TileStyle.Board.sprout else TileStyle.Board.tray
+		guis.trayMark.Text = if cell.sprouted then TileStyle.GoalGlyphs.Trays else TileStyle.SeedGlyph
+	end
+end
+
 -- A firefly spot's marker: a warm glow and a firefly when lit, a dim dot when not.
 local function styleSpot(label: TextLabel, lit: boolean)
 	label.Text = if lit then TileStyle.GoalGlyphs.Fireflies else TileStyle.SpotGlyph
@@ -339,6 +351,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.rainbow.Visible = cell.rainbow == true
 	guis.web.Visible = cell.web == true
 	guis.statueMark.Visible = cell.buried == true
+	styleTray(guis, cell)
 	styleBale(guis.bale, cell.bale, cell)
 	styleFrost(guis, cell.frost or 0)
 end
@@ -467,6 +480,23 @@ function BoardView.load(self, game)
 		buried.BackgroundTransparency = 0.2
 		buried.Text = ""
 		buried.Parent = bg
+		-- A seed tray cell: soil under the tile and a seed (or seedling) in
+		-- the cell's bottom-left corner, over the tile.
+		local tray = Instance.new("Frame")
+		tray.Name = "Tray"
+		tray.Size = UDim2.fromScale(1, 1)
+		tray.BorderSizePixel = 0
+		tray.BackgroundTransparency = 0.2
+		tray.Parent = bg
+		local trayMark = Instance.new("TextLabel")
+		trayMark.Name = "Seed"
+		trayMark.AnchorPoint = Vector2.new(0, 1)
+		trayMark.Position = UDim2.fromScale((x - 1) / board.width, y / board.height)
+		trayMark.Size = UDim2.fromScale(0.34 / board.width, 0.34 / board.height)
+		trayMark.BackgroundTransparency = 1
+		trayMark.TextScaled = true
+		trayMark.ZIndex = 2
+		trayMark.Parent = self.baleLayer
 		local statueMark = Instance.new("TextLabel")
 		statueMark.Name = "Statue"
 		statueMark.AnchorPoint = Vector2.new(1, 1)
@@ -590,7 +620,7 @@ function BoardView.load(self, game)
 			end
 		end
 
-		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, bale = bale, frost = frost, frostStroke = frostStroke }
+		self.cellGuis[y][x] = { cell = bg, mud = mud, clay = clay, clover = clover, goo = goo, rainbow = rainbow, web = web, buried = buried, statueMark = statueMark, tray = tray, trayMark = trayMark, bale = bale, frost = frost, frostStroke = frostStroke }
 		self:_updateCell(x, y, cell)
 		self:_makeHitButton(x, y)
 
@@ -931,6 +961,23 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			bale:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Sprout" then
+		-- The seed under the cleared tile sprouts: the soil turns green.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.tray.BackgroundColor3 = TileStyle.Board.sprout
+			guis.trayMark.Text = TileStyle.GoalGlyphs.Trays
+			guis.trayMark.Rotation = -20
+			tween(guis.trayMark, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.1 / w, 1.1 / h), TileStyle.Board.sprout, true)
+		return FX_TIME
+	elseif effect.type == "Tray" then
+		-- A whole tray has sprouted: every cell of it flashes green.
+		for _, c in effect.cells do
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.sprout, true)
+		end
 		return FX_TIME
 	elseif effect.type == "Bloom" then
 		-- The bud bursts open and a tulip floats up off it.

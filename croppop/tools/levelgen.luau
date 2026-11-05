@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 850
+local LAST = tonumber(ARGS[2]) or 875
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -198,6 +198,11 @@ local NAMES = {
 	"Firefly Dance", "Lantern Row", "Moonbeam Rise", "Night Sky Farm", "Grand Lantern Night",
 	"Glow Brook", "Twilight Rows", "Midsummer Eve", "Dusky Dell", "Lantern Fair",
 	"Firefly Hollow", "Moonrise Ridge", "Starlight Yard", "Night Harvest", "Grand Firefly Festival",
+	"Tray Day", "Windowsill Farm", "Glasshouse Lane", "First Shoots", "Little Cloches",
+	"Propagator Path", "Punnet Place", "Shoot Up Hill", "Dibber Dell", "Grand Tray Parade",
+	"Germination Way", "Cutting Corner", "Plug Plant Plot", "Hothouse Hill", "Tray Table Fair",
+	"Cloche Corner", "Tender Shoots", "Root Run", "Leafing Out", "Grand Hothouse Show",
+	"Tiny Leaves Lane", "Two Leaf Rise", "Pricking Out", "Hardening Off", "Grand Glasshouse Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -235,7 +240,8 @@ local SNAIL_INTRO = 751 -- first level with garden snails
 local BUD_INTRO = 776 -- first level with tulip buds
 local LAMB_INTRO = 801 -- first level with lost lambs
 local FIREFLY_INTRO = 826 -- first level with firefly spots
-local INTROS = { [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local TRAY_INTRO = 851 -- first level with seed trays
+local INTROS = { [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -581,6 +587,7 @@ local function mechanics(id)
 		buds = id >= BUD_INTRO, -- "T"
 		lambs = id >= LAMB_INTRO, -- "E" and pens "P"
 		fireflies = id >= FIREFLY_INTRO, -- "N"
+		trays = id >= TRAY_INTRO, -- "R"
 	}
 end
 
@@ -588,6 +595,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_TRAYS = { "Trays", "Fireflies", "Lambs", "Collect", "Trays", "Blooms", "Snails", "Trucks", "Trays", "Honey", "Hedges", "Mix" }
 local FOCUS_FIREFLIES = { "Fireflies", "Lambs", "Blooms", "Collect", "Fireflies", "Snails", "Trucks", "Honey", "Fireflies", "Hedges", "Boxes", "Mix" }
 local FOCUS_LAMBS = { "Lambs", "Blooms", "Snails", "Collect", "Lambs", "Trucks", "Honey", "Hedges", "Lambs", "Boxes", "Buckets", "Mix" }
 local FOCUS_BUDS = { "Blooms", "Snails", "Trucks", "Collect", "Blooms", "Honey", "Hedges", "Boxes", "Blooms", "Buckets", "Scarecrows", "Mix" }
@@ -629,6 +637,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Tray", "Glasshouse", "Hothouse", "Cloche", "Propagator", "Punnet", "Windowsill", "Shoot", "Dibber", "Germinat", "Cutting", "Plug Plant", "Pricking Out", "Hardening Off", "Leafing" }, focus = "Trays", needs = "trays" },
 	{ words = { "Firefly", "Glow", "Glimmer", "Lantern", "Twilight", "Dusk", "Night", "Moon", "Star", "Midsummer", "Evening" }, focus = "Fireflies", needs = "fireflies" },
 	{ words = { "Lamb", "Sheep", "Ewe ", "Flock", "Fold", "Shepherd", "Bleat", "Fleece", "Shear", "Woolly", "Woolpack", "Ram'", "Crook", "Drover" }, focus = "Lambs", needs = "lambs" },
 	{ words = { "Tulip", "Bulb", "Bloom", "Blossom", "Petal", "Posy", "Bouquet", "Florist", "Flower", "Rosebud", "Bud " }, focus = "Blooms", needs = "buds" },
@@ -720,6 +729,8 @@ local function focusOf(id, name)
 		return "Lambs"
 	elseif id == FIREFLY_INTRO then
 		return "Fireflies"
+	elseif id == TRAY_INTRO then
+		return "Trays"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -731,7 +742,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -1134,6 +1145,48 @@ local function placeSnails(g, rng, id)
 	return placed
 end
 
+-- Seed trays: mirrored blocks of plain cells, 2x2 or three in a line, kept
+-- apart from other trays (touching R cells would make one tray). One pair of
+-- 2x2 trays on the first tray level, one or two pairs after (now and then
+-- three later on). Returns how many pairs were placed.
+local TRAY_SHAPES = {
+	{ { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 } },
+	{ { 0, 0 }, { 1, 0 }, { 2, 0 } },
+	{ { 0, 0 }, { 0, 1 }, { 0, 2 } },
+}
+local function placeTrays(g, rng, id)
+	local want = if id == TRAY_INTRO then 1 else rng:int(1, 2) + (if id >= TRAY_INTRO + 12 and rng:int(1, 3) == 1 then 1 else 0)
+	local placed = 0
+	for _ = 1, 100 do
+		if placed >= want then
+			break
+		end
+		local shape = if id == TRAY_INTRO then TRAY_SHAPES[1] else rng:pick(TRAY_SHAPES)
+		local x, y = rng:int(1, g.w // 2), rng:int(1, g.h)
+		local ok = true
+		for _, d in shape do
+			local cx, cy = x + d[1], y + d[2]
+			local row = g[cy]
+			if cx > g.w // 2 or not row or row[cx] ~= "." or row[g.w - cx + 1] ~= "." then
+				ok = false
+			end
+			for _, n in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+				local nrow = g[cy + n[2]]
+				if nrow and nrow[cx + n[1]] == "R" then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			for _, d in shape do
+				setSym(g, x + d[1], y + d[2], "R")
+			end
+			placed += 1
+		end
+	end
+	return placed
+end
+
 -- Firefly spots: mirrored plain cells spread over the board, three to five
 -- pairs (three on the first firefly level). Returns how many were placed.
 local function placeSpots(g, rng, id)
@@ -1385,6 +1438,8 @@ local function placePortals(g, rng, id)
 		local fits = true
 		for dy = -1, 1 do
 			fits = fits and isCell(g, x, r + dy) and isCell(g, mx, r + dy)
+			-- Don't cut a seed tray in pieces.
+			fits = fits and g[r + dy][x] ~= "R" and g[r + dy][mx] ~= "R"
 		end
 		if fits then
 			table.insert(columns, x)
@@ -1707,6 +1762,11 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	if focus == "Trays" or (focus == "Mix" and mech.trays and rng:int(1, 3) == 1) then
+		if placeTrays(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Fireflies" or (focus == "Mix" and mech.fireflies and rng:int(1, 3) == 1) then
 		if placeSpots(g, rng, id) < 2 then
 			return nil
@@ -1895,6 +1955,9 @@ local function draft(id, variant)
 	end
 	if has(g, "E") > 0 then
 		table.insert(goals, { kind = "Lambs" })
+	end
+	if has(g, "R") > 0 then
+		table.insert(goals, { kind = "Trays" })
 	end
 	if has(g, "N") > 0 then
 		-- About one firefly per lit spot every couple of swaps; a few more as levels go on.
