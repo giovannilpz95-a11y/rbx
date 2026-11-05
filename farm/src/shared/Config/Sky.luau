@@ -82,4 +82,22 @@ return table.freeze({
 		thanksPerLevel = 1,
 		thanksMax = 5, -- neighbors a rainbow thanks the owner for
 	}),
+
+	-- The Golden Goose (14 H2, a rare visitor): now and then it lands on one farm on the
+	-- server, picked at random, beside the path up from the gate. Everyone who walks up to it
+	-- (the owner too) gets a Golden Egg once, which sells on the spot for Coins, and the owner
+	-- gets a thank-you for each neighbor. Only one visitor at a time, and never during a sky
+	-- event or a rainbow.
+	goose = table.freeze({
+		checkSeconds = 20 * MIN, -- how often the server rolls for a visit
+		chance = 0.2, -- per roll: about one visit every 1.7 hours on a busy server
+		seconds = 5 * MIN,
+		reach = 14,
+		ahead = 22, -- studs up the spine path from the gate
+		side = 7, -- studs to the right of it (clear of a rainbow's chest)
+		eggCoins = 25, -- a Golden Egg: eggCoins + eggCoinsPerLevel x level, and XP
+		eggCoinsPerLevel = 5,
+		xp = 10,
+		thanksMax = 8, -- neighbors the owner is thanked for (Coins as the Rainbow's thanks)
+	}),
 })
