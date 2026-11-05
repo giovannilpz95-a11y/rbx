@@ -2526,6 +2526,8 @@ local function renderDebug(state: { [string]: any })
 	devButton("Event: +100 tokens", "Debug_Event", 240, 30, "tokens")
 	devButton("Event: end the preview now (leftovers become Coins)", "Debug_Event", 380, 31, "end")
 	devButton("Event: start the preview again", "Debug_Event", 300, 32, "start")
+	devButton("County Fair: open entries now", "Debug_Fair", 300, 33, "open")
+	devButton("County Fair: close entries and judge now", "Debug_Fair", 340, 34, "judge")
 end
 
 ---------------------------------------------------------------------------------------------

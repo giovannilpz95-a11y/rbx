@@ -16,6 +16,7 @@ local Timer = require(Shared.Timer)
 
 local ClientStore = require(script.Parent.Parent.ClientStore)
 local DailyGift = require(script.Parent.DailyGift)
+local Fair = require(script.Parent.Fair)
 local FarmerCard = require(script.Parent.FarmerCard)
 local Panels = require(script.Parent.Panels)
 local Ui = require(script.Parent.Ui)
@@ -50,6 +51,15 @@ local ENTRIES: { Entry } = {
 			end
 			return true, Events.timeLeft(endsAt - now), Events.reached(def, block.earned) > block.claimed
 		end,
+	},
+	{
+		-- The County Fair (UI/Fair): open weekends, then its results
+		glyph = "🏅",
+		order = 0,
+		open = function()
+			Panels.open("Fair")
+		end,
+		status = Fair.status,
 	},
 	{
 		glyph = "📅",
@@ -105,7 +115,7 @@ function EdgeStack.init()
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -24, 0, 148), -- under the Quests button
-		Size = UDim2.fromOffset(56, 340),
+		Size = UDim2.fromOffset(56, 420),
 		Parent = gui,
 	}, {
 		Ui.new("UIListLayout", {

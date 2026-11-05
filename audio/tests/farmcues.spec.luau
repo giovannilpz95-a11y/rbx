@@ -299,6 +299,8 @@ test("newer popups: quests, records, the daily gift and news", function()
 	expect.falsy(FarmCues.isReward({ kind = "Event", step = "started" }), "event start is news")
 	expect.falsy(FarmCues.isReward({ kind = "Event", step = "prize" }), "a prize ready is news")
 	expect.truthy(FarmCues.isReward({ kind = "Event", step = "crate" }), "a crate pays")
+	expect.eq(names(FarmCues.popup({ kind = "Fair", step = "entered" })), "UiOpen")
+	expect.eq(names(FarmCues.popup({ kind = "Fair", step = "results" })), "PrizeFind,Unlock")
 end)
 
 test("news popups leave the next snapshot's Coins their own sound", function()

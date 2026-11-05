@@ -121,6 +121,7 @@ local function snapshot(data: { [string]: any })
 		peddler = data.peddler, -- what you bought from the Wandering Peddler this visit
 		trophies = data.trophies,
 		event = data.event, -- the limited-time event: tokens, prizes, Fair Stand crates
+		fair = data.fair, -- the County Fair: this week's entries and every ribbon won
 		quests = data.quests,
 		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)
 		serverNow = Clock.now(),
