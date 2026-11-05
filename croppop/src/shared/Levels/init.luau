@@ -11,6 +11,9 @@
 	  w  weed (spreads when a swap pulls none)
 	  p  pumpkin (drop it to the bottom of its column; not on a column's bottom cell)
 	  c  clover (matches on it spread it; a Clover goal covers the board)
+	  U  lawn mower: blocks a cell and never breaks; it has a tile colour
+	     (the level's colours in turn, in reading order), every wave with a
+	     match of that colour charges it, and the third charge mows its row
 	  K  seed packet: blocks like a bale and holds 4 seeds of one tile colour
 	     (the level's colours in turn, in reading order); a match of that
 	     colour next to it, or a blast, takes a seed (the Packets goal)
@@ -111,7 +114,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -174,6 +177,7 @@ local VALID_CHARS = {
 	B = true,
 	W = true,
 	K = true,
+	U = true,
 	H = true,
 	y = true,
 	m = true,
