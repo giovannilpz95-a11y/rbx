@@ -2531,6 +2531,7 @@ local function renderDebug(state: { [string]: any })
 	devButton("Plot Showcase now (rate without the 20-second wait)", "Debug_Showcase", 380, 35)
 	devButton("County Fair: +1 Starlit Wheat Prize Crop", "Debug_Fair", 320, 36, "Starlit")
 	devButton("County Fair: +1 Heirloom Wheat Prize Crop (a Blue Ribbon)", "Debug_Fair", 400, 37, "Heirloom")
+	devButton("Wardrobe: own every piece", "Debug_Wardrobe", 260, 38)
 end
 
 ---------------------------------------------------------------------------------------------

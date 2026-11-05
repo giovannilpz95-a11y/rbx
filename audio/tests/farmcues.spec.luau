@@ -304,6 +304,8 @@ test("newer popups: quests, records, the daily gift and news", function()
 	expect.eq(names(FarmCues.popup({ kind = "Showcase", step = "rated" })), "Xp")
 	expect.falsy(FarmCues.isReward({ kind = "Showcase", step = "start" }), "the Showcase starting is news")
 	expect.eq(names(FarmCues.popup({ kind = "Fair", step = "results" })), "PrizeFind,Unlock")
+	expect.eq(names(FarmCues.popup({ kind = "Wardrobe", step = "bought" })), "Purchase")
+	expect.eq(names(FarmCues.popup({ kind = "Wardrobe", step = "unlocked" })), "Unlock")
 end)
 
 test("news popups leave the next snapshot's Coins their own sound", function()

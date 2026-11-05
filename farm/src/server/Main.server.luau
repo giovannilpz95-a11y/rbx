@@ -47,6 +47,7 @@ local EmoteService = require(Services.EmoteService)
 local EventService = require(Services.EventService)
 local FairService = require(Services.FairService)
 local ShowcaseService = require(Services.ShowcaseService)
+local WardrobeService = require(Services.WardrobeService)
 local MarketService = require(Services.MarketService)
 local LayoutService = require(Services.LayoutService)
 local RecordsService = require(Services.RecordsService)
@@ -88,6 +89,7 @@ EmoteService.init() -- last: the photo spots look for open ground on the finishe
 EventService.init() -- after the photo spots: the Fair Stand finds its own open ground
 FairService.init() -- and the County Fair tent after it
 ShowcaseService.init()
+WardrobeService.init()
 MarketService.init()
 LayoutService.init()
 SettingsService.init()

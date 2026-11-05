@@ -92,6 +92,14 @@ end
 
 local function render(_state: { [string]: any }, body: ScrollingFrame, title: TextLabel)
 	title.Text = "Emotes"
+	Ui.button("👒  Wardrobe: farm outfits", function()
+		Panels.open("Wardrobe")
+	end, {
+		Size = UDim2.new(1, -8, 0, 44),
+		BackgroundColor3 = Ui.colors.selected,
+		LayoutOrder = 0,
+		Parent = body,
+	})
 	for _, def in sorted() do
 		Ui.button(string.format("%s  %s", def.icon, def.displayName), function()
 			Panels.close()

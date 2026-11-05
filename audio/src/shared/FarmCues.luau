@@ -461,6 +461,12 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 			return { { sound = "PrizeFind" }, { sound = "Unlock", delay = 0.4 } }
 		end
 		return { { sound = "UiOpen" } }
+	elseif kind == "Wardrobe" then
+		-- The Wardrobe: a piece bought, or earned at the Fair, the Showcase or an event
+		if payload.step == "bought" then
+			return { { sound = "Purchase" } }
+		end
+		return { { sound = "Unlock" } }
 	elseif kind == "Showcase" then
 		-- The Plot Showcase: it starts, a rating card, your rating sent (XP), your farm's result
 		local step = payload.step

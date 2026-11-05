@@ -214,6 +214,11 @@ function Profile.template(): { [string]: any }
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart or the Peddler
 		peddler = { visit = 0, bought = {} }, -- the Wandering Peddler's purchases this visit (shared/Peddler)
 		trophies = {}, -- Gold Town Record trophy id -> copies in storage, not placed (Config/Trophies), and event keepsakes (Config/Events)
+		wardrobe = { -- farm fashion (shared/Wardrobe, Config/Wardrobe)
+			owned = {}, -- piece id -> true (free pieces count without it)
+			worn = {}, -- slot -> piece id
+			show = true, -- false: just the player's own avatar
+		},
 		showcase = { -- the Plot Showcase (shared/Showcase, Config/Showcase)
 			optIn = false, -- show this farm in the Showcase (Settings)
 			sunflowers = 0, -- weighted sunflowers received in all

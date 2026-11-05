@@ -102,6 +102,7 @@ local PREFIX_SKU: { [string]: string } = {
 	tonic = "Tonic", -- the Tonic Shed: building it and Gem tonics (shared/Tonics)
 	event = "Event", -- the limited-time event: prizes, shop, leftover tokens, token bonuses
 	fair = "Event", -- its Fair Stand crates
+	wardrobe = "Wardrobe", -- farm fashion bought with Coins or Gems
 	debug = "DevGrant", -- Studio only; never reaches live analytics
 }
 
