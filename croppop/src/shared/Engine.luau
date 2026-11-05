@@ -95,6 +95,16 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Lost lambs: block a cell and never break; blasts and boosters don't
+	move them. A match next to one (once per lamb per wave) walks it one
+	cell towards the nearest pen (the longer way first, then the other):
+	it tramples whatever is there (tiles, obstacles, webs, frost, and a
+	fence on the way) until the cell is empty, then steps in (a "Walk"
+	effect). Quilts, seed sacks, scarecrows, beehives, snails, other lambs
+	and pumpkins stop it, and so do hedges and cells where a power-up is
+	about to appear; then it tries the other way, or stays. A lamb that
+	steps onto its pen is home (a "Home" effect), for the Lambs goal.
+
 	Garden snails: block a cell and never break, and blasts and boosters
 	don't move them. A match next to one (once per snail per wave) shoves it
 	one cell straight away from the matched tile: the snail bites whatever
@@ -495,6 +505,100 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb" }
+local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
+
+local function isReserved(wave, cell): boolean
+	for _, create in wave.pendingCreates do
+		if create.cell == cell then
+			return true
+		end
+	end
+	return wave.reserved ~= nil and wave.reserved[cell] == true
+end
+
+-- The pen nearest a lamb (by steps across the board, ties in reading order).
+function Engine._nearestPen(self, lamb)
+	local best, bestDist = nil, math.huge
+	for _, pen in self.board.pens do
+		local dist = math.abs(pen.x - lamb.x) + math.abs(pen.y - lamb.y)
+		if dist < bestDist then
+			best, bestDist = pen, dist
+		end
+	end
+	return best
+end
+
+-- Tramples a cell clear for a lamb; true if it's empty now.
+function Engine._trample(self, wave, to): boolean
+	for _ = 1, MAX_TRAMPLES do
+		if Board.isEmptySlot(to) and not to.web then
+			return true
+		end
+		if to.web then
+			to.web = false
+			table.insert(wave.webs, { x = to.x, y = to.y })
+			self.goals:onWeb()
+		elseif to.bale > 0 then
+			wave.balesTouched[to] = true
+			self:_damageBale(wave, to)
+		elseif to.piece then
+			self:_removePiece(wave, to, "lamb")
+		end
+		if isReserved(wave, to) then
+			return false -- a crate left a power-up here
+		end
+	end
+	return Board.isEmptySlot(to) and not to.web
+end
+
+-- A match walked a lamb one cell towards its pen.
+function Engine._walkLamb(self, wave, lamb)
+	local board = self.board
+	local pen = self:_nearestPen(lamb)
+	if not pen then
+		return
+	end
+	local ddx, ddy = pen.x - lamb.x, pen.y - lamb.y
+	local stepX = { if ddx > 0 then 1 else -1, 0 }
+	local stepY = { 0, if ddy > 0 then 1 else -1 }
+	local tries = {}
+	local order = if math.abs(ddx) >= math.abs(ddy) then { { ddx, stepX }, { ddy, stepY } } else { { ddy, stepY }, { ddx, stepX } }
+	for _, entry in order do
+		if entry[1] ~= 0 then
+			table.insert(tries, entry[2])
+		end
+	end
+	for _, step in tries do
+		local to = board:get(lamb.x + step[1], lamb.y + step[2])
+		local fence = to and board:fenceBetween(lamb.x, lamb.y, to.x, to.y)
+		local blocked = not to or (fence and fence.hedge) or isReserved(wave, to) or (to.piece and to.piece.pumpkin)
+		for _, key in LAMB_BLOCKERS do
+			blocked = blocked or (to and to[key] ~= nil and to[key] ~= false)
+		end
+		if not blocked then
+			if fence and board:breakFence(fence) then
+				table.insert(wave.fences, { x = fence.x, y = fence.y, side = fence.side })
+				self.goals:onFence()
+			end
+			if self:_trample(wave, to) then
+				lamb.bale, lamb.lamb = 0, nil
+				table.insert(wave.bales, { x = lamb.x, y = lamb.y, hp = 0 })
+				table.insert(wave.effects, { type = "Walk", fromX = lamb.x, fromY = lamb.y, x = to.x, y = to.y })
+				if to.pen then
+					table.insert(wave.effects, { type = "Home", x = to.x, y = to.y })
+					self.goals:onLamb()
+				else
+					to.bale, to.lamb = 1, true
+					wave.balesTouched[to] = true -- the same wave doesn't walk it again
+					table.insert(wave.bales, { x = to.x, y = to.y, hp = 1, lamb = true })
+				end
+			end
+			return -- it tried this way: trampling takes its step even if the cell won't clear
+		end
+	end
+end
+
 -- A match shoved a snail one cell along (dx, dy): it bites what's there and
 -- crawls in if that empties the cell, leaving goo where it was.
 function Engine._shoveSnail(self, wave, snail, dx: number, dy: number)
@@ -541,8 +645,8 @@ function Engine._shoveSnail(self, wave, snail, dx: number, dy: number)
 end
 
 function Engine._damageBale(self, wave, cell, byMatch: boolean?)
-	if cell.snail then
-		return -- blasts don't budge a snail; only matches next to it shove it
+	if cell.snail or cell.lamb then
+		return -- blasts don't budge snails or lambs; only matches next to them do
 	end
 	if cell.tarp then
 		local tarp = cell.tarp
@@ -829,6 +933,10 @@ function Engine._popGroups(self, wave, groups)
 					wave.balesTouched[n] = true
 					wave.shoves = wave.shoves or {}
 					table.insert(wave.shoves, { snail = n, dx = d[1], dy = d[2] })
+				elseif n and n.lamb and not wave.balesTouched[n] then
+					wave.balesTouched[n] = true
+					wave.shoves = wave.shoves or {}
+					table.insert(wave.shoves, { lamb = n })
 				elseif n and n.bale > 0 and not n.stone and not n.quilt and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					self:_damageBale(wave, n, true)
@@ -852,7 +960,13 @@ function Engine._popGroups(self, wave, groups)
 	end
 	-- Snails move once every match has popped, so they know where power-ups go.
 	for _, shove in wave.shoves or {} do
-		self:_shoveSnail(wave, shove.snail, shove.dx, shove.dy)
+		if shove.lamb then
+			if shove.lamb.lamb then
+				self:_walkLamb(wave, shove.lamb)
+			end
+		else
+			self:_shoveSnail(wave, shove.snail, shove.dx, shove.dy)
+		end
 	end
 	wave.shoves = nil
 end
@@ -884,8 +998,8 @@ function Engine._chooseBeeTarget(self)
 	self.board:eachCell(function(cell)
 		if wantsFences and #self.board:fencesAround(cell.x, cell.y) > 0 then
 			table.insert(tiers[1], cell)
-		elseif cell.quilt or cell.snail then
-			-- Bees leave quilts and snails alone: nothing breaks them.
+		elseif cell.quilt or cell.snail or cell.lamb then
+			-- Bees leave quilts, snails and lambs alone: nothing breaks them.
 		elseif cell.sack then
 			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
 		elseif cell.bucket then
@@ -1618,7 +1732,7 @@ function Engine.useBooster(self, kind: string, a: number?, b: number?, c: number
 
 	if kind == "Trowel" then
 		local cell = board:get(a :: number, b :: number)
-		if not cell or cell.quilt or cell.snail or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
+		if not cell or cell.quilt or cell.snail or cell.lamb or (cell.piece == nil and cell.bale == 0) or (cell.piece and cell.piece.pumpkin) then
 			return false, {}
 		end
 		local wave = newWave()

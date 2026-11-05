@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 800
+local LAST = tonumber(ARGS[2]) or 825
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -188,6 +188,11 @@ local NAMES = {
 	"Posy Corner", "Daisy Chain Dell", "Bluebell Wood", "Florist's Yard", "Petal Parade",
 	"Tulip Fields", "Bouquet Lane", "Buttercup Bank", "Bulb Barn", "Golden Bloom Fair",
 	"Lilac Lane", "Peony Path", "Crocus Corner", "Bud Break Hill", "Grand Flower Festival",
+	"Lost Lamb Lane", "Shepherd's Walk", "Flock Hill", "Woolly Rise", "Ewe Turn",
+	"Little Lambs", "Sheepfold Yard", "Sheepdog Trials", "Bleating Brook", "Grand Sheep Show",
+	"Crook and Bell", "Lambing Time", "Woolpack Road", "Shearing Day", "Ram's Horn Hill",
+	"Counting Sheep", "Fleece Fair", "Black Sheep Row", "Shepherd's Rest", "Grand Flock Parade",
+	"Lamb's Tail Lane", "Drover's Road", "Highland Flock", "Homeward Lambs", "Golden Fleece Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -223,7 +228,8 @@ local HIVE_INTRO = 701 -- first level with beehives
 local TRUCK_INTRO = 726 -- first level with hay trucks
 local SNAIL_INTRO = 751 -- first level with garden snails
 local BUD_INTRO = 776 -- first level with tulip buds
-local INTROS = { [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local LAMB_INTRO = 801 -- first level with lost lambs
+local INTROS = { [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -567,6 +573,7 @@ local function mechanics(id)
 		trucks = id >= TRUCK_INTRO, -- "C"
 		snails = id >= SNAIL_INTRO, -- "O"
 		buds = id >= BUD_INTRO, -- "T"
+		lambs = id >= LAMB_INTRO, -- "E" and pens "P"
 	}
 end
 
@@ -574,6 +581,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_LAMBS = { "Lambs", "Blooms", "Snails", "Collect", "Lambs", "Trucks", "Honey", "Hedges", "Lambs", "Boxes", "Buckets", "Mix" }
 local FOCUS_BUDS = { "Blooms", "Snails", "Trucks", "Collect", "Blooms", "Honey", "Hedges", "Boxes", "Blooms", "Buckets", "Scarecrows", "Mix" }
 local FOCUS_SNAILS = { "Snails", "Trucks", "Honey", "Collect", "Snails", "Hedges", "Boxes", "Buckets", "Snails", "Scarecrows", "Letters", "Mix" }
 local FOCUS_TRUCKS = { "Trucks", "Honey", "Hedges", "Collect", "Trucks", "Boxes", "Buckets", "Scarecrows", "Trucks", "Letters", "Clay", "Mix" }
@@ -613,6 +621,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Lamb", "Sheep", "Ewe ", "Flock", "Fold", "Shepherd", "Bleat", "Fleece", "Shear", "Woolly", "Woolpack", "Ram'", "Crook", "Drover" }, focus = "Lambs", needs = "lambs" },
 	{ words = { "Tulip", "Bulb", "Bloom", "Blossom", "Petal", "Posy", "Bouquet", "Florist", "Flower", "Rosebud", "Bud " }, focus = "Blooms", needs = "buds" },
 	{ words = { "Snail", "Shell", "Slug", "Escargot", "Whorl", "Crawl", "Slow " }, focus = "Snails", needs = "snails" },
 	{ words = { "Truck", "Wagon", "Lorry", "Haulage", "Pickup", "Convoy", "Flatbed", "Tow " }, focus = "Trucks", needs = "trucks" },
@@ -698,6 +707,8 @@ local function focusOf(id, name)
 		return "Snails"
 	elseif id == BUD_INTRO then
 		return "Blooms"
+	elseif id == LAMB_INTRO then
+		return "Lambs"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -709,7 +720,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -804,7 +815,7 @@ end
 -- Tarps: centred runs of plain cells in a row (so they stay mirrored), with
 -- tiles above them to fall in once they roll up, never stacked. The first
 -- tarp level has one run of four.
-local NOT_FALLING = "123wsSxtfF#dhGqkzlLyuvVjCOT" -- cells nothing falls out of
+local NOT_FALLING = "123wsSxtfF#dhGqkzlLyuvVjCOTE" -- cells nothing falls out of
 local function placeTarps(g, rng, id)
 	local want = if id == TARP_INTRO then 1 else rng:int(1, 2)
 	local placed = 0
@@ -1106,6 +1117,44 @@ local function placeSnails(g, rng, id)
 		end
 		if ok then
 			setSym(g, x, y, "O")
+			placed += 1
+		end
+	end
+	return placed
+end
+
+-- Lost lambs: a mirrored pair in the top half, each with its pen a few rows
+-- below (straight down, or a step or two across), and no holes in the column
+-- between. Now and then two pairs after the first lamb level.
+local function placeLambs(g, rng, id)
+	local want = if id == LAMB_INTRO or rng:int(1, 3) < 3 then 1 else 2
+	local placed = 0
+	for _ = 1, 60 do
+		if placed >= want then
+			break
+		end
+		local x, y = rng:int(1, g.w // 2), rng:int(1, math.max(1, g.h // 2 - 1))
+		local drop = if id == LAMB_INTRO then 4 else rng:int(3, 6)
+		local px, py = x + (if id == LAMB_INTRO then 0 else rng:int(-1, 2)), y + drop
+		local mx, mpx = g.w - x + 1, g.w - px + 1
+		local ok = mx - x >= 2 and mpx - px >= 2 and px >= 1 and py <= g.h
+			and g[y][x] == "." and g[y][mx] == "." and g[py] ~= nil and g[py][px] == "." and g[py][mpx] == "."
+		if ok then
+			for yy = y, py do
+				ok = ok and isCell(g, x, yy) and isCell(g, px, yy)
+			end
+			for dy = -1, 1 do
+				for dx = -1, 1 do
+					local row = g[y + dy]
+					if row and (row[x + dx] == "E" or row[x + dx] == "P") then
+						ok = false
+					end
+				end
+			end
+		end
+		if ok then
+			setSym(g, x, y, "E")
+			setSym(g, px, py, "P")
 			placed += 1
 		end
 	end
@@ -1614,6 +1663,11 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	if focus == "Lambs" or (focus == "Mix" and mech.lambs and rng:int(1, 3) == 1) then
+		if placeLambs(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Boxes" or (focus == "Mix" and mech.boxes and rng:int(1, 3) == 1) then
 		if placeBoxes(g, rng, id) == 0 then
 			return nil
@@ -1794,6 +1848,9 @@ local function draft(id, variant)
 	end
 	if has(g, "T") > 0 then
 		table.insert(goals, { kind = "Blooms" })
+	end
+	if has(g, "E") > 0 then
+		table.insert(goals, { kind = "Lambs" })
 	end
 	local hives = has(g, "j")
 	if hives > 0 then

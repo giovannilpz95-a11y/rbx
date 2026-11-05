@@ -259,6 +259,9 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.bucket then
 		label.BackgroundColor3 = TileStyle.Board.bucket
 		label.Text = TileStyle.BucketGlyph
+	elseif kind.lamb then
+		label.BackgroundColor3 = TileStyle.Board.lamb
+		label.Text = TileStyle.GoalGlyphs.Lambs
 	elseif kind.bud then
 		-- Pinker as it charges; the dots are its charges so far.
 		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
@@ -525,6 +528,23 @@ function BoardView.load(self, game)
 			exit.Parent = self.baleLayer
 		end
 
+		-- Lamb pens: a little house in the cell's corner, where lambs go home.
+		if cell.pen then
+			local pen = Instance.new("TextLabel")
+			pen.Name = "Pen"
+			pen.AnchorPoint = Vector2.new(1, 1)
+			pen.Position = UDim2.fromScale(x / board.width, y / board.height)
+			pen.Size = UDim2.fromScale(0.4 / board.width, 0.4 / board.height)
+			pen.BackgroundColor3 = TileStyle.Board.pen
+			pen.BackgroundTransparency = 0.2
+			pen.Text = TileStyle.PenGlyph
+			pen.TextScaled = true
+			pen.Parent = self.baleLayer
+			local penCorner = Instance.new("UICorner")
+			penCorner.CornerRadius = UDim.new(0.3, 0)
+			penCorner.Parent = pen
+		end
+
 		-- Portals: a swirl on the bottom edge of the entrance and the top edge of
 		-- the exit, in the same colour for each pair.
 		for _, link in { { cell.portalOut, "PortalIn", 1, y }, { cell.portalIn, "PortalOut", 0, y - 1 } } do
@@ -789,6 +809,39 @@ function BoardView._effect(self, effect): number
 			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
+	elseif effect.type == "Walk" then
+		-- The lamb trots across into its new cell.
+		local lamb = Instance.new("TextLabel")
+		lamb.Name = "Walk"
+		lamb.AnchorPoint = Vector2.new(0.5, 0.5)
+		lamb.BackgroundTransparency = 1
+		lamb.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		lamb.Position = self:_centerOf(effect.fromX, effect.fromY)
+		lamb.Text = TileStyle.GoalGlyphs.Lambs
+		lamb.TextScaled = true
+		lamb.Parent = self.fxLayer
+		tween(lamb, FX_TIME, { Position = self:_centerOf(effect.x, effect.y) }, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+		task.delay(FX_TIME, function()
+			lamb:Destroy()
+		end)
+		return FX_TIME
+	elseif effect.type == "Home" then
+		-- Home at last: the pen glows and the lamb skips off up the board.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.pen, true)
+		local lamb = Instance.new("TextLabel")
+		lamb.Name = "Home"
+		lamb.AnchorPoint = Vector2.new(0.5, 0.5)
+		lamb.BackgroundTransparency = 1
+		lamb.Size = UDim2.fromScale(0.8 / w, 0.8 / h)
+		lamb.Position = self:_centerOf(effect.x, effect.y)
+		lamb.Text = TileStyle.GoalGlyphs.Lambs
+		lamb.TextScaled = true
+		lamb.Parent = self.fxLayer
+		tween(lamb, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			lamb:Destroy()
+		end)
 		return FX_TIME
 	elseif effect.type == "Crawl" then
 		-- The snail slides across into its new cell.
