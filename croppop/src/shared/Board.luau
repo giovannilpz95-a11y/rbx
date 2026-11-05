@@ -63,6 +63,8 @@ export type Cell = {
 	bucket: boolean?, -- the "bale" is a mud bucket: one hit tips it, spilling mud around it
 	truck: boolean?, -- the "bale" is a hay truck: each hit drops one of its bales nearby
 	snail: boolean?, -- the "bale" is a garden snail: matches shove it along, and it leaves goo
+	spot: boolean?, -- a firefly spot: fireflies light up here now and then
+	lit: boolean?, -- the spot's firefly is lit: clearing the tile here catches it
 	lamb: boolean?, -- the "bale" is a lost lamb: matches next to it walk it towards a pen
 	pen: boolean?, -- a lamb's pen: a lamb that steps onto it is home (tiles sit here as usual)
 	bud: number?, -- the "bale" is a tulip bud: charges so far (it blooms at 3, and closes if a swap misses it)
@@ -117,6 +119,7 @@ function Board.new(width: number, height: number)
 		-- { cells = { Cell } in reading order, left = patches still missing }.
 		quilts = {},
 		pens = {}, -- lamb pens ("P" in the layout): cells in reading order
+		spots = {}, -- firefly spots ("N" in the layout): cells in reading order
 	}, Board)
 	for y = 1, height do
 		self.cells[y] = {}
@@ -257,6 +260,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "P" then
 					cell.pen = true
 					table.insert(self.pens, cell)
+				elseif ch == "N" then
+					cell.spot = true
+					table.insert(self.spots, cell)
 				elseif ch == "j" then
 					cell.bale = 1
 					cell.hive = true
@@ -775,6 +781,9 @@ function Board.hash(self): string
 			if cell and cell.pen then
 				clover ..= "&"
 			end
+			if cell and cell.spot then
+				clover ..= if cell.lit then "$" else "%"
+			end
 			local basket = self.basketAt[y * 100 + x]
 			if self.henAt[y * 100 + x] then
 				table.insert(row, "H" .. self.henAt[y * 100 + x].laid % 2)
@@ -881,6 +890,8 @@ function Board.snapshot(self)
 			bud = cell.bud,
 			lamb = cell.lamb,
 			pen = cell.pen,
+			spot = cell.spot,
+			lit = cell.lit,
 			-- What's inside shows only once it's open.
 			mailbox = cell.mailbox and { open = cell.mailbox.open, mail = cell.mailbox.open and cell.mailbox.mail },
 			quilt = cell.quilt ~= nil,

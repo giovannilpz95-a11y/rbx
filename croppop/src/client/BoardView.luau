@@ -303,6 +303,14 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	end
 end
 
+-- A firefly spot's marker: a warm glow and a firefly when lit, a dim dot when not.
+local function styleSpot(label: TextLabel, lit: boolean)
+	label.Text = if lit then TileStyle.GoalGlyphs.Fireflies else TileStyle.SpotGlyph
+	label.BackgroundColor3 = if lit then TileStyle.Board.glow else TileStyle.Board.spot
+	label.BackgroundTransparency = if lit then 0.1 else 0.5
+	label.TextColor3 = if lit then TileStyle.Board.text else Color3.new(1, 1, 1)
+end
+
 local function styleClay(guis, layers: number?)
 	guis.clay.Visible = (layers or 0) > 0
 	guis.clay.BackgroundTransparency = if layers == 2 then 0.1 else 0.35
@@ -355,6 +363,7 @@ function BoardView.load(self, game)
 	self.aspect.AspectRatio = board.width / board.height
 	self.grid = {}
 	self.cellGuis = {}
+	self.spotGuis = {} -- y * 100 + x -> firefly spot marker
 	for y = 1, board.height do
 		self.grid[y] = {}
 		self.cellGuis[y] = {}
@@ -526,6 +535,22 @@ function BoardView.load(self, game)
 			exit.Text = TileStyle.Pumpkin.exit
 			exit.TextScaled = true
 			exit.Parent = self.baleLayer
+		end
+
+		-- Firefly spots: a marker in the cell's top-left corner, over the tile.
+		if cell.spot then
+			local spot = Instance.new("TextLabel")
+			spot.Name = "Spot"
+			spot.AnchorPoint = Vector2.new(0, 0)
+			spot.Position = UDim2.fromScale((x - 1) / board.width, (y - 1) / board.height)
+			spot.Size = UDim2.fromScale(0.4 / board.width, 0.4 / board.height)
+			spot.TextScaled = true
+			spot.Parent = self.baleLayer
+			local spotCorner = Instance.new("UICorner")
+			spotCorner.CornerRadius = UDim.new(0.5, 0)
+			spotCorner.Parent = spot
+			styleSpot(spot, cell.lit == true)
+			self.spotGuis[y * 100 + x] = spot
 		end
 
 		-- Lamb pens: a little house in the cell's corner, where lambs go home.
@@ -809,6 +834,38 @@ function BoardView._effect(self, effect): number
 			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
 		end
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(2 / w, 2 / h), TileStyle.Board.scarecrow, true)
+		return FX_TIME
+	elseif effect.type == "Lights" then
+		-- The fireflies move: old spots go dark, new ones light up.
+		for _, c in effect.changes do
+			local spot = self.spotGuis[c.y * 100 + c.x]
+			if spot then
+				styleSpot(spot, c.lit)
+				if c.lit then
+					self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(0.9 / w, 0.9 / h), TileStyle.Board.glow, true)
+				end
+			end
+		end
+		return FX_TIME
+	elseif effect.type == "Catch" then
+		-- Caught: the spot goes dark and the firefly floats off to the goal.
+		local spot = self.spotGuis[effect.y * 100 + effect.x]
+		if spot then
+			styleSpot(spot, false)
+		end
+		local fly = Instance.new("TextLabel")
+		fly.Name = "Firefly"
+		fly.AnchorPoint = Vector2.new(0.5, 0.5)
+		fly.BackgroundTransparency = 1
+		fly.Size = UDim2.fromScale(0.7 / w, 0.7 / h)
+		fly.Position = self:_centerOf(effect.x, effect.y)
+		fly.Text = TileStyle.GoalGlyphs.Fireflies
+		fly.TextScaled = true
+		fly.Parent = self.fxLayer
+		tween(fly, FX_TIME, { Position = self:_centerOf(effect.x, effect.y - 1.5), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			fly:Destroy()
+		end)
 		return FX_TIME
 	elseif effect.type == "Walk" then
 		-- The lamb trots across into its new cell.

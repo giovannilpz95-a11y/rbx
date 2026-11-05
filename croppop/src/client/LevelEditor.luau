@@ -78,6 +78,7 @@ local BRUSH_ROWS = {
 		{ char = "T", label = TileStyle.GoalGlyphs.Blooms },
 		{ char = "E", label = TileStyle.GoalGlyphs.Lambs },
 		{ char = "P", label = TileStyle.PenGlyph },
+		{ char = "N", label = TileStyle.GoalGlyphs.Fireflies },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -91,7 +92,7 @@ local FENCE = "|" -- the fence brush
 local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -114,6 +115,7 @@ local GOAL_BUTTONS = {
 	Honey = "+ 🍯",
 	Blooms = "+ 🌷",
 	Lambs = "+ 🐑",
+	Fireflies = "+ ✨",
 }
 
 local ui = nil
@@ -391,6 +393,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.lamb, TileStyle.GoalGlyphs.Lambs
 	elseif char == "P" then
 		return TileStyle.Board.pen, TileStyle.PenGlyph
+	elseif char == "N" then
+		return TileStyle.Board.glow, TileStyle.GoalGlyphs.Fireflies
 	elseif char == "v" or char == "V" then
 		return TileStyle.Board.box, TileStyle.GoalGlyphs.Boxes .. (if char == "v" then "3" else "2")
 	elseif char == "u" then
@@ -573,6 +577,8 @@ local function goalLabel(goal): string
 		return "🌷 all buds"
 	elseif goal.kind == "Lambs" then
 		return "🐑 all lambs home"
+	elseif goal.kind == "Fireflies" then
+		return "✨ fireflies"
 	end
 	return "🌾 all bales"
 end
@@ -685,9 +691,9 @@ local function renderPanel()
 				goal.count = math.clamp(goal.count + d * 5, 5, 200)
 				render()
 			end)
-		elseif goal.kind == "Pumpkins" or goal.kind == "Honey" then
+		elseif goal.kind == "Pumpkins" or goal.kind == "Honey" or goal.kind == "Fireflies" then
 			stepper(goalRow, "Count", tostring(goal.count), function(d)
-				goal.count = math.clamp(goal.count + d, 1, if goal.kind == "Honey" then 40 else 20)
+				goal.count = math.clamp(goal.count + d, 1, if goal.kind == "Pumpkins" then 20 else 40)
 				render()
 			end)
 		end
@@ -707,8 +713,8 @@ local function renderPanel()
 				table.insert(state.goals, { kind = "Collect", tile = state.colors[1] or "Tomato", count = 15 })
 			elseif kind == "Pumpkins" then
 				table.insert(state.goals, { kind = "Pumpkins", count = 3 })
-			elseif kind == "Honey" then
-				table.insert(state.goals, { kind = "Honey", count = 10 })
+			elseif kind == "Honey" or kind == "Fireflies" then
+				table.insert(state.goals, { kind = kind, count = 10 })
 			else
 				table.insert(state.goals, { kind = kind })
 			end
