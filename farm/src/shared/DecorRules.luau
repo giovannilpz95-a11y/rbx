@@ -7,6 +7,7 @@
 
 local Decor = require("./Config/Decor")
 local EventConfig = require("./Config/Events")
+local FairConfig = require("./Config/Fair")
 local Land = require("./Config/Land")
 local Trophies = require("./Config/Trophies")
 local TownRules = require("./TownRules")
@@ -29,6 +30,20 @@ for _, trophy in Trophies.byRecord do
 		unlockLevel = 0,
 		trophy = true,
 		badge = "🏆 Gold trophy",
+	})
+end
+-- County Fair Blue Ribbon cups (Config/Fair) too
+for _, cup in FairConfig.cups do
+	trophyDefs[cup.id] = table.freeze({
+		id = cup.id,
+		displayName = cup.displayName,
+		size = cup.size,
+		category = "Keepsake",
+		coinCost = 0,
+		xp = 0,
+		unlockLevel = 0,
+		trophy = true,
+		badge = "🥇 County Fair Blue Ribbon",
 	})
 end
 -- Event keepsakes (Config/Events: prizes and Event Shop pieces) work the same way: earned,

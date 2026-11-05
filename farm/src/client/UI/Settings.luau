@@ -225,6 +225,17 @@ local function render(state: { [string]: any }, body: ScrollingFrame, title: Tex
 			Remotes.fire("Social_SetHelpers", v)
 		end
 	)
+	-- The Plot Showcase is opt-in (Config/Showcase): nobody is put on display unasked
+	choices(
+		body,
+		nextOrder(),
+		"Show my farm in the Plot Showcase",
+		{ "On", "Off" },
+		if state.showcase and state.showcase.optIn then "On" else "Off",
+		function(v)
+			Remotes.fire("Showcase_OptIn", v)
+		end
+	)
 end
 
 function SettingsUi.init()

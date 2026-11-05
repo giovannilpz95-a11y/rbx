@@ -6,6 +6,7 @@
 -- if they claimed it earlier.
 
 return table.freeze({
+	fair = 0, -- the County Fair badge: any ribbon (Config/Fair)
 	records = table.freeze({
 		Orders = { 0, 0, 0 },
 		Harvest = { 0, 0, 0 },
