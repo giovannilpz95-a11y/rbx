@@ -266,6 +266,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- Pinker as it charges; the dots are its charges so far.
 		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
 		label.Text = TileStyle.GoalGlyphs.Blooms .. string.rep("•", kind.bud)
+	elseif kind.mower then
+		-- The mower shows the tile colour that charges it, and its charges as dots.
+		label.BackgroundColor3 = TileStyle.Board.mower
+		label.Text = TileStyle.MowerGlyph .. (TileStyle.Glyphs[kind.mowerColor] or "") .. string.rep("•", if type(kind.mower) == "number" then kind.mower else 0)
 	elseif kind.packet then
 		-- The packet shows the tile colour that takes its seeds, and how many are left.
 		label.BackgroundColor3 = TileStyle.Board.packet
@@ -981,6 +985,17 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			bale:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Mow" then
+		-- The mower revs up and cuts along its row (the row blast follows).
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = -10
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+		end
+		for x = 1, w do
+			self:_flash(self:_centerOf(x, effect.y), UDim2.fromScale(1 / w, 1 / h), TileStyle.Board.mowed, true)
+		end
 		return FX_TIME
 	elseif effect.type == "Packet" then
 		-- The last seed is out: the packet flashes and goes.

@@ -93,9 +93,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump or cell.packet then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump or cell.packet or cell.mower then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins, pumps and seed packets aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins, pumps, seed packets and mowers aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then

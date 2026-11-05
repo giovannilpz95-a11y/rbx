@@ -95,6 +95,13 @@
 	touch it (boosters since the last swap count), a charged bud closes up
 	and loses its charge (a Pop phase with a "Wilt" effect).
 
+	Lawn mowers: block a cell and never break, and each has a tile colour
+	(the level's colours in turn, in reading order, like seed packets).
+	Every wave with a match of that colour anywhere on the board charges
+	it once; the MOWER_CHARGES-th charge mows its whole row (a "Mow"
+	effect, then a row blast from the mower) and it starts again. Blasts
+	don't charge or hurt a mower.
+
 	Seed packets: block a cell like a bale and hold PACKET_SEEDS seeds of one
 	tile colour (the level's colours in turn, in reading order). A match of
 	that colour next to a packet (once per packet per wave) takes a seed, and
@@ -212,6 +219,7 @@ local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common co
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
+local MOWER_CHARGES = 3 -- colour matches before a lawn mower mows its row
 local PUMP_DRAIN = 2 -- flooded cells a hand pump drains each time it's hit
 local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
 local BIN_RADIUS = 1 -- a bursting bin blasts the cells this close (a small diamond)
@@ -264,13 +272,19 @@ function Engine.new(level, seed: number, options: Options?)
 		self:_moveLights(nil) -- the first lights
 	end
 
-	-- Seed packets take the level's colours in turn, in reading order.
-	local packets = 0
+	-- Seed packets and lawn mowers take the level's colours in turn, in reading order.
+	local packets, mowers = 0, 0
+	self.mowers = {}
 	board:eachCell(function(cell)
 		if cell.packet then
 			packets += 1
 			cell.packet = PACKET_SEEDS
 			cell.packetColor = colors[(packets - 1) % #colors + 1]
+		elseif cell.mower then
+			mowers += 1
+			cell.mower = 0
+			cell.mowerColor = colors[(mowers - 1) % #colors + 1]
+			table.insert(self.mowers, cell)
 		end
 	end)
 
@@ -565,7 +579,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "mower" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -734,6 +748,9 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_takeSeed(wave, cell)
 		return
 	end
+	if cell.mower then
+		return -- nothing breaks a mower, and only colour matches charge it
+	end
 	if cell.pump then
 		self:_pump(wave, cell)
 		return -- nothing breaks a pump; it goes when the water does
@@ -856,6 +873,27 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale })
 	if cell.bale == 0 then
 		self.goals:onBale()
+	end
+end
+
+-- A match of `color` charges every mower of that colour (once per wave);
+-- a full mower mows its row.
+function Engine._chargeMowers(self, wave, color: number?)
+	if not color or #self.mowers == 0 then
+		return
+	end
+	wave.mowersCharged = wave.mowersCharged or {}
+	for _, cell in self.mowers do
+		if cell.mower and cell.mowerColor == color and not wave.mowersCharged[cell] then
+			wave.mowersCharged[cell] = true
+			cell.mower += 1
+			if cell.mower >= MOWER_CHARGES then
+				cell.mower = 0
+				table.insert(wave.effects, { type = "Mow", x = cell.x, y = cell.y })
+				table.insert(wave.queue, { power = Power.SprayerRow, x = cell.x, y = cell.y })
+			end
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, mower = cell.mower, mowerColor = cell.mowerColor })
+		end
 	end
 end
 
@@ -1062,6 +1100,7 @@ function Engine._popGroups(self, wave, groups)
 			wave.reserved = wave.reserved or {}
 			wave.reserved[group.at] = true
 		end
+		self:_chargeMowers(wave, group.color)
 		-- A compost bin next to the match takes every tile of it.
 		local fed = {}
 		for _, cell in group.cells do
@@ -1080,6 +1119,8 @@ function Engine._popGroups(self, wave, groups)
 				local n = board:get(cell.x + d[1], cell.y + d[2])
 				if n and fed[n] then
 					-- fed above
+				elseif n and n.mower then
+					-- mowers only charge from colour matches (above)
 				elseif n and n.packet then
 					-- Only a match of the packet's own colour takes a seed.
 					if group.color == n.packetColor and not wave.balesTouched[n] then
@@ -1155,8 +1196,8 @@ function Engine._chooseBeeTarget(self)
 	self.board:eachCell(function(cell)
 		if wantsFences and #self.board:fencesAround(cell.x, cell.y) > 0 then
 			table.insert(tiers[1], cell)
-		elseif cell.quilt or cell.snail or cell.lamb then
-			-- Bees leave quilts, snails and lambs alone: nothing breaks them.
+		elseif cell.quilt or cell.snail or cell.lamb or cell.mower then
+			-- Bees leave quilts, snails, lambs and mowers alone: nothing breaks them.
 		elseif cell.sack then
 			table.insert(if goals:wants("Clover") then tiers[1] else tiers[4], cell)
 		elseif cell.bucket then
