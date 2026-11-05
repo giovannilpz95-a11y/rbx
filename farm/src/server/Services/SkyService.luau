@@ -29,6 +29,7 @@ local Peddler = require(Shared.Peddler)
 
 local DataService = require(script.Parent.DataService)
 local EconomyService = require(script.Parent.EconomyService)
+local EventService = require(script.Parent.EventService)
 local NetService = require(script.Parent.NetService)
 local NoticeService = require(script.Parent.NoticeService)
 local PlotService = require(script.Parent.PlotService)
@@ -285,6 +286,7 @@ function SkyService.collect(player: Player, id: any): (boolean, string?)
 	local coins = Sky.starCoins(data.level)
 	EconomyService.add(player, "Coins", coins, "sky_star")
 	EconomyService.add(player, "XP", Config.starXp, "sky_star")
+	EventService.bonus(player, "star")
 	local extras = {}
 	if star.lucky then
 		data.heirloomSeeds = (data.heirloomSeeds or 0) + 1
@@ -551,6 +553,7 @@ function SkyService.petGoose(player: Player): (boolean, string?)
 	EconomyService.add(player, "Coins", coins, "sky_goose")
 	EconomyService.add(player, "XP", Config.goose.xp, "sky_goose")
 	NetService.popup(player, { kind = "GooseEgg", coins = coins, xp = Config.goose.xp })
+	EventService.bonus(player, "goose")
 	thankOwner(
 		g,
 		player,
@@ -600,6 +603,7 @@ function SkyService.openRainbow(player: Player): (boolean, string?)
 		table.insert(parts, "+" .. TrainService.rewardName(reward.item, reward.qty))
 	end
 	NetService.popup(player, { kind = "RainbowOpened", text = table.concat(parts, "  ") })
+	EventService.bonus(player, "rainbow")
 	-- The owner's thank-you for each neighbor who came
 	thankOwner(
 		r,

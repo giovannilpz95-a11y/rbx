@@ -6,6 +6,7 @@
 -- fields are checked against the real parts on the server, so model sizes can change.)
 
 local Decor = require("./Config/Decor")
+local EventConfig = require("./Config/Events")
 local Land = require("./Config/Land")
 local Trophies = require("./Config/Trophies")
 local TownRules = require("./TownRules")
@@ -27,6 +28,23 @@ for _, trophy in Trophies.byRecord do
 		xp = 0,
 		unlockLevel = 0,
 		trophy = true,
+		badge = "🏆 Gold trophy",
+	})
+end
+-- Event keepsakes (Config/Events: prizes and Event Shop pieces) work the same way: earned,
+-- placed from storage for free, and back into storage when taken up
+for _, keepsake in EventConfig.keepsakes do
+	local event = EventConfig.events[keepsake.event]
+	trophyDefs[keepsake.id] = table.freeze({
+		id = keepsake.id,
+		displayName = keepsake.displayName,
+		size = keepsake.size,
+		category = "Keepsake",
+		coinCost = 0,
+		xp = 0,
+		unlockLevel = 0,
+		trophy = true,
+		badge = string.format("%s %s keepsake", event.tokenIcon, event.displayName),
 	})
 end
 

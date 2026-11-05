@@ -5,6 +5,7 @@
 -- within PATH_PARTS_MAX because players lay a lot of them. Parts keep CanQuery on, so a tap
 -- on any of them reaches the tap target they are parented under.
 
+local EventDecor = require("./EventDecor")
 local Kit = require("./Kit")
 local Palette = require("./Palette")
 
@@ -1123,6 +1124,11 @@ for record, statue in TROPHIES do
 		plinth(b)
 		statue(b)
 	end
+end
+
+-- Event keepsakes (Art/EventDecor)
+for id, builder in EventDecor do
+	BUILDERS[id] = builder
 end
 
 function ArtDecor.has(id: string): boolean

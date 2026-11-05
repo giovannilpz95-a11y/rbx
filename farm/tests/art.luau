@@ -253,6 +253,28 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 		end
 	end)
 
+	test("art: every event keepsake builds inside its footprint and budget", function()
+		local EventConfig = require("../src/shared/Config/Events")
+		for id, def in EventConfig.keepsakes do
+			ok(ArtDecor.has(id), "keepsake model for " .. id)
+			ok(Decor.items[id] == nil, id .. " is never sold in the Decorations shop")
+			local root = Instance.new("Part")
+			root.CanTouch = false
+			ArtDecor.build(id, root, CFrame.new())
+			local n = Kit.countParts(root) - 1
+			ok(n > 0 and n <= ArtDecor.PARTS_MAX, string.format("%s has %d parts", id, n))
+			paletteRules(root, id)
+			local hw, hd = def.size[1] * Decor.tile / 2, def.size[2] * Decor.tile / 2
+			Kit.eachPart(root, function(p)
+				if p ~= root then
+					local c = p.CFrame.Position
+					ok(math.abs(c.X) <= hw and math.abs(c.Z) <= hd, id .. ": " .. p.Name .. " inside its footprint")
+					ok(p.CanQuery, id .. ": " .. p.Name .. " can be tapped")
+				end
+			end)
+		end
+	end)
+
 	test("art: every factory's moving part works and returns to rest", function()
 		for _, id in FACTORIES do
 			local m = Instance.new("Model")

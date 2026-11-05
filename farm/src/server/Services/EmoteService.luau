@@ -5,7 +5,6 @@
 -- A photo spot's group pose sends everyone standing in its frame the same pose at once.
 
 local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
 
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("FarmShared")
 local ArtEmoteProps = require(Shared.Art.EmoteProps)
@@ -14,6 +13,7 @@ local Net = require(Shared.Net)
 
 local NetService = require(script.Parent.NetService)
 local PlotService = require(script.Parent.PlotService)
+local OpenGround = require(script.Parent.Parent.Util.OpenGround)
 
 local EmoteService = {}
 
@@ -103,45 +103,8 @@ local RADII = { 25, 22, 28 }
 local CLEARANCE = Vector3.new(14, 10, 13)
 local CLEARANCE_AT = CFrame.new(0, 5.5, 1)
 
-local function findSpot(skip: { Instance }): CFrame?
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances = skip
-	local overlap = OverlapParams.new()
-	overlap.FilterType = Enum.RaycastFilterType.Exclude
-	overlap.FilterDescendantsInstances = skip
-	for _, radius in RADII do
-		for _, degrees in ANGLES do
-			local a = math.rad(degrees)
-			local x, z = math.cos(a) * radius, math.sin(a) * radius
-			local hit = Workspace:Raycast(Vector3.new(x, 60, z), Vector3.new(0, -120, 0), params)
-			if hit and hit.Position.Y < 2 and hit.Normal.Y > 0.9 then
-				-- Face the middle of the plaza: local -Z looks at it, the prop stands behind
-				local cf = CFrame.lookAt(hit.Position, Vector3.new(0, hit.Position.Y, 0))
-				local blocked = false
-				for _, p in Workspace:GetPartBoundsInBox(cf * CLEARANCE_AT, CLEARANCE, overlap) do
-					if p.Transparency < 1 or p.CanCollide then -- not an invisible zone
-						blocked = true
-						break
-					end
-				end
-				if not blocked then
-					return cf
-				end
-			end
-		end
-	end
-	return nil
-end
-
 local function buildSpots()
 	local parent = PlotService.square.model
-	local skip: { Instance } = {}
-	for _, player in Players:GetPlayers() do
-		if player.Character then
-			table.insert(skip, player.Character)
-		end
-	end
 	local kinds = {}
 	for kind in Config.photoSpots do
 		table.insert(kinds, kind)
@@ -150,7 +113,7 @@ local function buildSpots()
 		return Config.photoSpots[a].order < Config.photoSpots[b].order
 	end)
 	for _, kind in kinds do
-		local cf = findSpot(skip)
+		local cf = OpenGround.find(ANGLES, RADII, CLEARANCE, CLEARANCE_AT)
 		if cf == nil then
 			warn("[EmoteService] no open ground on the plaza for the photo spot", kind)
 			continue
