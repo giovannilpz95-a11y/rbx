@@ -115,6 +115,13 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Tool chests: block a cell like a bale and start locked. Only a blast (a
+	power-up, a booster or a bee) unlocks one (a "ChestOpen" effect);
+	matches next to a locked chest do nothing. An open chest holds
+	CHEST_TOOLS tools: each match next to it (once per chest per wave) and
+	each blast on it hands one to the Tools goal (a "Tool" effect), and the
+	last one empties it and frees the cell.
+
 	Jam jars: block a cell like a bale and have a tile colour (the level's
 	colours in turn, in reading order). A jar needs JAR_FILL scoops: a match
 	of its colour next to it (once per jar per wave) adds one, and so does
@@ -235,6 +242,7 @@ local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip b
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
 local JAR_FILL = 3 -- colour matches (or blasts) that fill a jam jar
+local CHEST_TOOLS = 3 -- tools in a tool chest (Board sets it from the layout)
 local MOWER_CHARGES = 3 -- colour matches before a lawn mower mows its row
 local PUMP_DRAIN = 2 -- flooded cells a hand pump drains each time it's hit
 local BIN_COUNT = 9 -- tiles a compost bin takes before it bursts
@@ -609,7 +617,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "mower" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "mower" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -780,6 +788,10 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	end
 	if cell.jar then
 		self:_fillJar(wave, cell)
+		return
+	end
+	if cell.chest then
+		self:_openChest(wave, cell)
 		return
 	end
 	if cell.mower then
@@ -958,6 +970,26 @@ function Engine._fillJar(self, wave, cell)
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
 	table.insert(wave.effects, { type = "Jar", x = cell.x, y = cell.y })
 	self.goals:onJar()
+end
+
+-- A blast unlocks a locked tool chest; an open one hands a tool to the
+-- Tools goal, and the last one empties it.
+function Engine._openChest(self, wave, cell)
+	if not cell.chestOpen then
+		cell.chestOpen = true
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, chest = cell.chest, chestOpen = true })
+		table.insert(wave.effects, { type = "ChestOpen", x = cell.x, y = cell.y })
+		return
+	end
+	cell.chest -= 1
+	table.insert(wave.effects, { type = "Tool", x = cell.x, y = cell.y })
+	self.goals:onTool()
+	if cell.chest > 0 then
+		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, chest = cell.chest, chestOpen = true })
+		return
+	end
+	cell.bale, cell.chest, cell.chestOpen = 0, nil, nil
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
 end
 
 -- A hand pump drains the nearest flooded cells (breadth first, in NEIGHBORS
@@ -1177,6 +1209,12 @@ function Engine._popGroups(self, wave, groups)
 						wave.balesTouched[n] = true
 						self:_takeSeed(wave, n)
 					end
+				elseif n and n.chest then
+					-- Matches only take tools from an open chest; a locked one needs a blast.
+					if n.chestOpen and not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_openChest(wave, n)
+					end
 				elseif n and n.jar then
 					-- An empty jar fills only from its own colour; a full one cracks at any match.
 					if (n.jar == 0 or group.color == n.jarColor) and not wave.balesTouched[n] then
@@ -1272,6 +1310,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Packets") then tiers[1] else tiers[4], cell)
 		elseif cell.jar then
 			table.insert(if goals:wants("Jars") then tiers[1] else tiers[4], cell)
+		elseif cell.chest then
+			table.insert(if goals:wants("Tools") then tiers[1] else tiers[4], cell)
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
