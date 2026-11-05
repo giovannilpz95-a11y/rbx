@@ -9,7 +9,8 @@
 	still match.
 	Pumpkins are pieces that never match and can't be blasted: they fall and
 	swap like tiles, and the engine collects them from the bottom cell of a
-	column. Refills drop new ones while `pumpkinsToSpawn` is above 0.
+	column. Refills drop new ones while `pumpkinsToSpawn` is above 0. A muddy
+	pumpkin ("o") waits for a match next to it to wash it before it counts.
 	Clover grows on cells (under whatever is there); the engine spreads it.
 	Portals link a cell to another anywhere on the board: pieces leaving the
 	entrance fall into the exit instead of the cell below. An exit is fed only
@@ -42,6 +43,7 @@ export type Piece = {
 	color: number, -- 1..6, 0 for a Sunflower or a pumpkin
 	power: string?, -- see Tiles.Power
 	pumpkin: boolean?,
+	muddy: boolean?, -- a muddy pumpkin: a match next to it washes it before it can be collected
 	timer: number?, -- a snowball: swaps left before it bursts and frosts the tiles around it
 }
 
@@ -113,7 +115,7 @@ function Board.new(width: number, height: number)
 		height = height,
 		cells = {},
 		nextId = 1,
-		startPumpkins = {}, -- cells that start with a pumpkin ("p" in the layout)
+		startPumpkins = {}, -- cells that start with a pumpkin ("p", or "muddy" for "o", in the layout)
 		startSnowballs = {}, -- cells that start with a snowball ("i" in the layout), in reading order
 		pumpkinsToSpawn = 0, -- set by the engine before each refill
 		-- Pumpkin baskets ("d" in the layout): { x, y, waiting } in row order;
@@ -237,6 +239,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 					cell.bale = tonumber(ch) :: number
 				elseif ch == "p" then
 					self.startPumpkins[cell] = true
+				elseif ch == "o" then
+					self.startPumpkins[cell] = "muddy"
 				elseif ch == "i" then
 					table.insert(self.startSnowballs, cell)
 				elseif ch == "c" then
@@ -577,6 +581,7 @@ function Board.fillInitial(self, rng, colors: { number })
 		self:eachCell(function(cell)
 			if self.startPumpkins[cell] then
 				cell.piece = self:newPumpkin()
+				cell.piece.muddy = if self.startPumpkins[cell] == "muddy" then true else nil
 			elseif cell.bale == 0 then
 				cell.piece = self:newPiece(pickCalmColor(self, cell.x, cell.y, rng, colors))
 			end
@@ -923,7 +928,7 @@ function Board.hash(self): string
 			else
 				local piece = cell.piece
 				local code = if piece and piece.pumpkin
-					then "P"
+					then (if piece.muddy then "Pm" else "P")
 					elseif piece then tostring(piece.color) .. (POWER_CODES[piece.power] or "")
 					else "_"
 				if piece and piece.timer then
@@ -1019,7 +1024,7 @@ function Board.snapshot(self)
 			vine = cell.vine,
 			mist = cell.mist,
 			buried = cell.buried,
-			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin, timer = piece.timer },
+			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin, muddy = piece.muddy, timer = piece.timer },
 		})
 	end)
 	return out

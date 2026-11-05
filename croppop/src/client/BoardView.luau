@@ -197,6 +197,12 @@ local function styleTile(tile: Frame, piece)
 		face.Text = TileStyle.Sunflower.glyph
 		corner.CornerRadius = UDim.new(0.5, 0)
 		badge.Visible = false
+	elseif piece.pumpkin and piece.muddy then
+		face.BackgroundColor3 = TileStyle.MuddyPumpkin.color
+		face.Text = TileStyle.MuddyPumpkin.glyph
+		corner.CornerRadius = UDim.new(0.35, 0)
+		badge.Visible = true
+		badge.Text = TileStyle.MuddyPumpkin.badge
 	elseif piece.pumpkin then
 		face.BackgroundColor3 = TileStyle.Pumpkin.color
 		face.Text = TileStyle.Pumpkin.glyph
@@ -1102,6 +1108,14 @@ function BoardView._effect(self, effect): number
 		-- The last seed is out: the packet flashes and goes.
 		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.packet, true)
 		return FX_TIME
+	elseif effect.type == "Wash" then
+		-- A splash, and the pumpkin comes out clean.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.wash, true)
+		local tile = self.tiles[effect.id]
+		if tile then
+			styleTile(tile, { id = effect.id, color = 0, pumpkin = true })
+		end
+		return 0
 	elseif effect.type == "Mist" then
 		-- The mist thins away, showing the tile under it.
 		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]

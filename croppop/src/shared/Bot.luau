@@ -54,6 +54,34 @@ local function underPumpkins(board, moves)
 end
 
 -- Moves whose match takes in a cell next to a pumpkin basket (while the goal needs more).
+-- Moves that put a tile next to a muddy pumpkin (a match there washes it).
+local function washesPumpkins(board, moves)
+	local muddy = {}
+	board:eachCell(function(cell)
+		if cell.piece and cell.piece.muddy then
+			table.insert(muddy, cell)
+		end
+	end)
+	if #muddy == 0 then
+		return nil
+	end
+	local function near(x, y)
+		for _, cell in muddy do
+			if math.abs(cell.x - x) + math.abs(cell.y - y) == 1 then
+				return true
+			end
+		end
+		return false
+	end
+	local out = {}
+	for _, m in moves do
+		if near(m[1], m[2]) or near(m[3], m[4]) then
+			table.insert(out, m)
+		end
+	end
+	return out
+end
+
 local function shakesBaskets(pop, moves)
 	local board = pop.board
 	if #board.baskets == 0 or pop:_pumpkinsOwed() <= 0 then
@@ -157,6 +185,11 @@ local function chooseMove(pop, rng)
 	end
 	if #powered > 0 and rng:int(1, 3) > 1 then
 		return rng:pick(powered)
+	end
+	-- Only on boards with muddy pumpkins, so other levels' tuning stays the same.
+	local washMoves = washesPumpkins(board, moves)
+	if washMoves and #washMoves > 0 and rng:int(1, 2) == 1 then
+		return rng:pick(washMoves)
 	end
 	-- Only on boards with pumpkins, so other levels' tuning stays the same.
 	local pumpkinMoves = underPumpkins(board, moves)

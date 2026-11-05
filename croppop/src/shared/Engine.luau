@@ -115,6 +115,11 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Muddy pumpkins: a pumpkin caked in mud ("o" in the layout) falls and
+	swaps like any pumpkin, but it isn't collected from the bottom of its
+	column until a match next to it washes the mud off (a "Wash" effect).
+	Blasts don't wash it. It counts for the Pumpkins goal like any pumpkin.
+
 	Mist: a patch of mist sits on a cell and hides whatever tile is there
 	(the tile still swaps and matches as usual; new tiles falling in are
 	hidden too). A match on the cell or next to it lifts the mist (a
@@ -1000,6 +1005,13 @@ function Engine._fillJar(self, wave, cell)
 	self.goals:onJar()
 end
 
+-- The mud washes off a muddy pumpkin.
+function Engine._washPumpkin(self, wave, cell)
+	local piece = cell.piece
+	piece.muddy = nil
+	table.insert(wave.effects, { type = "Wash", id = piece.id, x = cell.x, y = cell.y })
+end
+
 -- Mist lifts off a cell.
 function Engine._clearMist(self, wave, cell)
 	cell.mist = false
@@ -1375,6 +1387,9 @@ function Engine._popGroups(self, wave, groups)
 					wave.balesTouched[n] = true
 					wave.shoves = wave.shoves or {}
 					table.insert(wave.shoves, { lamb = n })
+				elseif n and n.piece and n.piece.muddy then
+					-- A match next to a muddy pumpkin washes it, so it can be collected.
+					self:_washPumpkin(wave, n)
 				elseif n and n.bale > 0 and not n.stone and not n.quilt and not wave.balesTouched[n] then
 					wave.balesTouched[n] = true
 					self:_damageBale(wave, n, true)
@@ -1856,7 +1871,7 @@ function Engine._collectPumpkins(self, phases): boolean
 	local wave = nil
 	board:eachCell(function(cell)
 		local piece = cell.piece
-		if piece and piece.pumpkin and board:isExit(cell) then
+		if piece and piece.pumpkin and not piece.muddy and board:isExit(cell) then
 			wave = wave or newWave()
 			cell.piece = nil
 			table.insert(wave.removed, { id = piece.id, x = cell.x, y = cell.y, cause = "pumpkin" })
