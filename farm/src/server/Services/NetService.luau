@@ -122,6 +122,7 @@ local function snapshot(data: { [string]: any })
 		trophies = data.trophies,
 		event = data.event, -- the limited-time event: tokens, prizes, Fair Stand crates
 		fair = data.fair, -- the County Fair: this week's entries and every ribbon won
+		showcase = data.showcase, -- the Plot Showcase: opt-in, sunflowers, the winner's ribbon
 		quests = data.quests,
 		records = Records.view(data, Clock.now()), -- the Farmer Card (client/UI/FarmerCard)
 		serverNow = Clock.now(),

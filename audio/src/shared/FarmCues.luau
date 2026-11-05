@@ -461,6 +461,17 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 			return { { sound = "PrizeFind" }, { sound = "Unlock", delay = 0.4 } }
 		end
 		return { { sound = "UiOpen" } }
+	elseif kind == "Showcase" then
+		-- The Plot Showcase: it starts, a rating card, your rating sent (XP), your farm's result
+		local step = payload.step
+		if step == "rated" then
+			return { { sound = "Xp" } }
+		elseif step == "results" then
+			return { { sound = "PrizeFind" } }
+		elseif step == "rate" then
+			return { { sound = "UiOpen" } }
+		end
+		return { { sound = "Notify" } }
 	end
 	return {}
 end
@@ -470,6 +481,9 @@ end
 local NEWS = table.freeze({ Crier = true, Quest = true, Away = true, HelpedYou = true, Visitor = true, Place = true, Star = true, SkyNote = true, GroupPose = true })
 
 function FarmCues.isReward(payload: { [string]: any }?): boolean
+	if type(payload) == "table" and payload.kind == "Showcase" then
+		return payload.step == "rated" -- only a rating pays (XP); the rest is news
+	end
 	if type(payload) == "table" and payload.kind == "Event" then
 		return payload.step ~= "started" and payload.step ~= "prize"
 	end
