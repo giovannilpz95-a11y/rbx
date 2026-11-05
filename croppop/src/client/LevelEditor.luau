@@ -76,6 +76,8 @@ local BRUSH_ROWS = {
 		{ char = "C", label = TileStyle.TruckGlyph },
 		{ char = "O", label = TileStyle.SnailGlyph },
 		{ char = "T", label = TileStyle.GoalGlyphs.Blooms },
+		{ char = "E", label = TileStyle.GoalGlyphs.Lambs },
+		{ char = "P", label = TileStyle.PenGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
 		{ char = "o", label = "🌀" },
 		-- Not a layout character either: tap a cell, then a neighbour, to add or remove the fence between.
@@ -89,7 +91,7 @@ local FENCE = "|" -- the fence brush
 local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -111,6 +113,7 @@ local GOAL_BUTTONS = {
 	Boxes = "+ 📦",
 	Honey = "+ 🍯",
 	Blooms = "+ 🌷",
+	Lambs = "+ 🐑",
 }
 
 local ui = nil
@@ -384,6 +387,10 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.snail, TileStyle.SnailGlyph
 	elseif char == "T" then
 		return TileStyle.Board.bud, TileStyle.GoalGlyphs.Blooms
+	elseif char == "E" then
+		return TileStyle.Board.lamb, TileStyle.GoalGlyphs.Lambs
+	elseif char == "P" then
+		return TileStyle.Board.pen, TileStyle.PenGlyph
 	elseif char == "v" or char == "V" then
 		return TileStyle.Board.box, TileStyle.GoalGlyphs.Boxes .. (if char == "v" then "3" else "2")
 	elseif char == "u" then
@@ -564,6 +571,8 @@ local function goalLabel(goal): string
 		return "🍯 honey"
 	elseif goal.kind == "Blooms" then
 		return "🌷 all buds"
+	elseif goal.kind == "Lambs" then
+		return "🐑 all lambs home"
 	end
 	return "🌾 all bales"
 end
