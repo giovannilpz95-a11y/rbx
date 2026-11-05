@@ -177,4 +177,30 @@ local BUILDERS: { [string]: (Kit.Builder) -> () } = {
 	end,
 }
 
+-- County Fair Blue Ribbon cups (Config/Fair cups): a gold cup on a plinth with a blue rosette,
+-- and what the cup is for on top
+local function cup(b: Kit.Builder, topper: (Kit.Builder) -> ())
+	b.block("Plinth", Vector3.new(2.4, 1.2, 2.4), CFrame.new(0, 0.6, 0), Palette.stone, SOLID)
+	b.cyl("Foot", 0.3, 1.4, CFrame.new(0, 1.35, 0) * CFrame.Angles(0, 0, math.rad(90)), RIBBON_GOLD)
+	b.post("Stem", 0.8, 0.35, CFrame.new(0, 1.9, 0), RIBBON_GOLD, QUIET)
+	b.cyl("Bowl", 1.1, 1.5, CFrame.new(0, 2.8, 0) * CFrame.Angles(0, 0, math.rad(90)), RIBBON_GOLD)
+	for _, x in { -0.95, 0.95 } do
+		b.block("Handle", Vector3.new(0.25, 0.8, 0.25), CFrame.new(x, 2.85, 0), RIBBON_GOLD, QUIET)
+	end
+	rosette(b, CFrame.new(0, 0.7, -1.26), 0.7, RIBBON_BLUE)
+	topper(b)
+end
+
+BUILDERS.ProduceCup = function(b)
+	cup(b, function(t)
+		t.ball("Pumpkin", 0.8, CFrame.new(0, 3.7, 0), PUMPKIN, QUIET)
+	end)
+end
+
+BUILDERS.BakersCup = function(b)
+	cup(b, function(t)
+		t.cyl("Pie", 0.3, 1, CFrame.new(0, 3.5, 0) * CFrame.Angles(0, 0, math.rad(90)), Palette.woodLight, QUIET)
+	end)
+end
+
 return table.freeze(BUILDERS)

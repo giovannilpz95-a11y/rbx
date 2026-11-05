@@ -455,6 +455,12 @@ function FarmCues.popup(payload: { [string]: any }?): { Cue }
 			return { { sound = "CoinBig" } }
 		end
 		return { { sound = "Notify" } }
+	elseif kind == "Fair" then
+		-- The County Fair: an entry in, then the judges' ribbons
+		if payload.step == "results" then
+			return { { sound = "PrizeFind" }, { sound = "Unlock", delay = 0.4 } }
+		end
+		return { { sound = "UiOpen" } }
 	end
 	return {}
 end

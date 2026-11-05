@@ -18,6 +18,7 @@ return table.freeze({
 	Event_Swap = "Event_Swap", -- slot: swap a Fair Stand crate (a new one after the wait)
 	Event_Claim = "Event_Claim", -- claim every event prize reached
 	Event_Buy = "Event_Buy", -- slot: buy from the Event Shop with event tokens
+	Fair_Enter = "Fair_Enter", -- class, a, b: enter the County Fair (Produce: Prize Basket index; Bake: Bakery good, garnish index?)
 	Factory_Build = "Factory_Build", -- factoryId
 	Factory_Queue = "Factory_Queue", -- factoryId, recipeId
 	Factory_Collect = "Factory_Collect", -- factoryId
@@ -148,6 +149,7 @@ return table.freeze({
 	Debug_FillLots = "Debug_FillLots", -- a finished Cottage on every open House lot (Studio only)
 	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
 	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow" | "Goose" | "Peddler": that sky event or visitor starts now (Studio only)
+	Debug_Fair = "Debug_Fair", -- "open" | "judge": a County Fair opens now, or its entries close now (Studio only)
 	Debug_Event = "Debug_Event", -- "tokens" | "end" | "start": +100 event tokens, end or restart the preview (Studio only)
 	Client_Ready = "Client_Ready",
 

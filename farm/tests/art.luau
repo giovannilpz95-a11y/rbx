@@ -255,7 +255,12 @@ return function(test: (string, () -> ()) -> (), eq: (any, any, string?) -> (), o
 
 	test("art: every event keepsake builds inside its footprint and budget", function()
 		local EventConfig = require("../src/shared/Config/Events")
-		for id, def in EventConfig.keepsakes do
+		local FairConfig = require("../src/shared/Config/Fair")
+		local all: { [string]: any } = table.clone(EventConfig.keepsakes) :: any
+		for id, cup in FairConfig.cups do
+			all[id] = cup
+		end
+		for id, def in all do
 			ok(ArtDecor.has(id), "keepsake model for " .. id)
 			ok(Decor.items[id] == nil, id .. " is never sold in the Decorations shop")
 			local root = Instance.new("Part")
