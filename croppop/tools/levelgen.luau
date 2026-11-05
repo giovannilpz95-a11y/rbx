@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 1100
+local LAST = tonumber(ARGS[2]) or 1125
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -248,6 +248,11 @@ local NAMES = {
 	"Vineyard View", "Ivy Cottage", "Creeper Crescent", "Trellis Terrace", "Grand Clematis Gala",
 	"Tendril Turn", "Wisteria Way", "Arbour Close", "Vine Arch", "Grand Trellis Fair",
 	"Ivy Hollow", "Creeper Copse", "Clematis Brook", "Tendril Tops", "Grand Eleven Hundred Gala",
+	"Misty Morning", "Fog Bank", "Haze Hill", "Murky Mere", "Grand Mist Fair",
+	"Steamy Lane", "Dewy Dell", "Cloudy Corner", "Fog Bottom Ford", "Grand Fog Show",
+	"Hazy Hollow", "Misty Moor", "Vapour Vale", "Murky Mile", "Grand Haze Gala",
+	"Dew Drop Drive", "Cloud Bank", "Steamy Gully", "Fog Hollow", "Grand Misty Fair",
+	"Hazy Heath", "Vapour Trail", "Dewy Downs", "Murky Lane", "Grand Cloudburst Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -295,7 +300,8 @@ local JAR_INTRO = 1001 -- first level with jam jars
 local CHEST_INTRO = 1026 -- first level with tool chests
 local VANE_INTRO = 1051 -- first level with weathervanes
 local VINE_INTRO = 1076 -- first level with vines
-local INTROS = { [VINE_INTRO] = true, [VANE_INTRO] = true, [CHEST_INTRO] = true, [JAR_INTRO] = true, [GOPHER_INTRO] = true, [MOWER_INTRO] = true, [PACKET_INTRO] = true, [PUMP_INTRO] = true, [BIN_INTRO] = true, [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local MIST_INTRO = 1101 -- first level with mist
+local INTROS = { [MIST_INTRO] = true, [VINE_INTRO] = true, [VANE_INTRO] = true, [CHEST_INTRO] = true, [JAR_INTRO] = true, [GOPHER_INTRO] = true, [MOWER_INTRO] = true, [PACKET_INTRO] = true, [PUMP_INTRO] = true, [BIN_INTRO] = true, [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -651,6 +657,7 @@ local function mechanics(id)
 		chests = id >= CHEST_INTRO, -- "X"
 		vanes = id >= VANE_INTRO, -- "Z"
 		vines = id >= VINE_INTRO, -- "Y"
+		mist = id >= MIST_INTRO, -- "Q"
 	}
 end
 
@@ -658,6 +665,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_MIST = { "Mist", "Vines", "Vanes", "Collect", "Mist", "Tools", "Jars", "Gophers", "Mist", "Mowers", "Packets", "Mix" }
 local FOCUS_VINES = { "Vines", "Vanes", "Tools", "Collect", "Vines", "Jars", "Gophers", "Mowers", "Vines", "Packets", "Floods", "Mix" }
 local FOCUS_VANES = { "Vanes", "Tools", "Jars", "Collect", "Vanes", "Gophers", "Mowers", "Packets", "Vanes", "Floods", "Bins", "Mix" }
 local FOCUS_CHESTS = { "Tools", "Jars", "Gophers", "Collect", "Tools", "Mowers", "Packets", "Floods", "Tools", "Bins", "Trays", "Mix" }
@@ -709,6 +717,7 @@ local NAME_HINTS = {
 	{ words = { "Stone", "Quarry", "Rock" }, focus = "Stones", needs = "stones" },
 	{ words = { "Basket", "Hamper", "Wicker" }, focus = "Baskets", needs = "baskets" },
 	{ words = { "Fence", "Rail", "Pen", "Hurdle", "Gate" }, focus = "Fences", needs = "fences" },
+	{ words = { "Mist", "Fog", "Haze", "Hazy", "Murky", "Steam", "Dew", "Cloud", "Vapour" }, focus = "Mist", needs = "mist" },
 	{ words = { "Vine", "Ivy", "Creeper", "Clematis", "Tendril", "Trellis", "Wisteria", "Arbour", "Eleven Hundred" }, focus = "Vines", needs = "vines" },
 	{ words = { "Vane", "Weathervane", "Weathercock", "Windy", "Compass", "Breez", "Cockerel", "Gust", "North Wind", "Spire", "Spinning", "Whirlwind" }, focus = "Vanes", needs = "vanes" },
 	{ words = { "Tool", "Chest", "Spanner", "Wrench", "Hammer", "Workbench" }, focus = "Tools", needs = "chests" },
@@ -830,6 +839,8 @@ local function focusOf(id, name)
 		return "Vanes"
 	elseif id == VINE_INTRO then
 		return "Vines"
+	elseif id == MIST_INTRO then
+		return "Mist"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -841,7 +852,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.vines then FOCUS_VINES elseif mech.vanes then FOCUS_VANES elseif mech.chests then FOCUS_CHESTS elseif mech.jars then FOCUS_JARS elseif mech.gophers then FOCUS_GOPHERS elseif mech.mowers then FOCUS_MOWERS elseif mech.packets then FOCUS_PACKETS elseif mech.pumps then FOCUS_PUMPS elseif mech.bins then FOCUS_BINS elseif mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.mist then FOCUS_MIST elseif mech.vines then FOCUS_VINES elseif mech.vanes then FOCUS_VANES elseif mech.chests then FOCUS_CHESTS elseif mech.jars then FOCUS_JARS elseif mech.gophers then FOCUS_GOPHERS elseif mech.mowers then FOCUS_MOWERS elseif mech.packets then FOCUS_PACKETS elseif mech.pumps then FOCUS_PUMPS elseif mech.bins then FOCUS_BINS elseif mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -1463,6 +1474,20 @@ local function placePackets(g, rng, id)
 		end
 		if ok then
 			setSym(g, x, y, "K")
+			placed += 1
+		end
+	end
+	return placed
+end
+
+-- Mist on plain cells in one of the frost patterns; the first mist level
+-- scatters it, so each patch needs its own match.
+local function placeMist(g, rng, id)
+	local name = if id == MIST_INTRO then "scatter" else rng:pick(FROST_PATTERNS)
+	local placed = 0
+	for _, p in PATTERNS[name](g, rng) do
+		if isCell(g, p[1], p[2]) and g[p[2]][p[1]] == "." then
+			setSym(g, p[1], p[2], "Q")
 			placed += 1
 		end
 	end
@@ -2150,6 +2175,11 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	if focus == "Mist" or (focus == "Mix" and mech.mist and rng:int(1, 3) == 1) then
+		if placeMist(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Vines" or (focus == "Mix" and mech.vines and rng:int(1, 3) == 1) then
 		if placeVines(g, rng, id) == 0 then
 			return nil
@@ -2415,6 +2445,9 @@ local function draft(id, variant)
 	end
 	if has(g, "Y") > 0 then
 		table.insert(goals, { kind = "Vines" })
+	end
+	if has(g, "Q") > 0 then
+		table.insert(goals, { kind = "Mist" })
 	end
 	if has(g, "N") > 0 then
 		-- About one firefly per lit spot every couple of swaps; a few more as levels go on.

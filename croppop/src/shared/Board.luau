@@ -94,6 +94,7 @@ export type Cell = {
 	thickGoo: boolean?, -- the goo is thick: the first clear leaves plain goo
 	web: boolean?, -- a web over the tile: it can't move or match; only a blast clears the web
 	vine: boolean?, -- the "web" is a vine: a match next to it cuts it too, and vines creep
+	mist: boolean?, -- mist on the cell hides its tile; a match on it or next to it lifts it
 	rainbow: boolean?, -- a rainbow patch: the plain tile here changes colour after every swap
 	buried: boolean?, -- part of a buried statue lies under this cell (only blasts dig it up)
 	statue: any?, -- the statue this cell is (or was) part of: { cells, left }
@@ -247,6 +248,8 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "Y" then
 					cell.web = true
 					cell.vine = true
+				elseif ch == "Q" then
+					cell.mist = true
 				elseif ch == "r" then
 					cell.rainbow = true
 					self.hasRainbow = true
@@ -844,6 +847,9 @@ function Board.hash(self): string
 			if cell and cell.web then
 				clover ..= if cell.vine then "'" else "*"
 			end
+			if cell and cell.mist then
+				clover ..= "@"
+			end
 			if cell and cell.pen then
 				clover ..= "&"
 			end
@@ -1011,6 +1017,7 @@ function Board.snapshot(self)
 			rainbow = cell.rainbow,
 			web = cell.web,
 			vine = cell.vine,
+			mist = cell.mist,
 			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin, timer = piece.timer },
 		})
