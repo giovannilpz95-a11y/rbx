@@ -566,9 +566,28 @@ local function sweep(firstPress: boolean): boolean
 		return true
 	end
 
-	-- Hands: on a fresh press, use the nearest thing in reach (opens its panel, collects...)
+	-- Hands: on a fresh press, use the nearest thing in reach (opens its panel, collects...).
+	-- A growing bed you're standing on or next to counts too, when it's nearer than any
+	-- building: it opens the bed's window (time left, Gem speed-up), the same as tapping it.
 	if firstPress then
 		local best, bestDistance = nearestHands(root)
+		local growing, growingDistance = nil, math.huge
+		for _, part in interactives do
+			if part:GetAttribute("Interact") == "Field" then
+				local d = distanceToPart(part, root.Position)
+				if
+					d <= Balance.plantRadiusStuds
+					and d < growingDistance
+					and fieldState(part:GetAttribute("FieldId") :: string) == "growing"
+				then
+					growing, growingDistance = part, d
+				end
+			end
+		end
+		if growing and growingDistance <= bestDistance then
+			act(growing)
+			return true
+		end
 		if best then
 			act(best)
 			return true
