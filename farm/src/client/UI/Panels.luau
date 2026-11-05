@@ -1639,8 +1639,10 @@ local function renderBuildings(state: { [string]: any })
 					-100 + n,
 					{ kind = "Decor", id = id },
 					def.displayName,
-					string.format("🏆 Gold trophy x%d", count),
-					if not room then full :: string else "Free to place, 1 x 1 tile",
+					string.format("%s x%d", def.badge or "🏆 Gold trophy", count),
+					if not room
+						then full :: string
+						else string.format("Free to place, %d x %d tiles", def.size[1], def.size[2]),
 					if room then nil else danger,
 					nil
 				)
@@ -2138,8 +2140,8 @@ local function renderTown(state: { [string]: any })
 		do
 			local room, full = DecorRules.hasRoom(state, id)
 			local card = line(
-				string.format("🏆 %s   x%d", def.displayName, count),
-				if room then "Gold trophy, free to place" else full :: string
+				string.format("%s   x%d", def.displayName, count),
+				if room then (def.badge or "Gold trophy") .. ", free to place" else full :: string
 			)
 			rightButton(card, "Free", room, function()
 				Panels.close()
@@ -2521,6 +2523,9 @@ local function renderDebug(state: { [string]: any })
 	devButton("Sky: a rainbow ends on your farm now", "Debug_Sky", 300, 27, "Rainbow")
 	devButton("Visitors: the Golden Goose lands on your farm now", "Debug_Sky", 360, 28, "Goose")
 	devButton("Visitors: the Wandering Peddler in the Town Square now", "Debug_Sky", 380, 29, "Peddler")
+	devButton("Event: +100 tokens", "Debug_Event", 240, 30, "tokens")
+	devButton("Event: end the preview now (leftovers become Coins)", "Debug_Event", 380, 31, "end")
+	devButton("Event: start the preview again", "Debug_Event", 300, 32, "start")
 end
 
 ---------------------------------------------------------------------------------------------

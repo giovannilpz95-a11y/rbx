@@ -44,6 +44,7 @@ local TonicShedService = require(Services.TonicShedService)
 local ExpressService = require(Services.ExpressService)
 local SkyService = require(Services.SkyService)
 local EmoteService = require(Services.EmoteService)
+local EventService = require(Services.EventService)
 local MarketService = require(Services.MarketService)
 local LayoutService = require(Services.LayoutService)
 local RecordsService = require(Services.RecordsService)
@@ -82,6 +83,7 @@ TonicShedService.init()
 ExpressService.init() -- after the map exists
 SkyService.init()
 EmoteService.init() -- last: the photo spots look for open ground on the finished plaza
+EventService.init() -- after the photo spots: the Fair Stand finds its own open ground
 MarketService.init()
 LayoutService.init()
 SettingsService.init()

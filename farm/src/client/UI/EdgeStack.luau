@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("FarmShared")
 local Daily = require(Shared.Config.Daily)
 local DailyRules = require(Shared.Daily)
+local Events = require(Shared.Events)
 local Products = require(Shared.Config.Products)
 local Timer = require(Shared.Timer)
 
@@ -34,6 +35,22 @@ type Entry = {
 local seenOffer = false -- the Starter Pack dot goes once the Shop has been opened
 
 local ENTRIES: { Entry } = {
+	{
+		-- The limited-time event (UI/Event): its time left, a dot while a prize waits
+		glyph = "🎀",
+		order = 0,
+		open = function()
+			Panels.open("Event")
+		end,
+		status = function(state, now)
+			local def, _, endsAt = Events.active(now)
+			local block = state.event
+			if def == nil or block == nil or block.id ~= def.id then
+				return false, "", false
+			end
+			return true, Events.timeLeft(endsAt - now), Events.reached(def, block.earned) > block.claimed
+		end,
+	},
 	{
 		glyph = "📅",
 		order = 1,
@@ -88,7 +105,7 @@ function EdgeStack.init()
 		BackgroundTransparency = 1,
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -24, 0, 148), -- under the Quests button
-		Size = UDim2.fromOffset(56, 260),
+		Size = UDim2.fromOffset(56, 340),
 		Parent = gui,
 	}, {
 		Ui.new("UIListLayout", {

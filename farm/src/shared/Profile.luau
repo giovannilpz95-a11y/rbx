@@ -213,7 +213,17 @@ function Profile.template(): { [string]: any }
 		heirloomSeeds = 0, -- from the Seed Cart; one goes into the next field planted
 		decorCoupons = {}, -- decoration id -> prepaid copies from the Seed Cart or the Peddler
 		peddler = { visit = 0, bought = {} }, -- the Wandering Peddler's purchases this visit (shared/Peddler)
-		trophies = {}, -- Gold Town Record trophy id -> copies in storage, not placed (Config/Trophies)
+		trophies = {}, -- Gold Town Record trophy id -> copies in storage, not placed (Config/Trophies), and event keepsakes (Config/Events)
+		event = { -- the running limited-time event (shared/Events, Config/Events); id "" = none
+			id = "",
+			run = 0, -- the event's startsAt (an event can run again)
+			tokens = 0, -- left to spend in the Event Shop
+			earned = 0, -- earned in all: climbs the prize track
+			claimed = 0, -- prizes claimed
+			bought = {}, -- Event Shop slot (string) -> copies bought
+			crates = {}, -- Fair Stand slot (string) -> { item, qty, tokens } or { waitUntil }
+			seed = 0,
+		},
 		social = { -- visiting, Helping Hands and boosts (shared/Social)
 			privacy = Social.defaultPrivacy, -- who may visit: Open / Friends / Closed
 			helpers = Social.defaultHelpers, -- who may help: Nobody / Friends / Anyone

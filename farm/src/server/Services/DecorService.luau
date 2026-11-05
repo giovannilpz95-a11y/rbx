@@ -49,7 +49,10 @@ function DecorService.place(player: Player, id: any, x: any, z: any, r: any): (b
 	local data = DataService.get(player) :: { [string]: any }
 	local trophy = def.trophy == true
 	if trophy and (data.trophies[id] or 0) < 1 then
-		return false, "Win this record's Gold medal to get its trophy"
+		return false,
+			if def.category == "Keepsake"
+				then "Earn this keepsake in its event first"
+				else "Win this record's Gold medal to get its trophy"
 	end
 	-- A prepaid one (the Wandering Peddler sells some from a few levels ahead) can go down early
 	if data.level < def.unlockLevel and (data.decorCoupons[id] or 0) <= 0 then
