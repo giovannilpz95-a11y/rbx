@@ -18,6 +18,9 @@ return table.freeze({
 	Event_Swap = "Event_Swap", -- slot: swap a Fair Stand crate (a new one after the wait)
 	Event_Claim = "Event_Claim", -- claim every event prize reached
 	Event_Buy = "Event_Buy", -- slot: buy from the Event Shop with event tokens
+	Wardrobe_Buy = "Wardrobe_Buy", -- pieceId: buy a Wardrobe piece (and put it on)
+	Wardrobe_Wear = "Wardrobe_Wear", -- slot, pieceId ("" takes the slot's piece off)
+	Wardrobe_Show = "Wardrobe_Show", -- "On" | "Off": show the farm outfit on the avatar
 	Showcase_OptIn = "Showcase_OptIn", -- "On" | "Off": show this farm in the Plot Showcase
 	Showcase_Rate = "Showcase_Rate", -- ownerUserId, stars 1-3: rate a farm on show (standing on it)
 	Fair_Enter = "Fair_Enter", -- class, a, b: enter the County Fair (Produce: Prize Basket index; Bake: Bakery good, garnish index?)
@@ -151,6 +154,7 @@ return table.freeze({
 	Debug_FillLots = "Debug_FillLots", -- a finished Cottage on every open House lot (Studio only)
 	Debug_Population = "Debug_Population", -- Houses swapped for the biggest type up to Population 3,000 (Studio only)
 	Debug_Sky = "Debug_Sky", -- "Rain" | "Starfall" | "Rainbow" | "Goose" | "Peddler": that sky event or visitor starts now (Studio only)
+	Debug_Wardrobe = "Debug_Wardrobe", -- own every Wardrobe piece (Studio only)
 	Debug_Showcase = "Debug_Showcase", -- a Plot Showcase starts now, dwell waived (Studio only)
 	Debug_Fair = "Debug_Fair", -- "open" | "judge" | "Starlit" | "Heirloom": a County Fair opens now, its entries close now, or a Prize Crop for the basket (Studio only)
 	Debug_Event = "Debug_Event", -- "tokens" | "end" | "start": +100 event tokens, end or restart the preview (Studio only)
