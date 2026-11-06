@@ -86,6 +86,8 @@ export type Cell = {
 	pump: boolean?, -- the "bale" is a hand pump: it never breaks, hits drain flood water near it
 	flood: boolean?, -- flood water under the tile (only a pump drains it)
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
+	cage: any?, -- the fruit cage over this tile ({ cells, pegs }); the cell also has `web` set
+	peg: boolean?, -- one of its cage's pegs is here (a match next to it or a blast pulls it)
 	tree: number?, -- the "bale" is an apple tree: apples still on it (only blasts shake them off)
 	pot: boolean?, -- the "bale" is a stew pot: its layers are the hits left; a swap that misses it puffs mist next to it
 	frame: boolean?, -- the "bale" is a cold frame: its layers are the stages still to open (a swap that misses it closes one)
@@ -256,6 +258,10 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "Y" then
 					cell.web = true
 					cell.vine = true
+				elseif ch == "=" or ch == "+" then
+					cell.web = true
+					cell.cage = true
+					cell.peg = if ch == "+" then true else nil
 				elseif ch == "Q" then
 					cell.mist = true
 				elseif ch == "r" then
@@ -422,6 +428,27 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 		group(function(cell)
 			return trayCells[cell] == true
 		end, "tray", self.trays)
+	end
+	local cageCells = {}
+	self:eachCell(function(cell)
+		if cell.cage == true then
+			cell.cage = nil
+			cageCells[cell] = true
+		end
+	end)
+	self.cages = {}
+	if next(cageCells) then
+		group(function(cell)
+			return cageCells[cell] == true
+		end, "cage", self.cages)
+		for _, cage in self.cages do
+			cage.pegs = 0
+			for _, c in cage.cells do
+				if c.peg then
+					cage.pegs += 1
+				end
+			end
+		end
 	end
 	local quiltCells = {}
 	self:eachCell(function(cell)
@@ -865,7 +892,9 @@ function Board.hash(self): string
 			if cell and cell.rainbow then
 				clover ..= "~"
 			end
-			if cell and cell.web then
+			if cell and cell.cage then
+				clover ..= if cell.peg then "=+" else "="
+			elseif cell and cell.web then
 				clover ..= if cell.vine then "'" else "*"
 			end
 			if cell and cell.mist then
@@ -1050,6 +1079,8 @@ function Board.snapshot(self)
 			rainbow = cell.rainbow,
 			web = cell.web,
 			vine = cell.vine,
+			cage = cell.cage ~= nil,
+			peg = cell.peg,
 			mist = cell.mist,
 			buried = cell.buried,
 			piece = piece and { id = piece.id, color = piece.color, power = piece.power, pumpkin = piece.pumpkin, muddy = piece.muddy, timer = piece.timer },

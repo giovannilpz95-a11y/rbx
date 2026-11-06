@@ -32,6 +32,7 @@
 	  { kind = "Frames" }                                -- open every cold frame (a missed swap closes one a stage)
 	  { kind = "Pots" }                                  -- take every stew pot off the boil (a missed swap puffs steam)
 	  { kind = "Apples" }                                -- shake every apple off the apple trees (blasts only)
+	  { kind = "Cages" }                                 -- lift every fruit cage (pull all its pegs)
 	  { kind = "Gophers" }                               -- catch a gopher in every burrow
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
@@ -66,7 +67,7 @@ function Goals.new(defs: { any }, board)
 	board:eachCell(function(cell)
 		if cell.vine then
 			vines += 1
-		elseif cell.web then
+		elseif cell.web and not cell.cage then
 			webs += 1
 		end
 		if cell.mist then
@@ -191,6 +192,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Pots", target = def.count or pots, progress = 0 })
 		elseif def.kind == "Apples" then
 			table.insert(list, { kind = "Apples", target = def.count or apples, progress = 0 })
+		elseif def.kind == "Cages" then
+			table.insert(list, { kind = "Cages", target = def.count or #(board.cages or {}), progress = 0 })
 		elseif def.kind == "Floods" then
 			table.insert(list, { kind = "Floods", target = def.count or floods, progress = 0 })
 		elseif def.kind == "Bins" then
@@ -338,6 +341,10 @@ end
 
 function Goals.onApple(self)
 	bump(self, "Apples", nil)
+end
+
+function Goals.onCage(self)
+	bump(self, "Cages", nil)
 end
 
 -- A stew pot puffed new mist onto the board: a Mist goal has one more to lift.

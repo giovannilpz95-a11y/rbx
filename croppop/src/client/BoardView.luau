@@ -247,7 +247,12 @@ end
 -- kind: the cell (or phase entry) saying what the "bale" is: weed, stone,
 -- crate, tarp, tin, quilt (+ patched, x, y).
 -- A web or a vine over a tile.
-local function styleWeb(web: TextLabel, vine: boolean?)
+local function styleWeb(web: TextLabel, vine: boolean?, cage: boolean?, peg: boolean?)
+	if cage then
+		web.BackgroundColor3 = TileStyle.Board.cage
+		web.Text = if peg then TileStyle.PegGlyph else TileStyle.GoalGlyphs.Cages
+		return
+	end
 	web.BackgroundColor3 = if vine then TileStyle.Board.vine else TileStyle.Board.web
 	web.Text = if vine then TileStyle.GoalGlyphs.Vines else TileStyle.GoalGlyphs.Webs
 end
@@ -417,7 +422,7 @@ function BoardView._updateCell(self, x: number, y: number, cell)
 	guis.buried.Visible = cell.buried == true
 	guis.rainbow.Visible = cell.rainbow == true
 	guis.web.Visible = cell.web == true
-	styleWeb(guis.web, cell.vine)
+	styleWeb(guis.web, cell.vine, cell.cage ~= nil, cell.peg)
 	guis.statueMark.Visible = cell.buried == true
 	styleTray(guis, cell)
 	styleBale(guis.bale, cell.bale, cell)
@@ -1270,6 +1275,16 @@ function BoardView._effect(self, effect): number
 			flower:Destroy()
 		end)
 		return FX_TIME
+	elseif effect.type == "Peg" then
+		-- The peg pops out of the cage.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1 / w, 1 / h), TileStyle.Board.cage, true)
+		return 0
+	elseif effect.type == "Cage" then
+		-- The last peg is out: the whole cage lifts off.
+		for _, c in effect.cells do
+			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.cage, true)
+		end
+		return FX_TIME
 	elseif effect.type == "Apple" then
 		-- An apple drops off the tree.
 		local apple = Instance.new("TextLabel")
@@ -1529,8 +1544,8 @@ function BoardView._pop(self, phase)
 	for _, wb in phase.webs or {} do
 		local guis = self.cellGuis[wb.y] and self.cellGuis[wb.y][wb.x]
 		if guis and wb.on then
-			-- A vine creeps over this tile.
-			styleWeb(guis.web, wb.vine)
+			-- A vine creeps over this tile (or a cage loses a peg).
+			styleWeb(guis.web, wb.vine, wb.cage, false)
 			guis.web.BackgroundTransparency = 1
 			guis.web.TextTransparency = 1
 			guis.web.Visible = true

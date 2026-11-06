@@ -64,6 +64,10 @@
 	  T  tulip bud: blocks like a 1-layer bale; every hit charges it and the
 	     third makes it bloom (the Blooms goal), but a swap that doesn't hit
 	     a charged bud closes it back up to no charge
+	  = +  fruit cage over a tile ("+" also holds one of its pegs): each
+	     connected group is one cage, holding its tiles like a web; a match
+	     next to a peg or a blast on it pulls the peg, and the last peg out
+	     lifts the cage (the Cages goal). Every cage needs a peg.
 	  $  apple tree: blocks a cell with 2 apples on it; only blasts shake
 	     them off, one a blast (the Apples goal), and a bare tree goes
 	  &  stew pot: blocks like a 2-layer bale; every hit knocks a layer off
@@ -149,7 +153,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44", "Set45", "Set46", "Set47", "Set48", "Set49", "Set50" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44", "Set45", "Set46", "Set47", "Set48", "Set49", "Set50", "Set51" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -222,6 +226,8 @@ local VALID_CHARS = {
 	["^"] = true,
 	["&"] = true,
 	["$"] = true,
+	["="] = true,
+	["+"] = true,
 	U = true,
 	I = true,
 	H = true,
@@ -374,7 +380,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets, burrows, jars, chests, vanes, vines, mist, birds, frames, pots, trees = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets, burrows, jars, chests, vanes, vines, mist, birds, frames, pots, trees, cages = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for y, row in level.layout do
 		if #row ~= width then
@@ -667,6 +673,50 @@ function Levels.validate(level): string?
 			return "lambs in the layout but no pen"
 		end
 	end
+	-- Fruit cages: each connected group of "=" and "+" cells needs a peg.
+	do
+		local seen = {}
+		local function caged(x, y)
+			local row = level.layout[y]
+			local ch = row and string.sub(row, x, x)
+			return ch == "=" or ch == "+"
+		end
+		for y = 1, height do
+			for x = 1, width do
+				if caged(x, y) and not seen[y * 1000 + x] then
+					cages += 1
+					local pegs = 0
+					local stack = { { x, y } }
+					seen[y * 1000 + x] = true
+					while #stack > 0 do
+						local c = table.remove(stack)
+						if string.sub(level.layout[c[2]], c[1], c[1]) == "+" then
+							pegs += 1
+						end
+						for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
+							local nx, ny = c[1] + d[1], c[2] + d[2]
+							if caged(nx, ny) and not seen[ny * 1000 + nx] then
+								seen[ny * 1000 + nx] = true
+								table.insert(stack, { nx, ny })
+							end
+						end
+					end
+					if pegs == 0 then
+						return string.format("fruit cage at %d,%d has no pegs", x, y)
+					end
+				end
+			end
+		end
+	end
+	if cages > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Cages"
+		end
+		if not wanted then
+			return "fruit cages in the layout but no cages goal"
+		end
+	end
 	if trees > 0 then
 		local wanted = false
 		for _, goal in level.goals do
@@ -830,6 +880,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Lambs" then
 			if lambs == 0 then
 				return "lambs goal but no lambs in the layout"
+			end
+		elseif goal.kind == "Cages" then
+			if cages == 0 then
+				return "cages goal but no fruit cages in the layout"
 			end
 		elseif goal.kind == "Apples" then
 			if trees == 0 then
