@@ -279,6 +279,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.lamb then
 		label.BackgroundColor3 = TileStyle.Board.lamb
 		label.Text = TileStyle.GoalGlyphs.Lambs
+	elseif kind.bush then
+		-- The bush; the dots are the stages it has ripened so far.
+		label.BackgroundColor3 = TileStyle.Board.bush
+		label.Text = TileStyle.GoalGlyphs.Berries .. string.rep("•", if type(kind.bush) == "number" then kind.bush else 0)
 	elseif kind.tree then
 		-- The tree and how many apples are still on it.
 		label.BackgroundColor3 = TileStyle.Board.tree
@@ -1285,6 +1289,26 @@ function BoardView._effect(self, effect): number
 			self:_flash(self:_centerOf(c.x, c.y), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.cage, true)
 		end
 		return FX_TIME
+	elseif effect.type == "Berries" then
+		-- The ripe bush's berries pop out and fan upwards.
+		local count = effect.count or 3
+		for i = 1, count do
+			local berry = Instance.new("TextLabel")
+			berry.Name = "Berry"
+			berry.AnchorPoint = Vector2.new(0.5, 0.5)
+			berry.BackgroundTransparency = 1
+			berry.Size = UDim2.fromScale(0.5 / w, 0.5 / h)
+			berry.Position = self:_centerOf(effect.x, effect.y)
+			berry.Text = TileStyle.GoalGlyphs.Berries
+			berry.TextScaled = true
+			berry.Parent = self.fxLayer
+			local spread = (i - (count + 1) / 2) * 0.6
+			tween(berry, FX_TIME, { Position = self:_centerOf(effect.x + spread, effect.y - 1), TextTransparency = 1 })
+			task.delay(FX_TIME, function()
+				berry:Destroy()
+			end)
+		end
+		return 0
 	elseif effect.type == "Apple" then
 		-- An apple drops off the tree.
 		local apple = Instance.new("TextLabel")

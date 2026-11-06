@@ -88,6 +88,7 @@ export type Cell = {
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
 	cage: any?, -- the fruit cage over this tile ({ cells, pegs }); the cell also has `web` set
 	peg: boolean?, -- one of its cage's pegs is here (a match next to it or a blast pulls it)
+	bush: number?, -- the "bale" is a berry bush: stages ripened so far (it never breaks; matches only)
 	tree: number?, -- the "bale" is an apple tree: apples still on it (only blasts shake them off)
 	pot: boolean?, -- the "bale" is a stew pot: its layers are the hits left; a swap that misses it puffs mist next to it
 	frame: boolean?, -- the "bale" is a cold frame: its layers are the stages still to open (a swap that misses it closes one)
@@ -305,6 +306,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "$" then
 					cell.bale = 1
 					cell.tree = 2 -- Engine's TREE_APPLES
+				elseif ch == "*" then
+					cell.bale = 1
+					cell.bush = 0
 				elseif ch == "B" then
 					cell.bale = 1
 					cell.bin = 9 -- Engine's BIN_COUNT
@@ -946,6 +950,8 @@ function Board.hash(self): string
 				table.insert(row, "^" .. cell.bale .. clover)
 			elseif cell.pot then
 				table.insert(row, "&" .. cell.bale .. clover)
+			elseif cell.bush then
+				table.insert(row, "B" .. cell.bush .. clover)
 			elseif cell.tree then
 				table.insert(row, "$" .. cell.tree .. clover)
 			elseif cell.bin then
@@ -1044,6 +1050,7 @@ function Board.snapshot(self)
 			frame = cell.frame,
 			pot = cell.pot,
 			tree = cell.tree,
+			bush = cell.bush,
 			bin = cell.bin,
 			packet = cell.packet,
 			mower = cell.mower,
