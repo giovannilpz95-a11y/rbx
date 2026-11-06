@@ -33,6 +33,7 @@
 	  { kind = "Pots" }                                  -- take every stew pot off the boil (a missed swap puffs steam)
 	  { kind = "Apples" }                                -- shake every apple off the apple trees (blasts only)
 	  { kind = "Cages" }                                 -- lift every fruit cage (pull all its pegs)
+	  { kind = "Berries", count = 12 }                   -- pick N berries (every 3rd match next to a berry bush sends 3)
 	  { kind = "Gophers" }                               -- catch a gopher in every burrow
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
@@ -131,9 +132,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump or cell.packet or cell.jar or cell.chest or cell.vane or cell.mower or cell.bird or cell.frame or cell.pot or cell.tree then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump or cell.packet or cell.jar or cell.chest or cell.vane or cell.mower or cell.bird or cell.frame or cell.pot or cell.tree or cell.bush then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins, pumps, seed packets, jam jars, tool chests, weathervanes, mowers, songbirds, cold frames, stew pots and apple trees aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins, pumps, seed packets, jam jars, tool chests, weathervanes, mowers, songbirds, cold frames, stew pots, apple trees and berry bushes aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -192,6 +193,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Pots", target = def.count or pots, progress = 0 })
 		elseif def.kind == "Apples" then
 			table.insert(list, { kind = "Apples", target = def.count or apples, progress = 0 })
+		elseif def.kind == "Berries" then
+			table.insert(list, { kind = "Berries", target = def.count, progress = 0 })
 		elseif def.kind == "Cages" then
 			table.insert(list, { kind = "Cages", target = def.count or #(board.cages or {}), progress = 0 })
 		elseif def.kind == "Floods" then
@@ -345,6 +348,10 @@ end
 
 function Goals.onCage(self)
 	bump(self, "Cages", nil)
+end
+
+function Goals.onBerry(self)
+	bump(self, "Berries", nil)
 end
 
 -- A stew pot puffed new mist onto the board: a Mist goal has one more to lift.

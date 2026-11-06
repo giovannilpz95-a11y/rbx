@@ -115,6 +115,12 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Berry bushes: block a cell and never break. Each match next to one
+	(once per bush per wave) ripens it a stage, and the BUSH_STAGES-th
+	sends BUSH_BERRIES berries to the Berries goal (a "Berries" effect);
+	then it grows again from nothing. Blasts don't ripen a bush, and bees
+	leave it alone.
+
 	Fruit cages: a cage covers a block of tiles (each connected group of
 	"=" and "+" cells is one cage), holding them in place and out of
 	matches like a web. Its pegs ("+" cells) hold it down: a match next to
@@ -302,6 +308,8 @@ local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip b
 local FRAME_STAGES = 3 -- stages a cold frame opens through (and Board's "^" layers)
 local POT_LAYERS = 2 -- hits to take a stew pot off the boil (and Board's "&" layers)
 local TREE_APPLES = 2 -- apples on an apple tree (and Board's "$" count)
+local BUSH_STAGES = 3 -- matches next to a berry bush before it's ripe
+local BUSH_BERRIES = 3 -- berries a ripe bush sends to the Berries goal
 local STEAM_COVER_LIMIT = 4 -- pots stop steaming once mist covers 1/this of the cells
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
@@ -700,7 +708,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame", "pot", "tree" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame", "pot", "tree", "bush" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -864,6 +872,9 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 	if cell.packet then
 		self:_takeSeed(wave, cell)
 		return
+	end
+	if cell.bush then
+		return -- only matches next to a berry bush ripen it
 	end
 	if cell.bird then
 		return -- only a match of its colour feeds a songbird
@@ -1077,6 +1088,20 @@ function Engine._feedBird(self, wave, cell)
 	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
 	table.insert(wave.effects, { type = "Bird", x = cell.x, y = cell.y })
 	self.goals:onBird()
+end
+
+-- A match next to a berry bush ripens it a stage; when it's ripe it sends
+-- its berries and starts again.
+function Engine._ripenBush(self, wave, cell)
+	cell.bush += 1
+	if cell.bush >= BUSH_STAGES then
+		cell.bush = 0
+		table.insert(wave.effects, { type = "Berries", x = cell.x, y = cell.y, count = BUSH_BERRIES })
+		for _ = 1, BUSH_BERRIES do
+			self.goals:onBerry()
+		end
+	end
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, bush = cell.bush })
 end
 
 -- After a swap every songbird hops on to the level's next colour.
@@ -1497,6 +1522,12 @@ function Engine._popGroups(self, wave, groups)
 				local n = board:get(cell.x + d[1], cell.y + d[2])
 				if n and fed[n] then
 					-- fed above
+				elseif n and n.bush then
+					-- A match next to a berry bush ripens it.
+					if not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_ripenBush(wave, n)
+					end
 				elseif n and n.peg then
 					-- A match next to a fruit cage's peg pulls it.
 					if not wave.balesTouched[n] then
@@ -1648,6 +1679,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Tools") then tiers[1] else tiers[4], cell)
 		elseif cell.vane then
 			table.insert(if goals:wants("Vanes") then tiers[1] else tiers[4], cell)
+		elseif cell.bush then
+			-- bees can't ripen a berry bush
 		elseif cell.bird then
 			-- bees can't feed a songbird
 		elseif cell.truck then
