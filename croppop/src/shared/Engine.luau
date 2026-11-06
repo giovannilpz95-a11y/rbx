@@ -115,6 +115,12 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Apple trees: block a cell and hold TREE_APPLES apples. Matches next to a
+	tree do nothing: only a blast on it (a power-up, a booster or a bee)
+	shakes it, and each blast shakes one apple off (an "Apple" effect), for
+	the Apples goal. The last apple leaves the tree bare and it goes (a
+	"Tree" effect).
+
 	Stew pots: block a cell like a POT_LAYERS-layer bale. Each hit (a match
 	next to one, once per wave, or a blast on it) knocks a layer off, and
 	the last takes it off the boil (a "Pot" effect), for the Pots goal. A
@@ -287,6 +293,7 @@ local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common co
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local FRAME_STAGES = 3 -- stages a cold frame opens through (and Board's "^" layers)
 local POT_LAYERS = 2 -- hits to take a stew pot off the boil (and Board's "&" layers)
+local TREE_APPLES = 2 -- apples on an apple tree (and Board's "$" count)
 local STEAM_COVER_LIMIT = 4 -- pots stop steaming once mist covers 1/this of the cells
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
@@ -685,7 +692,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame", "pot" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame", "pot", "tree" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -915,6 +922,22 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		end
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, truck = cell.truck })
 		self:_dropBale(wave, cell)
+		return
+	end
+	if cell.tree then
+		if byMatch then
+			return -- only blasts shake an apple tree
+		end
+		cell.tree -= 1
+		table.insert(wave.effects, { type = "Apple", x = cell.x, y = cell.y })
+		self.goals:onApple()
+		if cell.tree <= 0 then
+			cell.bale, cell.tree = 0, nil
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+			table.insert(wave.effects, { type = "Tree", x = cell.x, y = cell.y })
+		else
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, tree = cell.tree })
+		end
 		return
 	end
 	if cell.pot then
@@ -1450,6 +1473,8 @@ function Engine._popGroups(self, wave, groups)
 						wave.balesTouched[n] = true
 						self:_takeSeed(wave, n)
 					end
+				elseif n and n.tree then
+					-- matches don't shake an apple tree; only blasts do
 				elseif n and n.bird then
 					-- Only a match of the bird's own colour feeds it.
 					if group.color == n.bird and not wave.balesTouched[n] then
@@ -1563,6 +1588,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Frames") then tiers[1] else tiers[4], cell)
 		elseif cell.pot then
 			table.insert(if goals:wants("Pots") then tiers[1] else tiers[4], cell)
+		elseif cell.tree then
+			table.insert(if goals:wants("Apples") then tiers[1] else tiers[4], cell)
 		elseif cell.bin then
 			table.insert(if goals:wants("Bins") then tiers[1] else tiers[4], cell)
 		elseif cell.pump then

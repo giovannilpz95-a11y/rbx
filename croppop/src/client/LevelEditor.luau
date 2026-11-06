@@ -93,6 +93,7 @@ local BRUSH_ROWS = {
 		{ char = "D", label = TileStyle.GoalGlyphs.Birds },
 		{ char = "^", label = TileStyle.GoalGlyphs.Frames },
 		{ char = "&", label = TileStyle.GoalGlyphs.Pots },
+		{ char = "$", label = TileStyle.TreeGlyph },
 		{ char = "U", label = TileStyle.MowerGlyph },
 		{ char = "I", label = TileStyle.BurrowGlyph },
 		-- Not a layout character: tap an entrance, then its exit; tap either end again to remove it.
@@ -108,7 +109,7 @@ local FENCE = "|" -- the fence brush
 local HEDGE = "=" -- the hedge brush
 -- Layout characters that aren't board cells (no portal end or fence there).
 local NOT_CELL = { ["#"] = true, d = true, h = true, G = true }
-local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies", "Trays", "Bins", "Floods", "Packets", "Gophers", "Jars", "Tools", "Vanes", "Vines", "Mist", "Birds", "Frames", "Pots" }
+local GOAL_KINDS = { "Collect", "Mud", "HayBale", "Frost", "Weeds", "Pumpkins", "Clover", "Stones", "Fences", "Goo", "Statues", "Tarps", "Webs", "Quilts", "Snowballs", "Clay", "Letters", "Boxes", "Honey", "Blooms", "Lambs", "Fireflies", "Trays", "Bins", "Floods", "Packets", "Gophers", "Jars", "Tools", "Vanes", "Vines", "Mist", "Birds", "Frames", "Pots", "Apples" }
 local GOAL_BUTTONS = {
 	Collect = "+ Collect",
 	Mud = "+ Mud",
@@ -144,6 +145,7 @@ local GOAL_BUTTONS = {
 	Birds = "+ 🐦",
 	Frames = "+ 🌱",
 	Pots = "+ 🍲",
+	Apples = "+ 🍎",
 	Gophers = "+ 🐹",
 }
 
@@ -452,6 +454,8 @@ local function cellLook(char: string): (Color3, string)
 		return TileStyle.Board.frame, TileStyle.GoalGlyphs.Frames
 	elseif char == "&" then
 		return TileStyle.Board.pot, TileStyle.GoalGlyphs.Pots
+	elseif char == "$" then
+		return TileStyle.Board.tree, TileStyle.TreeGlyph
 	elseif char == "U" then
 		return TileStyle.Board.mower, TileStyle.MowerGlyph
 	elseif char == "I" then
@@ -664,6 +668,8 @@ local function goalLabel(goal): string
 		return "🌱 all frames"
 	elseif goal.kind == "Pots" then
 		return "🍲 all pots"
+	elseif goal.kind == "Apples" then
+		return "🍎 all apples"
 	elseif goal.kind == "Gophers" then
 		return "🐹 all gophers"
 	end
