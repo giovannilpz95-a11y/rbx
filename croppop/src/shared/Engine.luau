@@ -115,6 +115,13 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Cold frames: block a cell like a FRAME_STAGES-layer bale, a glass box
+	over a seedling. Each hit (a match next to one, once per wave, or a
+	blast on it) opens it a stage, and the last stage frees the seedling
+	(a "Frame" effect), for the Frames goal. It has to be kept at: after a
+	swap that didn't hit a part-open frame (boosters since the last swap
+	count), it closes one stage again (a "Shut" effect).
+
 	Songbirds: block a cell like a bale and each wants one tile colour (the
 	level's colours in turn, in reading order). After every swap each bird
 	hops on to the level's next colour (a "Hop" effect). A match of the
@@ -269,6 +276,7 @@ local MAX_CASCADES = 100
 local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
+local FRAME_STAGES = 3 -- stages a cold frame opens through (and Board's "^" layers)
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
 local JAR_FILL = 3 -- colour matches (or blasts) that fill a jam jar
@@ -322,6 +330,7 @@ function Engine.new(level, seed: number, options: Options?)
 		gooCleared = 0, -- during the current action (stops goo spreading)
 		vinesCut = 0, -- during the current action (stops vines creeping)
 		budsHit = {}, -- tulip buds hit since the last swap ended
+		framesHit = {}, -- cold frames hit since the last swap ended
 		lightSwaps = 0, -- swaps since the fireflies last moved
 	}, Engine)
 
@@ -661,7 +670,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -891,6 +900,19 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		end
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, truck = cell.truck })
 		self:_dropBale(wave, cell)
+		return
+	end
+	if cell.frame then
+		self.framesHit[cell] = true
+		cell.bale -= 1
+		if cell.bale <= 0 then
+			cell.bale, cell.frame = 0, nil
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+			table.insert(wave.effects, { type = "Frame", x = cell.x, y = cell.y })
+			self.goals:onFrame()
+		else
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, frame = true })
+		end
 		return
 	end
 	if cell.bud then
@@ -1509,6 +1531,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Honey") then tiers[1] else tiers[4], cell)
 		elseif cell.bud then
 			table.insert(if goals:wants("Blooms") then tiers[1] else tiers[4], cell)
+		elseif cell.frame then
+			table.insert(if goals:wants("Frames") then tiers[1] else tiers[4], cell)
 		elseif cell.bin then
 			table.insert(if goals:wants("Bins") then tiers[1] else tiers[4], cell)
 		elseif cell.pump then
@@ -2205,6 +2229,7 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	end
 	if wasSwap then
 		self:_wiltBuds(phases)
+		self:_shutFrames(phases)
 	end
 	if wasSwap and self.vinesCut == 0 and self.goals:wants("Vines") and not self.goals:isComplete() then
 		self:_growVines(phases)
@@ -2334,6 +2359,24 @@ function Engine._wiltBuds(self, phases)
 		end
 	end)
 	self.budsHit = {}
+	if wave then
+		self:_finishWave(wave, phases)
+	end
+end
+
+-- After a swap, every part-open cold frame that wasn't hit since the last
+-- swap closes one stage again.
+function Engine._shutFrames(self, phases)
+	local wave
+	self.board:eachCell(function(cell)
+		if cell.frame and cell.bale < FRAME_STAGES and not self.framesHit[cell] then
+			cell.bale += 1
+			wave = wave or newWave()
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, frame = true })
+			table.insert(wave.effects, { type = "Shut", x = cell.x, y = cell.y })
+		end
+	end)
+	self.framesHit = {}
 	if wave then
 		self:_finishWave(wave, phases)
 	end
