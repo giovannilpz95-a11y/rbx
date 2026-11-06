@@ -24,7 +24,7 @@ local Rng = load("Rng")
 local Tiles = load("Tiles")
 
 local FIRST = tonumber(ARGS[1]) or 6
-local LAST = tonumber(ARGS[2]) or 1150
+local LAST = tonumber(ARGS[2]) or 1175
 local GAMES = tonumber(ARGS[3]) or 48
 
 -- Names for levels 6 onwards, in order.
@@ -258,6 +258,11 @@ local NAMES = {
 	"Rinsing Ridge", "Soap Suds Square", "Scrub Brush Bend", "Washline Way", "Grand Rinse Gala",
 	"Sudsy Steps", "Sponge Dale", "Scrubland Row", "Lather Loft", "Grand Washday Gala",
 	"Rinse Cycle Close", "Soapy Dell", "Washboard Way", "Scrub Yard", "Grand Lather Fair",
+	"Robin's Rest", "Finch Field", "Wren Way", "Sparrow Street", "Grand Songbird Fair",
+	"Thrush Copse", "Linnet Lane", "Lark Lea", "Warbler Walk", "Grand Birdsong Show",
+	"Chirping Corner", "Robin Row", "Finch Farm", "Wren Wood", "Grand Sparrow Gala",
+	"Skylark Ridge", "Thrush Hill", "Linnet Loop", "Chirpy Close", "Grand Warbler Fair",
+	"Songbird Square", "Birdsong Bend", "Lark Hollow", "Wren Dale", "Grand Robin Gala",
 }
 
 -- Township-like move counts: long enough to plan, short enough to stay tense.
@@ -307,7 +312,8 @@ local VANE_INTRO = 1051 -- first level with weathervanes
 local VINE_INTRO = 1076 -- first level with vines
 local MIST_INTRO = 1101 -- first level with mist
 local MUDDY_INTRO = 1126 -- first level with muddy pumpkins
-local INTROS = { [MUDDY_INTRO] = true, [MIST_INTRO] = true, [VINE_INTRO] = true, [VANE_INTRO] = true, [CHEST_INTRO] = true, [JAR_INTRO] = true, [GOPHER_INTRO] = true, [MOWER_INTRO] = true, [PACKET_INTRO] = true, [PUMP_INTRO] = true, [BIN_INTRO] = true, [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
+local BIRD_INTRO = 1151 -- first level with songbirds
+local INTROS = { [BIRD_INTRO] = true, [MUDDY_INTRO] = true, [MIST_INTRO] = true, [VINE_INTRO] = true, [VANE_INTRO] = true, [CHEST_INTRO] = true, [JAR_INTRO] = true, [GOPHER_INTRO] = true, [MOWER_INTRO] = true, [PACKET_INTRO] = true, [PUMP_INTRO] = true, [BIN_INTRO] = true, [TRAY_INTRO] = true, [FIREFLY_INTRO] = true, [LAMB_INTRO] = true, [BUD_INTRO] = true, [SNAIL_INTRO] = true, [TRUCK_INTRO] = true, [HIVE_INTRO] = true, [HEDGE_INTRO] = true, [BOX_INTRO] = true, [BUCKET_INTRO] = true, [SCARECROW_INTRO] = true, [MAIL_INTRO] = true, [CLAY_INTRO] = true, [SNOW_INTRO] = true, [SACK_INTRO] = true, [QUILT_INTRO] = true, [WEB_INTRO] = true, [RAINBOW_INTRO] = true, [THICK_GOO_INTRO] = true, [TARP_INTRO] = true, [SPRING_INTRO] = true, [STATUE_INTRO] = true, [CRATE_INTRO] = true, [HEN_INTRO] = true, [GOO_INTRO] = true, [FENCE_INTRO] = true, [BASKET_INTRO] = true,  [FROST_INTRO] = true, [WEEDS_INTRO] = true, [PUMPKIN_INTRO] = true, [CLOVER_INTRO] = true, [STONE_INTRO] = true, [PORTAL_INTRO] = true }
 
 local REWARDS = {
 	Normal = { coins = 25, xp = 5 },
@@ -665,6 +671,7 @@ local function mechanics(id)
 		vines = id >= VINE_INTRO, -- "Y"
 		mist = id >= MIST_INTRO, -- "Q"
 		muddy = id >= MUDDY_INTRO, -- "o"
+		birds = id >= BIRD_INTRO, -- "D"
 	}
 end
 
@@ -672,6 +679,7 @@ end
 local FOCUS = { "Collect", "Mud", "HayBale", "Mix", "Mud", "Collect", "HayBale", "Mix" }
 local FOCUS_FROST = { "Collect", "Mud", "Frost", "HayBale", "Mix", "Mud", "Frost", "Collect", "HayBale", "Mix" }
 local FOCUS_WEEDS = { "Collect", "Weeds", "Mud", "Frost", "HayBale", "Mix", "Mud", "Weeds", "Collect", "Frost", "HayBale", "Mix" }
+local FOCUS_BIRDS = { "Birds", "Muddy", "Mist", "Collect", "Birds", "Vines", "Vanes", "Tools", "Birds", "Jars", "Gophers", "Mix" }
 local FOCUS_MUDDY = { "Muddy", "Mist", "Vines", "Collect", "Muddy", "Vanes", "Tools", "Jars", "Muddy", "Gophers", "Mowers", "Mix" }
 local FOCUS_MIST = { "Mist", "Vines", "Vanes", "Collect", "Mist", "Tools", "Jars", "Gophers", "Mist", "Mowers", "Packets", "Mix" }
 local FOCUS_VINES = { "Vines", "Vanes", "Tools", "Collect", "Vines", "Jars", "Gophers", "Mowers", "Vines", "Packets", "Floods", "Mix" }
@@ -716,6 +724,7 @@ local FOCUS_PUMPKINS = { "Pumpkins", "Collect", "Weeds", "Mud", "Pumpkins", "Fro
 
 -- Names that promise an obstacle get it (when it's in the game by then).
 local NAME_HINTS = {
+	{ words = { "Robin", "Finch", "Wren", "Sparrow", "Songbird", "Thrush", "Linnet", "Lark", "Warbler", "Birdsong", "Chirp", "Skylark" }, focus = "Birds", needs = "birds" },
 	{ words = { "Wash", "Rinse", "Rinsing", "Scrub", "Suds", "Soap", "Sponge", "Lather" }, focus = "Muddy", needs = "muddy" },
 	{ words = { "Mud", "Puddle", "Ditch" }, focus = "Mud" },
 	{ words = { "Bale", "Hay" }, focus = "HayBale" },
@@ -852,6 +861,8 @@ local function focusOf(id, name)
 		return "Mist"
 	elseif id == MUDDY_INTRO then
 		return "Muddy"
+	elseif id == BIRD_INTRO then
+		return "Birds"
 	end
 	for _, hint in NAME_HINTS do
 		for _, word in hint.words do
@@ -863,7 +874,7 @@ local function focusOf(id, name)
 	if id <= 7 then
 		return ({ "Collect", "Mud", "Collect" })[id - 5] or "Mud"
 	end
-	local list = if mech.muddy then FOCUS_MUDDY elseif mech.mist then FOCUS_MIST elseif mech.vines then FOCUS_VINES elseif mech.vanes then FOCUS_VANES elseif mech.chests then FOCUS_CHESTS elseif mech.jars then FOCUS_JARS elseif mech.gophers then FOCUS_GOPHERS elseif mech.mowers then FOCUS_MOWERS elseif mech.packets then FOCUS_PACKETS elseif mech.pumps then FOCUS_PUMPS elseif mech.bins then FOCUS_BINS elseif mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
+	local list = if mech.birds then FOCUS_BIRDS elseif mech.muddy then FOCUS_MUDDY elseif mech.mist then FOCUS_MIST elseif mech.vines then FOCUS_VINES elseif mech.vanes then FOCUS_VANES elseif mech.chests then FOCUS_CHESTS elseif mech.jars then FOCUS_JARS elseif mech.gophers then FOCUS_GOPHERS elseif mech.mowers then FOCUS_MOWERS elseif mech.packets then FOCUS_PACKETS elseif mech.pumps then FOCUS_PUMPS elseif mech.bins then FOCUS_BINS elseif mech.trays then FOCUS_TRAYS elseif mech.fireflies then FOCUS_FIREFLIES elseif mech.lambs then FOCUS_LAMBS elseif mech.buds then FOCUS_BUDS elseif mech.snails then FOCUS_SNAILS elseif mech.trucks then FOCUS_TRUCKS elseif mech.hives then FOCUS_HIVES elseif mech.hedges then FOCUS_HEDGES elseif mech.boxes then FOCUS_BOXES elseif mech.buckets then FOCUS_BUCKETS elseif mech.scarecrows then FOCUS_CROWS elseif mech.mail then FOCUS_MAIL elseif mech.clay then FOCUS_CLAY elseif mech.snowballs then FOCUS_SNOW elseif mech.sacks then FOCUS_SACKS elseif mech.quilts then FOCUS_QUILTS elseif mech.webs then FOCUS_WEBS elseif mech.rainbow then FOCUS_RAINBOW elseif mech.thickGoo then FOCUS_THICK_GOO elseif mech.tarps then FOCUS_TARPS elseif mech.springs then FOCUS_SPRINGS elseif mech.statues then FOCUS_STATUES elseif mech.crates then FOCUS_CRATES elseif mech.hens then FOCUS_HENS elseif mech.goo then FOCUS_GOO elseif mech.fences then FOCUS_FENCES elseif mech.baskets then FOCUS_BASKETS elseif mech.stones then FOCUS_STONES elseif mech.clover then FOCUS_CLOVER elseif mech.pumpkins then FOCUS_PUMPKINS elseif mech.weeds then FOCUS_WEEDS elseif mech.frost then FOCUS_FROST else FOCUS
 	return list[(id % #list) + 1]
 end
 
@@ -1509,6 +1520,34 @@ local function placePackets(g, rng, id)
 		end
 		if ok then
 			setSym(g, x, y, "K")
+			placed += 1
+		end
+	end
+	return placed
+end
+
+-- Songbirds: mirrored pairs on plain cells away from the edge, not next to
+-- each other; the first bird level has one pair.
+local function placeBirds(g, rng, id)
+	local want = if id == BIRD_INTRO then 1 else rng:int(1, 3)
+	local placed = 0
+	for _ = 1, 40 do
+		if placed >= want then
+			break
+		end
+		local x, y = rng:int(2, g.w // 2), rng:int(2, g.h - 1)
+		local mx = g.w - x + 1
+		local ok = mx - x >= 2 and g[y][x] == "." and g[y][mx] == "."
+		for dy = -1, 1 do
+			for dx = -1, 1 do
+				local row = g[y + dy]
+				if row and row[x + dx] == "D" then
+					ok = false
+				end
+			end
+		end
+		if ok then
+			setSym(g, x, y, "D")
 			placed += 1
 		end
 	end
@@ -2210,6 +2249,11 @@ local function draft(id, variant)
 			return nil
 		end
 	end
+	if focus == "Birds" or (focus == "Mix" and mech.birds and rng:int(1, 3) == 1) then
+		if placeBirds(g, rng, id) == 0 then
+			return nil
+		end
+	end
 	if focus == "Mist" or (focus == "Mix" and mech.mist and rng:int(1, 3) == 1) then
 		if placeMist(g, rng, id) == 0 then
 			return nil
@@ -2490,6 +2534,9 @@ local function draft(id, variant)
 	end
 	if has(g, "Q") > 0 then
 		table.insert(goals, { kind = "Mist" })
+	end
+	if has(g, "D") > 0 then
+		table.insert(goals, { kind = "Birds" })
 	end
 	if has(g, "N") > 0 then
 		-- About one firefly per lit spot every couple of swaps; a few more as levels go on.

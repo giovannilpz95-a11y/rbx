@@ -286,6 +286,11 @@ local function styleBale(label: TextLabel, hp: number, kind)
 		-- The packet shows the tile colour that takes its seeds, and how many are left.
 		label.BackgroundColor3 = TileStyle.Board.packet
 		label.Text = (TileStyle.Glyphs[kind.packetColor] or "?") .. (if type(kind.packet) == "number" then kind.packet else "")
+	elseif kind.bird then
+		-- The bird on a perch tinted by the tile colour it wants, with that tile's glyph.
+		local want = if type(kind.bird) == "number" then kind.bird else nil
+		label.BackgroundColor3 = if want and TileStyle.Colors[want] then TileStyle.Colors[want] else TileStyle.Board.bird
+		label.Text = TileStyle.GoalGlyphs.Birds .. (if want then TileStyle.Glyphs[want] or "" else "")
 	elseif kind.vane then
 		-- The rooster with an arrow at the side matches must hit; dots are its layers.
 		label.BackgroundColor3 = TileStyle.Board.vane
@@ -1135,6 +1140,20 @@ function BoardView._effect(self, effect): number
 				tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Back)
 			end
 		end
+		return FX_TIME
+	elseif effect.type == "Hop" then
+		-- Every songbird hops on to its next colour.
+		for _, cell in effect.cells do
+			local guis = self.cellGuis[cell.y] and self.cellGuis[cell.y][cell.x]
+			if guis then
+				guis.bale.Rotation = 15
+				tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Elastic)
+			end
+		end
+		return FX_TIME
+	elseif effect.type == "Bird" then
+		-- The bird is fed and flies off.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.3 / w, 1.3 / h), TileStyle.Board.bird, true)
 		return FX_TIME
 	elseif effect.type == "Vane" then
 		-- The vane topples and goes.

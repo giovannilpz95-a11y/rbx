@@ -28,6 +28,7 @@
 	  { kind = "Vanes" }                                 -- bring down every weathervane
 	  { kind = "Vines" }                                 -- cut every vine (a creep adds one)
 	  { kind = "Mist" }                                  -- lift all the mist (matches on it or next to it)
+	  { kind = "Birds" }                                 -- feed every songbird (a match of its colour next to it)
 	  { kind = "Gophers" }                               -- catch a gopher in every burrow
 	  { kind = "Letters" }                               -- collect every letter from the mailboxes
 	  { kind = "Clay" }                                  -- break up all clay (a blast cracks glazed clay first)
@@ -56,7 +57,7 @@ function Goals.new(defs: { any }, board)
 	local trays = #board.trays
 	local bins = 0
 	local floods = board.floodsLeft or 0
-	local packets, jars, tools, vanes, vines, mist = 0, 0, 0, 0, 0, 0
+	local packets, jars, tools, vanes, vines, mist, birds = 0, 0, 0, 0, 0, 0, 0
 	local burrows = #(board.burrows or {})
 	local mudLayers, bales, frost, weeds, bare, stones, goo, tarps, webs = 0, 0, 0, 0, 0, 0, 0, 0, 0
 	board:eachCell(function(cell)
@@ -67,6 +68,9 @@ function Goals.new(defs: { any }, board)
 		end
 		if cell.mist then
 			mist += 1
+		end
+		if cell.bird then
+			birds += 1
 		end
 		if cell.goo then
 			goo += if cell.thickGoo then 2 else 1
@@ -114,9 +118,9 @@ function Goals.new(defs: { any }, board)
 		frost += cell.frost
 		if cell.tarp then
 			tarps += 1 -- tarps aren't bales for the HayBale goal
-		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump or cell.packet or cell.jar or cell.chest or cell.vane or cell.mower then
+		elseif cell.crate or cell.tin or cell.quilt or cell.sack or cell.mailbox or cell.scarecrow or cell.bucket or cell.stack or cell.hive or cell.truck or cell.snail or cell.bud or cell.lamb or cell.bin or cell.pump or cell.packet or cell.jar or cell.chest or cell.vane or cell.mower or cell.bird then
 			-- Surprise crates, sewing tins, quilts, seed sacks, mailboxes, scarecrows and
-			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins, pumps, seed packets, jam jars, tool chests, weathervanes and mowers aren't bales for the HayBale goal.
+			-- mud buckets, box stacks, beehives, hay trucks, snails, tulip buds, lambs, compost bins, pumps, seed packets, jam jars, tool chests, weathervanes, mowers and songbirds aren't bales for the HayBale goal.
 		elseif cell.stone then
 			stones += 1
 		elseif cell.weed then
@@ -167,6 +171,8 @@ function Goals.new(defs: { any }, board)
 			table.insert(list, { kind = "Vines", target = def.count or vines, progress = 0 })
 		elseif def.kind == "Mist" then
 			table.insert(list, { kind = "Mist", target = def.count or mist, progress = 0 })
+		elseif def.kind == "Birds" then
+			table.insert(list, { kind = "Birds", target = def.count or birds, progress = 0 })
 		elseif def.kind == "Floods" then
 			table.insert(list, { kind = "Floods", target = def.count or floods, progress = 0 })
 		elseif def.kind == "Bins" then
@@ -298,6 +304,10 @@ end
 
 function Goals.onMist(self)
 	bump(self, "Mist", nil)
+end
+
+function Goals.onBird(self)
+	bump(self, "Birds", nil)
 end
 
 -- A vine crept onto another tile: one more to cut.
