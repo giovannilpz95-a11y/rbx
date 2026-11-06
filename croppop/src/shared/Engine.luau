@@ -115,6 +115,14 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Fruit cages: a cage covers a block of tiles (each connected group of
+	"=" and "+" cells is one cage), holding them in place and out of
+	matches like a web. Its pegs ("+" cells) hold it down: a match next to
+	a peg (once per peg per wave) or a blast on it pulls the peg (a "Peg"
+	effect). Blasts on the rest of the cage do nothing. The last peg out
+	lifts the whole cage (a "Cage" effect), for the Cages goal, and its
+	tiles are free.
+
 	Apple trees: block a cell and hold TREE_APPLES apples. Matches next to a
 	tree do nothing: only a blast on it (a power-up, a booster or a bee)
 	shakes it, and each blast shakes one apple off (an "Apple" effect), for
@@ -1132,8 +1140,32 @@ function Engine._clearMist(self, wave, cell)
 	self.goals:onMist()
 end
 
--- A web or vine comes off its tile (the tile stays).
+-- A peg comes out of a fruit cage; the last one lifts the whole cage.
+function Engine._pullPeg(self, wave, cell)
+	local cage = cell.cage
+	cell.peg = nil
+	cage.pegs -= 1
+	table.insert(wave.webs, { x = cell.x, y = cell.y, on = true, cage = true })
+	table.insert(wave.effects, { type = "Peg", x = cell.x, y = cell.y })
+	if cage.pegs > 0 then
+		return
+	end
+	local cells = {}
+	for _, c in cage.cells do
+		c.web, c.cage = false, nil
+		table.insert(wave.webs, { x = c.x, y = c.y })
+		table.insert(cells, { x = c.x, y = c.y })
+	end
+	table.insert(wave.effects, { type = "Cage", cells = cells })
+	self.goals:onCage()
+end
+
+-- A web or vine comes off its tile (the tile stays). A fruit cage doesn't:
+-- only its pegs open it.
 function Engine._clearWeb(self, wave, cell)
+	if cell.cage then
+		return
+	end
 	cell.web = false
 	table.insert(wave.webs, { x = cell.x, y = cell.y })
 	if cell.vine then
@@ -1399,6 +1431,12 @@ function Engine._hit(self, wave, x: number, y: number)
 	if cell.buried then
 		self:_digUp(wave, cell)
 	end
+	if cell.cage then
+		if cell.peg then
+			self:_pullPeg(wave, cell)
+		end
+		return -- the cage keeps its tile safe
+	end
 	if cell.web then
 		self:_clearWeb(wave, cell) -- the blast clears the web or vine; the tile stays
 		return
@@ -1459,6 +1497,14 @@ function Engine._popGroups(self, wave, groups)
 				local n = board:get(cell.x + d[1], cell.y + d[2])
 				if n and fed[n] then
 					-- fed above
+				elseif n and n.peg then
+					-- A match next to a fruit cage's peg pulls it.
+					if not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_pullPeg(wave, n)
+					end
+				elseif n and n.cage then
+					-- the rest of a cage shrugs matches off
 				elseif n and n.vine then
 					-- A match next to a vine cuts it (the tile under it stays).
 					if not wave.balesTouched[n] then
@@ -1636,6 +1682,10 @@ function Engine._chooseBeeTarget(self)
 				table.insert(tiers[2], cell)
 			elseif cell.buried and goals:wants("Statues") then
 				table.insert(tiers[2], cell)
+			elseif cell.peg and goals:wants("Cages") then
+				table.insert(tiers[2], cell)
+			elseif cell.cage then
+				-- bees can't open a cage anywhere but at a peg
 			elseif cell.web and goals:wants(if cell.vine then "Vines" else "Webs") then
 				table.insert(tiers[2], cell)
 			elseif goals:wants("Collect", cell.piece.color) then
