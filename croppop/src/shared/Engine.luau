@@ -115,6 +115,12 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Songbirds: block a cell like a bale and each wants one tile colour (the
+	level's colours in turn, in reading order). After every swap each bird
+	hops on to the level's next colour (a "Hop" effect). A match of the
+	bird's colour next to it feeds it and it flies off (a "Bird" effect),
+	for the Birds goal; other colours' matches and blasts don't touch it.
+
 	Muddy pumpkins: a pumpkin caked in mud ("o" in the layout) falls and
 	swaps like any pumpkin, but it isn't collected from the bottom of its
 	column until a match next to it washes the mud off (a "Wash" effect).
@@ -327,11 +333,16 @@ function Engine.new(level, seed: number, options: Options?)
 	end
 
 	-- Seed packets, jam jars and lawn mowers take the level's colours in turn, in reading order.
-	local packets, jars, mowers, vanes = 0, 0, 0, 0
+	local packets, jars, mowers, vanes, birds = 0, 0, 0, 0, 0
 	self.mowers = {}
 	self.vanes = {}
+	self.birds = {}
 	board:eachCell(function(cell)
-		if cell.vane then
+		if cell.bird then
+			birds += 1
+			cell.bird = colors[(birds - 1) % #colors + 1]
+			table.insert(self.birds, cell)
+		elseif cell.vane then
 			-- Weathervanes point up, right, down and left in turn.
 			vanes += 1
 			cell.vane = (vanes - 1) % #VANE_SIDES + 1
@@ -650,7 +661,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -815,6 +826,9 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		self:_takeSeed(wave, cell)
 		return
 	end
+	if cell.bird then
+		return -- only a match of its colour feeds a songbird
+	end
 	if cell.jar then
 		self:_fillJar(wave, cell)
 		return
@@ -973,6 +987,32 @@ function Engine._chargeMowers(self, wave, color: number?)
 			end
 			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 1, mower = cell.mower, mowerColor = cell.mowerColor })
 		end
+	end
+end
+
+-- A songbird is fed and flies off.
+function Engine._feedBird(self, wave, cell)
+	cell.bale, cell.bird = 0, nil
+	table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+	table.insert(wave.effects, { type = "Bird", x = cell.x, y = cell.y })
+	self.goals:onBird()
+end
+
+-- After a swap every songbird hops on to the level's next colour.
+function Engine._hopBirds(self, phases)
+	local wave = newWave()
+	local cells = {}
+	for _, cell in self.birds do
+		if cell.bird then
+			local at = table.find(self.colors, cell.bird) or 0
+			cell.bird = self.colors[at % #self.colors + 1]
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, bird = cell.bird })
+			table.insert(cells, { x = cell.x, y = cell.y })
+		end
+	end
+	if #cells > 0 then
+		table.insert(wave.effects, { type = "Hop", cells = cells })
+		self:_finishWave(wave, phases)
 	end
 end
 
@@ -1360,6 +1400,12 @@ function Engine._popGroups(self, wave, groups)
 						wave.balesTouched[n] = true
 						self:_takeSeed(wave, n)
 					end
+				elseif n and n.bird then
+					-- Only a match of the bird's own colour feeds it.
+					if group.color == n.bird and not wave.balesTouched[n] then
+						wave.balesTouched[n] = true
+						self:_feedBird(wave, n)
+					end
 				elseif n and n.vane then
 					-- Only a match on the side the arrow points at knocks a vane.
 					local side = VANE_SIDES[n.vane]
@@ -1475,6 +1521,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Tools") then tiers[1] else tiers[4], cell)
 		elseif cell.vane then
 			table.insert(if goals:wants("Vanes") then tiers[1] else tiers[4], cell)
+		elseif cell.bird then
+			-- bees can't feed a songbird
 		elseif cell.truck then
 			table.insert(if goals:wants("HayBale") then tiers[1] else tiers[4], cell)
 		elseif cell.mailbox then
@@ -2163,6 +2211,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 	end
 	if wasSwap and #self.vanes > 0 and not self.goals:isComplete() then
 		self:_turnVanes(phases)
+	end
+	if wasSwap and #self.birds > 0 and not self.goals:isComplete() then
+		self:_hopBirds(phases)
 	end
 	if #self.board.burrows > 0 and (wasSwap or not self.gopherCell) and not self.goals:isComplete() then
 		self:_moveGopher(phases)
