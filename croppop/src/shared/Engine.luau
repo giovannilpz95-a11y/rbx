@@ -115,6 +115,15 @@
 	so does each blast on it; other colours' matches don't touch it. The
 	last seed empties it (a "Packet" effect), for the Packets goal.
 
+	Stew pots: block a cell like a POT_LAYERS-layer bale. Each hit (a match
+	next to one, once per wave, or a blast on it) knocks a layer off, and
+	the last takes it off the boil (a "Pot" effect), for the Pots goal. A
+	pot has to be kept at: after a swap that didn't hit it (boosters since
+	the last swap count), it puffs steam onto a plain tile next to it (a
+	"Steam" effect): mist, which a match on it or next to it lifts. Steam
+	stops once mist covers 1/STEAM_COVER_LIMIT of the board, and adds one
+	to a Mist goal if the level has one.
+
 	Cold frames: block a cell like a FRAME_STAGES-layer bale, a glass box
 	over a seedling. Each hit (a match next to one, once per wave, or a
 	blast on it) opens it a stage, and the last stage frees the seedling
@@ -277,6 +286,8 @@ local BONUS_COINS_PER_MOVE = 2 -- leftover moves when a level is won
 local SCARECROW_CHARGES = 3 -- hits before a scarecrow clears the most common colour
 local BUD_CHARGES = 3 -- hits in a row (one swap after another) before a tulip bud blooms
 local FRAME_STAGES = 3 -- stages a cold frame opens through (and Board's "^" layers)
+local POT_LAYERS = 2 -- hits to take a stew pot off the boil (and Board's "&" layers)
+local STEAM_COVER_LIMIT = 4 -- pots stop steaming once mist covers 1/this of the cells
 local SNOW_TIMER = 8 -- swaps before a snowball bursts
 local PACKET_SEEDS = 4 -- seeds in a seed packet
 local JAR_FILL = 3 -- colour matches (or blasts) that fill a jam jar
@@ -331,6 +342,7 @@ function Engine.new(level, seed: number, options: Options?)
 		vinesCut = 0, -- during the current action (stops vines creeping)
 		budsHit = {}, -- tulip buds hit since the last swap ended
 		framesHit = {}, -- cold frames hit since the last swap ended
+		potsHit = {}, -- stew pots hit since the last swap ended
 		lightSwaps = 0, -- swaps since the fireflies last moved
 	}, Engine)
 
@@ -346,8 +358,11 @@ function Engine.new(level, seed: number, options: Options?)
 	self.mowers = {}
 	self.vanes = {}
 	self.birds = {}
+	self.pots = {}
 	board:eachCell(function(cell)
-		if cell.bird then
+		if cell.pot then
+			table.insert(self.pots, cell)
+		elseif cell.bird then
 			birds += 1
 			cell.bird = colors[(birds - 1) % #colors + 1]
 			table.insert(self.birds, cell)
@@ -670,7 +685,7 @@ function Engine._sendPatch(self, wave, from)
 end
 
 -- byMatch: the hit is a match next to the bale (not a blast on it).
-local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame" }
+local LAMB_BLOCKERS = { "quilt", "sack", "scarecrow", "hive", "snail", "lamb", "bin", "pump", "packet", "jar", "chest", "vane", "mower", "bird", "frame", "pot" }
 local MAX_TRAMPLES = 8 -- hits a lamb gives a cell before it gives up (a cell holds at most a few layers)
 
 local function isReserved(wave, cell): boolean
@@ -900,6 +915,19 @@ function Engine._damageBale(self, wave, cell, byMatch: boolean?)
 		end
 		table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, truck = cell.truck })
 		self:_dropBale(wave, cell)
+		return
+	end
+	if cell.pot then
+		self.potsHit[cell] = true
+		cell.bale -= 1
+		if cell.bale <= 0 then
+			cell.bale, cell.pot = 0, nil
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = 0 })
+			table.insert(wave.effects, { type = "Pot", x = cell.x, y = cell.y })
+			self.goals:onPot()
+		else
+			table.insert(wave.bales, { x = cell.x, y = cell.y, hp = cell.bale, pot = true })
+		end
 		return
 	end
 	if cell.frame then
@@ -1533,6 +1561,8 @@ function Engine._chooseBeeTarget(self)
 			table.insert(if goals:wants("Blooms") then tiers[1] else tiers[4], cell)
 		elseif cell.frame then
 			table.insert(if goals:wants("Frames") then tiers[1] else tiers[4], cell)
+		elseif cell.pot then
+			table.insert(if goals:wants("Pots") then tiers[1] else tiers[4], cell)
 		elseif cell.bin then
 			table.insert(if goals:wants("Bins") then tiers[1] else tiers[4], cell)
 		elseif cell.pump then
@@ -2231,6 +2261,9 @@ function Engine._afterAction(self, phases, wasSwap: boolean?)
 		self:_wiltBuds(phases)
 		self:_shutFrames(phases)
 	end
+	if wasSwap and #self.pots > 0 and not self.goals:isComplete() then
+		self:_steamPots(phases)
+	end
 	if wasSwap and self.vinesCut == 0 and self.goals:wants("Vines") and not self.goals:isComplete() then
 		self:_growVines(phases)
 	end
@@ -2377,6 +2410,43 @@ function Engine._shutFrames(self, phases)
 		end
 	end)
 	self.framesHit = {}
+	if wave then
+		self:_finishWave(wave, phases)
+	end
+end
+
+-- After a swap, every stew pot that wasn't hit since the last swap puffs
+-- steam (mist) onto a plain tile next to it, while there's room for more.
+function Engine._steamPots(self, phases)
+	local board = self.board
+	local mist, cells = 0, 0
+	board:eachCell(function(cell)
+		cells += 1
+		if cell.mist then
+			mist += 1
+		end
+	end)
+	local wave
+	for _, pot in self.pots do
+		if pot.pot and not self.potsHit[pot] and (mist + 1) * STEAM_COVER_LIMIT <= cells then
+			local candidates = {}
+			for _, d in NEIGHBORS do
+				local n = board:get(pot.x + d[1], pot.y + d[2])
+				if n and not n.mist and Board.isPlainTile(n) and not board:fenceBetween(pot.x, pot.y, n.x, n.y) then
+					table.insert(candidates, n)
+				end
+			end
+			if #candidates > 0 then
+				local cell = candidates[self.rng:int(1, #candidates)]
+				cell.mist = true
+				mist += 1
+				self.goals:onMistAdded()
+				wave = wave or newWave()
+				table.insert(wave.effects, { type = "Steam", x = cell.x, y = cell.y, fromX = pot.x, fromY = pot.y })
+			end
+		end
+	end
+	self.potsHit = {}
 	if wave then
 		self:_finishWave(wave, phases)
 	end

@@ -86,6 +86,7 @@ export type Cell = {
 	pump: boolean?, -- the "bale" is a hand pump: it never breaks, hits drain flood water near it
 	flood: boolean?, -- flood water under the tile (only a pump drains it)
 	bin: number?, -- the "bale" is a compost bin: tiles still to take before it bursts
+	pot: boolean?, -- the "bale" is a stew pot: its layers are the hits left; a swap that misses it puffs mist next to it
 	frame: boolean?, -- the "bale" is a cold frame: its layers are the stages still to open (a swap that misses it closes one)
 	bud: number?, -- the "bale" is a tulip bud: charges so far (it blooms at 3, and closes if a swap misses it)
 	hive: boolean?, -- the "bale" is a beehive: it never breaks, and each hit sends a honey jar to the goal
@@ -291,6 +292,9 @@ function Board.fromLayout(layout: { string }, portals: { any }?, fences: { any }
 				elseif ch == "^" then
 					cell.bale = 3 -- Engine's FRAME_STAGES
 					cell.frame = true
+				elseif ch == "&" then
+					cell.bale = 2 -- Engine's POT_LAYERS
+					cell.pot = true
 				elseif ch == "B" then
 					cell.bale = 1
 					cell.bin = 9 -- Engine's BIN_COUNT
@@ -907,6 +911,8 @@ function Board.hash(self): string
 				table.insert(row, "E" .. cell.bud .. clover)
 			elseif cell.frame then
 				table.insert(row, "^" .. cell.bale .. clover)
+			elseif cell.pot then
+				table.insert(row, "&" .. cell.bale .. clover)
 			elseif cell.bin then
 				table.insert(row, "Q" .. cell.bin .. clover)
 			elseif cell.pump then
@@ -1001,6 +1007,7 @@ function Board.snapshot(self)
 			snail = cell.snail,
 			bud = cell.bud,
 			frame = cell.frame,
+			pot = cell.pot,
 			bin = cell.bin,
 			packet = cell.packet,
 			mower = cell.mower,
