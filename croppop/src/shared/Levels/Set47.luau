@@ -539,12 +539,12 @@ return {
 		},
 		rewards = { coins = 25, xp = 5 },
 	},
-	-- Bot wins 49% (target 50%; 28 moves, hand-tuned from 31 over 400 games).
+	-- Bot wins 45-49% (target 50%; 27 moves, hand-tuned from 31 over 400 games on two seeds).
 	{
 		id = 1172,
 		name = "Birdsong Bend",
 		difficulty = "Normal",
-		moves = 28,
+		moves = 27,
 		colors = { "Tomato", "Egg", "Corn", "Milk", "Wool" },
 		layout = {
 			"##.....##",

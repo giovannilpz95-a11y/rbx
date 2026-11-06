@@ -64,6 +64,9 @@
 	  T  tulip bud: blocks like a 1-layer bale; every hit charges it and the
 	     third makes it bloom (the Blooms goal), but a swap that doesn't hit
 	     a charged bud closes it back up to no charge
+	  ^  cold frame: blocks like a 3-layer bale; every hit opens it a stage
+	     and the last frees its seedling (the Frames goal), but a swap that
+	     doesn't hit a part-open frame closes it one stage again
 	  O  garden snail: blocks a cell and never breaks; a match next to it
 	     shoves it a cell away, biting what's there and crawling in if that
 	     empties the cell, leaving goo behind. Needs a Goo goal
@@ -141,7 +144,7 @@ local Tiles = require(script.Parent.Tiles)
 
 local Levels = {}
 
-Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44", "Set45", "Set46", "Set47" }
+Levels.SETS = { "Set01", "Set02", "Set03", "Set04", "Set05", "Set06", "Set07", "Set08", "Set09", "Set10", "Set11", "Set12", "Set13", "Set14", "Set15", "Set16", "Set17", "Set18", "Set19", "Set20", "Set21", "Set22", "Set23", "Set24", "Set25", "Set26", "Set27", "Set28", "Set29", "Set30", "Set31", "Set32", "Set33", "Set34", "Set35", "Set36", "Set37", "Set38", "Set39", "Set40", "Set41", "Set42", "Set43", "Set44", "Set45", "Set46", "Set47", "Set48" }
 
 Levels.List = {}
 for _, setName in Levels.SETS do
@@ -211,6 +214,7 @@ local VALID_CHARS = {
 	Q = true,
 	o = true,
 	D = true,
+	["^"] = true,
 	U = true,
 	I = true,
 	H = true,
@@ -363,7 +367,7 @@ function Levels.validate(level): string?
 	if width < 3 or width > Levels.MAX_SIZE then
 		return "layout must be 3 to " .. Levels.MAX_SIZE .. " columns"
 	end
-	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets, burrows, jars, chests, vanes, vines, mist, birds = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	local mud, bales, frost, weeds, pumpkins, clover, stones, baskets, goo, buried, springs, tarps, webs, quilts, tins, sacks, snowballs, clay, letters, buckets, boxes, hives, trucks, snails, buds, lambs, pens, spots, trays, bins, floods, pumps, packets, burrows, jars, chests, vanes, vines, mist, birds, frames = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	for y, row in level.layout do
 		if #row ~= width then
@@ -431,6 +435,8 @@ function Levels.validate(level): string?
 				snails += 1
 			elseif ch == "T" then
 				buds += 1
+			elseif ch == "^" then
+				frames += 1
 			elseif ch == "E" then
 				lambs += 1
 			elseif ch == "P" then
@@ -650,6 +656,15 @@ function Levels.validate(level): string?
 			return "lambs in the layout but no pen"
 		end
 	end
+	if frames > 0 then
+		local wanted = false
+		for _, goal in level.goals do
+			wanted = wanted or goal.kind == "Frames"
+		end
+		if not wanted then
+			return "cold frames in the layout but no frames goal"
+		end
+	end
 	if buds > 0 then
 		local wanted = false
 		for _, goal in level.goals do
@@ -786,6 +801,10 @@ function Levels.validate(level): string?
 		elseif goal.kind == "Lambs" then
 			if lambs == 0 then
 				return "lambs goal but no lambs in the layout"
+			end
+		elseif goal.kind == "Frames" then
+			if frames == 0 then
+				return "frames goal but no cold frames in the layout"
 			end
 		elseif goal.kind == "Blooms" then
 			if buds == 0 then

@@ -274,6 +274,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.lamb then
 		label.BackgroundColor3 = TileStyle.Board.lamb
 		label.Text = TileStyle.GoalGlyphs.Lambs
+	elseif kind.frame then
+		-- The seedling under glass: the dots are the stages still to open, and it clears as it opens.
+		label.BackgroundColor3 = TileStyle.Board.frame:Lerp(Color3.new(1, 1, 1), (3 - hp) * 0.25)
+		label.Text = TileStyle.GoalGlyphs.Frames .. string.rep("•", hp)
 	elseif kind.bud then
 		-- Pinker as it charges; the dots are its charges so far.
 		label.BackgroundColor3 = if kind.bud > 0 then TileStyle.Board.budLit else TileStyle.Board.bud
@@ -1257,6 +1261,18 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			flower:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Frame" then
+		-- The frame lifts off and the seedling is free.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.frame, true)
+		return FX_TIME
+	elseif effect.type == "Shut" then
+		-- The frame drops a stage back down.
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.bale.Rotation = 10
+			tween(guis.bale, FX_TIME, { Rotation = 0 }, Enum.EasingStyle.Bounce)
+		end
 		return FX_TIME
 	elseif effect.type == "Wilt" then
 		-- The bud closes up again: it droops and loses its charge.
