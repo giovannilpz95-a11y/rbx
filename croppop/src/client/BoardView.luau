@@ -274,6 +274,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.lamb then
 		label.BackgroundColor3 = TileStyle.Board.lamb
 		label.Text = TileStyle.GoalGlyphs.Lambs
+	elseif kind.pot then
+		-- The pot on the boil; the dots are the hits it still needs.
+		label.BackgroundColor3 = TileStyle.Board.pot
+		label.Text = TileStyle.GoalGlyphs.Pots .. string.rep("•", hp)
 	elseif kind.frame then
 		-- The seedling under glass: the dots are the stages still to open, and it clears as it opens.
 		label.BackgroundColor3 = TileStyle.Board.frame:Lerp(Color3.new(1, 1, 1), (3 - hp) * 0.25)
@@ -1261,6 +1265,21 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			flower:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Pot" then
+		-- The pot comes off the boil and goes.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.pot, true)
+		return FX_TIME
+	elseif effect.type == "Steam" then
+		-- A puff of steam drifts off the pot and settles as mist on the tile.
+		self:_flash(self:_centerOf(effect.fromX, effect.fromY), UDim2.fromScale(1.2 / w, 1.2 / h), TileStyle.Board.mist, true)
+		local guis = self.cellGuis[effect.y] and self.cellGuis[effect.y][effect.x]
+		if guis then
+			guis.mist.Visible = true
+			guis.mist.BackgroundTransparency = 1
+			guis.mist.TextTransparency = 1
+			tween(guis.mist, FX_TIME, { BackgroundTransparency = 0.05, TextTransparency = 0.4 })
+		end
 		return FX_TIME
 	elseif effect.type == "Frame" then
 		-- The frame lifts off and the seedling is free.
