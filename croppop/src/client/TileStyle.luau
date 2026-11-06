@@ -48,6 +48,7 @@ TileStyle.MuddyPumpkin = { color = Color3.fromRGB(110, 80, 50), glyph = "🎃", 
 -- Portal ends: a swirl on a coloured disc, one colour per entrance/exit pair.
 TileStyle.PortalGlyph = "🌀"
 TileStyle.BasketGlyph = "🧺" -- a pumpkin basket (Unicode 11)
+TileStyle.TreeGlyph = "🌳" -- an apple tree (its apples show as a count)
 TileStyle.HenGlyph = "🐔" -- a hen house
 TileStyle.CrateGlyph = "🎁" -- a surprise crate
 TileStyle.SpringGlyph = "⛲" -- a goo spring
@@ -124,6 +125,7 @@ TileStyle.GoalGlyphs = {
 	Birds = "🐦", -- a songbird fed and flown off
 	Frames = "🌱", -- a seedling freed from a cold frame
 	Pots = "🍲", -- a stew pot taken off the boil
+	Apples = "🍎", -- an apple shaken off an apple tree
 	Floods = "💧", -- a flooded cell pumped dry
 	Bins = "♻", -- a compost bin that has burst
 	Trays = "🌼", -- a seed tray with every seed sprouted (the seedling is the seed sack)
@@ -196,6 +198,7 @@ TileStyle.Board = {
 	bird = Color3.fromRGB(120, 170, 120), -- a songbird's perch (tinted by the colour it wants)
 	frame = Color3.fromRGB(150, 190, 205), -- a glass cold frame (paler as it opens)
 	pot = Color3.fromRGB(70, 70, 78), -- a black iron stew pot
+	tree = Color3.fromRGB(70, 130, 60), -- a leafy apple tree
 	mower = Color3.fromRGB(200, 60, 50), -- a red lawn mower
 	burrow = Color3.fromRGB(120, 86, 56), -- the earth round a gopher burrow
 	mowed = Color3.fromRGB(150, 220, 120), -- freshly cut grass along a mowed row

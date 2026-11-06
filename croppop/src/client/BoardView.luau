@@ -274,6 +274,10 @@ local function styleBale(label: TextLabel, hp: number, kind)
 	elseif kind.lamb then
 		label.BackgroundColor3 = TileStyle.Board.lamb
 		label.Text = TileStyle.GoalGlyphs.Lambs
+	elseif kind.tree then
+		-- The tree and how many apples are still on it.
+		label.BackgroundColor3 = TileStyle.Board.tree
+		label.Text = TileStyle.TreeGlyph .. TileStyle.GoalGlyphs.Apples .. (if type(kind.tree) == "number" then kind.tree else "")
 	elseif kind.pot then
 		-- The pot on the boil; the dots are the hits it still needs.
 		label.BackgroundColor3 = TileStyle.Board.pot
@@ -1265,6 +1269,26 @@ function BoardView._effect(self, effect): number
 		task.delay(FX_TIME, function()
 			flower:Destroy()
 		end)
+		return FX_TIME
+	elseif effect.type == "Apple" then
+		-- An apple drops off the tree.
+		local apple = Instance.new("TextLabel")
+		apple.Name = "Apple"
+		apple.AnchorPoint = Vector2.new(0.5, 0.5)
+		apple.BackgroundTransparency = 1
+		apple.Size = UDim2.fromScale(0.6 / w, 0.6 / h)
+		apple.Position = self:_centerOf(effect.x, effect.y)
+		apple.Text = TileStyle.GoalGlyphs.Apples
+		apple.TextScaled = true
+		apple.Parent = self.fxLayer
+		tween(apple, FX_TIME, { Position = self:_centerOf(effect.x, effect.y + 1), TextTransparency = 1 })
+		task.delay(FX_TIME, function()
+			apple:Destroy()
+		end)
+		return 0
+	elseif effect.type == "Tree" then
+		-- The bare tree goes.
+		self:_flash(self:_centerOf(effect.x, effect.y), UDim2.fromScale(1.4 / w, 1.4 / h), TileStyle.Board.tree, true)
 		return FX_TIME
 	elseif effect.type == "Pot" then
 		-- The pot comes off the boil and goes.
